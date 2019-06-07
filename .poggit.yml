@@ -1,5 +1,10 @@
 --- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/matcracker/BedcoreProtect
 branches:
 - master
-projects: []
+projects:
+  BedcoreProtect:
+    path: ""
+    libs:
+      - src: poggit/libasynql/libasynql
+        version: ^3.0
 ...
