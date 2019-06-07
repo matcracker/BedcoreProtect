@@ -7,6 +7,6 @@ projects:
       vendor: vendor
     path: ""
     libs:
-      - src: poggit\libasynql
+      - src: poggit/libasynql/libasynql
         version: ^3.0
 ...
