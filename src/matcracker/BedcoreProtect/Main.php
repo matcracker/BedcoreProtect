@@ -34,6 +34,15 @@ final class Main extends PluginBase
 
     public function onEnable(): void //TODO: Check extensions
     {
+        if (!$this->isPhar()) {
+            $this->getLogger()->warning("/-------------------------------<!WARNING!>--------------------------------\\\n");
+            $this->getLogger()->warning("|         It is not recommended to run BedcoreProtect from source.         |\n");
+            $this->getLogger()->warning("|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|\n");
+            $this->getLogger()->warning("\--------------------------------------------------------------------------/\n");
+        }
+
+        include_once($this->getFile() . "/vendor/autoload.php");
+
         @mkdir($this->getDataFolder());
         $this->saveDefaultConfig();
 
