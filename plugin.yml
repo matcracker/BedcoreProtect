@@ -2,8 +2,6 @@ name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
 version: 0.1.0
 api: [3.4.0]
-softdepend:
-  - DEVirion
 
 load: POSTWORLD
 author: matcracker

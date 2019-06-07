@@ -3,6 +3,8 @@ branches:
 - master
 projects:
   BedcoreProtect:
+    includeDirs:
+      vendor: vendor
     path: ""
     libs:
       - src: poggit/libasynql/libasynql
