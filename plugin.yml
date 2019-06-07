@@ -1,0 +1,28 @@
+name: BedcoreProtect
+main: matcracker\BedcoreProtect\Main
+version: 0.1.0
+api: [3.4.0]
+softdepend:
+  - DEVirion
+
+load: POSTWORLD
+author: matcracker
+description: "BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine server. Rollback and restore any amount of damage"
+website: https://github.com/matcracker/BedcoreProtect
+permissions:
+  bcp.command.bedcoreprotect:
+    description: "Allows the user to run the command and sub-commands /bedcoreprotect"
+    default: op
+    children:
+      bcp.subcommand.help:
+        description: "Allows the user to run the sub-command /bedcoreprotect help"
+      bcp.subcommand.inspect:
+        description: "Allows the user to run the sub-command /bedcoreprotect inspect"
+      bcp.subcommand.near:
+        description: "Allows the user to run the sub-command /bedcoreprotect near"
+      bcp.subcommand.lookup:
+        description: "Allows the user to run the sub-command /bedcoreprotect lookup"
+      bcp.subcommand.rollback:
+        description: "Allows the user to run the sub-command /bedcoreprotect rollback"
+      bcp.subcommand.restore:
+        description: "Allows the user to run the sub-command /bedcoreprotect restore"
