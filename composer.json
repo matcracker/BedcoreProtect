@@ -19,9 +19,8 @@
     "time-unit-php/time-unit-php": "dev-master"
   },
   "autoload": {
-    "psr-0": {
-      "": "src/"
-      
+    "psr-4": {
+      "matcracker\\BedcoreProtect\\": "src/"
     }
   }
 }

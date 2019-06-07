@@ -11,6 +11,10 @@ class ComposerStaticInit89216bea090f06e25929b0350580de17
     );
 
     public static $prefixLengthsPsr4 = array (
+        'm' => 
+        array (
+            'matcracker\\BedcoreProtect\\' => 26,
+        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Mbstring\\' => 26,
@@ -28,6 +32,10 @@ class ComposerStaticInit89216bea090f06e25929b0350580de17
     );
 
     public static $prefixDirsPsr4 = array (
+        'matcracker\\BedcoreProtect\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
+        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
@@ -50,10 +58,6 @@ class ComposerStaticInit89216bea090f06e25929b0350580de17
         ),
     );
 
-    public static $fallbackDirsPsr4 = array (
-        0 => __DIR__ . '/../..' . '/src',
-    );
-
     public static $prefixesPsr0 = array (
         'T' => 
         array (
@@ -73,7 +77,6 @@ class ComposerStaticInit89216bea090f06e25929b0350580de17
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit89216bea090f06e25929b0350580de17::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit89216bea090f06e25929b0350580de17::$prefixDirsPsr4;
-            $loader->fallbackDirsPsr4 = ComposerStaticInit89216bea090f06e25929b0350580de17::$fallbackDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInit89216bea090f06e25929b0350580de17::$prefixesPsr0;
 
         }, null, ClassLoader::class);
