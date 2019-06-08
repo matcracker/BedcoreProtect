@@ -6,6 +6,7 @@ projects:
     includeDirs:
       vendor: vendor
     path: ""
+    icon: resources/bedcoreprotect_logo.png
     stub: "composer.php"
     libs:
       - src: poggit/libasynql/libasynql
