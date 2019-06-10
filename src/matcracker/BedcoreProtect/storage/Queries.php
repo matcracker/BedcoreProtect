@@ -23,7 +23,9 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
+use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
+use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
@@ -99,6 +101,15 @@ class Queries
         });
     }
 
+    public function requestLookup(CommandSender $sender, CommandParser $parser, ?Vector3 $vector3): void
+    {
+        $query = $parser->buildLookupQuery($vector3);
+        $this->connector->executeSelectRaw($query, [], function (array $rows) use ($sender) {
+            Inspector::cacheLogs($sender, $rows);
+            Inspector::parseLogs($sender, $rows);
+        });
+    }
+
     public function rollback(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
     {
         $this->rollbackBlocks($position, $parser, $onSuccess, $onError);
@@ -119,6 +130,13 @@ class Queries
     public function requestBlockLog(Player $inspector, Block $block): void
     {
         $this->requestLog(QueriesConst::GET_BLOCK_LOG, $inspector, $block->asPosition());
+    }
+
+    public function purge(int $time): void
+    {
+        $this->connector->executeGeneric(QueriesConst::PURGE, [
+            "time" => $time
+        ]);
     }
 
     private function addRawLog(string $uuid, Position $position, int $action): void

@@ -22,6 +22,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use matcracker\BedcoreProtect\storage\QueriesConst;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 
@@ -36,24 +37,34 @@ final class Inspector
     /**
      * It adds a player into the inspector mode. It returns the success of operation.
      *
-     * @param Player $inspector
+     * @param CommandSender $inspector
      */
-    public static function addInspector(Player $inspector): void
+    public static function addInspector(CommandSender $inspector): void
     {
-        self::$inspectors[$inspector->getUniqueId()->toString()]["enabled"] = true;
+        self::$inspectors[self::getUUID($inspector)]["enabled"] = true;
+    }
+
+    private static function getUUID(CommandSender $sender): string
+    {
+        $uuid = $sender->getServer()->getServerUniqueId();
+        if ($sender instanceof Player) {
+            $uuid = $sender->getUniqueId();
+        }
+
+        return $uuid->toString();
     }
 
     /**
      * It removes a player from the inspector mode. It returns the success of operation.
      *
-     * @param Player $inspector
+     * @param CommandSender $inspector
      * @return bool
      */
-    public static function removeInspector(Player $inspector): bool
+    public static function removeInspector(CommandSender $inspector): bool
     {
         if (!self::isInspector($inspector)) return false;
 
-        unset(self::$inspectors[$inspector->getUniqueId()->toString()]);
+        unset(self::$inspectors[self::getUUID($inspector)]);
 
         return true;
     }
@@ -61,36 +72,36 @@ final class Inspector
     /**
      * It checks if a player is an inspector.
      *
-     * @param Player $inspector
+     * @param CommandSender $inspector
      * @return bool
      */
-    public static function isInspector(Player $inspector): bool
+    public static function isInspector(CommandSender $inspector): bool
     {
         if (!self::issetInspector($inspector)) return false;
 
-        return self::$inspectors[$inspector->getUniqueId()->toString()]["enabled"];
+        return self::$inspectors[self::getUUID($inspector)]["enabled"];
     }
 
-    private static function issetInspector(Player $inspector): bool
+    private static function issetInspector(CommandSender $inspector): bool
     {
-        if (isset(self::$inspectors[$inspector->getUniqueId()->toString()])) {
-            return array_key_exists("enabled", self::$inspectors[$inspector->getUniqueId()->toString()]);
+        if (isset(self::$inspectors[self::getUUID($inspector)])) {
+            return array_key_exists("enabled", self::$inspectors[self::getUUID($inspector)]);
         }
         return false;
     }
 
-    public static function cacheLogs(Player $inspector, array $logs = []): void
+    public static function cacheLogs(CommandSender $inspector, array $logs = []): void
     {
-        self::$inspectors[$inspector->getUniqueId()->toString()]["logs"] = $logs;
+        self::$inspectors[self::getUUID($inspector)]["logs"] = $logs;
     }
 
     /**
-     * @param Player $inspector
+     * @param CommandSender $inspector
      * @return array
      */
-    public static function getCachedLogs(Player $inspector): array
+    public static function getCachedLogs(CommandSender $inspector): array
     {
-        return self::$inspectors[$inspector->getUniqueId()->toString()]["logs"];
+        return self::$inspectors[self::getUUID($inspector)]["logs"];
     }
 
     public static function clearCache(): void
@@ -101,11 +112,11 @@ final class Inspector
     /**
      * It sends a message to the inspector with all the log's info.
      *
-     * @param Player $inspector
+     * @param CommandSender $inspector
      * @param int $page
      * @param array $logs
      */
-    public static function parseLogs(Player $inspector, array $logs, int $page = 0): void
+    public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0): void
     {
         if (count($logs) > 0) {
             $chunkLogs = array_chunk($logs, 4);

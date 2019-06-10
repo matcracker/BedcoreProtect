@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS blocks_log
     old_block_damage TINYINT(2) UNSIGNED NOT NULL,
     new_block_id     INTEGER UNSIGNED    NOT NULL,
     new_block_damage TINYINT(2) UNSIGNED NOT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id),
+    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
     FOREIGN KEY (old_block_id, old_block_damage) REFERENCES blocks (id, damage),
     FOREIGN KEY (new_block_id, new_block_damage) REFERENCES blocks (id, damage)
 );
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS entities_log
 (
     history_id      BIGINT UNSIGNED,
     entityfrom_uuid VARCHAR(36) NOT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id),
+    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
 );
 -- #        }
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS signs_log
 (
     history_id BIGINT UNSIGNED,
     text_lines TEXT,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id)
+    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {inventories_log
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS inventories_log
     new_item_id     INTEGER UNSIGNED    NOT NULL,
     new_item_damage TINYINT(2) UNSIGNED NOT NULL,
     new_amount      TINYINT UNSIGNED    NOT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id)
+    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #    }
@@ -295,5 +295,11 @@ WHERE (x BETWEEN :min_x AND :max_x)
 ORDER BY time DESC;
 -- #            }
 -- #        }
+-- #    }
+-- #    {purge
+-- #        :time int
+DELETE
+FROM log_history
+WHERE time < (UNIX_TIMESTAMP() - FROM_UNIXTIME(:time));
 -- #    }
 -- #}

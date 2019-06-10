@@ -25,6 +25,7 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
+use SplFixedArray;
 use UnexpectedValueException;
 
 final class CommandParser
@@ -47,10 +48,7 @@ final class CommandParser
     private $parsed = false;
 
     //Default data values
-    private $data = [
-        "radius" => null,
-        "time" => null
-    ];
+    private $data;
 
     /**
      * CommandParser constructor.
@@ -65,9 +63,13 @@ final class CommandParser
         if ($shift) {
             array_shift($this->arguments);
         }
-        if (($r = $this->configParser->getDefaultRadius()) !== 0) {
-            $this->data["radius"] = $r;
-        }
+        $this->data = new SplFixedArray(6);
+        $this->data["user"] = null;
+        $this->data["time"] = null;
+        $this->data["radius"] = $this->configParser->getDefaultRadius() !== 0 ?: null;
+        $this->data["action"] = null;
+        $this->data["blocks"] = null;
+        $this->data["exclusions"] = null;
     }
 
     public function parse(): bool
@@ -149,7 +151,7 @@ final class CommandParser
     public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
     {
         if (!$this->parsed) {
-            throw new UnexpectedValueException("Before getting data, you need to invoke CommandParser::parse()");
+            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $prefix = $restore ? "new" : "old";
@@ -165,9 +167,9 @@ final class CommandParser
         return $query;
     }
 
-    private function buildConditionalQuery(string &$query, Vector3 $vector3, array $args): void
+    private function buildConditionalQuery(string &$query, ?Vector3 $vector3, array $args): void
     {
-        if (count($args) !== 2) {
+        if (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1) {
             throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");
         }
 
@@ -177,7 +179,7 @@ final class CommandParser
             } else if ($key === "time") {
                 $diffTime = time() - (int)$value;
                 $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
-            } else if ($key === "radius") {
+            } else if ($key === "radius" && $vector3 !== null) {
                 $minV = $vector3->subtract($value, $value, $value)->floor();
                 $maxV = $vector3->add($value, $value, $value)->floor();
                 $query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
@@ -196,11 +198,14 @@ final class CommandParser
                 $query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
             } else if ($key === "blocks" || $key === "exclusions") { //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
                 $operator = $key === "exclusions" ? "<>" : "=";
-                foreach ($value as $blockArray) {
-                    $id = (int)$blockArray["id"];
-                    $damage = (int)$blockArray["damage"];
-                    $query .= "{$args[0]} $operator '$id' AND {$args[1]} $operator '$damage') AND ";
+                for ($i = 0; $i < $cArgs; $i += 2) {
+                    foreach ($value as $blockArray) {
+                        $id = (int)$blockArray["id"];
+                        $damage = (int)$blockArray["damage"];
+                        $query .= "{$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
+                    }
                 }
+
             }
         }
     }
@@ -213,10 +218,30 @@ final class CommandParser
         return self::ACTIONS[$cmdAction];
     }
 
+    public function buildLookupQuery(?Vector3 $vector3): string
+    {
+        if (!$this->parsed) {
+            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+
+        $query = /**@lang text */
+            "SELECT log_id, bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, x, y, z FROM log_history 
+            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE ";
+
+        $this->buildConditionalQuery($query, $vector3, [
+            "bl.old_block_id", "bl.old_block_damage",
+            "bl.new_block_id", "bl.new_block_damage"
+        ]);
+
+        $query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+
+        return $query;
+    }
+
     public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
     {
         if (!$this->parsed) {
-            throw new UnexpectedValueException("Before getting data, you need to invoke CommandParser::parse()");
+            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $prefix = $restore ? "new" : "old";
@@ -228,22 +253,26 @@ final class CommandParser
         $this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
 
         $query = rtrim($query, " AND ") . " ORDER BY time DESC;";
-        var_dump($query);
         return $query;
     }
 
     /**
      * It returns an array with the parsed data from the command.
      *
-     * @return array
+     * @return SplFixedArray
      * @throws UnexpectedValueException if it is used before CommandParser::parse()
      */
-    public function getData(): array
+    public function getData(): SplFixedArray
     {
         if (!$this->parsed) {
-            throw new UnexpectedValueException("Before getting data, you need to invoke CommandParser::parse()");
+            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
         return $this->data;
+    }
+
+    public function getUser(): ?string
+    {
+        return $this->data["user"];
     }
 
     public function getTime(): ?int
@@ -251,8 +280,23 @@ final class CommandParser
         return $this->data["time"];
     }
 
-    public function getRadius(): int
+    public function getRadius(): ?int
     {
         return $this->data["radius"];
+    }
+
+    public function getAction(): ?string
+    {
+        return $this->data["action"];
+    }
+
+    public function getBlocks(): ?array
+    {
+        return $this->data["blocks"];
+    }
+
+    public function getExclusions(): ?array
+    {
+        return $this->data["exclusions"];
     }
 }

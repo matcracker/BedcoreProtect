@@ -56,6 +56,7 @@ final class QueriesConst
     public const GET_ENTITY_LOG = "bcp.get.log.entity";
     public const GET_NEAR_LOG = "bcp.get.log.near";
     public const GET_TRANSACTION_LOG = "bcp.get.log.transaction";
+    public const PURGE = "bcp.purge";
 
     private function __construct()
     {

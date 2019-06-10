@@ -32,13 +32,18 @@ final class Main extends PluginBase
     /**@var Database */
     private $database;
 
-    public function onEnable(): void //TODO: Check extensions
+    public function onEnable(): void
     {
+        if (!extension_loaded("curl")) {
+            $this->getLogger()->error("Extension 'curl' is missing. Enable it on php.ini file.");
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+        }
+
         if (!$this->isPhar()) {
-            $this->getLogger()->warning("/-------------------------------<!WARNING!>--------------------------------\\\n");
-            $this->getLogger()->warning("|         It is not recommended to run BedcoreProtect from source.         |\n");
-            $this->getLogger()->warning("|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|\n");
-            $this->getLogger()->warning("\--------------------------------------------------------------------------/\n");
+            $this->getLogger()->warning("/-------------------------------<!WARNING!>--------------------------------\\");
+            $this->getLogger()->warning("|         It is not recommended to run BedcoreProtect from source.         |");
+            $this->getLogger()->warning("|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|");
+            $this->getLogger()->warning("\--------------------------------------------------------------------------/");
         }
 
         include_once($this->getFile() . "/vendor/autoload.php");
