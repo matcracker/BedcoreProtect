@@ -288,6 +288,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < (CURRENT_TIMESTAMP - FROM_UNIXTIME(:time));
+WHERE time < FROM_UNIXTIME(UNIX_TIMESTAMP() - :time);
 -- #    }
 -- #}

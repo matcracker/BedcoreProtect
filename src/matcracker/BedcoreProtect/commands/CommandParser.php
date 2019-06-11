@@ -94,9 +94,9 @@ final class CommandParser
                 case "user":
                 case "u":
                     $offlinePlayer = Server::getInstance()->getOfflinePlayer($paramValues);
-                    if ($offlinePlayer->hasPlayedBefore()) {
-                        $this->data["user"] = $offlinePlayer->getName();
-                    }
+                    if (!$offlinePlayer->hasPlayedBefore()) return false;
+
+                    $this->data["user"] = $offlinePlayer->getName();
                     break;
                 case "time":
                 case "t":
@@ -139,6 +139,13 @@ final class CommandParser
                     return false;
             }
         }
+        $filter = array_filter($this->data, function ($value) {
+            return $value !== null;
+        });
+
+        if (empty($filter))
+            return false;
+
         $this->parsed = true;
         return true;
     }
@@ -270,7 +277,7 @@ final class CommandParser
      * @return array
      * @throws UnexpectedValueException if it is used before CommandParser::parse()
      */
-    public function getData(): array
+    public function getAllData(): array
     {
         if (!$this->parsed) {
             throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
@@ -280,31 +287,43 @@ final class CommandParser
 
     public function getUser(): ?string
     {
-        return $this->data["user"];
+        return $this->getData("user");
+    }
+
+    /**
+     * @param string $key
+     * @return mixed
+     */
+    private function getData(string $key)
+    {
+        if (!$this->parsed) {
+            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+        return $this->data[$key];
     }
 
     public function getTime(): ?int
     {
-        return $this->data["time"];
+        return $this->getData("time");
     }
 
     public function getRadius(): ?int
     {
-        return $this->data["radius"];
+        return $this->getData("radius");
     }
 
     public function getAction(): ?string
     {
-        return $this->data["action"];
+        return $this->getData("action");
     }
 
     public function getBlocks(): ?array
     {
-        return $this->data["blocks"];
+        return $this->getData("blocks");
     }
 
     public function getExclusions(): ?array
     {
-        return $this->data["exclusions"];
+        return $this->getData("exclusions");
     }
 }
