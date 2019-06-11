@@ -169,11 +169,9 @@ WHERE history_id = :id;
 -- #                :world_name string
 SELECT bl.old_block_id,
        bl.old_block_damage,
-       old_b.block_name AS old_block_name,
        bl.new_block_id,
        bl.new_block_damage,
-       new_b.block_name AS new_block_name,
-       e.entity_name    AS entity_from,
+       e.entity_name AS entity_from,
        x,
        y,
        z,
@@ -184,10 +182,6 @@ SELECT bl.old_block_id,
 FROM log_history
          INNER JOIN entities e ON log_history.who = e.uuid
          INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
-         INNER JOIN (SELECT * FROM blocks) old_b
-                    ON bl.old_block_id = old_b.id AND bl.old_block_damage = old_b.damage
-         INNER JOIN (SELECT * FROM blocks) new_b
-                    ON bl.new_block_id = new_b.id AND bl.new_block_damage = new_b.damage
 WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
@@ -233,12 +227,10 @@ ORDER BY time DESC;
 -- #                :world_name string
 SELECT bl.old_block_id,
        bl.old_block_damage,
-       old_b.block_name AS old_block_name,
        bl.new_block_id,
        bl.new_block_damage,
-       new_b.block_name AS new_block_name,
-       e1.entity_name   AS entity_from,
-       e2.entity_name   AS entity_to,
+       e1.entity_name AS entity_from,
+       e2.entity_name AS entity_to,
        x,
        y,
        z,
@@ -251,10 +243,6 @@ FROM log_history
          LEFT JOIN entities_log el ON log_history.log_id = el.history_id
          LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid
          LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
-         LEFT JOIN (SELECT * FROM blocks) old_b
-                   ON bl.old_block_id = old_b.id AND bl.old_block_damage = old_b.damage
-         LEFT JOIN (SELECT * FROM blocks) new_b
-                   ON bl.new_block_id = new_b.id AND bl.new_block_damage = new_b.damage
 WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
@@ -300,6 +288,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < (UNIX_TIMESTAMP() - FROM_UNIXTIME(:time));
+WHERE time < (CURRENT_TIMESTAMP - FROM_UNIXTIME(:time));
 -- #    }
 -- #}

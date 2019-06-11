@@ -1,7 +1,10 @@
 <?php
 
 /*
- * BedcoreProtect
+ *     ___         __                 ___           __          __
+ *    / _ )___ ___/ /______  _______ / _ \_______  / /____ ____/ /_
+ *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
+ *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
  * Copyright (C) 2019
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +28,6 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
-use SplFixedArray;
 use UnexpectedValueException;
 
 final class CommandParser
@@ -48,7 +50,14 @@ final class CommandParser
     private $parsed = false;
 
     //Default data values
-    private $data;
+    private $data = [
+        "user" => null,
+        "time" => null,
+        "radius" => null,
+        "action" => null,
+        "blocks" => null,
+        "exclusions" => null
+    ];
 
     /**
      * CommandParser constructor.
@@ -63,13 +72,8 @@ final class CommandParser
         if ($shift) {
             array_shift($this->arguments);
         }
-        $this->data = new SplFixedArray(6);
-        $this->data["user"] = null;
-        $this->data["time"] = null;
-        $this->data["radius"] = $this->configParser->getDefaultRadius() !== 0 ?: null;
-        $this->data["action"] = null;
-        $this->data["blocks"] = null;
-        $this->data["exclusions"] = null;
+
+        $this->data["radius"] = $this->configParser->getDefaultRadius() !== 0 ?? null;
     }
 
     public function parse(): bool
@@ -135,7 +139,6 @@ final class CommandParser
                     return false;
             }
         }
-
         $this->parsed = true;
         return true;
     }
@@ -174,18 +177,18 @@ final class CommandParser
         }
 
         foreach ($this->data as $key => $value) {
-            if ($key === "user") {
+            if ($key === "user" && $value !== null) {
                 $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$value') AND ";
-            } else if ($key === "time") {
+            } else if ($key === "time" && $value !== null) {
                 $diffTime = time() - (int)$value;
                 $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
-            } else if ($key === "radius" && $vector3 !== null) {
+            } else if ($key === "radius" && $vector3 !== null && $value !== null) {
                 $minV = $vector3->subtract($value, $value, $value)->floor();
                 $maxV = $vector3->add($value, $value, $value)->floor();
                 $query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
                 $query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
                 $query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
-            } else if ($key === "action") {
+            } else if ($key === "action" && $value !== null) {
                 $minAction = CommandParser::toAction($value);
                 $maxAction = $minAction;
                 if ($value === "container") {
@@ -196,7 +199,7 @@ final class CommandParser
                     $maxAction = QueriesConst::BROKE;
                 }
                 $query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
-            } else if ($key === "blocks" || $key === "exclusions") { //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
+            } else if (($key === "blocks" || $key === "exclusions") && $value !== null) { //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
                 $operator = $key === "exclusions" ? "<>" : "=";
                 for ($i = 0; $i < $cArgs; $i += 2) {
                     foreach ($value as $blockArray) {
@@ -218,17 +221,22 @@ final class CommandParser
         return self::ACTIONS[$cmdAction];
     }
 
-    public function buildLookupQuery(?Vector3 $vector3): string
+    public function buildLookupQuery(): string
     {
         if (!$this->parsed) {
             throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $query = /**@lang text */
-            "SELECT log_id, bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, x, y, z FROM log_history 
-            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE ";
+            "SELECT *,
+            bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
+            il.old_item_id, il.old_item_damage, il.old_amount, il.new_item_id, il.new_item_damage, il.new_amount, 
+            e.entity_name AS entity_from FROM log_history 
+            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
+            LEFT JOIN entities e ON log_history.who = e.uuid 
+            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ";
 
-        $this->buildConditionalQuery($query, $vector3, [
+        $this->buildConditionalQuery($query, null, [
             "bl.old_block_id", "bl.old_block_damage",
             "bl.new_block_id", "bl.new_block_damage"
         ]);
@@ -259,10 +267,10 @@ final class CommandParser
     /**
      * It returns an array with the parsed data from the command.
      *
-     * @return SplFixedArray
+     * @return array
      * @throws UnexpectedValueException if it is used before CommandParser::parse()
      */
-    public function getData(): SplFixedArray
+    public function getData(): array
     {
         if (!$this->parsed) {
             throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");

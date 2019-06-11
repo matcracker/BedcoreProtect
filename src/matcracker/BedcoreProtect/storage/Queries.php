@@ -1,7 +1,10 @@
 <?php
 
 /*
- * BedcoreProtect
+ *     ___         __                 ___           __          __
+ *    / _ )___ ___/ /______  _______ / _ \_______  / /____ ____/ /_
+ *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
+ *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
  * Copyright (C) 2019
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +28,6 @@ use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
-use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
@@ -101,10 +103,11 @@ class Queries
         });
     }
 
-    public function requestLookup(CommandSender $sender, CommandParser $parser, ?Vector3 $vector3): void
+    public function requestLookup(CommandSender $sender, CommandParser $parser): void
     {
-        $query = $parser->buildLookupQuery($vector3);
+        $query = $parser->buildLookupQuery();
         $this->connector->executeSelectRaw($query, [], function (array $rows) use ($sender) {
+            //var_dump($rows[0]);
             Inspector::cacheLogs($sender, $rows);
             Inspector::parseLogs($sender, $rows);
         });
@@ -132,11 +135,11 @@ class Queries
         $this->requestLog(QueriesConst::GET_BLOCK_LOG, $inspector, $block->asPosition());
     }
 
-    public function purge(int $time): void
+    public function purge(int $time, ?callable $onSuccess = null): void
     {
-        $this->connector->executeGeneric(QueriesConst::PURGE, [
+        $this->connector->executeChange(QueriesConst::PURGE, [
             "time" => $time
-        ]);
+        ], $onSuccess);
     }
 
     private function addRawLog(string $uuid, Position $position, int $action): void

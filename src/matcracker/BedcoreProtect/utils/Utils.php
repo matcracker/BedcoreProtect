@@ -1,7 +1,10 @@
 <?php
 
 /*
- * BedcoreProtect
+ *     ___         __                 ___           __          __
+ *    / _ )___ ___/ /______  _______ / _ \_______  / /____ ____/ /_
+ *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
+ *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
  * Copyright (C) 2019
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +33,6 @@ use Time\Unit\TimeUnitDay;
 use Time\Unit\TimeUnitHour;
 use Time\Unit\TimeUnitMinute;
 use Time\Unit\TimeUnitSecond;
-use Time\Unit\TimeUnitSecondsInterface;
 
 final class Utils
 {
@@ -74,26 +76,36 @@ final class Utils
     public static function parseTime(string $strDate): int
     {
         if (empty($strDate)) return 0;
-
-        $strDate = preg_replace('[^0-9smhdw]', '', $strDate);
+        $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
         if (empty($strDate)) return 0;
 
-        if (strpos($strDate, 'w') !== false) {
-            $strDate = preg_replace('[^0-9]', '', $strDate);
-            if (empty($strDate)) return 0;
+        $time = 0;
+        $matches = [];
+        preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
 
-            return TimeUnitDay::toSeconds(((int)$strDate) * 7);
+        foreach ($matches[0] as $match) {
+            $value = (int)preg_replace("/[^0-9]/", "", $match);
+            $dateType = (string)preg_replace("/[^smhdw]/", "", $match);
+
+            switch ($dateType) {
+                case "w":
+                    $time += TimeUnitDay::toSeconds($value * 7);
+                    break;
+                case "d":
+                    $time += TimeUnitDay::toSeconds($value);
+                    break;
+                case "h":
+                    $time += TimeUnitHour::toSeconds($value);
+                    break;
+                case "m":
+                    $time += TimeUnitMinute::toSeconds($value);
+                    break;
+                case "s":
+                    $time += TimeUnitSecond::toSeconds($value);
+                    break;
+            }
         }
-        /**@var TimeUnitSecondsInterface $unit */
-        $unit = strpos($strDate, 'd') !== false ? new TimeUnitDay()
-            : strpos($strDate, 'h') !== false ? new TimeUnitHour()
-                : strpos($strDate, 'm') !== false ? new TimeUnitMinute()
-                    : new TimeUnitSecond();
-
-        $strDate = preg_replace('[^0-9]', '', $strDate);
-        if (empty($strDate)) return 0;
-
-        return $unit::toSeconds(((int)$strDate));
+        return $time;
     }
 
     /**

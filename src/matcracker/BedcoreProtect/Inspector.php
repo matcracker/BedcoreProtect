@@ -1,7 +1,10 @@
 <?php
 
 /*
- * BedcoreProtect
+ *     ___         __                 ___           __          __
+ *    / _ )___ ___/ /______  _______ / _ \_______  / /____ ____/ /_
+ *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
+ *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
  * Copyright (C) 2019
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +25,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use matcracker\BedcoreProtect\storage\QueriesConst;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
@@ -79,15 +83,12 @@ final class Inspector
     {
         if (!self::issetInspector($inspector)) return false;
 
-        return self::$inspectors[self::getUUID($inspector)]["enabled"];
+        return isset(self::$inspectors[self::getUUID($inspector)]["enabled"]) ?? false;
     }
 
     private static function issetInspector(CommandSender $inspector): bool
     {
-        if (isset(self::$inspectors[self::getUUID($inspector)])) {
-            return array_key_exists("enabled", self::$inspectors[self::getUUID($inspector)]);
-        }
-        return false;
+        return isset(self::$inspectors[self::getUUID($inspector)]);
     }
 
     public static function cacheLogs(CommandSender $inspector, array $logs = []): void
@@ -101,6 +102,8 @@ final class Inspector
      */
     public static function getCachedLogs(CommandSender $inspector): array
     {
+        if (!self::issetInspector($inspector)) return [];
+
         return self::$inspectors[self::getUUID($inspector)]["logs"];
     }
 
@@ -143,7 +146,7 @@ final class Inspector
                         $blockFound = $action === QueriesConst::BROKE ? "old" : "new";
                         $id = (int)$log["{$blockFound}_block_id"];
                         $damage = (int)$log["{$blockFound}_block_damage"];
-                        $blockName = (string)$log["{$blockFound}_block_name"];
+                        $blockName = BlockFactory::get($id, $damage)->getName();
 
                         $midMessage = "#$id:$damage ($blockName)";
                     } elseif ($action === QueriesConst::KILLED) {
@@ -162,6 +165,7 @@ final class Inspector
                     $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" .
                         $timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW) .
                         "&f - &3$entityFromName &f$actionName &3" . $midMessage . " &f - &7(x$x/y$y/z$z/$worldName)&f."));
+                    $inspector->sendMessage("View older data by typing /bcp l <page>.");
                 }
             } else {
                 $inspector->sendMessage(Utils::translateColors("&3" . Main::PLUGIN_NAME . "&f - &cThe page &6$page&c does not exist!"));
