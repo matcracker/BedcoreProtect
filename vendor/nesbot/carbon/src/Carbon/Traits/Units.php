@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -24,43 +23,11 @@ use InvalidArgumentException;
 trait Units
 {
     /**
-     * Returns true if a property can be changed via setter.
-     *
-     * @param string $unit
-     *
-     * @return bool
-     */
-    public static function isModifiableUnit($unit)
-    {
-        static $modifiableUnits = [
-            // @call addUnit
-            'millennium',
-            // @call addUnit
-            'century',
-            // @call addUnit
-            'decade',
-            // @call addUnit
-            'quarter',
-            // @call addUnit
-            'week',
-            // @call addUnit
-            'weekday',
-        ];
-
-        return in_array($unit, $modifiableUnits) || in_array($unit, static::$units);
-    }
-
-    public function subRealUnit($unit, $value = 1)
-    {
-        return $this->addRealUnit($unit, -$value);
-    }
-
-    /**
      * Add seconds to the instance using timestamp. Positive $value travels
      * forward while negative $value travels into the past.
      *
      * @param string $unit
-     * @param int $value
+     * @param int    $value
      *
      * @return static
      */
@@ -69,12 +36,12 @@ trait Units
         switch ($unit) {
             // @call addRealUnit
             case 'micro':
-                // @call addRealUnit
+            // @call addRealUnit
             case 'microsecond':
                 /* @var CarbonInterface $this */
                 $diff = $this->microsecond + $value;
                 $time = $this->getTimestamp();
-                $seconds = (int)floor($diff / static::MICROSECONDS_PER_SECOND);
+                $seconds = (int) floor($diff / static::MICROSECONDS_PER_SECOND);
                 $time += $seconds;
                 $diff -= $seconds * static::MICROSECONDS_PER_SECOND;
                 $microtime = str_pad("$diff", 6, '0', STR_PAD_LEFT);
@@ -83,7 +50,7 @@ trait Units
                 return $this->tz('UTC')->modify("@$time.$microtime")->tz($tz);
             // @call addRealUnit
             case 'milli':
-                // @call addRealUnit
+            // @call addRealUnit
             case 'millisecond':
                 return $this->addRealUnit('microsecond', $value * static::MICROSECONDS_PER_MILLISECOND);
                 break;
@@ -139,21 +106,53 @@ trait Units
         }
 
         /* @var CarbonInterface $this */
-        return $this->setTimestamp((int)($this->getTimestamp() + $value));
+        return $this->setTimestamp((int) ($this->getTimestamp() + $value));
+    }
+
+    public function subRealUnit($unit, $value = 1)
+    {
+        return $this->addRealUnit($unit, -$value);
+    }
+
+    /**
+     * Returns true if a property can be changed via setter.
+     *
+     * @param string $unit
+     *
+     * @return bool
+     */
+    public static function isModifiableUnit($unit)
+    {
+        static $modifiableUnits = [
+            // @call addUnit
+            'millennium',
+            // @call addUnit
+            'century',
+            // @call addUnit
+            'decade',
+            // @call addUnit
+            'quarter',
+            // @call addUnit
+            'week',
+            // @call addUnit
+            'weekday',
+        ];
+
+        return in_array($unit, $modifiableUnits) || in_array($unit, static::$units);
     }
 
     /**
      * Add given units or interval to the current instance.
      *
-     * @param string|DateInterval $unit
-     * @param int $value
-     * @param bool|null $overflow
-     *
-     * @return CarbonInterface
+     * @example $date->add('hour', 3)
      * @example $date->add(15, 'days')
      * @example $date->add(CarbonInterval::days(4))
      *
-     * @example $date->add('hour', 3)
+     * @param string|DateInterval $unit
+     * @param int                 $value
+     * @param bool|null           $overflow
+     *
+     * @return CarbonInterface
      */
     public function add($unit, $value = 1, $overflow = null)
     {
@@ -177,8 +176,8 @@ trait Units
     /**
      * Add given units to the current instance.
      *
-     * @param string $unit
-     * @param int $value
+     * @param string    $unit
+     * @param int       $value
      * @param bool|null $overflow
      *
      * @return CarbonInterface
@@ -226,14 +225,14 @@ trait Units
                 'month',
                 'year',
             ]) && ($overflow === false || (
-                    $overflow === null &&
-                    ($ucUnit = ucfirst($unit) . 's') &&
-                    !($this->{'local' . $ucUnit . 'Overflow'} ?? static::{'shouldOverflow' . $ucUnit}())
-                ))) {
+                $overflow === null &&
+                ($ucUnit = ucfirst($unit).'s') &&
+                !($this->{'local'.$ucUnit.'Overflow'} ?? static::{'shouldOverflow'.$ucUnit}())
+            ))) {
             $day = $date->day;
         }
 
-        $value = (int)$value;
+        $value = (int) $value;
 
         if ($unit === 'milli' || $unit === 'millisecond') {
             $unit = 'microsecond';
@@ -243,7 +242,7 @@ trait Units
         // Work-around for bug https://bugs.php.net/bug.php?id=75642
         if ($unit === 'micro' || $unit === 'microsecond') {
             $microseconds = $this->micro + $value;
-            $second = (int)floor($microseconds / static::MICROSECONDS_PER_SECOND);
+            $second = (int) floor($microseconds / static::MICROSECONDS_PER_SECOND);
             $microseconds %= static::MICROSECONDS_PER_SECOND;
             if ($microseconds < 0) {
                 $microseconds += static::MICROSECONDS_PER_SECOND;
@@ -268,8 +267,8 @@ trait Units
     /**
      * Subtract given units to the current instance.
      *
-     * @param string $unit
-     * @param int $value
+     * @param string    $unit
+     * @param int       $value
      * @param bool|null $overflow
      *
      * @return CarbonInterface
@@ -282,35 +281,15 @@ trait Units
     /**
      * Subtract given units or interval to the current instance.
      *
-     * @param string|DateInterval $unit
-     * @param int $value
-     * @param bool|null $overflow
-     *
-     * @return CarbonInterface
-     * @see sub()
-     *
-     */
-    public function subtract($unit, $value = 1, $overflow = null)
-    {
-        if (is_string($unit) && func_num_args() === 1) {
-            $unit = CarbonInterval::make($unit);
-        }
-
-        return $this->sub($unit, $value, $overflow);
-    }
-
-    /**
-     * Subtract given units or interval to the current instance.
-     *
-     * @param string|DateInterval $unit
-     * @param int $value
-     * @param bool|null $overflow
-     *
-     * @return CarbonInterface
+     * @example $date->sub('hour', 3)
      * @example $date->sub(15, 'days')
      * @example $date->sub(CarbonInterval::days(4))
      *
-     * @example $date->sub('hour', 3)
+     * @param string|DateInterval $unit
+     * @param int                 $value
+     * @param bool|null           $overflow
+     *
+     * @return CarbonInterface
      */
     public function sub($unit, $value = 1, $overflow = null)
     {
@@ -330,5 +309,25 @@ trait Units
         }
 
         return $this->addUnit($unit, -floatval($value), $overflow);
+    }
+
+    /**
+     * Subtract given units or interval to the current instance.
+     *
+     * @see sub()
+     *
+     * @param string|DateInterval $unit
+     * @param int                 $value
+     * @param bool|null           $overflow
+     *
+     * @return CarbonInterface
+     */
+    public function subtract($unit, $value = 1, $overflow = null)
+    {
+        if (is_string($unit) && func_num_args() === 1) {
+            $unit = CarbonInterval::make($unit);
+        }
+
+        return $this->sub($unit, $value, $overflow);
     }
 }

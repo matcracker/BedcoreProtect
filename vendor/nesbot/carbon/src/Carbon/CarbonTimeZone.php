@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon;
 
 use DateTimeInterface;
@@ -31,28 +30,21 @@ class CarbonTimeZone extends DateTimeZone
                 throw new InvalidArgumentException('Absolute timezone offset cannot be greater than 100.');
             }
 
-            $timezone = ($timezone >= 0 ? '+' : '') . $timezone . ':00';
+            $timezone = ($timezone >= 0 ? '+' : '').$timezone.':00';
         }
 
         return $timezone;
     }
 
-    /**
-     * Create a CarbonTimeZone from mixed input.
-     *
-     * @param DateTimeZone|string|int|null $object
-     *
-     * @return false|static
-     */
-    public static function create($object = null)
+    protected static function getDateTimeZoneFromName(&$name)
     {
-        return static::instance($object);
+        return @timezone_open($name = (string) static::getDateTimeZoneNameFromMixed($name));
     }
 
     /**
      * Create a CarbonTimeZone from mixed input.
      *
-     * @param DateTimeZone|string|int|null $object original value to get CarbonTimeZone from it.
+     * @param DateTimeZone|string|int|null $object     original value to get CarbonTimeZone from it.
      * @param DateTimeZone|string|int|null $objectDump dump of the object for error messages.
      *
      * @return false|static
@@ -75,32 +67,13 @@ class CarbonTimeZone extends DateTimeZone
 
         if ($tz === false) {
             if (Carbon::isStrictModeEnabled()) {
-                throw new InvalidArgumentException('Unknown or bad timezone (' . ($objectDump ?: $object) . ')');
+                throw new InvalidArgumentException('Unknown or bad timezone ('.($objectDump ?: $object).')');
             }
 
             return false;
         }
 
         return new static($tz->getName());
-    }
-
-    protected static function getDateTimeZoneFromName(&$name)
-    {
-        return @timezone_open($name = (string)static::getDateTimeZoneNameFromMixed($name));
-    }
-
-    /**
-     * @alias getAbbreviatedName
-     *
-     * Returns abbreviated name of the current timezone according to DST setting.
-     *
-     * @param bool $dst
-     *
-     * @return string
-     */
-    public function getAbbr($dst = false)
-    {
-        return $this->getAbbreviatedName($dst);
     }
 
     /**
@@ -126,15 +99,17 @@ class CarbonTimeZone extends DateTimeZone
     }
 
     /**
-     * Returns a new CarbonTimeZone object using the offset string instead of region string.
+     * @alias getAbbreviatedName
      *
-     * @param DateTimeInterface|null $date
+     * Returns abbreviated name of the current timezone according to DST setting.
      *
-     * @return CarbonTimeZone
+     * @param bool $dst
+     *
+     * @return string
      */
-    public function toOffsetTimeZone(DateTimeInterface $date = null)
+    public function getAbbr($dst = false)
     {
-        return new static($this->toOffsetName($date));
+        return $this->getAbbreviatedName($dst);
     }
 
     /**
@@ -150,9 +125,43 @@ class CarbonTimeZone extends DateTimeZone
 
         $hours = floor($minutes / 60);
 
-        $minutes = str_pad((string)(abs($minutes) % 60), 2, '0', STR_PAD_LEFT);
+        $minutes = str_pad((string) (abs($minutes) % 60), 2, '0', STR_PAD_LEFT);
 
-        return ($hours < 0 ? '-' : '+') . str_pad((string)abs($hours), 2, '0', STR_PAD_LEFT) . ":$minutes";
+        return ($hours < 0 ? '-' : '+').str_pad((string) abs($hours), 2, '0', STR_PAD_LEFT).":$minutes";
+    }
+
+    /**
+     * Returns a new CarbonTimeZone object using the offset string instead of region string.
+     *
+     * @param DateTimeInterface|null $date
+     *
+     * @return CarbonTimeZone
+     */
+    public function toOffsetTimeZone(DateTimeInterface $date = null)
+    {
+        return new static($this->toOffsetName($date));
+    }
+
+    /**
+     * Returns the first region string (such as "America/Toronto") that matches the current timezone.
+     *
+     * @see timezone_name_from_abbr native PHP function.
+     *
+     * @param DateTimeInterface|null $date
+     * @param int                    $isDst
+     *
+     * @return string
+     */
+    public function toRegionName(DateTimeInterface $date = null, $isDst = 1)
+    {
+        $name = $this->getName();
+        $firstChar = substr($name, 0, 1);
+
+        if ($firstChar !== '+' && $firstChar !== '-') {
+            return $name;
+        }
+
+        return @timezone_name_from_abbr('', @$this->getOffset($date ?: Carbon::now($this)) ?: 0, $isDst);
     }
 
     /**
@@ -168,35 +177,13 @@ class CarbonTimeZone extends DateTimeZone
 
         if ($tz === false) {
             if (Carbon::isStrictModeEnabled()) {
-                throw new InvalidArgumentException('Unknown timezone for offset ' . $this->getOffset($date ?: Carbon::now($this)) . ' seconds.');
+                throw new InvalidArgumentException('Unknown timezone for offset '.$this->getOffset($date ?: Carbon::now($this)).' seconds.');
             }
 
             return false;
         }
 
         return new static($tz);
-    }
-
-    /**
-     * Returns the first region string (such as "America/Toronto") that matches the current timezone.
-     *
-     * @param DateTimeInterface|null $date
-     * @param int $isDst
-     *
-     * @return string
-     * @see timezone_name_from_abbr native PHP function.
-     *
-     */
-    public function toRegionName(DateTimeInterface $date = null, $isDst = 1)
-    {
-        $name = $this->getName();
-        $firstChar = substr($name, 0, 1);
-
-        if ($firstChar !== '+' && $firstChar !== '-') {
-            return $name;
-        }
-
-        return @timezone_name_from_abbr('', @$this->getOffset($date ?: Carbon::now($this)) ?: 0, $isDst);
     }
 
     /**
@@ -207,5 +194,17 @@ class CarbonTimeZone extends DateTimeZone
     public function __toString()
     {
         return $this->getName();
+    }
+
+    /**
+     * Create a CarbonTimeZone from mixed input.
+     *
+     * @param DateTimeZone|string|int|null $object
+     *
+     * @return false|static
+     */
+    public static function create($object = null)
+    {
+        return static::instance($object);
     }
 }

@@ -50,7 +50,7 @@ return [
     'weekdays_min' => ['Ai', 'Sm', 'Mo', 'Bu', 'Br', 'Su', 'Sn'],
 
     'ordinal' => function ($number, $period) {
-        return $number . ($period === 'D' ? 'er' : '');
+        return $number.($period === 'D' ? 'er' : '');
     },
 
     'meridiem' => function ($hour) {

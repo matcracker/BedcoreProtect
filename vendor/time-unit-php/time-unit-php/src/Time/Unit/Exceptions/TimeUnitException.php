@@ -1,5 +1,4 @@
 <?php
-
 namespace Time\Unit\Exceptions;
 
 use RuntimeException;

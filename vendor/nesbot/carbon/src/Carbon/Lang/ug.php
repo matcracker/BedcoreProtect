@@ -49,10 +49,10 @@ return [
             case 'd':
             case 'D':
             case 'DDD':
-                return $number . '-كۈنى';
+                return $number.'-كۈنى';
             case 'w':
             case 'W':
-                return $number . '-ھەپتە';
+                return $number.'-ھەپتە';
             default:
                 return $number;
         }

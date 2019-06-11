@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Value;
 
 /**
@@ -45,25 +44,6 @@ class Container
     }
 
     /**
-     * Traverses the key using dot notation. Based on the second parameter, it will return the value or if it was set.
-     *
-     * @param string $key
-     * @param bool $returnValue
-     * @return mixed
-     */
-    protected function traverse($key, $returnValue = true)
-    {
-        $value = $this->values;
-        foreach (explode('.', $key) as $part) {
-            if (!is_array($value) || !array_key_exists($part, $value)) {
-                return false;
-            }
-            $value = $value[$part];
-        }
-        return $returnValue ? $value : true;
-    }
-
-    /**
      * Returns the value for the key $key, or null if the value doesn't exist.
      *
      * @param string $key
@@ -91,6 +71,35 @@ class Container
     }
 
     /**
+     * Returns a plain array representation of the Value\Container object.
+     *
+     * @return array
+     */
+    public function getArrayCopy()
+    {
+        return $this->values;
+    }
+
+    /**
+     * Traverses the key using dot notation. Based on the second parameter, it will return the value or if it was set.
+     *
+     * @param string $key
+     * @param bool $returnValue
+     * @return mixed
+     */
+    protected function traverse($key, $returnValue = true)
+    {
+        $value = $this->values;
+        foreach (explode('.', $key) as $part) {
+            if (!is_array($value) || !array_key_exists($part, $value)) {
+                return false;
+            }
+            $value = $value[$part];
+        }
+        return $returnValue ? $value : true;
+    }
+
+    /**
      * Uses dot-notation to set a value.
      *
      * @param string $key
@@ -111,15 +120,5 @@ class Container
 
         $ref = $value;
         return $this;
-    }
-
-    /**
-     * Returns a plain array representation of the Value\Container object.
-     *
-     * @return array
-     */
-    public function getArrayCopy()
-    {
-        return $this->values;
     }
 }

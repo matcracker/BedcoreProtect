@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator;
 
 use Particle\Validator\Value\Container;
@@ -64,42 +63,6 @@ class Validator
     }
 
     /**
-     * Retrieves a Chain object, or builds one if it doesn't exist yet.
-     *
-     * @param string $key
-     * @param string $name
-     * @param bool $required
-     * @param bool $allowEmpty
-     * @return Chain
-     */
-    protected function getChain($key, $name, $required, $allowEmpty)
-    {
-        if (isset($this->chains[$this->context][$key])) {
-            /** @var Chain $chain */
-            $chain = $this->chains[$this->context][$key];
-            $chain->required($required);
-            $chain->allowEmpty($allowEmpty);
-
-            return $chain;
-        }
-        return $this->chains[$this->context][$key] = $this->buildChain($key, $name, $required, $allowEmpty);
-    }
-
-    /**
-     * Build a new Chain object and return it.
-     *
-     * @param string $key
-     * @param string $name
-     * @param bool $required
-     * @param bool $allowEmpty
-     * @return Chain
-     */
-    protected function buildChain($key, $name, $required, $allowEmpty)
-    {
-        return new Chain($key, $name, $required, $allowEmpty);
-    }
-
-    /**
      * Creates a new optional Validation Chain for the key $key.
      *
      * @param string $key
@@ -143,35 +106,6 @@ class Validator
     }
 
     /**
-     * Returns the message stack. If the context isn't the default context, it will merge the message of the default
-     * context first.
-     *
-     * @param string $context
-     * @return MessageStack
-     */
-    protected function getMergedMessageStack($context)
-    {
-        $stack = $this->getMessageStack($context);
-
-        if ($context !== self::DEFAULT_CONTEXT) {
-            $stack->merge($this->getMessageStack(self::DEFAULT_CONTEXT));
-        }
-
-        return $stack;
-    }
-
-    /**
-     * Returns a message stack for the context $context.
-     *
-     * @param string $context
-     * @return MessageStack
-     */
-    protected function getMessageStack($context)
-    {
-        return $this->messageStacks[$context];
-    }
-
-    /**
      * Copy the rules and messages of the context $otherContext to the current context.
      *
      * @param string $otherContext
@@ -189,40 +123,6 @@ class Validator
     }
 
     /**
-     * Copies the chains of the context $otherContext to the current context.
-     *
-     * @param string $otherContext
-     * @param callable|null $callback
-     */
-    protected function copyChains($otherContext, $callback)
-    {
-        if (isset($this->chains[$otherContext])) {
-            $clonedChains = [];
-            foreach ($this->chains[$otherContext] as $key => $chain) {
-                $clonedChains[$key] = clone $chain;
-            }
-
-            $this->chains[$this->context] = $this->runChainCallback($clonedChains, $callback);
-        }
-    }
-
-    /**
-     * Executes the callback $callback and returns the resulting chains.
-     *
-     * @param Chain[] $chains
-     * @param callable|null $callback
-     * @return Chain[]
-     */
-    protected function runChainCallback($chains, $callback)
-    {
-        if ($callback !== null) {
-            $callback($chains);
-        }
-
-        return $chains;
-    }
-
-    /**
      * Create a new validation context with the callback $callback.
      *
      * @param string $name
@@ -235,18 +135,6 @@ class Validator
         $this->context = $name;
         call_user_func($callback, $this);
         $this->context = self::DEFAULT_CONTEXT;
-    }
-
-    /**
-     * Adds a message stack.
-     *
-     * @param string $name
-     */
-    protected function addMessageStack($name)
-    {
-        $messageStack = new MessageStack();
-
-        $this->messageStacks[$name] = $messageStack;
     }
 
     /**
@@ -294,5 +182,116 @@ class Validator
     {
         $this->getMessageStack($this->context)->overwriteDefaultMessages($messages);
         return $this;
+    }
+
+    /**
+     * Retrieves a Chain object, or builds one if it doesn't exist yet.
+     *
+     * @param string $key
+     * @param string $name
+     * @param bool $required
+     * @param bool $allowEmpty
+     * @return Chain
+     */
+    protected function getChain($key, $name, $required, $allowEmpty)
+    {
+        if (isset($this->chains[$this->context][$key])) {
+            /** @var Chain $chain */
+            $chain = $this->chains[$this->context][$key];
+            $chain->required($required);
+            $chain->allowEmpty($allowEmpty);
+
+            return $chain;
+        }
+        return $this->chains[$this->context][$key] = $this->buildChain($key, $name, $required, $allowEmpty);
+    }
+
+    /**
+     * Build a new Chain object and return it.
+     *
+     * @param string $key
+     * @param string $name
+     * @param bool $required
+     * @param bool $allowEmpty
+     * @return Chain
+     */
+    protected function buildChain($key, $name, $required, $allowEmpty)
+    {
+        return new Chain($key, $name, $required, $allowEmpty);
+    }
+
+    /**
+     * Copies the chains of the context $otherContext to the current context.
+     *
+     * @param string $otherContext
+     * @param callable|null $callback
+     */
+    protected function copyChains($otherContext, $callback)
+    {
+        if (isset($this->chains[$otherContext])) {
+            $clonedChains = [];
+            foreach ($this->chains[$otherContext] as $key => $chain) {
+                $clonedChains[$key] = clone $chain;
+            }
+
+            $this->chains[$this->context] = $this->runChainCallback($clonedChains, $callback);
+        }
+    }
+
+    /**
+     * Executes the callback $callback and returns the resulting chains.
+     *
+     * @param Chain[] $chains
+     * @param callable|null $callback
+     * @return Chain[]
+     */
+    protected function runChainCallback($chains, $callback)
+    {
+        if ($callback !== null) {
+            $callback($chains);
+        }
+
+        return $chains;
+    }
+
+    /**
+     * Returns a message stack for the context $context.
+     *
+     * @param string $context
+     * @return MessageStack
+     */
+    protected function getMessageStack($context)
+    {
+        return $this->messageStacks[$context];
+    }
+
+    /**
+     * Adds a message stack.
+     *
+     * @param string $name
+     */
+    protected function addMessageStack($name)
+    {
+        $messageStack = new MessageStack();
+
+        $this->messageStacks[$name] = $messageStack;
+    }
+
+    /**
+     * Returns the message stack. If the context isn't the default context, it will merge the message of the default
+     * context first.
+     *
+     * @param string $context
+     * @return MessageStack
+     */
+    protected function getMergedMessageStack($context)
+    {
+        $stack = $this->getMessageStack($context);
+
+        if ($context !== self::DEFAULT_CONTEXT) {
+            $stack->merge($this->getMessageStack(self::DEFAULT_CONTEXT));
+        }
+
+        return $stack;
     }
 }

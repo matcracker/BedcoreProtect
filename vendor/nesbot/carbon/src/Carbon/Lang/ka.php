@@ -147,7 +147,7 @@ return [
         'sameDay' => '[დღეს], LT[-ზე]',
         'nextDay' => '[ხვალ], LT[-ზე]',
         'nextWeek' => function (\Carbon\CarbonInterface $current, \Carbon\CarbonInterface $other) {
-            return ($current->isSameWeek($other) ? '' : '[შემდეგ] ') . 'dddd, LT[-ზე]';
+            return ($current->isSameWeek($other) ? '' : '[შემდეგ] ').'dddd, LT[-ზე]';
         },
         'lastDay' => '[გუშინ], LT[-ზე]',
         'lastWeek' => '[წინა] dddd, LT-ზე',
@@ -158,13 +158,13 @@ return [
             return $number;
         }
         if ($number === 1) {
-            return $number . '-ლი';
+            return $number.'-ლი';
         }
         if (($number < 20) || ($number <= 100 && ($number % 20 === 0)) || ($number % 100 === 0)) {
-            return 'მე-' . $number;
+            return 'მე-'.$number;
         }
 
-        return $number . '-ე';
+        return $number.'-ე';
     },
     'months' => ['იანვარს', 'თებერვალს', 'მარტს', 'აპრილის', 'მაისს', 'ივნისს', 'ივლისს', 'აგვისტს', 'სექტემბერს', 'ოქტომბერს', 'ნოემბერს', 'დეკემბერს'],
     'months_standalone' => ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'],

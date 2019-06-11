@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator;
 
 use Particle\Validator\Output\Subject;
@@ -55,6 +54,14 @@ abstract class Rule
     protected $name;
 
     /**
+     * This method should validate, possibly log errors, and return the result as a boolean.
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    abstract public function validate($value);
+
+    /**
      * This indicates whether or not the rule can and should break the chain it's in.
      *
      * @return bool
@@ -87,6 +94,20 @@ abstract class Rule
     }
 
     /**
+     * Sets the default parameters for each validation rule (key and name).
+     *
+     * @param string $key
+     * @param string $name
+     * @return $this
+     */
+    public function setParameters($key, $name)
+    {
+        $this->key = $key;
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
      * Determines whether or not the value of $key is valid in the array $values and returns the result as a bool.
      *
      * @param string $key
@@ -99,19 +120,11 @@ abstract class Rule
     }
 
     /**
-     * This method should validate, possibly log errors, and return the result as a boolean.
-     *
-     * @param mixed $value
-     * @return bool
-     */
-    abstract public function validate($value);
-
-    /**
      * Attach a representation of this rule to the Output\Subject $subject.
      *
+     * @internal
      * @param Subject $subject
      * @param MessageStack $messageStack
-     * @internal
      */
     public function output(Subject $subject, MessageStack $messageStack)
     {
@@ -127,17 +140,54 @@ abstract class Rule
     }
 
     /**
-     * Sets the default parameters for each validation rule (key and name).
+     * Appends the error for reason $reason to the MessageStack.
      *
-     * @param string $key
-     * @param string $name
-     * @return $this
+     * @param string $reason
+     * @return bool
      */
-    public function setParameters($key, $name)
+    protected function error($reason)
     {
-        $this->key = $key;
-        $this->name = $name;
-        return $this;
+        $this->messageStack->append(
+            new Failure(
+                $this->key,
+                $reason,
+                $this->getMessage($reason),
+                $this->getMessageParameters()
+            )
+        );
+
+        return false;
+    }
+
+    /**
+     * Return an array of all parameters that might be replaced in the validation error messages.
+     *
+     * @return array
+     */
+    protected function getMessageParameters()
+    {
+        $name = isset($this->name) ? $this->name : str_replace('_', ' ', $this->key);
+
+        return [
+            'key' => $this->key,
+            'name' => $name,
+        ];
+    }
+
+    /**
+     * Returns an error message for the reason $reason, or an empty string if it doesn't exist.
+     *
+     * @param mixed $reason
+     * @return string
+     */
+    protected function getMessage($reason)
+    {
+        $messageTemplate = '';
+        if (array_key_exists($reason, $this->messageTemplates)) {
+            $messageTemplate = $this->messageTemplates[$reason];
+        }
+
+        return $messageTemplate;
     }
 
     /**
@@ -168,56 +218,5 @@ abstract class Rule
         }
 
         return $messages;
-    }
-
-    /**
-     * Return an array of all parameters that might be replaced in the validation error messages.
-     *
-     * @return array
-     */
-    protected function getMessageParameters()
-    {
-        $name = isset($this->name) ? $this->name : str_replace('_', ' ', $this->key);
-
-        return [
-            'key' => $this->key,
-            'name' => $name,
-        ];
-    }
-
-    /**
-     * Appends the error for reason $reason to the MessageStack.
-     *
-     * @param string $reason
-     * @return bool
-     */
-    protected function error($reason)
-    {
-        $this->messageStack->append(
-            new Failure(
-                $this->key,
-                $reason,
-                $this->getMessage($reason),
-                $this->getMessageParameters()
-            )
-        );
-
-        return false;
-    }
-
-    /**
-     * Returns an error message for the reason $reason, or an empty string if it doesn't exist.
-     *
-     * @param mixed $reason
-     * @return string
-     */
-    protected function getMessage($reason)
-    {
-        $messageTemplate = '';
-        if (array_key_exists($reason, $this->messageTemplates)) {
-            $messageTemplate = $this->messageTemplates[$reason];
-        }
-
-        return $messageTemplate;
     }
 }

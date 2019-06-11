@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator;
 
 use Particle\Validator\Output\Structure;
@@ -66,19 +65,6 @@ class Chain
     }
 
     /**
-     * Shortcut method for storing a rule on this chain, and returning the chain.
-     *
-     * @param Rule $rule
-     * @return $this
-     */
-    protected function addRule(Rule $rule)
-    {
-        $this->rules[] = $rule;
-
-        return $this;
-    }
-
-    /**
      * Overwrite the default __clone behaviour to make sure the rules are cloned too.
      */
     public function __clone()
@@ -102,16 +88,6 @@ class Chain
     {
         $this->getNotEmptyRule()->setAllowEmpty($allowEmpty);
         return $this;
-    }
-
-    /**
-     * Returns the second rule, which is always the allow empty rule.
-     *
-     * @return Rule\NotEmpty
-     */
-    protected function getNotEmptyRule()
-    {
-        return $this->rules[1];
     }
 
     /**
@@ -371,8 +347,8 @@ class Chain
      * Validates that the value is a valid phone number for $countryCode.
      *
      * @param string $countryCode
-     * @return $this
      * @see \Particle\Validator\Rule\Phone
+     * @return $this
      */
     public function phone($countryCode)
     {
@@ -402,16 +378,6 @@ class Chain
     {
         $this->getRequiredRule()->setRequired($required);
         return $this;
-    }
-
-    /**
-     * Returns the first rule, which is always the required rule.
-     *
-     * @return Rule\Required
-     */
-    protected function getRequiredRule()
-    {
-        return $this->rules[0];
     }
 
     /**
@@ -449,10 +415,10 @@ class Chain
     /**
      * Attach a representation of this Chain to the Output\Structure $structure.
      *
+     * @internal
      * @param Structure $structure
      * @param MessageStack $messageStack
      * @return Structure
-     * @internal
      */
     public function output(Structure $structure, MessageStack $messageStack)
     {
@@ -493,5 +459,38 @@ class Chain
             $output->set($this->key, $input->get($this->key));
         }
         return $valid;
+    }
+
+    /**
+     * Shortcut method for storing a rule on this chain, and returning the chain.
+     *
+     * @param Rule $rule
+     * @return $this
+     */
+    protected function addRule(Rule $rule)
+    {
+        $this->rules[] = $rule;
+
+        return $this;
+    }
+
+    /**
+     * Returns the first rule, which is always the required rule.
+     *
+     * @return Rule\Required
+     */
+    protected function getRequiredRule()
+    {
+        return $this->rules[0];
+    }
+
+    /**
+     * Returns the second rule, which is always the allow empty rule.
+     *
+     * @return Rule\NotEmpty
+     */
+    protected function getNotEmptyRule()
+    {
+        return $this->rules[1];
     }
 }

@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -43,7 +42,7 @@ trait Week
      * day of year included in the first week. Or use ISO format if no settings
      * given.
      *
-     * @param int|null $year if null, act as a getter, if not null, set the year and return current instance.
+     * @param int|null $year      if null, act as a getter, if not null, set the year and return current instance.
      * @param int|null $dayOfWeek first date of week from 0 (Sunday) to 6 (Saturday)
      * @param int|null $dayOfYear first day of year included in the week #1
      *
@@ -63,7 +62,7 @@ trait Week
      * day of year included in the first week. Or use US format if no settings
      * given (Sunday / Jan 6).
      *
-     * @param int|null $year if null, act as a getter, if not null, set the year and return current instance.
+     * @param int|null $year      if null, act as a getter, if not null, set the year and return current instance.
      * @param int|null $dayOfWeek first date of week from 0 (Sunday) to 6 (Saturday)
      * @param int|null $dayOfYear first day of year included in the week #1
      *
@@ -75,7 +74,7 @@ trait Week
         $dayOfYear = $dayOfYear ?? $this->getTranslationMessage('day_of_first_week_of_year') ?? 1;
 
         if ($year !== null) {
-            $year = (int)round($year);
+            $year = (int) round($year);
 
             if ($this->weekYear(null, $dayOfWeek, $dayOfYear) === $year) {
                 return $this->copy();
@@ -117,37 +116,6 @@ trait Week
         }
 
         return $year;
-    }
-
-    /**
-     * Get/set the week number using given first day of week and first
-     * day of year included in the first week. Or use US format if no settings
-     * given (Sunday / Jan 6).
-     *
-     * @param int|null $week
-     * @param int|null $dayOfWeek
-     * @param int|null $dayOfYear
-     *
-     * @return int|static
-     */
-    public function week($week = null, $dayOfWeek = null, $dayOfYear = null)
-    {
-        $date = $this;
-        $dayOfWeek = $dayOfWeek ?? $this->getTranslationMessage('first_day_of_week') ?? 0;
-        $dayOfYear = $dayOfYear ?? $this->getTranslationMessage('day_of_first_week_of_year') ?? 1;
-
-        if ($week !== null) {
-            return $date->addWeeks(round($week) - $this->week(null, $dayOfWeek, $dayOfYear));
-        }
-
-        $start = $date->copy()->dayOfYear($dayOfYear)->startOfWeek($dayOfWeek);
-        $end = $date->copy()->startOfWeek($dayOfWeek);
-        if ($start > $end) {
-            $start = $start->subWeeks(26)->dayOfYear($dayOfYear)->startOfWeek($dayOfWeek);
-        }
-        $week = (int)($start->diffInDays($end) / 7 + 1);
-
-        return $week > $end->weeksInYear($dayOfWeek, $dayOfYear) ? 1 : $week;
     }
 
     /**
@@ -194,7 +162,38 @@ trait Week
             $endDay += $this->daysInYear;
         }
 
-        return (int)round(($endDay - $startDay) / 7);
+        return (int) round(($endDay - $startDay) / 7);
+    }
+
+    /**
+     * Get/set the week number using given first day of week and first
+     * day of year included in the first week. Or use US format if no settings
+     * given (Sunday / Jan 6).
+     *
+     * @param int|null $week
+     * @param int|null $dayOfWeek
+     * @param int|null $dayOfYear
+     *
+     * @return int|static
+     */
+    public function week($week = null, $dayOfWeek = null, $dayOfYear = null)
+    {
+        $date = $this;
+        $dayOfWeek = $dayOfWeek ?? $this->getTranslationMessage('first_day_of_week') ?? 0;
+        $dayOfYear = $dayOfYear ?? $this->getTranslationMessage('day_of_first_week_of_year') ?? 1;
+
+        if ($week !== null) {
+            return $date->addWeeks(round($week) - $this->week(null, $dayOfWeek, $dayOfYear));
+        }
+
+        $start = $date->copy()->dayOfYear($dayOfYear)->startOfWeek($dayOfWeek);
+        $end = $date->copy()->startOfWeek($dayOfWeek);
+        if ($start > $end) {
+            $start = $start->subWeeks(26)->dayOfYear($dayOfYear)->startOfWeek($dayOfWeek);
+        }
+        $week = (int) ($start->diffInDays($end) / 7 + 1);
+
+        return $week > $end->weeksInYear($dayOfWeek, $dayOfYear) ? 1 : $week;
     }
 
     /**

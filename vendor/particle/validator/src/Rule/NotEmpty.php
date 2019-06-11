@@ -6,11 +6,10 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Rule;
 
-use Particle\Validator\Rule;
 use Particle\Validator\StringifyCallbackTrait;
+use Particle\Validator\Rule;
 use Particle\Validator\Value\Container;
 
 /**
@@ -71,7 +70,7 @@ class NotEmpty extends Rule
      */
     public function __construct($allowEmpty)
     {
-        $this->allowEmpty = (bool)$allowEmpty;
+        $this->allowEmpty = (bool) $allowEmpty;
     }
 
     /**
@@ -80,20 +79,6 @@ class NotEmpty extends Rule
     public function shouldBreakChain()
     {
         return $this->shouldBreak;
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @param string $key
-     * @param Container $input
-     * @return bool
-     */
-    public function isValid($key, Container $input)
-    {
-        $this->input = $input;
-
-        return $this->validate($input->get($key));
     }
 
     /**
@@ -133,17 +118,17 @@ class NotEmpty extends Rule
     }
 
     /**
-     * Determines whether or not the value may be empty.
+     * @inheritdoc
      *
+     * @param string $key
      * @param Container $input
      * @return bool
      */
-    protected function allowEmpty(Container $input)
+    public function isValid($key, Container $input)
     {
-        if (isset($this->allowEmptyCallback)) {
-            $this->allowEmpty = call_user_func($this->allowEmptyCallback, $input->getArrayCopy());
-        }
-        return $this->allowEmpty;
+        $this->input = $input;
+
+        return $this->validate($input->get($key));
     }
 
     /**
@@ -163,15 +148,14 @@ class NotEmpty extends Rule
     }
 
     /**
-     * Set the callback to execute to determine whether or not the rule should allow empty.
-     *
-     * @param callable $allowEmptyCallback
-     * @return $this
+     * {@inheritdoc}
      */
-    protected function setAllowEmptyCallback(callable $allowEmptyCallback)
+    protected function getMessageParameters()
     {
-        $this->allowEmptyCallback = $allowEmptyCallback;
-        return $this;
+        return array_merge(parent::getMessageParameters(), [
+            'allowEmpty' => $this->allowEmpty,
+            'callback' => $this->getCallbackAsString($this->allowEmptyCallback)
+        ]);
     }
 
     /**
@@ -187,13 +171,28 @@ class NotEmpty extends Rule
     }
 
     /**
-     * {@inheritdoc}
+     * Set the callback to execute to determine whether or not the rule should allow empty.
+     *
+     * @param callable $allowEmptyCallback
+     * @return $this
      */
-    protected function getMessageParameters()
+    protected function setAllowEmptyCallback(callable $allowEmptyCallback)
     {
-        return array_merge(parent::getMessageParameters(), [
-            'allowEmpty' => $this->allowEmpty,
-            'callback' => $this->getCallbackAsString($this->allowEmptyCallback)
-        ]);
+        $this->allowEmptyCallback = $allowEmptyCallback;
+        return $this;
+    }
+
+    /**
+     * Determines whether or not the value may be empty.
+     *
+     * @param Container $input
+     * @return bool
+     */
+    protected function allowEmpty(Container $input)
+    {
+        if (isset($this->allowEmptyCallback)) {
+            $this->allowEmpty = call_user_func($this->allowEmptyCallback, $input->getArrayCopy());
+        }
+        return $this->allowEmpty;
     }
 }

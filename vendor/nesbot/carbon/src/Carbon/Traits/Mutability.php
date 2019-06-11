@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\Carbon;
@@ -22,16 +21,6 @@ use Carbon\CarbonImmutable;
 trait Mutability
 {
     /**
-     * Returns true if the current class/instance is immutable.
-     *
-     * @return bool
-     */
-    public static function isImmutable()
-    {
-        return !static::isMutable();
-    }
-
-    /**
      * Returns true if the current class/instance is mutable.
      *
      * @return bool
@@ -42,16 +31,13 @@ trait Mutability
     }
 
     /**
-     * Return a mutable copy of the instance.
+     * Returns true if the current class/instance is immutable.
      *
-     * @return Carbon
+     * @return bool
      */
-    public function toMutable()
+    public static function isImmutable()
     {
-        /** @var Carbon $date */
-        $date = $this->cast(Carbon::class);
-
-        return $date;
+        return !static::isMutable();
     }
 
     /**
@@ -68,6 +54,19 @@ trait Mutability
         }
 
         return $className::instance($this);
+    }
+
+    /**
+     * Return a mutable copy of the instance.
+     *
+     * @return Carbon
+     */
+    public function toMutable()
+    {
+        /** @var Carbon $date */
+        $date = $this->cast(Carbon::class);
+
+        return $date;
     }
 
     /**

@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -48,13 +47,23 @@ trait Serialization
     protected $dumpLocale = null;
 
     /**
+     * Return a serialized string of the instance.
+     *
+     * @return string
+     */
+    public function serialize()
+    {
+        return serialize($this);
+    }
+
+    /**
      * Create an instance from a serialized string.
      *
      * @param string $value
      *
-     * @return static|CarbonInterface
      * @throws \InvalidArgumentException
      *
+     * @return static|CarbonInterface
      */
     public static function fromSerialized($value)
     {
@@ -83,34 +92,9 @@ trait Serialization
         /** @var \DateTimeInterface $date */
         $date = get_parent_class(static::class) && method_exists(parent::class, '__set_state')
             ? parent::__set_state($dump)
-            : (object)$dump;
+            : (object) $dump;
 
         return static::instance($date);
-    }
-
-    /**
-     * @param callable $callback
-     *
-     * @return void
-     * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
-     *             You should rather transform Carbon object before the serialization.
-     *
-     * JSON serialize all Carbon instances using the given callback.
-     *
-     */
-    public static function serializeUsing($callback)
-    {
-        static::$serializer = $callback;
-    }
-
-    /**
-     * Return a serialized string of the instance.
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return serialize($this);
     }
 
     /**
@@ -158,5 +142,20 @@ trait Serialization
         }
 
         return $this->toJSON();
+    }
+
+    /**
+     * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
+     *             You should rather transform Carbon object before the serialization.
+     *
+     * JSON serialize all Carbon instances using the given callback.
+     *
+     * @param callable $callback
+     *
+     * @return void
+     */
+    public static function serializeUsing($callback)
+    {
+        static::$serializer = $callback;
     }
 }

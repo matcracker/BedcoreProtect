@@ -66,34 +66,34 @@ return [
     ],
     'calendar' => [
         'sameDay' => function (\Carbon\CarbonInterface $current) {
-            return '[avui a ' . ($current->hour !== 1 ? 'les' : 'la') . '] LT';
+            return '[avui a '.($current->hour !== 1 ? 'les' : 'la').'] LT';
         },
         'nextDay' => function (\Carbon\CarbonInterface $current) {
-            return '[demà a ' . ($current->hour !== 1 ? 'les' : 'la') . '] LT';
+            return '[demà a '.($current->hour !== 1 ? 'les' : 'la').'] LT';
         },
         'nextWeek' => function (\Carbon\CarbonInterface $current) {
-            return 'dddd [a ' . ($current->hour !== 1 ? 'les' : 'la') . '] LT';
+            return 'dddd [a '.($current->hour !== 1 ? 'les' : 'la').'] LT';
         },
         'lastDay' => function (\Carbon\CarbonInterface $current) {
-            return '[ahir a ' . ($current->hour !== 1 ? 'les' : 'la') . '] LT';
+            return '[ahir a '.($current->hour !== 1 ? 'les' : 'la').'] LT';
         },
         'lastWeek' => function (\Carbon\CarbonInterface $current) {
-            return '[el] dddd [passat a ' . ($current->hour !== 1 ? 'les' : 'la') . '] LT';
+            return '[el] dddd [passat a '.($current->hour !== 1 ? 'les' : 'la').'] LT';
         },
         'sameElse' => 'L',
     ],
     'ordinal' => function ($number, $period) {
-        return $number . (
+        return $number.(
             ($period === 'w' || $period === 'W') ? 'a' : (
-            ($number === 1) ? 'r' : (
-            ($number === 2) ? 'n' : (
-            ($number === 3) ? 'r' : (
-            ($number === 4) ? 't' : 'è'
+                ($number === 1) ? 'r' : (
+                    ($number === 2) ? 'n' : (
+                        ($number === 3) ? 'r' : (
+                            ($number === 4) ? 't' : 'è'
+                        )
+                    )
+                )
             )
-            )
-            )
-            )
-            );
+        );
     },
     'months' => ['de gener', 'de febrer', 'de març', 'd\'abril', 'de maig', 'de juny', 'de juliol', 'd\'agost', 'de setembre', 'd\'octubre', 'de novembre', 'de desembre'],
     'months_standalone' => ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'],

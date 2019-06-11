@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -25,28 +24,6 @@ trait Test
      * @var static|CarbonInterface
      */
     protected static $testNow;
-
-    /**
-     * Determine if there is a valid test instance set. A valid test instance
-     * is anything that is not null.
-     *
-     * @return bool true if there is a test instance, otherwise false
-     */
-    public static function hasTestNow()
-    {
-        return static::getTestNow() !== null;
-    }
-
-    /**
-     * Get the Carbon instance (real or mock) to be returned when a "now"
-     * instance is created.
-     *
-     * @return static|CarbonInterface the current instance used for testing
-     */
-    public static function getTestNow()
-    {
-        return static::$testNow;
-    }
 
     /**
      * Set a Carbon instance (real or mock) to be returned when a "now"
@@ -70,6 +47,28 @@ trait Test
     public static function setTestNow($testNow = null)
     {
         static::$testNow = is_string($testNow) ? static::parse($testNow) : $testNow;
+    }
+
+    /**
+     * Get the Carbon instance (real or mock) to be returned when a "now"
+     * instance is created.
+     *
+     * @return static|CarbonInterface the current instance used for testing
+     */
+    public static function getTestNow()
+    {
+        return static::$testNow;
+    }
+
+    /**
+     * Determine if there is a valid test instance set. A valid test instance
+     * is anything that is not null.
+     *
+     * @return bool true if there is a test instance, otherwise false
+     */
+    public static function hasTestNow()
+    {
+        return static::getTestNow() !== null;
     }
 
     protected static function mockConstructorParameters(&$time, &$tz)

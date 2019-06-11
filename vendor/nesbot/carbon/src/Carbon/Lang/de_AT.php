@@ -16,4 +16,4 @@
  * - Michael Hohl
  * - Namoshek
  */
-return require __DIR__ . '/de.php';
+return require __DIR__.'/de.php';

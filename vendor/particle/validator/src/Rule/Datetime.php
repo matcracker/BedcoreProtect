@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Rule;
 
 use Particle\Validator\Rule;
@@ -91,7 +90,7 @@ class Datetime extends Rule
      */
     protected function checkDate($dateTime, $format, $value)
     {
-        $equal = (string)$dateTime->format($format) === (string)$value;
+        $equal = (string) $dateTime->format($format) === (string) $value;
 
         if ($dateTime->getLastErrors()['warning_count'] === 0 && $equal) {
             return $dateTime;

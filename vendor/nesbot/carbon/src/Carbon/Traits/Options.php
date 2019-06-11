@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -217,13 +216,13 @@ trait Options
     protected $localFormatFunction = null;
 
     /**
-     * @param bool $strictModeEnabled
+     * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
+     *             You should rather use the ->settings() method.
      * @see settings
      *
      * Enable the strict mode (or disable with passing false).
      *
-     * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
-     *             You should rather use the ->settings() method.
+     * @param bool $strictModeEnabled
      */
     public static function useStrictMode($strictModeEnabled = true)
     {
@@ -242,9 +241,6 @@ trait Options
     }
 
     /**
-     * @param bool $monthsOverflow
-     *
-     * @return void
      * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
      *             You should rather use the ->settings() method.
      *             Or you can use method variants: addMonthsWithOverflow/addMonthsNoOverflow, same variants
@@ -253,6 +249,9 @@ trait Options
      *
      * Indicates if months should be calculated with overflow.
      *
+     * @param bool $monthsOverflow
+     *
+     * @return void
      */
     public static function useMonthsOverflow($monthsOverflow = true)
     {
@@ -260,15 +259,15 @@ trait Options
     }
 
     /**
-     * @return void
-     * @see settings
-     *
-     * Reset the month overflow behavior.
-     *
      * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
      *             You should rather use the ->settings() method.
      *             Or you can use method variants: addMonthsWithOverflow/addMonthsNoOverflow, same variants
      *             are available for quarters, years, decade, centuries, millennia (singular and plural forms).
+     * @see settings
+     *
+     * Reset the month overflow behavior.
+     *
+     * @return void
      */
     public static function resetMonthsOverflow()
     {
@@ -286,9 +285,6 @@ trait Options
     }
 
     /**
-     * @param bool $yearsOverflow
-     *
-     * @return void
      * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
      *             You should rather use the ->settings() method.
      *             Or you can use method variants: addYearsWithOverflow/addYearsNoOverflow, same variants
@@ -297,6 +293,9 @@ trait Options
      *
      * Indicates if years should be calculated with overflow.
      *
+     * @param bool $yearsOverflow
+     *
+     * @return void
      */
     public static function useYearsOverflow($yearsOverflow = true)
     {
@@ -304,15 +303,15 @@ trait Options
     }
 
     /**
-     * @return void
-     * @see settings
-     *
-     * Reset the month overflow behavior.
-     *
      * @deprecated To avoid conflict between different third-party libraries, static setters should not be used.
      *             You should rather use the ->settings() method.
      *             Or you can use method variants: addYearsWithOverflow/addYearsNoOverflow, same variants
      *             are available for quarters, years, decade, centuries, millennia (singular and plural forms).
+     * @see settings
+     *
+     * Reset the month overflow behavior.
+     *
+     * @return void
      */
     public static function resetYearsOverflow()
     {

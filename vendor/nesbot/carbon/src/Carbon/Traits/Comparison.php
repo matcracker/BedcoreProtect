@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -30,56 +29,13 @@ use InvalidArgumentException;
 trait Comparison
 {
     /**
-     * Checks if the (date)time string is in a given format.
-     *
-     * @param string $date
-     * @param string $format
-     *
-     * @return bool
-     */
-    public static function hasFormat($date, $format)
-    {
-        try {
-            // Try to create a DateTime object. Throws an InvalidArgumentException if the provided time string
-            // doesn't match the format in any way.
-            static::rawCreateFromFormat($format, $date);
-
-            // createFromFormat() is known to handle edge cases silently.
-            // E.g. "1975-5-1" (Y-n-j) will still be parsed correctly when "Y-m-d" is supplied as the format.
-            // To ensure we're really testing against our desired format, perform an additional regex validation.
-
-            // Preg quote, but remove escaped backslashes since we'll deal with escaped characters in the format string.
-            $quotedFormat = str_replace('\\\\', '\\',
-                preg_quote($format, '/'));
-
-            // Build the regex string
-            $regex = '';
-            for ($i = 0; $i < strlen($quotedFormat); ++$i) {
-                // Backslash – the next character does not represent a date token so add it on as-is and continue.
-                // We're doing an extra ++$i here to increment the loop by 2.
-                if ($quotedFormat[$i] === '\\') {
-                    $regex .= '\\' . $quotedFormat[++$i];
-                    continue;
-                }
-
-                $regex .= strtr($quotedFormat[$i], static::$regexFormats);
-            }
-
-            return (bool)preg_match('/^' . $regex . '$/', $date);
-        } catch (InvalidArgumentException $e) {
-        }
-
-        return false;
-    }
-
-    /**
      * Determines if the instance is equal to another
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see equalTo()
      *
+     * @return bool
      */
     public function eq($date): bool
     {
@@ -103,9 +59,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see notEqualTo()
      *
+     * @return bool
      */
     public function ne($date): bool
     {
@@ -129,9 +85,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see greaterThan()
      *
+     * @return bool
      */
     public function gt($date): bool
     {
@@ -155,9 +111,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see greaterThan()
      *
+     * @return bool
      */
     public function isAfter($date): bool
     {
@@ -169,9 +125,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see greaterThanOrEqualTo()
      *
+     * @return bool
      */
     public function gte($date): bool
     {
@@ -195,9 +151,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see lessThan()
      *
+     * @return bool
      */
     public function lt($date): bool
     {
@@ -221,9 +177,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see lessThan()
      *
+     * @return bool
      */
     public function isBefore($date): bool
     {
@@ -235,9 +191,9 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date
      *
-     * @return bool
      * @see lessThanOrEqualTo()
      *
+     * @return bool
      */
     public function lte($date): bool
     {
@@ -261,21 +217,7 @@ trait Comparison
      *
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date1
      * @param \Carbon\Carbon|\DateTimeInterface|mixed $date2
-     * @param bool $equal Indicates if an equal to comparison should be done
-     *
-     * @return bool
-     */
-    public function isBetween($date1, $date2, $equal = true): bool
-    {
-        return $this->between($date1, $date2, $equal);
-    }
-
-    /**
-     * Determines if the instance is between two others
-     *
-     * @param \Carbon\Carbon|\DateTimeInterface|mixed $date1
-     * @param \Carbon\Carbon|\DateTimeInterface|mixed $date2
-     * @param bool $equal Indicates if an equal to comparison should be done
+     * @param bool                                    $equal Indicates if an equal to comparison should be done
      *
      * @return bool
      */
@@ -292,6 +234,20 @@ trait Comparison
         }
 
         return $this->greaterThan($date1) && $this->lessThan($date2);
+    }
+
+    /**
+     * Determines if the instance is between two others
+     *
+     * @param \Carbon\Carbon|\DateTimeInterface|mixed $date1
+     * @param \Carbon\Carbon|\DateTimeInterface|mixed $date2
+     * @param bool                                    $equal Indicates if an equal to comparison should be done
+     *
+     * @return bool
+     */
+    public function isBetween($date1, $date2, $equal = true): bool
+    {
+        return $this->between($date1, $date2, $equal);
     }
 
     /**
@@ -387,14 +343,35 @@ trait Comparison
     }
 
     /**
-     * Determines if the instance is in the current unit given.
+     * Compares the formatted values of the two dates.
      *
-     * @param string $unit singular unit string
-     * @param \Carbon\Carbon|\DateTimeInterface|null $date instance to compare with or null to use current day.
+     * @param string                                 $format date formats to compare.
+     * @param \Carbon\Carbon|\DateTimeInterface|null $date   instance to compare with or null to use current day.
      *
-     * @return bool
      * @throws \InvalidArgumentException
      *
+     * @return bool
+     */
+    public function isSameAs($format, $date = null)
+    {
+        /** @var DateTimeInterface $date */
+        $date = $date ?: static::now($this->tz);
+
+        static::expectDateTime($date, 'null');
+
+        /* @var CarbonInterface $this */
+        return $this->rawFormat($format) === ($date instanceof self ? $date->rawFormat($format) : $date->format($format));
+    }
+
+    /**
+     * Determines if the instance is in the current unit given.
+     *
+     * @param string                                 $unit singular unit string
+     * @param \Carbon\Carbon|\DateTimeInterface|null $date instance to compare with or null to use current day.
+     *
+     * @throws \InvalidArgumentException
+     *
+     * @return bool
      */
     public function isSameUnit($unit, $date = null)
     {
@@ -437,45 +414,24 @@ trait Comparison
     }
 
     /**
-     * Compares the formatted values of the two dates.
-     *
-     * @param string $format date formats to compare.
-     * @param \Carbon\Carbon|\DateTimeInterface|null $date instance to compare with or null to use current day.
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     *
-     */
-    public function isSameAs($format, $date = null)
-    {
-        /** @var DateTimeInterface $date */
-        $date = $date ?: static::now($this->tz);
-
-        static::expectDateTime($date, 'null');
-
-        /* @var CarbonInterface $this */
-        return $this->rawFormat($format) === ($date instanceof self ? $date->rawFormat($format) : $date->format($format));
-    }
-
-    /**
      * Determines if the instance is in the current unit given.
      *
      * @param string $unit The unit to test.
      *
-     * @return bool
      * @throws \BadMethodCallException
      *
+     * @return bool
      */
     public function isCurrentUnit($unit)
     {
-        return $this->{'isSame' . ucfirst($unit)}();
+        return $this->{'isSame'.ucfirst($unit)}();
     }
 
     /**
      * Checks if the passed in date is in the same quarter as the instance quarter (and year if needed).
      *
-     * @param \Carbon\Carbon|\DateTimeInterface|null $date The instance to compare with or null to use current day.
-     * @param bool $ofSameYear Check if it is the same month in the same year.
+     * @param \Carbon\Carbon|\DateTimeInterface|null $date       The instance to compare with or null to use current day.
+     * @param bool                                   $ofSameYear Check if it is the same month in the same year.
      *
      * @return bool
      */
@@ -494,8 +450,8 @@ trait Comparison
      * Note that this defaults to only comparing the month while ignoring the year.
      * To test if it is the same exact month of the same year, pass in true as the second parameter.
      *
-     * @param \Carbon\Carbon|\DateTimeInterface|null $date The instance to compare with or null to use the current date.
-     * @param bool $ofSameYear Check if it is the same month in the same year.
+     * @param \Carbon\Carbon|\DateTimeInterface|null $date       The instance to compare with or null to use the current date.
+     * @param bool                                   $ofSameYear Check if it is the same month in the same year.
      *
      * @return bool
      */
@@ -513,7 +469,7 @@ trait Comparison
      */
     public function isDayOfWeek($dayOfWeek)
     {
-        if (is_string($dayOfWeek) && defined($constant = static::class . '::' . strtoupper($dayOfWeek))) {
+        if (is_string($dayOfWeek) && defined($constant = static::class.'::'.strtoupper($dayOfWeek))) {
             $dayOfWeek = constant($constant);
         }
 
@@ -543,6 +499,21 @@ trait Comparison
     }
 
     /**
+     * Check if the instance is start of day / midnight.
+     *
+     * @param bool $checkMicroseconds check time at microseconds precision
+     *
+     * @return bool
+     */
+    public function isStartOfDay($checkMicroseconds = false)
+    {
+        /* @var CarbonInterface $this */
+        return $checkMicroseconds
+            ? $this->rawFormat('H:i:s.u') === '00:00:00.000000'
+            : $this->rawFormat('H:i:s') === '00:00:00';
+    }
+
+    /**
      * Check if the instance is end of day.
      *
      * @param bool $checkMicroseconds check time at microseconds precision
@@ -568,21 +539,6 @@ trait Comparison
     }
 
     /**
-     * Check if the instance is start of day / midnight.
-     *
-     * @param bool $checkMicroseconds check time at microseconds precision
-     *
-     * @return bool
-     */
-    public function isStartOfDay($checkMicroseconds = false)
-    {
-        /* @var CarbonInterface $this */
-        return $checkMicroseconds
-            ? $this->rawFormat('H:i:s.u') === '00:00:00.000000'
-            : $this->rawFormat('H:i:s') === '00:00:00';
-    }
-
-    /**
      * Check if the instance is midday.
      *
      * @return bool
@@ -590,6 +546,49 @@ trait Comparison
     public function isMidday()
     {
         /* @var CarbonInterface $this */
-        return $this->rawFormat('G:i:s') === static::$midDayAt . ':00:00';
+        return $this->rawFormat('G:i:s') === static::$midDayAt.':00:00';
+    }
+
+    /**
+     * Checks if the (date)time string is in a given format.
+     *
+     * @param string $date
+     * @param string $format
+     *
+     * @return bool
+     */
+    public static function hasFormat($date, $format)
+    {
+        try {
+            // Try to create a DateTime object. Throws an InvalidArgumentException if the provided time string
+            // doesn't match the format in any way.
+            static::rawCreateFromFormat($format, $date);
+
+            // createFromFormat() is known to handle edge cases silently.
+            // E.g. "1975-5-1" (Y-n-j) will still be parsed correctly when "Y-m-d" is supplied as the format.
+            // To ensure we're really testing against our desired format, perform an additional regex validation.
+
+            // Preg quote, but remove escaped backslashes since we'll deal with escaped characters in the format string.
+            $quotedFormat = str_replace('\\\\', '\\',
+                preg_quote($format, '/'));
+
+            // Build the regex string
+            $regex = '';
+            for ($i = 0; $i < strlen($quotedFormat); ++$i) {
+                // Backslash – the next character does not represent a date token so add it on as-is and continue.
+                // We're doing an extra ++$i here to increment the loop by 2.
+                if ($quotedFormat[$i] === '\\') {
+                    $regex .= '\\'.$quotedFormat[++$i];
+                    continue;
+                }
+
+                $regex .= strtr($quotedFormat[$i], static::$regexFormats);
+            }
+
+            return (bool) preg_match('/^'.$regex.'$/', $date);
+        } catch (InvalidArgumentException $e) {
+        }
+
+        return false;
     }
 }

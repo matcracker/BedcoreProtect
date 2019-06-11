@@ -6,11 +6,10 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Rule;
 
-use Particle\Validator\Rule;
 use Particle\Validator\StringifyCallbackTrait;
+use Particle\Validator\Rule;
 use Particle\Validator\Value\Container;
 
 /**
@@ -83,6 +82,17 @@ class Required extends Rule
     }
 
     /**
+     * Does nothing, because validity is determined in isValid.
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    public function validate($value)
+    {
+        return true;
+    }
+
+    /**
      * Determines whether or not the key is set when required, and if there is a value if allow empty is false.
      *
      * @param string $key
@@ -106,20 +116,6 @@ class Required extends Rule
     }
 
     /**
-     * Determines if the value is required.
-     *
-     * @param Container $input
-     * @return bool
-     */
-    protected function isRequired(Container $input)
-    {
-        if (isset($this->requiredCallback)) {
-            $this->required = call_user_func_array($this->requiredCallback, [$input->getArrayCopy()]);
-        }
-        return $this->required;
-    }
-
-    /**
      * Set a callable to potentially alter the required requirement at the time of validation.
      *
      * This may be incredibly useful for conditional validation.
@@ -133,30 +129,7 @@ class Required extends Rule
             return $this->setRequiredCallback($required);
         }
 
-        return $this->overwriteRequired((bool)$required);
-    }
-
-    /**
-     * Does nothing, because validity is determined in isValid.
-     *
-     * @param mixed $value
-     * @return bool
-     */
-    public function validate($value)
-    {
-        return true;
-    }
-
-    /**
-     * Set the required callback, and return $this.
-     *
-     * @param callable $requiredCallback
-     * @return $this
-     */
-    protected function setRequiredCallback(callable $requiredCallback)
-    {
-        $this->requiredCallback = $requiredCallback;
-        return $this;
+        return $this->overwriteRequired((bool) $required);
     }
 
     /**
@@ -172,6 +145,18 @@ class Required extends Rule
     }
 
     /**
+     * Set the required callback, and return $this.
+     *
+     * @param callable $requiredCallback
+     * @return $this
+     */
+    protected function setRequiredCallback(callable $requiredCallback)
+    {
+        $this->requiredCallback = $requiredCallback;
+        return $this;
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected function getMessageParameters()
@@ -180,5 +165,19 @@ class Required extends Rule
             'required' => $this->required,
             'callback' => $this->getCallbackAsString($this->requiredCallback)
         ]);
+    }
+
+    /**
+     * Determines if the value is required.
+     *
+     * @param Container $input
+     * @return bool
+     */
+    protected function isRequired(Container $input)
+    {
+        if (isset($this->requiredCallback)) {
+            $this->required = call_user_func_array($this->requiredCallback, [$input->getArrayCopy()]);
+        }
+        return $this->required;
     }
 }

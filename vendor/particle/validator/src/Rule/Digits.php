@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Rule;
 
 use Particle\Validator\Rule;
@@ -40,7 +39,7 @@ class Digits extends Rule
      */
     public function validate($value)
     {
-        if (ctype_digit((string)$value)) {
+        if (ctype_digit((string) $value)) {
             return true;
         }
         return $this->error(self::NOT_DIGITS);

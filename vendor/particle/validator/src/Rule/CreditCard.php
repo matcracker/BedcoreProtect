@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Rule;
 
 use byrokrat\checkdigit\Luhn;
@@ -71,6 +70,18 @@ class CreditCard extends Rule
      *
      * @return bool
      */
+    private function validateChecksum($value)
+    {
+        $luhn = new Luhn();
+
+        return $luhn->isValid($value);
+    }
+
+    /**
+     * @param $value
+     *
+     * @return bool
+     */
     private function validateFormat($value)
     {
         foreach ($this->validationRegExps as $validationRegExp) {
@@ -80,17 +91,5 @@ class CreditCard extends Rule
         }
 
         return false;
-    }
-
-    /**
-     * @param $value
-     *
-     * @return bool
-     */
-    private function validateChecksum($value)
-    {
-        $luhn = new Luhn();
-
-        return $luhn->isValid($value);
     }
 }

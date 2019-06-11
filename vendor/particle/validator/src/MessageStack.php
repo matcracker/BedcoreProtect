@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator;
 
 /**
@@ -84,18 +83,6 @@ class MessageStack
     }
 
     /**
-     * Returns whether an overwrite exists for the key $key with reason $reason.
-     *
-     * @param string $key
-     * @param string $reason
-     * @return bool
-     */
-    protected function hasOverwrite($key, $reason)
-    {
-        return isset($this->overwrites[$key][$reason]);
-    }
-
-    /**
      * Overwrite key-validator specific messages (so [first_name => [Length::TOO_SHORT => 'Message']]).
      *
      * @param array $messages
@@ -131,6 +118,17 @@ class MessageStack
     }
 
     /**
+     * Reset the messages to an empty array.
+     *
+     * @return $this
+     */
+    public function reset()
+    {
+        $this->failures = [];
+        return $this;
+    }
+
+    /**
      * Merges the default messages from $messageStack to this MessageStack.
      *
      * @param MessageStack $messageStack
@@ -161,14 +159,15 @@ class MessageStack
     }
 
     /**
-     * Reset the messages to an empty array.
+     * Returns whether an overwrite exists for the key $key with reason $reason.
      *
-     * @return $this
+     * @param string $key
+     * @param string $reason
+     * @return bool
      */
-    public function reset()
+    protected function hasOverwrite($key, $reason)
     {
-        $this->failures = [];
-        return $this;
+        return isset($this->overwrites[$key][$reason]);
     }
 
     /**

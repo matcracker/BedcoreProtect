@@ -63,7 +63,7 @@ return [
             case 'w':
             case 'W':
             case 'DDDo':
-                return $number . ($number === 1 ? '-ին' : '-րդ');
+                return $number.($number === 1 ? '-ին' : '-րդ');
             default:
                 return $number;
         }

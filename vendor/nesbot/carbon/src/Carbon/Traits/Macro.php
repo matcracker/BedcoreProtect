@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 /**
@@ -46,6 +45,31 @@ trait Macro
     protected static $globalGenericMacros = [];
 
     /**
+     * Register a custom macro.
+     *
+     * @example
+     * ```
+     * $userSettings = [
+     *   'locale' => 'pt',
+     *   'timezone' => 'America/Sao_Paulo',
+     * ];
+     * Carbon::macro('userFormat', function () use ($userSettings) {
+     *   return $this->copy()->locale($userSettings['locale'])->tz($userSettings['timezone'])->calendar();
+     * });
+     * echo Carbon::yesterday()->hours(11)->userFormat();
+     * ```
+     *
+     * @param string          $name
+     * @param object|callable $macro
+     *
+     * @return void
+     */
+    public static function macro($name, $macro)
+    {
+        static::$globalMacros[$name] = $macro;
+    }
+
+    /**
      * Remove all macros and generic macros.
      */
     public static function resetMacros()
@@ -58,7 +82,7 @@ trait Macro
      * Register a custom macro.
      *
      * @param object|callable $macro
-     * @param int $priority marco with higher priority is tried first
+     * @param int             $priority marco with higher priority is tried first
      *
      * @return void
      */
@@ -74,11 +98,6 @@ trait Macro
 
     /**
      * Mix another object into the class.
-     *
-     * @param object $mixin
-     *
-     * @return void
-     * @throws \ReflectionException
      *
      * @example
      * ```
@@ -102,6 +121,11 @@ trait Macro
      * echo "$previousBlackMoon\n";
      * ```
      *
+     * @param object $mixin
+     *
+     * @throws \ReflectionException
+     *
+     * @return void
      */
     public static function mixin($mixin)
     {
@@ -117,31 +141,6 @@ trait Macro
 
             static::macro($method->name, $method->invoke($mixin));
         }
-    }
-
-    /**
-     * Register a custom macro.
-     *
-     * @param string $name
-     * @param object|callable $macro
-     *
-     * @return void
-     * @example
-     * ```
-     * $userSettings = [
-     *   'locale' => 'pt',
-     *   'timezone' => 'America/Sao_Paulo',
-     * ];
-     * Carbon::macro('userFormat', function () use ($userSettings) {
-     *   return $this->copy()->locale($userSettings['locale'])->tz($userSettings['timezone'])->calendar();
-     * });
-     * echo Carbon::yesterday()->hours(11)->userFormat();
-     * ```
-     *
-     */
-    public static function macro($name, $macro)
-    {
-        static::$globalMacros[$name] = $macro;
     }
 
     /**

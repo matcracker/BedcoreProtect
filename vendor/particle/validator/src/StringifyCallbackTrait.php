@@ -6,7 +6,6 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator;
 
 /**
@@ -25,7 +24,7 @@ trait StringifyCallbackTrait
     protected function getCallbackAsString($callback)
     {
         if (is_object($callback) && method_exists($callback, '__toString')) {
-            return (string)$callback;
+            return (string) $callback;
         }
         return '';
     }

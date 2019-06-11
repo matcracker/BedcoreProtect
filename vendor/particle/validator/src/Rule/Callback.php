@@ -6,12 +6,11 @@
  * @copyright Copyright (c) 2005-2016 Particle (http://particle-php.com)
  * @license   https://github.com/particle-php/validator/blob/master/LICENSE New BSD License
  */
-
 namespace Particle\Validator\Rule;
 
+use Particle\Validator\StringifyCallbackTrait;
 use Particle\Validator\Exception\InvalidValueException;
 use Particle\Validator\Rule;
-use Particle\Validator\StringifyCallbackTrait;
 use Particle\Validator\Value\Container;
 
 /**
@@ -81,6 +80,16 @@ class Callback extends Rule
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getMessageParameters()
+    {
+        return array_merge(parent::getMessageParameters(), [
+            'callback' => $this->getCallbackAsString($this->callback),
+        ]);
+    }
+
+    /**
      * Validates the value according to this rule, and returns the result as a bool.
      *
      * @param string $key
@@ -92,15 +101,5 @@ class Callback extends Rule
         $this->values = $input->getArrayCopy();
 
         return parent::isValid($key, $input);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getMessageParameters()
-    {
-        return array_merge(parent::getMessageParameters(), [
-            'callback' => $this->getCallbackAsString($this->callback),
-        ]);
     }
 }

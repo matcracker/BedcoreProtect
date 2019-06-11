@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace Carbon\Traits;
 
 use Carbon\CarbonInterface;
@@ -27,24 +26,11 @@ use InvalidArgumentException;
 trait Rounding
 {
     /**
-     * Truncate the current instance at the given unit with given precision if specified.
-     *
-     * @param string $unit
-     * @param float|int $precision
-     *
-     * @return CarbonInterface
-     */
-    public function floorUnit($unit, $precision = 1)
-    {
-        return $this->roundUnit($unit, $precision, 'floor');
-    }
-
-    /**
      * Round the current instance at the given unit with given precision if specified and the given function.
      *
-     * @param string $unit
+     * @param string    $unit
      * @param float|int $precision
-     * @param string $function
+     * @param string    $function
      *
      * @return CarbonInterface
      */
@@ -117,9 +103,22 @@ trait Rounding
     }
 
     /**
+     * Truncate the current instance at the given unit with given precision if specified.
+     *
+     * @param string    $unit
+     * @param float|int $precision
+     *
+     * @return CarbonInterface
+     */
+    public function floorUnit($unit, $precision = 1)
+    {
+        return $this->roundUnit($unit, $precision, 'floor');
+    }
+
+    /**
      * Ceil the current instance at the given unit with given precision if specified.
      *
-     * @param string $unit
+     * @param string    $unit
      * @param float|int $precision
      *
      * @return CarbonInterface
@@ -133,7 +132,7 @@ trait Rounding
      * Round the current instance second with given precision if specified.
      *
      * @param float|int $precision
-     * @param string $function
+     * @param string    $function
      *
      * @return CarbonInterface
      */
