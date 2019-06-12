@@ -47,6 +47,7 @@ final class CommandParser
 
     private $configParser;
     private $arguments;
+    private $requiredParams;
     private $parsed = false;
 
     //Default data values
@@ -63,24 +64,25 @@ final class CommandParser
      * CommandParser constructor.
      * @param ConfigParser $configParser
      * @param array $arguments
+     * @param array|null $requiredParams
      * @param bool $shift It shift the first element of array used internally for command arguments. Default false.
      */
-    public function __construct(ConfigParser $configParser, array $arguments, bool $shift = false)
+    public function __construct(ConfigParser $configParser, array $arguments, ?array $requiredParams, bool $shift = false)
     {
         $this->configParser = $configParser;
         $this->arguments = $arguments;
+        $this->requiredParams = $requiredParams;
         if ($shift) {
             array_shift($this->arguments);
         }
 
-        $this->data["radius"] = $this->configParser->getDefaultRadius() !== 0 ?? null;
+        if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
+            $this->data["radius"] = $dr;
+        }
+
     }
 
-    /**
-     * @param string[]|null $requiredParams
-     * @return bool
-     */
-    public function parse(?array $requiredParams): bool
+    public function parse(): bool
     {
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) return false;
 
@@ -150,8 +152,10 @@ final class CommandParser
         if (empty($filter))
             return false;
 
-        if ($requiredParams !== null) {
-            if (count(array_intersect_key(array_flip($requiredParams), $this->data)) !== count($requiredParams)) {
+        if ($this->requiredParams !== null) {
+            if (count(array_intersect_key(array_flip($this->requiredParams), array_filter($this->data, function ($v) {
+                    return $v !== null;
+                }))) !== count($this->requiredParams)) {
                 return false;
             }
         }
@@ -238,12 +242,45 @@ final class CommandParser
         return self::ACTIONS[$cmdAction];
     }
 
+    /**
+     * Return string error message when a required parameter is missing.
+     * Return null if any parameter is required or all required parameter are present.
+     * @return string|null
+     */
+    public function getErrorMessage(): ?string
+    {
+        foreach (array_keys($this->data) as $param) {
+            if ($this->isRequired($param)) {
+                switch ($param) {
+                    case "user":
+                    case "action":
+                        return "This {$param} does not exist";
+                    case "time":
+                    case "radius":
+                        return "Please specify the amount of {$param}";
+                    case "blocks":
+                        return "Please specify the blocks to include";
+                    case "exclude":
+                        return "Please specify the blocks to exclude";
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function isRequired(string $param): bool
+    {
+        return $this->requiredParams !== null ? in_array($param, $this->requiredParams) : false;
+    }
+
     public function buildLookupQuery(): string
     {
         if (!$this->parsed) {
             throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
+        $time = time() - $this->getTime();
         $query = /**@lang text */
             "SELECT *,
             bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
@@ -252,7 +289,7 @@ final class CommandParser
             LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
             LEFT JOIN entities e ON log_history.who = e.uuid 
             LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
-            WHERE time BETWEEN CURRENT_TIMESTAMP AND FROM_UNIXTIME({$this->getTime()}) AND ";
+            WHERE time BETWEEN FROM_UNIXTIME({$time}) AND CURRENT_TIMESTAMP AND ";
 
         $this->buildConditionalQuery($query, null, [
             "bl.old_block_id", "bl.old_block_damage",

@@ -165,8 +165,8 @@ final class Inspector
                     $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" .
                         $timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW) .
                         "&f - &3$entityFromName &f$actionName &3" . $midMessage . " &f - &7(x$x/y$y/z$z/$worldName)&f."));
-                    $inspector->sendMessage("View older data by typing /bcp l <page>.");
                 }
+                $inspector->sendMessage("View older data by typing /bcp l <page>.");
             } else {
                 $inspector->sendMessage(Utils::translateColors("&3" . Main::PLUGIN_NAME . "&f - &cThe page &6$page&c does not exist!"));
             }
