@@ -64,45 +64,52 @@ final class BCPCommand extends Command
 
         //Shared commands between player and console.
         switch ($subCmd) {
-            case "help": //TODO: help subcmd
-                $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . "&3Help Page &f-----"));
-                $sender->sendMessage("&3/bcp help &7<command> &f- Display more info for that command.");
-                $sender->sendMessage("&3/bcp &7inspect &f- Turns the blocks inspector on or off.");
-                $sender->sendMessage("&3/bcp &7rollback &3<params> &f- Rollback block data.");
-                $sender->sendMessage("&3/bcp &7restore &3<params> &f- Restore block data.");
-                $sender->sendMessage("&3/bcp &7lookup &3<params> &f- Advanced block data lookup.");
-                $sender->sendMessage("&3/bcp &7purge &3<params> &f- Delete old block data.");
-                $sender->sendMessage("&3/bcp &7reload &f- Reloads the configuration file.");
-                $sender->sendMessage("&3/bcp &7status &f- Rollback block data.");
-                $sender->sendMessage(Utils::translateColors("&f------"));
+            case "help":
+                if (!isset($args[1])) {
+                    $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . "&3Help Page &f-----"));
+                    $sender->sendMessage("&3/bcp help &7<command> &f- Display more info for that command.");
+                    $sender->sendMessage("&3/bcp &7inspect &f- Turns the blocks inspector on or off.");
+                    $sender->sendMessage("&3/bcp &7rollback &3<params> &f- Rollback block data.");
+                    $sender->sendMessage("&3/bcp &7restore &3<params> &f- Restore block data.");
+                    $sender->sendMessage("&3/bcp &7lookup &3<params> &f- Advanced block data lookup.");
+                    $sender->sendMessage("&3/bcp &7purge &3<params> &f- Delete old block data.");
+                    $sender->sendMessage("&3/bcp &7reload &f- Reloads the configuration file.");
+                    $sender->sendMessage("&3/bcp &7status &f- Rollback block data.");
+                    $sender->sendMessage(Utils::translateColors("&f------"));
+                } else {
+                    //TODO: help subcmd
+                }
                 return true;
             case "lookup":
             case "l":
-                $parser = new CommandParser($this->plugin->getParsedConfig(), $args, true);
-                if (($p = $parser->parse())) {
-                    $this->queries->requestLookup($sender, $parser);
-                } else {
-                    if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
-                        $page = 0;
-                        if (isset($args[1])) {
-                            if (ctype_digit($args[1])) {
-                                $page = (int)$args[1];
-                            } else {
-                                $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cThe page value must be numeric!"));
-                                return true;
-                            }
-                        }
-                        Inspector::parseLogs($sender, $logs, $page);
+                if (isset($args[1])) {
+                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, true);
+                    if (($p = $parser->parse(["time"]))) {
+                        $this->queries->requestLookup($sender, $parser);
                     } else {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to lookup."));
+                        if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
+                            $page = 0;
+                            if (isset($args[1])) {
+                                if (ctype_digit($args[1])) {
+                                    $page = (int)$args[1];
+                                } else {
+                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cThe page value must be numeric!"));
+                                    return true;
+                                }
+                            }
+                            Inspector::parseLogs($sender, $logs, $page);
+                        } else {
+                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to lookup."));
+                        }
                     }
+                } else {
+                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter."));
                 }
-
                 return true;
             case "purge":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, true);
-                    if ($parser->parse()) {
+                    if ($parser->parse(["time"])) {
                         $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Data purge started. This may take some time."));
                         $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Do not restart your server until completed."));
                         $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender) {
@@ -110,9 +117,12 @@ final class BCPCommand extends Command
                             $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "{$affectedRows} rows of data deleted."));
                         });
                         return true;
+                    } else {
+                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to purge."));
                     }
+                } else {
+                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter."));
                 }
-                $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to purge."));
                 return true;
         }
 
@@ -151,7 +161,7 @@ final class BCPCommand extends Command
             case "rb":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, true);
-                    if ($parser->parse()) {
+                    if ($parser->parse(["time", "radius"])) {
                         $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Starting rollback on \"" . $sender->getLevel()->getFolderName() . "\"."));
                         $sender->sendMessage(Utils::translateColors("&f------"));
                         $start = microtime(true);
@@ -182,19 +192,21 @@ final class BCPCommand extends Command
                     } else {
                         if ($parser->getTime() === null) {
                             $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to rollback."));
+                        } else if ($parser->getRadius() === null) {
+                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of radius to rollback."));
                         } else {
-                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou insert wrong parameters.")); //TODO: Check original message
+                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou insert wrong parameters."));
                         }
                     }
                     return true;
                 } else {
-                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter.")); //TODO: Check original message
+                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter."));
                 }
                 return true;
             case "restore":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, true);
-                    if ($parser->parse()) {
+                    if ($parser->parse(["time", "radius"])) {
                         $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Restore started on \"" . $sender->getLevel()->getFolderName() . "\"."));
                         $sender->sendMessage(Utils::translateColors("&f------"));
                         $start = microtime(true);
@@ -224,9 +236,11 @@ final class BCPCommand extends Command
                         );
                     } else {
                         if ($parser->getTime() === null) {
-                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to restore."));
+                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of time to rollback."));
+                        } else if ($parser->getRadius() === null) {
+                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cPlease specify the amount of radius to rollback."));
                         } else {
-                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou insert wrong parameters.")); //TODO: Check original message
+                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou insert wrong parameters."));
                         }
                     }
                     return true;

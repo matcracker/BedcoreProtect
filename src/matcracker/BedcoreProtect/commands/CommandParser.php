@@ -76,7 +76,11 @@ final class CommandParser
         $this->data["radius"] = $this->configParser->getDefaultRadius() !== 0 ?? null;
     }
 
-    public function parse(): bool
+    /**
+     * @param string[]|null $requiredParams
+     * @return bool
+     */
+    public function parse(?array $requiredParams): bool
     {
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) return false;
 
@@ -145,6 +149,12 @@ final class CommandParser
 
         if (empty($filter))
             return false;
+
+        if ($requiredParams !== null) {
+            if (count(array_intersect_key(array_flip($requiredParams), $this->data)) !== count($requiredParams)) {
+                return false;
+            }
+        }
 
         $this->parsed = true;
         return true;
@@ -239,9 +249,10 @@ final class CommandParser
             bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
             il.old_item_id, il.old_item_damage, il.old_amount, il.new_item_id, il.new_item_damage, il.new_amount, 
             e.entity_name AS entity_from FROM log_history 
-            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
+            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
             LEFT JOIN entities e ON log_history.who = e.uuid 
-            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ";
+            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
+            WHERE time BETWEEN CURRENT_TIMESTAMP AND FROM_UNIXTIME({$this->getTime()}) AND ";
 
         $this->buildConditionalQuery($query, null, [
             "bl.old_block_id", "bl.old_block_damage",
@@ -251,6 +262,23 @@ final class CommandParser
         $query = rtrim($query, " AND ") . " ORDER BY time DESC;";
 
         return $query;
+    }
+
+    public function getTime(): ?int
+    {
+        return $this->getData("time");
+    }
+
+    /**
+     * @param string $key
+     * @return mixed
+     */
+    private function getData(string $key)
+    {
+        if (!$this->parsed) {
+            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+        return $this->data[$key];
     }
 
     public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
@@ -288,23 +316,6 @@ final class CommandParser
     public function getUser(): ?string
     {
         return $this->getData("user");
-    }
-
-    /**
-     * @param string $key
-     * @return mixed
-     */
-    private function getData(string $key)
-    {
-        if (!$this->parsed) {
-            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-        return $this->data[$key];
-    }
-
-    public function getTime(): ?int
-    {
-        return $this->getData("time");
     }
 
     public function getRadius(): ?int
