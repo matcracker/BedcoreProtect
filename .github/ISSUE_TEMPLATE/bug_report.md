@@ -3,7 +3,7 @@ name: Bug report
 about: Unexpected non-crash behaviour (except missing features). If this doesn’t look
   right
 title: ''
-labels: bug
+labels: ''
 assignees: ''
 
 ---
