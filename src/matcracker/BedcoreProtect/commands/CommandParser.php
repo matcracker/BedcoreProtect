@@ -153,9 +153,7 @@ final class CommandParser
             return false;
 
         if ($this->requiredParams !== null) {
-            if (count(array_intersect_key(array_flip($this->requiredParams), array_filter($this->data, function ($v) {
-                    return $v !== null;
-                }))) !== count($this->requiredParams)) {
+            if (count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)) {
                 return false;
             }
         }

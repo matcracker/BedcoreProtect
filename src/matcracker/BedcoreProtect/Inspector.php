@@ -117,62 +117,72 @@ final class Inspector
      *
      * @param CommandSender $inspector
      * @param int $page
+     * @param int $lines
      * @param array $logs
      */
-    public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0): void
+    public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
-        if (count($logs) > 0) {
-            $chunkLogs = array_chunk($logs, 4);
-            $maxPages = count($chunkLogs) - 1;
-            if (isset($chunkLogs[$page])) {
-                $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page $page/$maxPages) &f-----"));
-                foreach ($chunkLogs[$page] as $log) {
-                    //Default
-                    $entityFromName = (string)$log['entity_from'];
-                    $x = (int)$log['x'];
-                    $y = (int)$log['y'];
-                    $z = (int)$log['z'];
-                    $worldName = (string)$log['world_name'];
-                    $action = (int)$log['action'];
-                    $rollback = (bool)$log['rollback'];
-
-                    $actionName = Utils::getActionName($action); //Convert action to string
-                    $time = $log['time'];
-                    $timeStamp = Carbon::createFromTimestamp(is_int($time) ? $time : strtotime($time));
-
-                    $midMessage = "";
-
-                    if ($action >= QueriesConst::PLACED && $action <= QueriesConst::CLICKED) {
-                        $blockFound = $action === QueriesConst::BROKE ? "old" : "new";
-                        $id = (int)$log["{$blockFound}_block_id"];
-                        $damage = (int)$log["{$blockFound}_block_damage"];
-                        $blockName = BlockFactory::get($id, $damage)->getName();
-
-                        $midMessage = "#$id:$damage ($blockName)";
-                    } elseif ($action === QueriesConst::KILLED) {
-                        $entityToName = $log['entity_to'];
-
-                        $midMessage = $entityToName;
-                    } elseif ($action === QueriesConst::ADDED || $action === QueriesConst::REMOVED) {
-                        $itemFound = $action === QueriesConst::REMOVED ? "old" : "new";
-                        $id = (int)$log["{$itemFound}_item_id"];
-                        $damage = (int)$log["{$itemFound}_item_damage"];
-                        $amount = (int)$log["{$itemFound}_amount"];
-                        $itemName = ItemFactory::get($id, $damage)->getName();
-                        $midMessage = "$amount x #$id:$damage ($itemName)";
-                    }
-
-                    $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" .
-                        $timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW) .
-                        "&f - &3$entityFromName &f$actionName &3" . $midMessage . " &f - &7(x$x/y$y/z$z/$worldName)&f."));
-                }
-                $inspector->sendMessage("View older data by typing /bcp l <page>.");
-            } else {
-                $inspector->sendMessage(Utils::translateColors("&3" . Main::PLUGIN_NAME . "&f - &cThe page &6$page&c does not exist!"));
-            }
-        } else {
-            $inspector->sendMessage(Utils::translateColors("&3" . Main::PLUGIN_NAME . "&f - &cNo block data found for this location."));
+        if (count($logs) <= 0) {
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo block data found for this location."));
+            return;
         }
+
+        if ($lines < 1) {
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe lines number must be greater than 1."));
+            return;
+        }
+
+        $chunkLogs = array_chunk($logs, $lines);
+        $maxPages = count($chunkLogs);
+        $fakePage = $page + 1;
+        if (!isset($chunkLogs[$page])) {
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe page &6{$fakePage}&c does not exist!"));
+            return;
+        }
+
+        $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page {$fakePage}/{$maxPages}) &f-----"));
+        foreach ($chunkLogs[$page] as $log) {
+            //Default
+            $entityFromName = (string)$log['entity_from'];
+            $x = (int)$log['x'];
+            $y = (int)$log['y'];
+            $z = (int)$log['z'];
+            $worldName = (string)$log['world_name'];
+            $action = (int)$log['action'];
+            $rollback = (bool)$log['rollback'];
+
+            $actionName = Utils::getActionName($action); //Convert action to string
+            $time = $log['time'];
+            $timeStamp = Carbon::createFromTimestamp(is_int($time) ? $time : strtotime($time));
+
+            $midMessage = "";
+
+            if ($action >= QueriesConst::PLACED && $action <= QueriesConst::CLICKED) {
+                $blockFound = $action === QueriesConst::BROKE ? "old" : "new";
+                $id = (int)$log["{$blockFound}_block_id"];
+                $damage = (int)$log["{$blockFound}_block_damage"];
+                $blockName = BlockFactory::get($id, $damage)->getName();
+
+                $midMessage = "#$id:$damage ($blockName)";
+            } elseif ($action === QueriesConst::KILLED) {
+                $entityToName = $log['entity_to'];
+
+                $midMessage = $entityToName;
+            } elseif ($action === QueriesConst::ADDED || $action === QueriesConst::REMOVED) {
+                $itemFound = $action === QueriesConst::REMOVED ? "old" : "new";
+                $id = (int)$log["{$itemFound}_item_id"];
+                $damage = (int)$log["{$itemFound}_item_damage"];
+                $amount = (int)$log["{$itemFound}_amount"];
+                $itemName = ItemFactory::get($id, $damage)->getName();
+                $midMessage = "$amount x #$id:$damage ($itemName)";
+            }
+
+            $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . //TODO: Add strikethrough (&m) when MC fix it.
+                $timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW) .
+                "&f - &3{$entityFromName} &f{$actionName} &3{$midMessage} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+        }
+        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
+
     }
 
 }

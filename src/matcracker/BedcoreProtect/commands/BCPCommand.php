@@ -33,7 +33,6 @@ use poggit\libasynql\SqlError;
 
 final class BCPCommand extends Command
 {
-    private const CMD_PREFIX = "&3" . Main::PLUGIN_NAME . " &f- ";
 
     private $plugin;
     private $queries;
@@ -58,7 +57,7 @@ final class BCPCommand extends Command
 
         $subCmd = strtolower($args[0]);
         if (!$sender->hasPermission("bcp.command.bedcoreprotect") || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
-            $sender->sendMessage(self::CMD_PREFIX . "&cYou don't have permission to run this command.");
+            $sender->sendMessage(Main::MESSAGE_PREFIX . "&cYou don't have permission to run this command.");
             return true;
         }
 
@@ -89,45 +88,54 @@ final class BCPCommand extends Command
                     } else {
                         if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
                             $page = 0;
+                            $lines = 4;
                             if (isset($args[1])) {
-                                if (ctype_digit($args[1])) {
-                                    $page = (int)$args[1];
-                                } else {
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cThe page value must be numeric!"));
+                                $split = explode(":", $args[1]);
+                                if ($ctype = ctype_digit($split[0])) {
+                                    $page = (int)$split[0];
+                                }
+
+                                if (isset($split[1]) && $ctype = ctype_digit($split[1])) {
+                                    $lines = (int)$split[1];
+                                }
+
+                                if ($ctype) {
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cWrong page/line value inserted!"));
                                     return true;
                                 }
                             }
-                            Inspector::parseLogs($sender, $logs, $page);
+                            Inspector::parseLogs($sender, $logs, $page, $lines);
                         } else {
-                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&c{$parser->getErrorMessage()}."));
+                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
                         }
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
                 }
                 return true;
-            case "purge":
+            case
+            "purge":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Data purge started. This may take some time."));
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Do not restart your server until completed."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge started. This may take some time."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Do not restart your server until completed."));
                         $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender) {
-                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Data purge successful."));
-                            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "{$affectedRows} rows of data deleted."));
+                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge successful."));
+                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "{$affectedRows} rows of data deleted."));
                         });
                         return true;
                     } else {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&c{$parser->getErrorMessage()}."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
                 }
                 return true;
         }
 
         if (!($sender instanceof Player)) {
-            $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou can't run this command from console."));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou can't run this command from console."));
             return true;
         }
 
@@ -137,20 +145,20 @@ final class BCPCommand extends Command
             case "i":
                 $b = Inspector::isInspector($sender);
                 $b ? Inspector::removeInspector($sender) : Inspector::addInspector($sender);
-                $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . ($b ? "Disabled" : "Enabled") . " inspector mode."));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($b ? "Disabled" : "Enabled") . " inspector mode."));
                 return true;
             case "near":
                 $near = 5;
 
                 if (isset($args[1])) {
                     if (!ctype_digit($args[1])) {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cThe near value must be numeric!"));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe near value must be numeric!"));
                         return true;
                     }
                     $near = (int)$args[1];
                     $maxRadius = $this->plugin->getParsedConfig()->getMaxRadius();
                     if ($near < 1 || $near > $maxRadius) {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cThe near value must be between 1 and {$maxRadius}!"));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe near value must be between 1 and {$maxRadius}!"));
                         return true;
                     }
                 }
@@ -162,7 +170,7 @@ final class BCPCommand extends Command
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Starting rollback on \"" . $sender->getLevel()->getFolderName() . "\"."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Starting rollback on \"{$sender->getLevel()->getFolderName()}\"."));
                         $sender->sendMessage(Utils::translateColors("&f------"));
                         $start = microtime(true);
 
@@ -173,34 +181,35 @@ final class BCPCommand extends Command
                                     $time = $parser->getTime();
                                     $radius = $parser->getRadius();
                                     $date = Carbon::createFromTimestamp(time() - (int)$time)->diffForHumans(null, null, true, 2, CarbonInterface::JUST_NOW);
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Rollback completed for \"" . $sender->getLevel()->getFolderName() . "\"."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Rolled back $date."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Radius: $radius block(s)."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Approx. $countRows block(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rollback completed for \"{$sender->getLevel()->getFolderName()}\"."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rolled back {$date}."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$countRows} block(s) changed."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
                                     $sender->sendMessage(Utils::translateColors("&f------"));
                                 } else {
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cNo data to rollback."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to rollback."));
                                 }
                             },
                             function (SqlError $error) use ($sender) { //onError
                                 $this->plugin->getLogger()->alert($error->getErrorMessage());
-                                $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cAn error occurred while restoring. Check the console."));
+                                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
                                 $sender->sendMessage(Utils::translateColors("&f------"));
                             }
                         );
                     } else {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&c{$parser->getErrorMessage()}."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
                 }
                 return true;
             case "restore":
+            case "rs":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Restore started on \"" . $sender->getLevel()->getFolderName() . "\"."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore started on \"{$sender->getLevel()->getFolderName()}\"."));
                         $sender->sendMessage(Utils::translateColors("&f------"));
                         $start = microtime(true);
 
@@ -211,27 +220,27 @@ final class BCPCommand extends Command
                                     $time = $parser->getTime();
                                     $radius = $parser->getRadius();
                                     $date = Carbon::createFromTimestamp(time() - (int)$time)->diffForHumans(null, null, true, 2, CarbonInterface::JUST_NOW);
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Restore completed for \"" . $sender->getLevel()->getFolderName() . "\"."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Restored $date."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Radius: $radius block(s)."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Approx. $countRows block(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore completed for \"{$sender->getLevel()->getFolderName()}\"."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restored {$date}."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$countRows} block(s) changed."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
                                     $sender->sendMessage(Utils::translateColors("&f------"));
                                 } else {
-                                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cNo data to restore."));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to restore."));
                                 }
                             },
                             function (SqlError $error) use ($sender) { //onError
                                 $this->plugin->getLogger()->alert($error->getErrorMessage());
-                                $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cAn error occurred while restoring. Check the console."));
+                                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
                                 $sender->sendMessage(Utils::translateColors("&f------"));
                             }
                         );
                     } else {
-                        $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&c{$parser->getErrorMessage()}."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(self::CMD_PREFIX . "&cYou must add at least one parameter.")); //TODO: Check original message
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
                 }
                 return true;
         }
