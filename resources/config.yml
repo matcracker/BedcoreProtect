@@ -1,7 +1,7 @@
 #BedcoreProtect Config
 database:
-  # The database type. "sqlite" and "mysql" are supported.
-  type: sqlite
+  # The database type. "sqlite" and "mysql" are supported. (SQLITE NOT SUPPORTED YET.)
+  type: mysql
 
   # Edit these settings only if you choose "sqlite".
   sqlite:
@@ -14,10 +14,11 @@ database:
     # Avoid using the "root" user for security reasons.
     username: root
     password: ""
+    # The database name where plugin stores data.
     schema:
   # The maximum number of simultaneous SQL queries
   # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
-  worker-limit: 1
+  worker-limit: 2
 
 # If enabled, BedcoreProtect will check for updates when your server starts up.
 # If an update is available, you'll be notified via your server console.

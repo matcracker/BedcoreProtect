@@ -37,10 +37,12 @@ use poggit\libasynql\SqlError;
 
 trait QueriesInventoriesTrait
 {
-    public function addLogInventoryByPlayer(Player $player, ContainerInventory $inventory, SlotChangeAction $slotAction): void
+    public function addLogInventoryByPlayer(Player $player, SlotChangeAction $slotAction): void
     {
         $this->addEntity($player);
 
+        /**@var ContainerInventory $inventory */
+        $inventory = $slotAction->getInventory();
         $holder = $inventory->getHolder();
         $slot = $slotAction->getSlot();
         $sourceItem = $slotAction->getSourceItem();

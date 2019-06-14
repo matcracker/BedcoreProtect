@@ -65,7 +65,6 @@ final class TrackerListener implements Listener
     /**
      * @param BlockBreakEvent $event
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
@@ -91,7 +90,6 @@ final class TrackerListener implements Listener
     /**
      * @param BlockPlaceEvent $event
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
@@ -120,6 +118,10 @@ final class TrackerListener implements Listener
         }
     }
 
+    /**
+     * @param BlockSpreadEvent $event
+     * @priority MONITOR
+     */
     public function trackBlockSpread(BlockSpreadEvent $event): void
     {
         $block = $event->getBlock();
@@ -138,7 +140,10 @@ final class TrackerListener implements Listener
         }
     }
 
-
+    /**
+     * @param BlockBurnEvent $event
+     * @priority MONITOR
+     */
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
@@ -147,6 +152,10 @@ final class TrackerListener implements Listener
         $this->database->getQueries()->addBlockLogByBlock($block, $cause, QueriesConst::BROKE);
     }
 
+    /**
+     * @param PlayerBucketEvent $event
+     * @priority MONITOR
+     */
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
         if ($this->plugin->getParsedConfig()->getBuckets()) {
@@ -179,6 +188,10 @@ final class TrackerListener implements Listener
         }
     }
 
+    /**
+     * @param BlockFormEvent $event
+     * @priority MONITOR
+     */
     public function trackBlockForm(BlockFormEvent $event): void
     {
         $block = $event->getBlock();
@@ -189,6 +202,10 @@ final class TrackerListener implements Listener
         }
     }
 
+    /**
+     * @param EntityExplodeEvent $event
+     * @priority MONITOR
+     */
     public function trackEntityExplode(EntityExplodeEvent $event): void
     {
         if ($this->plugin->getParsedConfig()->getExplosions()) {
@@ -210,7 +227,6 @@ final class TrackerListener implements Listener
     /**
      * @param PlayerInteractEvent $event
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
@@ -246,6 +262,10 @@ final class TrackerListener implements Listener
 
     }
 
+    /**
+     * @param EntityDeathEvent $event
+     * @priority MONITOR
+     */
     public function trackEntityDeath(EntityDeathEvent $event): void
     {
         if ($this->plugin->getParsedConfig()->getEntityKills()) {
@@ -258,33 +278,29 @@ final class TrackerListener implements Listener
         }
     }
 
+    /**
+     * @param InventoryTransactionEvent $event
+     * @priority MONITOR
+     */
     public function trackInventoryTransaction(InventoryTransactionEvent $event): void
     {
         if ($this->plugin->getParsedConfig()->getItemTransactions()) {
             $transaction = $event->getTransaction();
             $player = $transaction->getSource();
-            $inventories = $transaction->getInventories();
             $actions = $transaction->getActions();
 
-            foreach ($inventories as $inventory) {
-                if ($inventory instanceof ContainerInventory) {
-                    foreach ($actions as $action) {
-                        if ($action instanceof SlotChangeAction) {
-                            if ($action->getInventory() === $inventory) {
-                                $this->database->getQueries()->addLogInventoryByPlayer($player, $inventory, $action);
-                                break 2;
-                            }
-                        }
-
-                    }
+            foreach ($actions as $action) {
+                if ($action instanceof SlotChangeAction && $action->getInventory() instanceof ContainerInventory) {
+                    $this->database->getQueries()->addLogInventoryByPlayer($player, $action);
+                    break;
                 }
             }
         }
     }
 
     /**
-     * @priority LOWEST
      * @param PlayerJoinEvent $event
+     * @priority LOWEST
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {
