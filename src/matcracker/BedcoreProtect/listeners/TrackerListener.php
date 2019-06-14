@@ -46,7 +46,6 @@ use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\inventory\ContainerInventory;
-use pocketmine\inventory\transaction\action\InventoryAction;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
@@ -265,19 +264,20 @@ final class TrackerListener implements Listener
             $transaction = $event->getTransaction();
             $player = $transaction->getSource();
             $inventories = $transaction->getInventories();
-            /**@var InventoryAction[] $actions */
-            $actions = array_values($transaction->getActions());
+            $actions = $transaction->getActions();
 
-            $i = 0;
             foreach ($inventories as $inventory) {
                 if ($inventory instanceof ContainerInventory) {
-                    $action = $actions[$i];
-                    if ($action instanceof SlotChangeAction) {
-                        $this->database->getQueries()->addLogInventoryByPlayer($player, $inventory, $action);
-                        break;
+                    foreach ($actions as $action) {
+                        if ($action instanceof SlotChangeAction) {
+                            if ($action->getInventory() === $inventory) {
+                                $this->database->getQueries()->addLogInventoryByPlayer($player, $inventory, $action);
+                                break 2;
+                            }
+                        }
+
                     }
                 }
-                $i++;
             }
         }
     }

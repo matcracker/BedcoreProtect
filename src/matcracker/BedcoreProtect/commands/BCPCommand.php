@@ -113,8 +113,7 @@ final class BCPCommand extends Command
                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
                 }
                 return true;
-            case
-            "purge":
+            case "purge":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
                     if ($parser->parse()) {
