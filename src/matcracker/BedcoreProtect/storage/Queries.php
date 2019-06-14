@@ -107,7 +107,6 @@ class Queries
     {
         $query = $parser->buildLookupQuery();
         $this->connector->executeSelectRaw($query, [], function (array $rows) use ($sender) {
-            //var_dump($rows[0]);
             Inspector::cacheLogs($sender, $rows);
             Inspector::parseLogs($sender, $rows);
         });

@@ -1,4 +1,4 @@
--- #!mysql
+-- #!sqlite
 -- #{bcp
 -- #    {table
 -- #        {entities
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS "blocks"
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS "log_history"
 (
-    log_id     UNSIGNED BIG INT NOT NULL PRIMARY KEY AUTOINCREMENT,
+    log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     who        VARCHAR(36)      NOT NULL,
     x          BIGINT           NOT NULL,
     y          TINYINT UNSIGNED NOT NULL,
@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
 -- #            :name string
 -- #            :address string 127.0.0.1
 INSERT OR
-REPLACE INTO "entities" (uuid, entity_name, address)
+REPLACE
+INTO "entities" (uuid, entity_name, address)
 VALUES (:uuid, :name, :address);
 -- #        }
 -- #        {block
@@ -93,7 +94,8 @@ VALUES (:uuid, :name, :address);
 -- #            :damage int
 -- #            :name string
 INSERT OR
-REPLACE INTO "blocks" (id, damage, block_name)
+REPLACE
+INTO "blocks" (id, damage, block_name)
 VALUES (:id, :damage, :name);
 -- #        }
 -- #        {log
