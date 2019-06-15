@@ -1,7 +1,7 @@
 #BedcoreProtect Config
 database:
-  # The database type. "sqlite" and "mysql" are supported. (SQLITE NOT SUPPORTED YET.)
-  type: mysql
+  # The database type. "sqlite" and "mysql" are supported.
+  type: sqlite
 
   # Edit these settings only if you choose "sqlite".
   sqlite:

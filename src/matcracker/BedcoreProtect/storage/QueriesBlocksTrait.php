@@ -227,7 +227,7 @@ trait QueriesBlocksTrait
             function (array $rows) use ($rollback, $position, $onSuccess, $parser) {
                 if (count($rows) > 0) {
                     $query = /**@lang text */
-                        "UPDATE log_history SET \"rollback\" = '{$rollback}' WHERE ";
+                        "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
                     foreach ($rows as $row) {
                         $level = $position->getLevel();

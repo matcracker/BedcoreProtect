@@ -201,7 +201,7 @@ final class CommandParser
             } else if ($key === "time" && $value !== null) {
                 $diffTime = time() - (int)$value;
                 if ($this->configParser->isSQLite()) {
-                    $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND CURRENT_TIMESTAMP) AND ";
+                    $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
                 } else {
                     $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
                 }
@@ -293,7 +293,7 @@ final class CommandParser
             LEFT JOIN inventories_log il ON log_history.log_id = il.history_id ";
 
         if ($this->configParser->isSQLite()) {
-            $query .= "WHERE time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND CURRENT_TIMESTAMP AND ";
+            $query .= "WHERE time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime')) AND ";
         } else {
             $query .= "WHERE time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP AND ";
         }

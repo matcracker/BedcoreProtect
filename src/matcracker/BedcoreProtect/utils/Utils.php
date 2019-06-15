@@ -76,6 +76,7 @@ final class Utils
     public static function parseTime(string $strDate): ?int
     {
         if (empty($strDate)) return null;
+        $strDate = strtolower($strDate);
         $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
         if (empty($strDate)) return null;
 
