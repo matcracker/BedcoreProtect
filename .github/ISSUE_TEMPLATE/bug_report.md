@@ -18,6 +18,8 @@ assignees: ''
 2. ...
 
 ### OS and versions
+<!-- try the `/bcp status` command | LATEST IS NOT A VALID VERSION -->
+* BedcoreProtect:
 <!-- try the `version` command | LATEST IS NOT A VALID VERSION -->
 * PocketMine-MP:
 * PHP:
