@@ -197,10 +197,14 @@ final class CommandParser
 
         foreach ($this->data as $key => $value) {
             if ($key === "user" && $value !== null) {
-                $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$value') AND ";
+                $query .= "who = (SELECT uuid FROM \"entities\" WHERE entity_name = '$value') AND ";
             } else if ($key === "time" && $value !== null) {
                 $diffTime = time() - (int)$value;
-                $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
+                if ($this->configParser->isSQLite()) {
+                    $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND CURRENT_TIMESTAMP) AND ";
+                } else {
+                    $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
+                }
             } else if ($key === "radius" && $vector3 !== null && $value !== null) {
                 $minV = $vector3->subtract($value, $value, $value)->floor();
                 $maxV = $vector3->add($value, $value, $value)->floor();
@@ -278,7 +282,7 @@ final class CommandParser
             throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
-        $time = time() - $this->getTime();
+        $diffTime = time() - $this->getTime();
         $query = /**@lang text */
             "SELECT *,
             bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
@@ -286,8 +290,14 @@ final class CommandParser
             e.entity_name AS entity_from FROM log_history 
             LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
             LEFT JOIN entities e ON log_history.who = e.uuid 
-            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
-            WHERE time BETWEEN FROM_UNIXTIME({$time}) AND CURRENT_TIMESTAMP AND ";
+            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id ";
+
+        if ($this->configParser->isSQLite()) {
+            $query .= "WHERE time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND CURRENT_TIMESTAMP AND ";
+        } else {
+            $query .= "WHERE time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP AND ";
+        }
+
 
         $this->buildConditionalQuery($query, null, [
             "bl.old_block_id", "bl.old_block_damage",

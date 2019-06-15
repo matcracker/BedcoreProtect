@@ -55,6 +55,7 @@ final class Main extends PluginBase
 
         @mkdir($this->getDataFolder());
         $this->saveDefaultConfig();
+        $this->saveResource("bedcore_database.db");
 
         $validation = $this->getParsedConfig()->validateConfig();
         if (!$validation->isValid()) {

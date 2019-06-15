@@ -101,7 +101,7 @@ trait QueriesInventoriesTrait
                 if (count($rows) > 0) {
                     $level = $position->getLevel();
                     $query = /**@lang text */
-                        "INSERT INTO log_history(log_id) VALUES";
+                        "UPDATE log_history SET \"rollback\" = '{$rollback}' WHERE ";
 
                     foreach ($rows as $row) {
                         $logId = (int)$row["log_id"];
@@ -116,9 +116,9 @@ trait QueriesInventoriesTrait
                             $inv->setItem($slot, $item);
                         }
 
-                        $query .= "('$logId'),";
+                        $query .= "log_id = '$logId' OR ";
                     }
-                    $query = rtrim($query, ",") . " ON DUPLICATE KEY UPDATE rollback = '$rollback';";
+                    $query = rtrim($query, " OR ") . ";";
                     $this->connector->executeInsertRaw($query);
                 }
 

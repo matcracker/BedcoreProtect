@@ -155,7 +155,7 @@ trait QueriesBlocksTrait
     private function buildMultipleBlocksQuery(array $blocks): string
     {
         $query = /**@lang text */
-            "INSERT INTO blocks (id, damage, block_name) VALUES";
+            "REPLACE INTO blocks (id, damage, block_name) VALUES";
 
         $filtered = array_unique(array_map(function (Block $element) {
             return $element->getId() . ":" . $element->getDamage() . ":" . $element->getName();
@@ -168,7 +168,7 @@ trait QueriesBlocksTrait
             $name = (string)$blockData[2];
             $query .= "('$id', '$damage', '$name'),";
         }
-        $query = rtrim($query, ",") . " ON DUPLICATE KEY UPDATE id=VALUES(id), damage=VALUES(damage);";
+        $query = rtrim($query, ",") . ";";//" ON DUPLICATE KEY UPDATE id=VALUES(id), damage=VALUES(damage);";
         return $query;
     }
 
@@ -227,7 +227,7 @@ trait QueriesBlocksTrait
             function (array $rows) use ($rollback, $position, $onSuccess, $parser) {
                 if (count($rows) > 0) {
                     $query = /**@lang text */
-                        "INSERT INTO log_history(log_id) VALUES";
+                        "UPDATE log_history SET \"rollback\" = '{$rollback}' WHERE ";
 
                     foreach ($rows as $row) {
                         $level = $position->getLevel();
@@ -253,10 +253,10 @@ trait QueriesBlocksTrait
                             }
                         }
 
-                        $query .= "('$logId'),";
+                        $query .= "log_id = '$logId' OR ";
                     }
 
-                    $query = rtrim($query, ",") . " ON DUPLICATE KEY UPDATE rollback = '$rollback';";
+                    $query = rtrim($query, " OR ") . ";";
                     $this->connector->executeInsertRaw($query);
                 }
 

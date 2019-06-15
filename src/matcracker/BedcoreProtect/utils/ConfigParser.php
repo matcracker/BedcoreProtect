@@ -40,6 +40,16 @@ final class ConfigParser
         $this->data = $main->getConfig()->getAll();
     }
 
+    public function isSQLite(): bool
+    {
+        return $this->getDatabaseType() === "sqlite";
+    }
+
+    public function getDatabaseType(): string
+    {
+        return (string)$this->data['database']['type'];
+    }
+
     public function getBlockPlace(): bool
     {
         return (bool)$this->data['block-place'];
