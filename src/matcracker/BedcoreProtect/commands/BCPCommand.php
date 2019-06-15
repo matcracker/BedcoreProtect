@@ -99,12 +99,12 @@ final class BCPCommand extends Command
                                     $lines = (int)$split[1];
                                 }
 
-                                if ($ctype) {
+                                if (!$ctype) {
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cWrong page/line value inserted!"));
                                     return true;
                                 }
                             }
-                            Inspector::parseLogs($sender, $logs, $page, $lines);
+                            Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
                         } else {
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
                         }
