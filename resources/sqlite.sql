@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS "log_history"
     z          BIGINT           NOT NULL,
     world_name VARCHAR(255)     NOT NULL,
     action     TINYINT UNSIGNED NOT NULL,
-    time       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "rollback" BOOLEAN   DEFAULT FALSE,
+    time       TIMESTAMP  DEFAULT (datetime('now', 'localtime')),
+    "rollback" TINYINT(1) DEFAULT 0,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
 -- #        }
@@ -289,6 +289,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < DATETIME(time, FROM_UNIXTIME(UNIX_TIMESTAMP() - :time);
+WHERE time < DATETIME(((SELECT strftime('%s', 'now')) - :time), 'unixepoch', 'localtime');
 -- #    }
 -- #}
