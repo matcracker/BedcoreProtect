@@ -57,7 +57,7 @@ final class BCPCommand extends Command
 
         $subCmd = strtolower($args[0]);
         if (!$sender->hasPermission("bcp.command.bedcoreprotect") || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . "&cYou don't have permission to run this command.");
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou don't have permission to run this command."));
             return true;
         }
 

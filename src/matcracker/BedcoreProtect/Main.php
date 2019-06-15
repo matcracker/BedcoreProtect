@@ -33,7 +33,6 @@ final class Main extends PluginBase
     public const PLUGIN_NAME = "BedcoreProtect";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-
     /**@var Database */
     private $database;
 
