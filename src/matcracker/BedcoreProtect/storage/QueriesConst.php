@@ -46,6 +46,8 @@ final class QueriesConst
         self::INIT_ENTITIES_LOG, self::INIT_SIGNS_LOG,
         self::INIT_INVENTORIES_LOG
     ];
+    public const BEGIN_TRANSACTION = "bcp.transaction.begin";
+    public const END_TRANSACTION = "bcp.transaction.end";
     public const ADD_ENTITY = "bcp.add.entity";
     public const ADD_BLOCK = "bcp.add.block";
     public const ADD_HISTORY_LOG = "bcp.add.log.main";

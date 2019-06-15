@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\listeners\TrackerListener;
+use matcracker\BedcoreProtect\matcracker\BedcoreProtect\listeners\PluginListener;
 use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
@@ -79,6 +80,7 @@ final class Main extends PluginBase
         $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
         $this->getServer()->getPluginManager()->registerEvents(new TrackerListener($this), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new PluginListener($this), $this);
     }
 
     public function getParsedConfig(): ConfigParser
@@ -100,6 +102,7 @@ final class Main extends PluginBase
     public function onDisable(): void
     {
         if (($this->database !== null)) {
+            $this->database->getQueries()->endTransaction();
             $this->database->close();
         }
         Inspector::clearCache();

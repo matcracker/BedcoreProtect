@@ -43,8 +43,6 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\level\Position;
@@ -296,23 +294,5 @@ final class TrackerListener implements Listener
                 }
             }
         }
-    }
-
-    /**
-     * @param PlayerJoinEvent $event
-     * @priority LOWEST
-     */
-    public function onPlayerJoin(PlayerJoinEvent $event): void
-    {
-        $this->database->getQueries()->addEntity($event->getPlayer());
-    }
-
-    /**
-     * @param PlayerQuitEvent $event
-     * @priority LOWEST
-     */
-    public function onPlayerQuit(PlayerQuitEvent $event): void
-    {
-        Inspector::removeInspector($event->getPlayer());
     }
 }

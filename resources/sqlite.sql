@@ -79,6 +79,14 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
 );
 -- #        }
 -- #    }
+-- #    {transaction
+-- #        {begin
+BEGIN TRANSACTION;
+-- #        }
+-- #        {end
+END TRANSACTION;
+-- #        }
+-- #    }
 -- #    {add
 -- #        {entity
 -- #            :uuid string

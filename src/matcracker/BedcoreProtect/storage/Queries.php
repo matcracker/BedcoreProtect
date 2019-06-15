@@ -57,6 +57,10 @@ class Queries
         $this->connector->waitAll();
         $this->addDefaultEntities();
         $this->addDefaultBlocks();
+
+        if ($this->configParser->isSQLite()) {
+            $this->beginTransaction();
+        }
     }
 
     private function addDefaultEntities(): void
@@ -71,6 +75,16 @@ class Queries
     private function addDefaultBlocks(): void
     {
         $this->addBlock(BlockUtils::createAir());
+    }
+
+    /**
+     * Can be used only with SQLite
+     */
+    public final function beginTransaction(): void
+    {
+        if ($this->configParser->isSQLite()) {
+            $this->connector->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+        }
     }
 
     public function requestNearLog(Player $inspector, Position $position, int $near): void
@@ -139,6 +153,16 @@ class Queries
         $this->connector->executeChange(QueriesConst::PURGE, [
             "time" => $time
         ], $onSuccess);
+    }
+
+    /**
+     * Can be used only with SQLite
+     */
+    public final function endTransaction(): void
+    {
+        if ($this->configParser->isSQLite()) {
+            $this->connector->executeGeneric(QueriesConst::END_TRANSACTION);
+        }
     }
 
     private function addRawLog(string $uuid, Position $position, int $action): void
