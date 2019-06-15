@@ -71,15 +71,15 @@ final class Utils
      * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
      *
      * @param string $strDate the date to parse.
-     * @return int how many seconds are in the string.
+     * @return int|null how many seconds are in the string. Return null if string can't be parsed.
      */
-    public static function parseTime(string $strDate): int
+    public static function parseTime(string $strDate): ?int
     {
-        if (empty($strDate)) return 0;
+        if (empty($strDate)) return null;
         $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
-        if (empty($strDate)) return 0;
+        if (empty($strDate)) return null;
 
-        $time = 0;
+        $time = null;
         $matches = [];
         preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
 
