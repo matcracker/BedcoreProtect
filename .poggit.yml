@@ -1,3 +1,4 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/matcracker/BedcoreProtect
 branches:
   - master
   - stable
