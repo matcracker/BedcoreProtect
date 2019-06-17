@@ -6,11 +6,9 @@ projects:
   BedcoreProtect:
     includeDirs:
       vendor: vendor
-    type: library
-    model: virion
     path: ""
     icon: resources/bedcoreprotect_logo.png
-    stub: "stub.php"
+    stub: "composer.php"
     libs:
       - src: poggit/libasynql/libasynql
         version: ^3.0
