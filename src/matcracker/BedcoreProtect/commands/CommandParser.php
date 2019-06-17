@@ -137,7 +137,7 @@ final class CommandParser
 
                         $this->data[$index][] = [
                             "id" => $block->getId(),
-                            "damage" => $block->getDamage()
+                            "damage" => $block->getMeta()
                         ];
                     }
                     break;

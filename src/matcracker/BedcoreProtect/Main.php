@@ -44,13 +44,6 @@ final class Main extends PluginBase
             $this->getServer()->getPluginManager()->disablePlugin($this);
         }
 
-        if (!$this->isPhar()) {
-            $this->getLogger()->warning("/-------------------------------<!WARNING!>--------------------------------\\");
-            $this->getLogger()->warning("|         It is not recommended to run BedcoreProtect from source.         |");
-            $this->getLogger()->warning("|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|");
-            $this->getLogger()->warning("\--------------------------------------------------------------------------/");
-        }
-
         include_once($this->getFile() . "/vendor/autoload.php");
 
         @mkdir($this->getDataFolder());
