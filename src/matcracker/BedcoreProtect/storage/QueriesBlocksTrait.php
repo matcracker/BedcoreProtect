@@ -26,14 +26,11 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
-use pocketmine\block\SignPost;
-use pocketmine\block\WallSign;
+use pocketmine\block\Sign;
 use pocketmine\entity\Entity;
-use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
-use pocketmine\tile\Sign;
-use pocketmine\tile\Tile;
+use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
 
 /**
@@ -70,9 +67,9 @@ trait QueriesBlocksTrait
         $this->addRawLog($uuid, $pos, $action);
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
             "old_id" => $oldBlock->getId(),
-            "old_damage" => $oldBlock->getDamage(),
+            "old_damage" => $oldBlock->getMeta(),
             "new_id" => $newBlock->getId(),
-            "new_damage" => $newBlock->getDamage()
+            "new_damage" => $newBlock->getMeta()
         ]);
     }
 
@@ -84,7 +81,7 @@ trait QueriesBlocksTrait
     {
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK, [
             "id" => $block->getId(),
-            "damage" => $block->getDamage(),
+            "damage" => $block->getMeta(),
             "name" => $block->getName()
         ]);
     }
@@ -111,9 +108,8 @@ trait QueriesBlocksTrait
     public function addSignLogByPlayer(Player $player, Sign $sign): void
     {
         $air = BlockUtils::createAir($sign->asPosition());
-        $signBlock = $sign->getBlock();
 
-        $this->addRawBlockLog($player->getUniqueId()->toString(), $signBlock, $air, QueriesConst::BROKE);
+        $this->addRawBlockLog($player->getUniqueId()->toString(), $sign, $air, QueriesConst::BROKE);
         $this->connector->executeInsert(QueriesConst::ADD_SIGN_LOG, [
             "lines" => json_encode($sign->getText())
         ]);
@@ -158,7 +154,7 @@ trait QueriesBlocksTrait
             "REPLACE INTO blocks (id, damage, block_name) VALUES";
 
         $filtered = array_unique(array_map(function (Block $element) {
-            return $element->getId() . ":" . $element->getDamage() . ":" . $element->getName();
+            return $element->getId() . ":" . $element->getMeta() . ":" . $element->getName();
         }, $blocks));
 
         foreach ($filtered as $value) {
@@ -186,7 +182,7 @@ trait QueriesBlocksTrait
 
         if (!is_array($newBlocks) && $newBlocks instanceof Block) {
             $newId = $newBlocks->getId();
-            $newDamage = $newBlocks->getDamage();
+            $newDamage = $newBlocks->getMeta();
 
             foreach ($oldBlocks as $oldBlock) {
                 $logId++;
@@ -230,23 +226,21 @@ trait QueriesBlocksTrait
                         "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
                     foreach ($rows as $row) {
-                        $level = $position->getLevel();
+                        $level = $position->getWorld();
                         $logId = (int)$row["log_id"];
                         $prefix = $rollback ? "old" : "new";
                         $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_damage"]);
                         $vector = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-                        $level->setBlock($vector, $block, false, true);
+                        $level->setBlock($vector, $block);
 
-                        if ($block instanceof SignPost) {
-                            $face = $block instanceof WallSign ? $block->getDamage() : Vector3::SIDE_UP;
-                            /**@var Sign $sign */
-                            $sign = Tile::createTile(Tile::SIGN, $level, Sign::createNBT($vector, $face));
+                        if ($block instanceof Sign) {
+                            //$face = $block instanceof WallSign ? $block->getDamage() : Vector3::SIDE_UP;
                             if ($this->configParser->getSignText()) {
                                 $this->connector->executeSelect(QueriesConst::GET_SIGN_LOG, ["id" => $logId],
-                                    function (array $rows) use ($sign) {
+                                    function (array $rows) use ($block) {
                                         if (count($rows) === 1) {
                                             $texts = (array)json_decode($rows[0]["text_lines"], true);
-                                            $sign->setText($texts[0], $texts[1], $texts[2], $texts[3]);
+                                            $block->getText()->setLines($texts);
                                         }
                                     }
                                 );

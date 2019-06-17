@@ -26,8 +26,9 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\QueriesConst;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
+use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Liquid;
+use pocketmine\block\Sign;
 use pocketmine\entity\object\PrimedTNT;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
@@ -45,9 +46,8 @@ use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
-use pocketmine\level\Position;
-use pocketmine\math\Vector3;
-use pocketmine\tile\Sign;
+use pocketmine\math\Facing;
+use pocketmine\world\Position;
 
 final class TrackerListener implements Listener
 {
@@ -74,7 +74,7 @@ final class TrackerListener implements Listener
                 $this->database->getQueries()->requestBlockLog($player, $block);
                 $event->setCancelled();
             } else {
-                $tile = $block->getLevel()->getTile($block);
+                $tile = $block->getWorld()->getTile($block);
                 if ($tile instanceof Sign) {
                     $this->database->getQueries()->addSignLogByPlayer($player, $tile);
                 } else {
@@ -161,11 +161,11 @@ final class TrackerListener implements Listener
             $block = $event->getBlockClicked();
             $fireEmpty = ($event instanceof PlayerBucketEmptyEvent);
 
-            $bucketDamage = $fireEmpty ? $event->getBucket()->getDamage() : $event->getItem()->getDamage();
+            $bucketDamage = $fireEmpty ? $event->getBucket()->getMeta() : $event->getItem()->getMeta();
 
-            $liquidId = BlockIds::FLOWING_WATER;
+            $liquidId = BlockLegacyIds::FLOWING_WATER;
             if ($bucketDamage === 10) {
-                $liquidId = BlockIds::FLOWING_LAVA;
+                $liquidId = BlockLegacyIds::FLOWING_LAVA;
             }
 
             $liquid = BlockFactory::get($liquidId, 0, $block->asPosition());
@@ -175,10 +175,10 @@ final class TrackerListener implements Listener
             } else {
                 $liquidPos = null;
                 $face = $event->getBlockFace();
-                if ($face === Vector3::SIDE_DOWN) {
-                    $liquidPos = Position::fromObject($liquid->add(0, 1, 0), $liquid->getLevel());
-                } else if ($face === Vector3::SIDE_UP) {
-                    $liquidPos = Position::fromObject($liquid->subtract(0, 1, 0), $liquid->getLevel());
+                if ($face === Facing::DOWN) {
+                    $liquidPos = Position::fromObject($liquid->add(0, 1, 0), $liquid->getWorld());
+                } else if ($face === Facing::UP) {
+                    $liquidPos = Position::fromObject($liquid->subtract(0, 1, 0), $liquid->getWorld());
                 }
 
                 $this->database->getQueries()->addBlockLogByEntity($player, $liquid, $block, QueriesConst::BROKE, $liquidPos);

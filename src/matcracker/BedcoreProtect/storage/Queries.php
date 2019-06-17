@@ -27,9 +27,9 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
+use pocketmine\world\Position;
 use poggit\libasynql\DataConnector;
 
 class Queries
@@ -110,7 +110,7 @@ class Queries
             "max_y" => $maxV->getY(),
             "min_z" => $minV->getZ(),
             "max_z" => $maxV->getZ(),
-            "world_name" => $position->getLevel()->getFolderName()
+            "world_name" => $position->getWorld()->getFolderName()
         ], function (array $rows) use ($inspector) {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -172,7 +172,7 @@ class Queries
             "x" => (int)$position->getX(),
             "y" => (int)$position->getY(),
             "z" => (int)$position->getZ(),
-            "world_name" => $position->getLevel()->getFolderName(),
+            "world_name" => $position->getWorld()->getFolderName(),
             "action" => $action
         ]);
     }

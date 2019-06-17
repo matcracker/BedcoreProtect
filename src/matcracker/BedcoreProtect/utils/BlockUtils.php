@@ -24,12 +24,12 @@ namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
+use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Door;
 use pocketmine\block\Liquid;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 
-final class BlockUtils implements BlockIds
+final class BlockUtils implements BlockLegacyIds
 {
     private function __construct()
     {
@@ -44,9 +44,9 @@ final class BlockUtils implements BlockIds
     {
         //It supports only PMMP blocks.
         $ids = [
-            BlockIds::TRAPDOOR, BlockIds::BED_BLOCK,
-            BlockIds::ITEM_FRAME_BLOCK, BlockIds::WOODEN_BUTTON,
-            BlockIds::STONE_BUTTON
+            self::TRAPDOOR, self::BED_BLOCK,
+            self::ITEM_FRAME_BLOCK, self::WOODEN_BUTTON,
+            self::STONE_BUTTON
         ];
         return (
             $block instanceof Door || in_array($block->getId(), $ids) || self::hasInventory($block)
@@ -57,15 +57,15 @@ final class BlockUtils implements BlockIds
     {
         //It supports only PMMP blocks.
         $ids = [
-            BlockIds::ENDER_CHEST, BlockIds::CHEST,
-            BlockIds::FURNACE, BlockIds::DISPENSER,
-            BlockIds::ENCHANTING_TABLE, BlockIds::ANVIL
+            self::ENDER_CHEST, self::CHEST,
+            self::FURNACE, self::DISPENSER,
+            self::ENCHANTING_TABLE, self::ANVIL
         ];
         return in_array($block->getId(), $ids);
     }
 
     public static function isStillLiquid(Liquid $liquid): bool
     {
-        return $liquid->getId() === BlockIds::STILL_WATER || $liquid->getId() === BlockIds::STILL_LAVA;
+        return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
     }
 }

@@ -23,10 +23,10 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use pocketmine\event\level\LevelSaveEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\event\world\WorldSaveEvent;
 
 final class PluginListener implements Listener
 {
@@ -40,10 +40,10 @@ final class PluginListener implements Listener
     }
 
     /**
-     * @param LevelSaveEvent $event
+     * @param WorldSaveEvent $event
      * @priority HIGH
      */
-    public function onLevelSave(LevelSaveEvent $event): void
+    public function onLevelSave(WorldSaveEvent $event): void
     {
         $this->database->getQueries()->endTransaction();
         $this->database->getQueries()->beginTransaction();
