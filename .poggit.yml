@@ -1,3 +1,4 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/matcracker/BedcoreProtect
 branches:
   - master
   - stable
@@ -7,8 +8,8 @@ projects:
       vendor: vendor
     path: ""
     icon: resources/bedcoreprotect_logo.png
-    stub: "stub.php"
+    stub: "composer.php"
     libs:
       - src: poggit/libasynql/libasynql
-        version: ^3.3.0
+        version: ^3.0
 ...

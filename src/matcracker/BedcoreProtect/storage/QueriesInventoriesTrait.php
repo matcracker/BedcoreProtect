@@ -30,11 +30,10 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
+use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
-use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
-use ReflectionClass;
 
 trait QueriesInventoriesTrait
 {
@@ -49,7 +48,7 @@ trait QueriesInventoriesTrait
         $sourceItem = $slotAction->getSourceItem();
         $targetItem = $slotAction->getTargetItem();
 
-        $position = Position::fromObject($holder, $player->getWorld());
+        $position = Position::fromObject($holder, $player->getLevel());
 
         if ($sourceItem->getId() === $targetItem->getId()) { //TODO: CHECK POSITION OF DOUBLE CHEST
             $sourceCount = $sourceItem->getCount();
@@ -77,15 +76,14 @@ trait QueriesInventoriesTrait
 
     private function addLogInventory(Inventory $inventory, int $slot, Item $oldItem, Item $newItem): void
     {
-        $r = new ReflectionClass($inventory);
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
-            "inventory_name" => $r->getShortName(),
+            "inventory_name" => $inventory->getName(),
             "slot" => $slot,
             "old_item_id" => $oldItem->getId(),
-            "old_item_damage" => $oldItem->getMeta(),
+            "old_item_damage" => $oldItem->getDamage(),
             "old_amount" => $oldItem->getCount(),
             "new_item_id" => $newItem->getId(),
-            "new_item_damage" => $newItem->getMeta(),
+            "new_item_damage" => $newItem->getDamage(),
             "new_amount" => $newItem->getCount()
         ]);
     }
@@ -101,7 +99,7 @@ trait QueriesInventoriesTrait
         $this->connector->executeSelectRaw($query, [],
             function (array $rows) use ($rollback, $position, $onSuccess, $parser) {
                 if (count($rows) > 0) {
-                    $level = $position->getWorld();
+                    $level = $position->getLevel();
                     $query = /**@lang text */
                         "UPDATE log_history SET \"rollback\" = '{$rollback}' WHERE ";
 

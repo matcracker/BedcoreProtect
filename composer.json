@@ -5,7 +5,8 @@
   "license": "LGPL-3.0",
   "authors": [
     {
-      "name": "matcracker"
+      "name": "matcracker",
+      "email": "matcracker98@gmail.com"
     }
   ],
   "require": {
