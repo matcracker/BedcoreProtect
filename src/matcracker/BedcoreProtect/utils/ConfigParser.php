@@ -110,12 +110,12 @@ final class ConfigParser
     {
         $v = new Validator();
 
-        $v->required('database.type')->string()->callback(function (string $value) {
+        $v->required('database.type')->string()->callback(function (string $value): bool {
             return $value === 'sqlite' || $value === 'mysql';
         });
         $v->required('database.sqlite.file')->string();
         //TODO: Check if mysql
-        $v->required('database.mysql.host')->string()->callback(function (string $value) {
+        $v->required('database.mysql.host')->string()->callback(function (string $value): bool {
             return filter_var($value, FILTER_VALIDATE_IP) !== false;
         });
         $v->required('database.mysql.username')->string();
@@ -125,7 +125,7 @@ final class ConfigParser
         $v->required('check-updates')->bool();
         $v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
         $v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
-        $v->required('timezone')->string()->callback(function (string $value) {
+        $v->required('timezone')->string()->callback(function (string $value): bool {
             return in_array($value, array_values(DateTimeZone::listIdentifiers()));
         });
 

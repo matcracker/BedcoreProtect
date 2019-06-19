@@ -150,6 +150,6 @@ final class Utils
     public static function getEntityName(Entity $entity): string
     {
         $reflect = new ReflectionClass($entity);
-        return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()})");
+        return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()}");
     }
 }

@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\commands;
 
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\matcracker\BedcoreProtect\commands\BCPHelpCommand;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;

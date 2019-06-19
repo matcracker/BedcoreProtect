@@ -46,6 +46,7 @@ use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
+use pocketmine\item\ItemIds;
 use pocketmine\math\Facing;
 use pocketmine\world\Position;
 
@@ -230,34 +231,39 @@ final class TrackerListener implements Listener
     {
 
         $player = $event->getPlayer();
-        $block = $event->getBlock();
+        $clickedBlock = $event->getBlock();
         $item = $event->getItem();
         $action = $event->getAction();
         $face = $event->getFace();
 
-        /*if ($item->getId() === ItemIds::FLINT_AND_STEEL && $action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) { //TODO: wait API 4.0.0
-            $firePos = $block->getSide(Vector3::getOppositeSide($face)); //TODO: IF FACE IS SIDE UP POS->ADD Y+1 ELSE SIDE DOWN SUB Y-1
-            $air = BlockFactory::get(BlockIds::AIR, 0, $firePos);
-            $fire = BlockFactory::get(BlockIds::FIRE, 0, $firePos);
-            var_dump($firePos->asVector3());
-            $this->database->getQueries()->logPlayer($player, $air, $fire, Queries::PLACED);
+        if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+            if (!$event->isCancelled()) {
+                $relativeBlock = $clickedBlock->getSide($face);
+                if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE) {
+                    $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::createAir($relativeBlock), QueriesConst::BROKE);
 
-        }*/
-        if ($this->plugin->getParsedConfig()->getPlayerInteractions()) {
-            if (BlockUtils::isActivable($block)) {
-                if (Inspector::isInspector($player)) {
-                    if (BlockUtils::hasInventory($block)) {
-                        $this->database->getQueries()->requestTransactionLog($player, $block);
-                    } else {
-                        $this->database->getQueries()->requestBlockLog($player, $block);
-                    }
-                    $event->setCancelled();
+                }
+            }
+        } else if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+            if (Inspector::isInspector($player)) {
+                if (BlockUtils::hasInventory($clickedBlock)) {
+                    $this->database->getQueries()->requestTransactionLog($player, $clickedBlock);
                 } else {
-                    $this->database->getQueries()->addBlockLogByEntity($player, $block, $block, QueriesConst::CLICKED);
+                    $this->database->getQueries()->requestBlockLog($player, $clickedBlock);
+                }
+                $event->setCancelled();
+                return;
+            }
+
+            if (!$event->isCancelled()) {
+                if ($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL) {
+                    $fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
+                    $this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::createAir($fire->asPosition()), $fire, QueriesConst::PLACED);
+                } else if ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)) {
+                    $this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, QueriesConst::CLICKED);
                 }
             }
         }
-
     }
 
     /**
