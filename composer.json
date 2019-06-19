@@ -10,12 +10,9 @@
   ],
   "require": {
     "php": ">=7.2.0",
-    "particle/validator": "^2.3",
-    "nesbot/carbon": "^2.18",
     "ext-ctype": "*",
     "ext-json": "*",
-    "ext-curl": "*",
-    "time-unit-php/time-unit-php": "dev-master"
+    "ext-curl": "*"
   },
   "autoload": {
     "psr-4": {

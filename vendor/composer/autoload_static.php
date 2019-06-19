@@ -6,28 +6,10 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitd51c964c54cf68b0369edc8168efba78
 {
-    public static $files = array (
-        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-    );
-
     public static $prefixLengthsPsr4 = array (
         'm' => 
         array (
             'matcracker\\BedcoreProtect\\' => 26,
-        ),
-        'S' => 
-        array (
-            'Symfony\\Polyfill\\Mbstring\\' => 26,
-            'Symfony\\Contracts\\Translation\\' => 30,
-            'Symfony\\Component\\Translation\\' => 30,
-        ),
-        'P' => 
-        array (
-            'Particle\\Validator\\' => 19,
-        ),
-        'C' => 
-        array (
-            'Carbon\\' => 7,
         ),
     );
 
@@ -36,40 +18,6 @@ class ComposerStaticInitd51c964c54cf68b0369edc8168efba78
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
-        'Symfony\\Polyfill\\Mbstring\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
-        ),
-        'Symfony\\Contracts\\Translation\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/translation-contracts',
-        ),
-        'Symfony\\Component\\Translation\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/translation',
-        ),
-        'Particle\\Validator\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/particle/validator/src',
-        ),
-        'Carbon\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon',
-        ),
-    );
-
-    public static $prefixesPsr0 = array (
-        'T' => 
-        array (
-            'Time\\Unit\\Tests' => 
-            array (
-                0 => __DIR__ . '/..' . '/time-unit-php/time-unit-php/tests',
-            ),
-            'Time\\Unit\\' => 
-            array (
-                0 => __DIR__ . '/..' . '/time-unit-php/time-unit-php/src',
-            ),
-        ),
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -77,7 +25,6 @@ class ComposerStaticInitd51c964c54cf68b0369edc8168efba78
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }

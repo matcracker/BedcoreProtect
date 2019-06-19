@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
+use DateTimeZone;
 use matcracker\BedcoreProtect\Main;
 use Particle\Validator\ValidationResult;
 use Particle\Validator\Validator;
@@ -42,12 +43,17 @@ final class ConfigParser
 
     public function isSQLite(): bool
     {
-        return $this->getDatabaseType() === "sqlite";
+        return $this->getDatabaseType() === 'sqlite';
     }
 
     public function getDatabaseType(): string
     {
         return (string)$this->data['database']['type'];
+    }
+
+    public function getTimezone(): string
+    {
+        return (string)$this->data['timezone'];
     }
 
     public function getBlockPlace(): bool
@@ -119,8 +125,11 @@ final class ConfigParser
         $v->required('check-updates')->bool();
         $v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
         $v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
+        $v->required('timezone')->string()->callback(function (string $value) {
+            return in_array($value, array_values(DateTimeZone::listIdentifiers()));
+        });
 
-        foreach (array_slice(array_keys($this->data), 4) as $key) {
+        foreach (array_slice(array_keys($this->data), 5) as $key) {
             $v->required($key)->bool();
         }
 

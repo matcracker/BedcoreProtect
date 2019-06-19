@@ -10,6 +10,6 @@ projects:
     stub: "stub.php"
     libs:
       - src: poggit/libasynql/libasynql
-        version: ^3.2
+        version: ^3.3.0
         branch: "4.0"
 ...

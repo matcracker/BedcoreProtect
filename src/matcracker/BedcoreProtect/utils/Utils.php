@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
+use DateTime;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\storage\QueriesConst;
 use pocketmine\entity\Entity;
@@ -29,10 +30,6 @@ use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 use ReflectionClass;
 use ReflectionException;
-use Time\Unit\TimeUnitDay;
-use Time\Unit\TimeUnitHour;
-use Time\Unit\TimeUnitMinute;
-use Time\Unit\TimeUnitSecond;
 
 final class Utils
 {
@@ -90,23 +87,50 @@ final class Utils
 
             switch ($dateType) {
                 case "w":
-                    $time += TimeUnitDay::toSeconds($value * 7);
+                    $time += $value * 7 * 24 * 60 * 60;
                     break;
                 case "d":
-                    $time += TimeUnitDay::toSeconds($value);
+                    $time += $value * 24 * 60 * 60;
                     break;
                 case "h":
-                    $time += TimeUnitHour::toSeconds($value);
+                    $time += $value * 60 * 60;
                     break;
                 case "m":
-                    $time += TimeUnitMinute::toSeconds($value);
+                    $time += $value * 60;
                     break;
                 case "s":
-                    $time += TimeUnitSecond::toSeconds($value);
+                    $time += $value;
                     break;
             }
         }
         return $time;
+    }
+
+    public static function timeAgo(int $timestamp, int $level = 6): string
+    {
+        $date = new DateTime();
+        $date->setTimestamp($timestamp);
+        $date = $date->diff(new DateTime());
+        // build array
+        $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
+        // remove empty date values
+        $since = array_filter($since);
+        // output only the first x date values
+        $since = array_slice($since, 0, $level);
+        // build string
+        $last_key = key(array_slice($since, -1, 1, true));
+        $string = '';
+        foreach ($since as $key => $val) {
+            // separator
+            if ($string) {
+                $string .= $key != $last_key ? ', ' : ' and ';
+            }
+            // set plural
+            $key .= $val > 1 ? 's' : '';
+            // add date value
+            $string .= $val . ' ' . $key;
+        }
+        return $string . ' ago';
     }
 
     /**

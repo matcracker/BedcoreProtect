@@ -37,7 +37,18 @@ final class Main extends PluginBase
     /**@var Database */
     private $database;
 
-    public function onEnable(): void
+    /**
+     * @return Database
+     */
+    public function getDatabase(): Database
+    {
+        if ($this->database === null) {
+            throw new UnexpectedValueException("Database connection it's not established!");
+        }
+        return $this->database;
+    }
+
+    protected function onEnable(): void
     {
         if (!extension_loaded("curl")) {
             $this->getLogger()->error("Extension 'curl' is missing. Enable it on php.ini file.");
@@ -60,13 +71,17 @@ final class Main extends PluginBase
             return;
         }
 
+        date_default_timezone_set($this->getParsedConfig()->getTimezone());
+        $this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
         $this->database = new Database($this);
 
+        $this->getLogger()->info("Establishing database connection using {$this->getParsedConfig()->getDatabaseType()}...");
         if (!$this->database->isConnected()) {
             $this->getLogger()->alert("Could not connect to the database.");
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
         }
+        $this->getLogger()->info("Connection established.");
 
         $this->database->getQueries()->init();
 
@@ -81,18 +96,7 @@ final class Main extends PluginBase
         return new ConfigParser($this);
     }
 
-    /**
-     * @return Database
-     */
-    public function getDatabase(): Database
-    {
-        if ($this->database === null) {
-            throw new UnexpectedValueException("Database connection it's not established!");
-        }
-        return $this->database;
-    }
-
-    public function onDisable(): void
+    protected function onDisable(): void
     {
         if (($this->database !== null)) {
             $this->database->getQueries()->endTransaction();

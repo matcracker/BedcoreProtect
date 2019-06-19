@@ -6,6 +6,4 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Time\\Unit\\Tests' => array($vendorDir . '/time-unit-php/time-unit-php/tests'),
-    'Time\\Unit\\' => array($vendorDir . '/time-unit-php/time-unit-php/src'),
 );

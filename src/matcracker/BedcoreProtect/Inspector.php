@@ -21,8 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
 use matcracker\BedcoreProtect\storage\QueriesConst;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
@@ -153,7 +151,7 @@ final class Inspector
 
             $actionName = Utils::getActionName($action); //Convert action to string
             $time = $log['time'];
-            $timeStamp = Carbon::createFromTimestamp(is_int($time) ? $time : strtotime($time));
+            $timeStamp = (is_int($time) ? (int)$time : strtotime($time));
 
             $midMessage = "";
 
@@ -178,7 +176,7 @@ final class Inspector
             }
 
             $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . //TODO: Add strikethrough (&m) when MC fix it.
-                $timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW) .
+                /*$timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW)*/ Utils::timeAgo($timeStamp) .
                 "&f - &3{$entityFromName} &f{$actionName} &3{$midMessage} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
         $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
