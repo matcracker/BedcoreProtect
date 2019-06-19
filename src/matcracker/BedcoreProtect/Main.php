@@ -32,6 +32,7 @@ use UnexpectedValueException;
 final class Main extends PluginBase
 {
     public const PLUGIN_NAME = "BedcoreProtect";
+    public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
     /**@var Database */

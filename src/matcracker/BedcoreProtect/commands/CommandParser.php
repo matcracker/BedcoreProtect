@@ -97,7 +97,7 @@ final class CommandParser
             }
 
             switch ($param) {
-                case "user":
+                case "user": //TODO: Add support for more players.
                 case "u":
                     $offlinePlayer = Server::getInstance()->getOfflinePlayer($paramValues);
                     if (!$offlinePlayer->hasPlayedBefore()) return false;

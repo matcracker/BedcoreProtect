@@ -29,7 +29,6 @@ use pocketmine\entity\Human;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 use ReflectionClass;
-use ReflectionException;
 
 final class Utils
 {
@@ -38,7 +37,7 @@ final class Utils
     {
     }
 
-    /*
+    /**
      * It returns the action's name from
      * @param int $action
      * @return string
@@ -50,11 +49,11 @@ final class Utils
             return is_int($element);
         }));
 
-        if (array_key_exists($action, $map)) {
-            return strtolower($map[$action]);
-        } else {
+        if (!array_key_exists($action, $map)) {
             throw new InvalidArgumentException('This action does not exist.');
         }
+
+        return strtolower($map[$action]);
     }
 
     public static function translateColors(string $message): string
@@ -147,15 +146,10 @@ final class Utils
     /**
      * @param Entity $entity
      * @return string
-     * @internal
      */
-    public static function getEntityName(Entity $entity): ?string
+    public static function getEntityName(Entity $entity): string
     {
-        try {
-            $reflect = new ReflectionClass($entity);
-            return ($entity instanceof Player) ? $entity->getName() : $reflect->getShortName();
-        } catch (ReflectionException $e) {
-            return null;
-        }
+        $reflect = new ReflectionClass($entity);
+        return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()})");
     }
 }

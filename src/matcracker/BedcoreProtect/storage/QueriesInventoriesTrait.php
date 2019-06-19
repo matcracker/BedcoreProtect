@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\storage;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
-use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
@@ -34,7 +33,6 @@ use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
-use ReflectionClass;
 
 trait QueriesInventoriesTrait
 {
@@ -42,44 +40,44 @@ trait QueriesInventoriesTrait
     {
         $this->addEntity($player);
 
-        /**@var ContainerInventory $inventory */
         $inventory = $slotAction->getInventory();
-        $holder = $inventory->getHolder();
-        $slot = $slotAction->getSlot();
-        $sourceItem = $slotAction->getSourceItem();
-        $targetItem = $slotAction->getTargetItem();
+        if ($inventory instanceof ContainerInventory) {
+            $holder = $inventory->getHolder();
+            $slot = $slotAction->getSlot();
+            $sourceItem = $slotAction->getSourceItem();
+            $targetItem = $slotAction->getTargetItem();
 
-        $position = Position::fromObject($holder, $player->getWorld());
+            $position = Position::fromObject($holder, $player->getWorld());
 
-        if ($sourceItem->getId() === $targetItem->getId()) { //TODO: CHECK POSITION OF DOUBLE CHEST
-            $sourceCount = $sourceItem->getCount();
-            $targetCount = $targetItem->getCount(); //Final count
-            if ($targetCount > $sourceCount) {
-                $diffAmount = $targetCount - $sourceCount; //Effective block added/removed
-                $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
-                $targetItem->setCount($diffAmount);
-            } else {
+            if ($sourceItem->getId() === $targetItem->getId()) { //TODO: CHECK POSITION OF DOUBLE CHEST
+                $sourceCount = $sourceItem->getCount();
+                $targetCount = $targetItem->getCount(); //Final count
+                if ($targetCount > $sourceCount) {
+                    $diffAmount = $targetCount - $sourceCount; //Effective number of blocks added/removed
+                    $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+                    $targetItem->setCount($diffAmount);
+                } else {
+                    $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
+                    $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
+                    $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+                }
+            } else if ($sourceItem->getId() !== ItemIds::AIR && $targetItem->getId() !== ItemIds::AIR) {
                 $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
-                $this->addLogInventory($inventory, $slot, $sourceItem, $targetItem);
+                $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
+                $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+            } else if ($sourceItem->getId() !== ItemIds::AIR) {
+                $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
+            } else {
                 $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
             }
-        } else if ($sourceItem->getId() !== ItemIds::AIR && $targetItem->getId() !== ItemIds::AIR) {
-            $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
-            $this->addLogInventory($inventory, $slot, $sourceItem, $targetItem);
-            $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
-        } else if ($sourceItem->getId() !== ItemIds::AIR) {
-            $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
-        } else {
-            $this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+            $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
         }
-        $this->addLogInventory($inventory, $slot, $sourceItem, $targetItem);
+
     }
 
-    private function addLogInventory(Inventory $inventory, int $slot, Item $oldItem, Item $newItem): void
+    private function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem): void
     {
-        $r = new ReflectionClass($inventory);
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
-            "inventory_name" => $r->getShortName(),
             "slot" => $slot,
             "old_item_id" => $oldItem->getId(),
             "old_item_damage" => $oldItem->getMeta(),
@@ -88,14 +86,15 @@ trait QueriesInventoriesTrait
             "new_item_damage" => $newItem->getMeta(),
             "new_amount" => $newItem->getCount()
         ]);
+
     }
 
     public function rollbackItems(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
     {
-        $this->executeInvetoriesEdit(true, $position, $parser, $onSuccess, $onError);
+        $this->executeInventoriesEdit(true, $position, $parser, $onSuccess, $onError);
     }
 
-    private function executeInvetoriesEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
+    private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
     {
         $query = $parser->buildInventoriesLogSelectionQuery($position, !$rollback);
         $this->connector->executeSelectRaw($query, [],
@@ -139,6 +138,6 @@ trait QueriesInventoriesTrait
 
     public function restoreItems(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
     {
-        $this->executeInvetoriesEdit(false, $position, $parser, $onSuccess, $onError);
+        $this->executeInventoriesEdit(false, $position, $parser, $onSuccess, $onError);
     }
 }

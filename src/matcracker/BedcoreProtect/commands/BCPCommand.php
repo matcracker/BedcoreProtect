@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\commands;
 
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\matcracker\BedcoreProtect\commands\BCPHelpCommand;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
@@ -62,20 +63,7 @@ final class BCPCommand extends Command
         //Shared commands between player and console.
         switch ($subCmd) {
             case "help":
-                if (!isset($args[1])) {
-                    $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . "&3Help Page &f-----"));
-                    $sender->sendMessage(Utils::translateColors("&3/bcp help &7<command> &f- Display more info for that command."));
-                    $sender->sendMessage(Utils::translateColors("&3/bcp &7inspect &f- Turns the blocks inspector on or off."));
-                    $sender->sendMessage(Utils::translateColors("&3/bcp &7rollback &3<params> &f- Rollback block data."));
-                    $sender->sendMessage(Utils::translateColors("&3/bcp &7restore &3<params> &f- Restore block data."));
-                    $sender->sendMessage(Utils::translateColors("&3/bcp &7lookup &3<params> &f- Advanced block data lookup."));
-                    $sender->sendMessage(Utils::translateColors("&3/bcp &7purge &3<params> &f- Delete old block data."));
-                    //$sender->sendMessage(Utils::translateColors("&3/bcp &7reload &f- Reloads the configuration file."));
-                    //$sender->sendMessage(Utils::translateColors("&3/bcp &7status &f- Displays the plugin status"));
-                    $sender->sendMessage(Utils::translateColors("&f------"));
-                } else {
-                    //TODO: help subcmd
-                }
+                isset($args[1]) ? BCPHelpCommand::showSpecificHelp($sender, $args[1]) : BCPHelpCommand::showGenericHelp($sender);
                 return true;
             case "lookup":
             case "l":

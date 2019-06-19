@@ -67,7 +67,6 @@ CREATE TABLE IF NOT EXISTS signs_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (
     history_id      BIGINT UNSIGNED,
-    inventory       VARCHAR(50)         NOT NULL,
     slot            TINYINT UNSIGNED    NOT NULL,
     old_item_id     INTEGER UNSIGNED    NOT NULL,
     old_item_damage TINYINT(2) UNSIGNED NOT NULL,
@@ -132,7 +131,6 @@ INSERT INTO signs_log(history_id, text_lines)
 VALUES (LAST_INSERT_ID(), :lines);
 -- #            }
 -- #            {to_inventory
--- #                :inventory_name string
 -- #                :slot int
 -- #                :old_item_id int
 -- #                :old_item_damage int
@@ -140,9 +138,9 @@ VALUES (LAST_INSERT_ID(), :lines);
 -- #                :new_item_id int
 -- #                :new_item_damage int
 -- #                :new_amount int
-INSERT INTO inventories_log(history_id, inventory, slot, old_item_id, old_item_damage, old_amount, new_item_id,
+INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_damage, old_amount, new_item_id,
                             new_item_damage, new_amount)
-VALUES (LAST_INSERT_ID(), :inventory_name, :slot, :old_item_id, :old_item_damage, :old_amount, :new_item_id,
+VALUES (LAST_INSERT_ID(), :slot, :old_item_id, :old_item_damage, :old_amount, :new_item_id,
         :new_item_damage, :new_amount);
 -- #            }
 -- #        }
