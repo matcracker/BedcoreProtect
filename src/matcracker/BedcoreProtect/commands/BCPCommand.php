@@ -21,8 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -179,7 +177,7 @@ final class BCPCommand extends Command
                                     $diff = microtime(true) - $start;
                                     $time = $parser->getTime();
                                     $radius = $parser->getRadius();
-                                    $date = Carbon::createFromTimestamp(time() - (int)$time)->diffForHumans(null, null, true, 2, CarbonInterface::JUST_NOW);
+                                    $date = Utils::timeAgo($time);
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rollback completed for \"{$sender->getWorld()->getFolderName()}\"."));
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rolled back {$date}."));
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
@@ -223,7 +221,7 @@ final class BCPCommand extends Command
                                     $diff = microtime(true) - $start;
                                     $time = $parser->getTime();
                                     $radius = $parser->getRadius();
-                                    $date = Carbon::createFromTimestamp(time() - (int)$time)->diffForHumans(null, null, true, 2, CarbonInterface::JUST_NOW);
+                                    $date = Utils::timeAgo($time);
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore completed for \"{$sender->getWorld()->getFolderName()}\"."));
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restored {$date}."));
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
