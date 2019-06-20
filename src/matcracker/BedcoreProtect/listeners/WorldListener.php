@@ -21,22 +21,23 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\Main;
-use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\player\PlayerQuitEvent;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\event\block\LeavesDecayEvent;
 use pocketmine\event\world\WorldSaveEvent;
 
-final class PluginListener implements Listener
+final class WorldListener extends BedcoreListener
 {
-    private $plugin;
-    private $database;
-
-    public function __construct(Main $plugin)
+    /**
+     * @param LeavesDecayEvent $event
+     * @priority MONITOR
+     */
+    public function trackLeavesDecay(LeavesDecayEvent $event): void
     {
-        $this->plugin = $plugin;
-        $this->database = $plugin->getDatabase();
+        if ($this->plugin->getParsedConfig()->getLeavesDecay()) {
+            $block = $event->getBlock();
+            $this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), QueriesConst::BROKE);
+        }
     }
 
     /**
@@ -49,21 +50,4 @@ final class PluginListener implements Listener
         $this->database->getQueries()->beginTransaction();
     }
 
-    /**
-     * @param PlayerJoinEvent $event
-     * @priority LOWEST
-     */
-    public function onPlayerJoin(PlayerJoinEvent $event): void
-    {
-        $this->database->getQueries()->addEntity($event->getPlayer());
-    }
-
-    /**
-     * @param PlayerQuitEvent $event
-     * @priority LOWEST
-     */
-    public function onPlayerQuit(PlayerQuitEvent $event): void
-    {
-        Inspector::removeInspector($event->getPlayer());
-    }
 }

@@ -22,8 +22,10 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\commands\BCPCommand;
-use matcracker\BedcoreProtect\listeners\PluginListener;
-use matcracker\BedcoreProtect\listeners\TrackerListener;
+use matcracker\BedcoreProtect\listeners\BlockListener;
+use matcracker\BedcoreProtect\listeners\EntityListener;
+use matcracker\BedcoreProtect\listeners\PlayerListener;
+use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
@@ -88,8 +90,10 @@ final class Main extends PluginBase
 
         $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
-        $this->getServer()->getPluginManager()->registerEvents(new TrackerListener($this), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new PluginListener($this), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new BlockListener($this), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new EntityListener($this), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new PlayerListener($this), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new WorldListener($this), $this);
     }
 
     public function getParsedConfig(): ConfigParser

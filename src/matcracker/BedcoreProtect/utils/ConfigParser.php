@@ -76,6 +76,11 @@ final class ConfigParser
         return (int)$this->data['max-radius'];
     }
 
+    public function getBlockIgnite(): bool
+    {
+        return (bool)$this->data['block-ignite'];
+    }
+
     public function getExplosions(): bool
     {
         return (bool)$this->data['explosions'];
@@ -94,6 +99,11 @@ final class ConfigParser
     public function getBuckets(): bool
     {
         return (bool)$this->data['buckets'];
+    }
+
+    public function getLeavesDecay(): bool
+    {
+        return (bool)$this->data['leaves-decay'];
     }
 
     public function getItemTransactions(): bool
