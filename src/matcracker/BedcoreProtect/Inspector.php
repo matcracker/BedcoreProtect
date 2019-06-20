@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use matcracker\BedcoreProtect\storage\QueriesConst;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;

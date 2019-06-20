@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\storage;
+namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
@@ -66,10 +66,13 @@ class Queries
     private function addDefaultEntities(): void
     {
         $uuid = Server::getInstance()->getServerUniqueId()->toString();
-        $this->addRawEntity($uuid, "console");
+        $this->addRawEntity($uuid, "#console");
+        $this->addRawEntity("flow-uuid", "#flow");
+        $this->addRawEntity("water-uuid", "#water");
         $this->addRawEntity("still water-uuid", "#water");
         $this->addRawEntity("lava-uuid", "#lava");
         $this->addRawEntity("fire block-uuid", "#fire");
+        $this->addRawEntity("leaves-uuid", "#decay");
     }
 
     private function addDefaultBlocks(): void
@@ -168,7 +171,7 @@ class Queries
     private function addRawLog(string $uuid, Position $position, int $action): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            "uuid" => $uuid,
+            "uuid" => strtolower($uuid),
             "x" => (int)$position->getX(),
             "y" => (int)$position->getY(),
             "z" => (int)$position->getZ(),

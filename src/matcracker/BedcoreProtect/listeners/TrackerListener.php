@@ -23,12 +23,13 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\QueriesConst;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Liquid;
 use pocketmine\block\Sign;
+use pocketmine\block\Water;
 use pocketmine\entity\object\PrimedTNT;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
@@ -36,6 +37,7 @@ use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockGrowEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
+use pocketmine\event\block\LeavesDecayEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
@@ -75,9 +77,8 @@ final class TrackerListener implements Listener
                 $this->database->getQueries()->requestBlockLog($player, $block);
                 $event->setCancelled();
             } else {
-                $tile = $block->getWorld()->getTile($block);
-                if ($tile instanceof Sign) {
-                    $this->database->getQueries()->addSignLogByPlayer($player, $tile);
+                if ($block instanceof Sign) {
+                    $this->database->getQueries()->addSignLogByPlayer($player, $block);
                 } else {
                     $air = BlockUtils::createAir($block->asPosition());
                     $this->database->getQueries()->addBlockLogByEntity($player, $block, $air, QueriesConst::BROKE);
@@ -118,6 +119,16 @@ final class TrackerListener implements Listener
     }
 
     /**
+     * @param LeavesDecayEvent $event
+     * @priority MONITOR
+     */
+    public function trackLeavesDecay(LeavesDecayEvent $event): void
+    {
+        $block = $event->getBlock();
+        $this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), QueriesConst::BROKE);
+    }
+
+    /**
      * @param BlockSpreadEvent $event
      * @priority MONITOR
      */
@@ -125,17 +136,23 @@ final class TrackerListener implements Listener
     {
         $block = $event->getBlock();
         $source = $event->getSource();
+        $newState = $event->getNewState();
+
+        /*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
+        print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
+        print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
         if ($source instanceof Liquid) {
+            //var_dump($source->getFlowVector());
             if (BlockUtils::isStillLiquid($source)) {
+
                 /*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
                 print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
                 print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
-                $this->database->getQueries()->addBlockLogByBlock($block, $source, QueriesConst::PLACED);
-            } /*else {
-                //TODO: Find player who place water
-            }*/
+                $this->database->getQueries()->addBlockLogByBlock($source, $block, $source, QueriesConst::PLACED);
+            } //TODO: Find player who place water
+
         }
     }
 
@@ -148,7 +165,7 @@ final class TrackerListener implements Listener
         $block = $event->getBlock();
         $cause = $event->getCausingBlock();
 
-        $this->database->getQueries()->addBlockLogByBlock($block, $cause, QueriesConst::BROKE);
+        $this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, QueriesConst::BROKE);
     }
 
     /**
@@ -196,8 +213,9 @@ final class TrackerListener implements Listener
         $block = $event->getBlock();
         $result = $event->getNewState();
 
-        if ($block instanceof Liquid) { //TODO: FIX ME
-            $this->database->getQueries()->addBlockLogByBlock($block, $result, QueriesConst::PLACED, $block->asPosition());
+        if ($block instanceof Liquid) {
+            $id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
+            $this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, QueriesConst::PLACED, $block->asPosition());
         }
     }
 

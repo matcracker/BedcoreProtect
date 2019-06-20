@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\storage;
+namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
@@ -63,7 +63,6 @@ trait QueriesEntitiesTrait
             "address" => $address
         ]);
     }
-
 
     //TODO: Rollback and restore entities
 }

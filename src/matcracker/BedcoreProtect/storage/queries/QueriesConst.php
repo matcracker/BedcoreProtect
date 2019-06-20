@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\storage;
+namespace matcracker\BedcoreProtect\storage\queries;
 
 final class QueriesConst
 {

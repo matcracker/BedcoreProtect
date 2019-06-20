@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\storage\queries\Queries;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 

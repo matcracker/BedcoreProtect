@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\storage;
+namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Utils;

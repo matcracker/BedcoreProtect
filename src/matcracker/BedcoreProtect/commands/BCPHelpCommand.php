@@ -17,6 +17,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace matcracker\BedcoreProtect\commands;
 
 use matcracker\BedcoreProtect\Main;

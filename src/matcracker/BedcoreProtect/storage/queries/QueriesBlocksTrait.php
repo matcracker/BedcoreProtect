@@ -19,13 +19,14 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\storage;
+namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
+use pocketmine\block\Leaves;
 use pocketmine\block\Sign;
 use pocketmine\entity\Entity;
 use pocketmine\math\Vector3;
@@ -58,6 +59,14 @@ trait QueriesBlocksTrait
         $this->addRawBlockLog($uuid, $oldBlock, $newBlock, $action, $position);
     }
 
+    /**
+     * @param string $uuid
+     * @param Block $oldBlock
+     * @param Block $newBlock
+     * @param int $action
+     * @param Position|null $position
+     * @internal
+     */
     private function addRawBlockLog(string $uuid, Block $oldBlock, Block $newBlock, int $action, ?Position $position = null): void
     {
         $this->addBlock($oldBlock);
@@ -89,14 +98,21 @@ trait QueriesBlocksTrait
     /**
      * It logs the block who mades the action for block.
      *
+     * @param Block $who
      * @param Block $oldBlock
      * @param Block $newBlock
      * @param int $action
      * @param Position|null $position
      */
-    public function addBlockLogByBlock(Block $oldBlock, Block $newBlock, int $action, ?Position $position = null): void
+    public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, int $action, ?Position $position = null): void
     {
-        $this->addRawBlockLog((strtolower($newBlock->getName()) . "-uuid"), $oldBlock, $newBlock, $action, $position);
+        $name = $who->getName();
+        //Particular blocks
+        if ($who->getId() instanceof Leaves) {
+            $name = "leaves";
+        }
+
+        $this->addRawBlockLog("{$name}-uuid", $oldBlock, $newBlock, $action, $position);
     }
 
     /**
@@ -109,7 +125,7 @@ trait QueriesBlocksTrait
     {
         $air = BlockUtils::createAir($sign->asPosition());
 
-        $this->addRawBlockLog($player->getUniqueId()->toString(), $sign, $air, QueriesConst::BROKE);
+        $this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, $air, QueriesConst::BROKE);
         $this->connector->executeInsert(QueriesConst::ADD_SIGN_LOG, [
             "lines" => json_encode($sign->getText())
         ]);

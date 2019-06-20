@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands;
 
 use ArrayOutOfBoundsException;
-use matcracker\BedcoreProtect\storage\QueriesConst;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
