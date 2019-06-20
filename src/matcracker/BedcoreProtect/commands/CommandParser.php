@@ -30,261 +30,255 @@ use pocketmine\math\Vector3;
 use pocketmine\Server;
 use UnexpectedValueException;
 
-final class CommandParser
-{
-    public const MAX_PARAMETERS = 6;
+final class CommandParser{
+	public const MAX_PARAMETERS = 6;
 
-    public const ACTIONS = [
-        "block" => QueriesConst::PLACED | QueriesConst::BROKE,
-        "+block" => QueriesConst::PLACED,
-        "-block" => QueriesConst::BROKE,
-        "click" => QueriesConst::CLICKED,
-        "container" => QueriesConst::ADDED | QueriesConst::REMOVED,
-        "+container" => QueriesConst::ADDED,
-        "-container" => QueriesConst::REMOVED,
-        "kill" => QueriesConst::KILLED,
-    ];
+	public const ACTIONS = [
+		"block" => QueriesConst::PLACED | QueriesConst::BROKE,
+		"+block" => QueriesConst::PLACED,
+		"-block" => QueriesConst::BROKE,
+		"click" => QueriesConst::CLICKED,
+		"container" => QueriesConst::ADDED | QueriesConst::REMOVED,
+		"+container" => QueriesConst::ADDED,
+		"-container" => QueriesConst::REMOVED,
+		"kill" => QueriesConst::KILLED,
+	];
 
-    private $configParser;
-    private $arguments;
-    private $requiredParams;
-    private $parsed = false;
+	private $configParser;
+	private $arguments;
+	private $requiredParams;
+	private $parsed = false;
 
-    //Default data values
-    private $data = [
-        "user" => null,
-        "time" => null,
-        "radius" => null,
-        "action" => null,
-        "blocks" => null,
-        "exclusions" => null
-    ];
+	//Default data values
+	private $data = [
+		"user" => null,
+		"time" => null,
+		"radius" => null,
+		"action" => null,
+		"blocks" => null,
+		"exclusions" => null
+	];
 
-    /**
-     * CommandParser constructor.
-     * @param ConfigParser $configParser
-     * @param array $arguments
-     * @param array|null $requiredParams
-     * @param bool $shift It shift the first element of array used internally for command arguments. Default false.
-     */
-    public function __construct(ConfigParser $configParser, array $arguments, ?array $requiredParams, bool $shift = false)
-    {
-        $this->configParser = $configParser;
-        $this->arguments = $arguments;
-        $this->requiredParams = $requiredParams;
-        if ($shift) {
-            array_shift($this->arguments);
-        }
+	/**
+	 * CommandParser constructor.
+	 *
+	 * @param ConfigParser $configParser
+	 * @param array        $arguments
+	 * @param array|null   $requiredParams
+	 * @param bool         $shift It shift the first element of array used internally for command arguments. Default false.
+	 */
+	public function __construct(ConfigParser $configParser, array $arguments, ?array $requiredParams, bool $shift = false){
+		$this->configParser = $configParser;
+		$this->arguments = $arguments;
+		$this->requiredParams = $requiredParams;
+		if($shift){
+			array_shift($this->arguments);
+		}
 
-        if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
-            $this->data["radius"] = $dr;
-        }
+		if(($dr = $this->configParser->getDefaultRadius()) !== 0){
+			$this->data["radius"] = $dr;
+		}
 
-    }
+	}
 
-    public function parse(): bool
-    {
-        if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) return false;
+	public function parse() : bool{
+		if(($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) return false;
 
-        foreach ($this->arguments as $argument) {
-            $arrayData = explode(":", $argument);
-            if (count($arrayData) !== 2) return false;
-            $param = strtolower($arrayData[0]);
-            $paramValues = $arrayData[1];
+		foreach($this->arguments as $argument){
+			$arrayData = explode(":", $argument);
+			if(count($arrayData) !== 2) return false;
+			$param = strtolower($arrayData[0]);
+			$paramValues = $arrayData[1];
 
-            if (!is_string($paramValues)) {
-                return false;
-            }
+			if(!is_string($paramValues)){
+				return false;
+			}
 
-            switch ($param) {
-                case "user": //TODO: Add support for more players.
-                case "u":
-                    $offlinePlayer = Server::getInstance()->getOfflinePlayer($paramValues);
-                    if (!$offlinePlayer->hasPlayedBefore()) return false;
+			switch($param){
+				case "user": //TODO: Add support for more players.
+				case "u":
+					$offlinePlayer = Server::getInstance()->getOfflinePlayer($paramValues);
+					if(!$offlinePlayer->hasPlayedBefore()) return false;
 
-                    $this->data["user"] = $offlinePlayer->getName();
-                    break;
-                case "time":
-                case "t":
-                    $this->data["time"] = Utils::parseTime($paramValues);
-                    break;
-                case "radius":
-                case "r":
-                    if (!ctype_digit($paramValues)) return false;
-                    $paramValues = (int)$paramValues;
-                    $maxRadius = $this->configParser->getMaxRadius();
-                    if ($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)) return false;
+					$this->data["user"] = $offlinePlayer->getName();
+					break;
+				case "time":
+				case "t":
+					$this->data["time"] = Utils::parseTime($paramValues);
+					break;
+				case "radius":
+				case "r":
+					if(!ctype_digit($paramValues)) return false;
+					$paramValues = (int) $paramValues;
+					$maxRadius = $this->configParser->getMaxRadius();
+					if($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)) return false;
 
-                    $this->data["radius"] = $paramValues;
-                    break;
-                case "action":
-                case "a":
-                    $paramValues = strtolower($paramValues);
-                    if (!array_key_exists($paramValues, self::ACTIONS)) return false;
+					$this->data["radius"] = $paramValues;
+					break;
+				case "action":
+				case "a":
+					$paramValues = strtolower($paramValues);
+					if(!array_key_exists($paramValues, self::ACTIONS)) return false;
 
-                    $this->data["action"] = $paramValues;
-                    break;
-                case "blocks":
-                case "b":
-                case "exclude":
-                case "e":
-                    $blocks = explode(",", $paramValues);
-                    if (count($blocks) < 1) return false;
+					$this->data["action"] = $paramValues;
+					break;
+				case "blocks":
+				case "b":
+				case "exclude":
+				case "e":
+					$blocks = explode(",", $paramValues);
+					if(count($blocks) < 1) return false;
 
-                    $index = substr($param, 0, 1) === "b" ? "blocks" : "exclusions";
-                    foreach ($blocks as $block) {
-                        $block = ItemFactory::fromString($block)->getBlock(); //TODO: TEST
+					$index = substr($param, 0, 1) === "b" ? "blocks" : "exclusions";
+					foreach($blocks as $block){
+						$block = ItemFactory::fromString($block)->getBlock(); //TODO: TEST
 
-                        $this->data[$index][] = [
-                            "id" => $block->getId(),
-                            "damage" => $block->getMeta()
-                        ];
-                    }
-                    break;
-                default:
-                    return false;
-            }
-        }
-        $filter = array_filter($this->data, function ($value) {
-            return $value !== null;
-        });
+						$this->data[$index][] = [
+							"id" => $block->getId(),
+							"damage" => $block->getMeta()
+						];
+					}
+					break;
+				default:
+					return false;
+			}
+		}
+		$filter = array_filter($this->data, function($value){
+			return $value !== null;
+		});
 
-        if (empty($filter))
-            return false;
+		if(empty($filter))
+			return false;
 
-        if ($this->requiredParams !== null) {
-            if (count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)) {
-                return false;
-            }
-        }
+		if($this->requiredParams !== null){
+			if(count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)){
+				return false;
+			}
+		}
 
-        $this->parsed = true;
-        return true;
-    }
+		$this->parsed = true;
 
-    /**
-     * It returns a 'select' query to get all optional data from log table
-     *
-     * @param Vector3 $vector3
-     * @param bool $restore
-     * @return string
-     * @throws UnexpectedValueException if it is used before CommandParser::parse()
-     */
-    public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
-    {
-        if (!$this->parsed) {
-            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
+		return true;
+	}
 
-        $prefix = $restore ? "new" : "old";
+	/**
+	 * It returns a 'select' query to get all optional data from log table
+	 *
+	 * @param Vector3 $vector3
+	 * @param bool    $restore
+	 *
+	 * @return string
+	 * @throws UnexpectedValueException if it is used before CommandParser::parse()
+	 */
+	public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false) : string{
+		if(!$this->parsed){
+			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+		}
 
-        $query = /**@lang text */
-            "SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_damage, x, y, z FROM log_history 
-            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int)$restore . "' AND ";
+		$prefix = $restore ? "new" : "old";
 
-        $this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_damage"]);
+		$query = /**@lang text */
+			"SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_damage, x, y, z FROM log_history 
+            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int) $restore . "' AND ";
 
-        $query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+		$this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_damage"]);
 
-        return $query;
-    }
+		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
 
-    private function buildConditionalQuery(string &$query, ?Vector3 $vector3, array $args): void
-    {
-        if (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1) {
-            throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");
-        }
+		return $query;
+	}
 
-        foreach ($this->data as $key => $value) {
-            if ($key === "user" && $value !== null) {
-                $query .= "who = (SELECT uuid FROM \"entities\" WHERE entity_name = '$value') AND ";
-            } else if ($key === "time" && $value !== null) {
-                $diffTime = time() - (int)$value;
-                if ($this->configParser->isSQLite()) {
-                    $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
-                } else {
-                    $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
-                }
-            } else if ($key === "radius" && $vector3 !== null && $value !== null) {
-                $minV = $vector3->subtract($value, $value, $value)->floor();
-                $maxV = $vector3->add($value, $value, $value)->floor();
-                $query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
-                $query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
-                $query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
-            } else if ($key === "action" && $value !== null) {
-                $minAction = CommandParser::toAction($value);
-                $maxAction = $minAction;
-                if ($value === "container") {
-                    $minAction = QueriesConst::ADDED;
-                    $maxAction = QueriesConst::REMOVED;
-                } elseif ($value === "block") {
-                    $minAction = QueriesConst::PLACED;
-                    $maxAction = QueriesConst::BROKE;
-                }
-                $query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
-            } else if (($key === "blocks" || $key === "exclusions") && $value !== null) { //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
-                $operator = $key === "exclusions" ? "<>" : "=";
-                for ($i = 0; $i < $cArgs; $i += 2) {
-                    foreach ($value as $blockArray) {
-                        $id = (int)$blockArray["id"];
-                        $damage = (int)$blockArray["damage"];
-                        $query .= "{$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
-                    }
-                }
+	private function buildConditionalQuery(string &$query, ?Vector3 $vector3, array $args) : void{
+		if(($cArgs = count($args)) % 2 !== 0 || $cArgs < 1){
+			throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");
+		}
 
-            }
-        }
-    }
+		foreach($this->data as $key => $value){
+			if($key === "user" && $value !== null){
+				$query .= "who = (SELECT uuid FROM \"entities\" WHERE entity_name = '$value') AND ";
+			}else if($key === "time" && $value !== null){
+				$diffTime = time() - (int) $value;
+				if($this->configParser->isSQLite()){
+					$query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
+				}else{
+					$query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
+				}
+			}else if($key === "radius" && $vector3 !== null && $value !== null){
+				$minV = $vector3->subtract($value, $value, $value)->floor();
+				$maxV = $vector3->add($value, $value, $value)->floor();
+				$query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
+				$query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
+				$query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
+			}else if($key === "action" && $value !== null){
+				$minAction = CommandParser::toAction($value);
+				$maxAction = $minAction;
+				if($value === "container"){
+					$minAction = QueriesConst::ADDED;
+					$maxAction = QueriesConst::REMOVED;
+				}elseif($value === "block"){
+					$minAction = QueriesConst::PLACED;
+					$maxAction = QueriesConst::BROKE;
+				}
+				$query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
+			}else if(($key === "blocks" || $key === "exclusions") && $value !== null){ //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
+				$operator = $key === "exclusions" ? "<>" : "=";
+				for($i = 0; $i < $cArgs; $i += 2){
+					foreach($value as $blockArray){
+						$id = (int) $blockArray["id"];
+						$damage = (int) $blockArray["damage"];
+						$query .= "{$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
+					}
+				}
 
-    public static function toAction(string $cmdAction): int
-    {
-        if (!isset(self::ACTIONS[$cmdAction]))
-            throw new ArrayOutOfBoundsException("The $cmdAction is not a valid action.");
+			}
+		}
+	}
 
-        return self::ACTIONS[$cmdAction];
-    }
+	public static function toAction(string $cmdAction) : int{
+		if(!isset(self::ACTIONS[$cmdAction]))
+			throw new ArrayOutOfBoundsException("The $cmdAction is not a valid action.");
 
-    /**
-     * Return string error message when a required parameter is missing.
-     * Return null if any parameter is required or all required parameter are present.
-     * @return string|null
-     */
-    public function getErrorMessage(): ?string
-    {
-        foreach (array_keys($this->data) as $param) {
-            if ($this->isRequired($param)) {
-                switch ($param) {
-                    case "user":
-                    case "action":
-                        return "This {$param} does not exist";
-                    case "time":
-                    case "radius":
-                        return "Please specify the amount of {$param}";
-                    case "blocks":
-                        return "Please specify the blocks to include";
-                    case "exclude":
-                        return "Please specify the blocks to exclude";
-                }
-            }
-        }
+		return self::ACTIONS[$cmdAction];
+	}
 
-        return null;
-    }
+	/**
+	 * Return string error message when a required parameter is missing.
+	 * Return null if any parameter is required or all required parameter are present.
+	 * @return string|null
+	 */
+	public function getErrorMessage() : ?string{
+		foreach(array_keys($this->data) as $param){
+			if($this->isRequired($param)){
+				switch($param){
+					case "user":
+					case "action":
+						return "This {$param} does not exist";
+					case "time":
+					case "radius":
+						return "Please specify the amount of {$param}";
+					case "blocks":
+						return "Please specify the blocks to include";
+					case "exclude":
+						return "Please specify the blocks to exclude";
+				}
+			}
+		}
 
-    private function isRequired(string $param): bool
-    {
-        return $this->requiredParams !== null ? in_array($param, $this->requiredParams) : false;
-    }
+		return null;
+	}
 
-    public function buildLookupQuery(): string
-    {
-        if (!$this->parsed) {
-            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
+	private function isRequired(string $param) : bool{
+		return $this->requiredParams !== null ? in_array($param, $this->requiredParams) : false;
+	}
 
-        $diffTime = time() - $this->getTime();
-        $query = /**@lang text */
-            "SELECT *,
+	public function buildLookupQuery() : string{
+		if(!$this->parsed){
+			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+		}
+
+		$diffTime = time() - $this->getTime();
+		$query = /**@lang text */
+			"SELECT *,
             bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
             il.old_item_id, il.old_item_damage, il.old_amount, il.new_item_id, il.new_item_damage, il.new_amount, 
             e.entity_name AS entity_from FROM log_history 
@@ -292,94 +286,89 @@ final class CommandParser
             LEFT JOIN entities e ON log_history.who = e.uuid 
             LEFT JOIN inventories_log il ON log_history.log_id = il.history_id ";
 
-        if ($this->configParser->isSQLite()) {
-            $query .= "WHERE time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime')) AND ";
-        } else {
-            $query .= "WHERE time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP AND ";
-        }
+		if($this->configParser->isSQLite()){
+			$query .= "WHERE time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime')) AND ";
+		}else{
+			$query .= "WHERE time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP AND ";
+		}
 
 
-        $this->buildConditionalQuery($query, null, [
-            "bl.old_block_id", "bl.old_block_damage",
-            "bl.new_block_id", "bl.new_block_damage"
-        ]);
+		$this->buildConditionalQuery($query, null, [
+			"bl.old_block_id", "bl.old_block_damage",
+			"bl.new_block_id", "bl.new_block_damage"
+		]);
 
-        $query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
 
-        return $query;
-    }
+		return $query;
+	}
 
-    public function getTime(): ?int
-    {
-        return $this->getData("time");
-    }
+	public function getTime() : ?int{
+		return $this->getData("time");
+	}
 
-    /**
-     * @param string $key
-     * @return mixed
-     */
-    private function getData(string $key)
-    {
-        if (!$this->parsed) {
-            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-        return $this->data[$key];
-    }
+	/**
+	 * @param string $key
+	 *
+	 * @return mixed
+	 */
+	private function getData(string $key){
+		if(!$this->parsed){
+			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+		}
 
-    public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
-    {
-        if (!$this->parsed) {
-            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
+		return $this->data[$key];
+	}
 
-        $prefix = $restore ? "new" : "old";
+	public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false) : string{
+		if(!$this->parsed){
+			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+		}
 
-        $query = /**@lang text */
-            "SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_damage, il.{$prefix}_amount, x, y, z FROM log_history 
-            INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '" . (int)$restore . "' AND ";
+		$prefix = $restore ? "new" : "old";
 
-        $this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
+		$query = /**@lang text */
+			"SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_damage, il.{$prefix}_amount, x, y, z FROM log_history 
+            INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '" . (int) $restore . "' AND ";
 
-        $query = rtrim($query, " AND ") . " ORDER BY time DESC;";
-        return $query;
-    }
+		$this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
 
-    /**
-     * It returns an array with the parsed data from the command.
-     *
-     * @return array
-     * @throws UnexpectedValueException if it is used before CommandParser::parse()
-     */
-    public function getAllData(): array
-    {
-        if (!$this->parsed) {
-            throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-        return $this->data;
-    }
+		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
 
-    public function getUser(): ?string
-    {
-        return $this->getData("user");
-    }
+		return $query;
+	}
 
-    public function getRadius(): ?int
-    {
-        return $this->getData("radius");
-    }
+	/**
+	 * It returns an array with the parsed data from the command.
+	 *
+	 * @return array
+	 * @throws UnexpectedValueException if it is used before CommandParser::parse()
+	 */
+	public function getAllData() : array{
+		if(!$this->parsed){
+			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+		}
 
-    public function getAction(): ?string
-    {
-        return $this->getData("action");
-    }
+		return $this->data;
+	}
 
-    public function getBlocks(): ?array
-    {
-        return $this->getData("blocks");
-    }
+	public function getUser() : ?string{
+		return $this->getData("user");
+	}
 
-    public function getExclusions(): ?array
-    {
-        return $this->getData("exclusions");
-    }
+	public function getRadius() : ?int{
+		return $this->getData("radius");
+	}
+
+	public function getAction() : ?string{
+		return $this->getData("action");
+	}
+
+	public function getBlocks() : ?array{
+		return $this->getData("blocks");
+	}
+
+	public function getExclusions() : ?array{
+		return $this->getData("exclusions");
+	}
 }

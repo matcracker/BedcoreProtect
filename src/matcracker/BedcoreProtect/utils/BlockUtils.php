@@ -29,43 +29,39 @@ use pocketmine\block\Door;
 use pocketmine\block\Liquid;
 use pocketmine\world\Position;
 
-final class BlockUtils implements BlockLegacyIds
-{
-    private function __construct()
-    {
-    }
+final class BlockUtils implements BlockLegacyIds{
+	private function __construct(){
+	}
 
-    public static function createAir(?Position $position = null): Block
-    {
-        return BlockFactory::get(self::AIR, 0, $position);
-    }
+	public static function createAir(?Position $position = null) : Block{
+		return BlockFactory::get(self::AIR, 0, $position);
+	}
 
-    public static function isActivable(Block $block): bool
-    {
-        //It supports only PMMP blocks.
-        $ids = [
-            self::TRAPDOOR, self::BED_BLOCK,
-            self::ITEM_FRAME_BLOCK, self::WOODEN_BUTTON,
-            self::STONE_BUTTON
-        ];
-        return (
-            $block instanceof Door || in_array($block->getId(), $ids) || self::hasInventory($block)
-        );
-    }
+	public static function isActivable(Block $block) : bool{
+		//It supports only PMMP blocks.
+		$ids = [
+			self::TRAPDOOR, self::BED_BLOCK,
+			self::ITEM_FRAME_BLOCK, self::WOODEN_BUTTON,
+			self::STONE_BUTTON
+		];
 
-    public static function hasInventory(Block $block): bool
-    {
-        //It supports only PMMP blocks.
-        $ids = [
-            self::ENDER_CHEST, self::CHEST,
-            self::FURNACE, self::DISPENSER,
-            self::ENCHANTING_TABLE, self::ANVIL
-        ];
-        return in_array($block->getId(), $ids);
-    }
+		return (
+			$block instanceof Door || in_array($block->getId(), $ids) || self::hasInventory($block)
+		);
+	}
 
-    public static function isStillLiquid(Liquid $liquid): bool
-    {
-        return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
-    }
+	public static function hasInventory(Block $block) : bool{
+		//It supports only PMMP blocks.
+		$ids = [
+			self::ENDER_CHEST, self::CHEST,
+			self::FURNACE, self::DISPENSER,
+			self::ENCHANTING_TABLE, self::ANVIL
+		];
+
+		return in_array($block->getId(), $ids);
+	}
+
+	public static function isStillLiquid(Liquid $liquid) : bool{
+		return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
+	}
 }

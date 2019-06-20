@@ -30,126 +30,127 @@ use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 use ReflectionClass;
 
-final class Utils
-{
+final class Utils{
 
-    private function __construct()
-    {
-    }
+	private function __construct(){
+	}
 
-    /**
-     * It returns the action's name from
-     * @param int $action
-     * @return string
-     */
-    public static function getActionName(int $action): string
-    {
-        $class = new ReflectionClass(QueriesConst::class);
-        $map = array_flip(array_filter($class->getConstants(), function ($element) {
-            return is_int($element);
-        }));
+	/**
+	 * It returns the action's name from
+	 *
+	 * @param int $action
+	 *
+	 * @return string
+	 */
+	public static function getActionName(int $action) : string{
+		$class = new ReflectionClass(QueriesConst::class);
+		$map = array_flip(array_filter($class->getConstants(), function($element){
+			return is_int($element);
+		}));
 
-        if (!array_key_exists($action, $map)) {
-            throw new InvalidArgumentException('This action does not exist.');
-        }
+		if(!array_key_exists($action, $map)){
+			throw new InvalidArgumentException('This action does not exist.');
+		}
 
-        return strtolower($map[$action]);
-    }
+		return strtolower($map[$action]);
+	}
 
-    public static function translateColors(string $message): string
-    {
-        return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", function (array $matches): string {
-            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
-        }, $message);
-    }
+	public static function translateColors(string $message) : string{
+		return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", function(array $matches) : string{
+			return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
+		}, $message);
+	}
 
-    /**
-     * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
-     *
-     * @param string $strDate the date to parse.
-     * @return int|null how many seconds are in the string. Return null if string can't be parsed.
-     */
-    public static function parseTime(string $strDate): ?int
-    {
-        if (empty($strDate)) return null;
-        $strDate = strtolower($strDate);
-        $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
-        if (empty($strDate)) return null;
+	/**
+	 * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
+	 *
+	 * @param string $strDate the date to parse.
+	 *
+	 * @return int|null how many seconds are in the string. Return null if string can't be parsed.
+	 */
+	public static function parseTime(string $strDate) : ?int{
+		if(empty($strDate)) return null;
+		$strDate = strtolower($strDate);
+		$strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
+		if(empty($strDate)) return null;
 
-        $time = null;
-        $matches = [];
-        preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
+		$time = null;
+		$matches = [];
+		preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
 
-        foreach ($matches[0] as $match) {
-            $value = (int)preg_replace("/[^0-9]/", "", $match);
-            $dateType = (string)preg_replace("/[^smhdw]/", "", $match);
+		foreach($matches[0] as $match){
+			$value = (int) preg_replace("/[^0-9]/", "", $match);
+			$dateType = (string) preg_replace("/[^smhdw]/", "", $match);
 
-            switch ($dateType) {
-                case "w":
-                    $time += $value * 7 * 24 * 60 * 60;
-                    break;
-                case "d":
-                    $time += $value * 24 * 60 * 60;
-                    break;
-                case "h":
-                    $time += $value * 60 * 60;
-                    break;
-                case "m":
-                    $time += $value * 60;
-                    break;
-                case "s":
-                    $time += $value;
-                    break;
-            }
-        }
-        return $time;
-    }
+			switch($dateType){
+				case "w":
+					$time += $value * 7 * 24 * 60 * 60;
+					break;
+				case "d":
+					$time += $value * 24 * 60 * 60;
+					break;
+				case "h":
+					$time += $value * 60 * 60;
+					break;
+				case "m":
+					$time += $value * 60;
+					break;
+				case "s":
+					$time += $value;
+					break;
+			}
+		}
 
-    public static function timeAgo(int $timestamp, int $level = 6): string
-    {
-        $date = new DateTime();
-        $date->setTimestamp($timestamp);
-        $date = $date->diff(new DateTime());
-        // build array
-        $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
-        // remove empty date values
-        $since = array_filter($since);
-        // output only the first x date values
-        $since = array_slice($since, 0, $level);
-        // build string
-        $last_key = key(array_slice($since, -1, 1, true));
-        $string = '';
-        foreach ($since as $key => $val) {
-            // separator
-            if ($string) {
-                $string .= $key != $last_key ? ', ' : ' and ';
-            }
-            // set plural
-            $key .= $val > 1 ? 's' : '';
-            // add date value
-            $string .= $val . ' ' . $key;
-        }
-        return $string . ' ago';
-    }
+		return $time;
+	}
 
-    /**
-     * Returns the entity UUID.
-     * @param Entity $entity
-     * @return string
-     * @internal
-     */
-    public static function getEntityUniqueId(Entity $entity): string
-    {
-        return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
-    }
+	public static function timeAgo(int $timestamp, int $level = 6) : string{
+		$date = new DateTime();
+		$date->setTimestamp($timestamp);
+		$date = $date->diff(new DateTime());
+		// build array
+		$since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
+		// remove empty date values
+		$since = array_filter($since);
+		// output only the first x date values
+		$since = array_slice($since, 0, $level);
+		// build string
+		$last_key = key(array_slice($since, -1, 1, true));
+		$string = '';
+		foreach($since as $key => $val){
+			// separator
+			if($string){
+				$string .= $key != $last_key ? ', ' : ' and ';
+			}
+			// set plural
+			$key .= $val > 1 ? 's' : '';
+			// add date value
+			$string .= $val . ' ' . $key;
+		}
 
-    /**
-     * @param Entity $entity
-     * @return string
-     */
-    public static function getEntityName(Entity $entity): string
-    {
-        $reflect = new ReflectionClass($entity);
-        return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()}");
-    }
+		return $string . ' ago';
+	}
+
+	/**
+	 * Returns the entity UUID.
+	 *
+	 * @param Entity $entity
+	 *
+	 * @return string
+	 * @internal
+	 */
+	public static function getEntityUniqueId(Entity $entity) : string{
+		return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
+	}
+
+	/**
+	 * @param Entity $entity
+	 *
+	 * @return string
+	 */
+	public static function getEntityName(Entity $entity) : string{
+		$reflect = new ReflectionClass($entity);
+
+		return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()}");
+	}
 }

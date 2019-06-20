@@ -26,28 +26,27 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\event\block\LeavesDecayEvent;
 use pocketmine\event\world\WorldSaveEvent;
 
-final class WorldListener extends BedcoreListener
-{
-    /**
-     * @param LeavesDecayEvent $event
-     * @priority MONITOR
-     */
-    public function trackLeavesDecay(LeavesDecayEvent $event): void
-    {
-        if ($this->plugin->getParsedConfig()->getLeavesDecay()) {
-            $block = $event->getBlock();
-            $this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), QueriesConst::BROKE);
-        }
-    }
+final class WorldListener extends BedcoreListener{
+	/**
+	 * @param LeavesDecayEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackLeavesDecay(LeavesDecayEvent $event) : void{
+		if($this->plugin->getParsedConfig()->getLeavesDecay()){
+			$block = $event->getBlock();
+			$this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), QueriesConst::BROKE);
+		}
+	}
 
-    /**
-     * @param WorldSaveEvent $event
-     * @priority HIGH
-     */
-    public function onLevelSave(WorldSaveEvent $event): void
-    {
-        $this->database->getQueries()->endTransaction();
-        $this->database->getQueries()->beginTransaction();
-    }
+	/**
+	 * @param WorldSaveEvent $event
+	 *
+	 * @priority HIGH
+	 */
+	public function onLevelSave(WorldSaveEvent $event) : void{
+		$this->database->getQueries()->endTransaction();
+		$this->database->getQueries()->beginTransaction();
+	}
 
 }

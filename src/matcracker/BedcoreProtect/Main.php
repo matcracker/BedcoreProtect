@@ -31,82 +31,80 @@ use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
 use UnexpectedValueException;
 
-final class Main extends PluginBase
-{
-    public const PLUGIN_NAME = "BedcoreProtect";
-    public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
-    public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
+final class Main extends PluginBase{
+	public const PLUGIN_NAME = "BedcoreProtect";
+	public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
+	public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /**@var Database */
-    private $database;
+	/**@var Database */
+	private $database;
 
-    /**
-     * @return Database
-     */
-    public function getDatabase(): Database
-    {
-        if ($this->database === null) {
-            throw new UnexpectedValueException("Database connection it's not established!");
-        }
-        return $this->database;
-    }
+	/**
+	 * @return Database
+	 */
+	public function getDatabase() : Database{
+		if($this->database === null){
+			throw new UnexpectedValueException("Database connection it's not established!");
+		}
 
-    protected function onEnable(): void
-    {
-        if (!extension_loaded("curl")) {
-            $this->getLogger()->error("Extension 'curl' is missing. Enable it on php.ini file.");
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-        }
+		return $this->database;
+	}
 
-        include_once($this->getFile() . "/vendor/autoload.php");
+	protected function onEnable() : void{
+		if(!extension_loaded("curl")){
+			$this->getLogger()->error("Extension 'curl' is missing. Enable it on php.ini file.");
+			$this->getServer()->getPluginManager()->disablePlugin($this);
+		}
 
-        @mkdir($this->getDataFolder());
-        $this->saveDefaultConfig();
-        $this->saveResource("bedcore_database.db");
+		include_once($this->getFile() . "/vendor/autoload.php");
 
-        $validation = $this->getParsedConfig()->validateConfig();
-        if (!$validation->isValid()) {
-            $this->getLogger()->warning("Configuration's file is not correct.");
-            foreach ($validation->getFailures() as $failure) {
-                $this->getLogger()->warning($failure->format());
-            }
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-            return;
-        }
+		@mkdir($this->getDataFolder());
+		$this->saveDefaultConfig();
+		$this->saveResource("bedcore_database.db");
 
-        date_default_timezone_set($this->getParsedConfig()->getTimezone());
-        $this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
-        $this->database = new Database($this);
+		$validation = $this->getParsedConfig()->validateConfig();
+		if(!$validation->isValid()){
+			$this->getLogger()->warning("Configuration's file is not correct.");
+			foreach($validation->getFailures() as $failure){
+				$this->getLogger()->warning($failure->format());
+			}
+			$this->getServer()->getPluginManager()->disablePlugin($this);
 
-        $this->getLogger()->info("Establishing database connection using {$this->getParsedConfig()->getDatabaseType()}...");
-        if (!$this->database->isConnected()) {
-            $this->getLogger()->alert("Could not connect to the database.");
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-            return;
-        }
-        $this->getLogger()->info("Connection established.");
+			return;
+		}
 
-        $this->database->getQueries()->init();
+		date_default_timezone_set($this->getParsedConfig()->getTimezone());
+		$this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
+		$this->database = new Database($this);
 
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+		$this->getLogger()->info("Establishing database connection using {$this->getParsedConfig()->getDatabaseType()}...");
+		if(!$this->database->isConnected()){
+			$this->getLogger()->alert("Could not connect to the database.");
+			$this->getServer()->getPluginManager()->disablePlugin($this);
 
-        $this->getServer()->getPluginManager()->registerEvents(new BlockListener($this), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new EntityListener($this), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new PlayerListener($this), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new WorldListener($this), $this);
-    }
+			return;
+		}
+		$this->getLogger()->info("Connection established.");
 
-    public function getParsedConfig(): ConfigParser
-    {
-        return new ConfigParser($this);
-    }
+		$this->database->getQueries()->init();
 
-    protected function onDisable(): void
-    {
-        if (($this->database !== null)) {
-            $this->database->getQueries()->endTransaction();
-            $this->database->close();
-        }
-        Inspector::clearCache();
-    }
+		$this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+
+		$this->getServer()->getPluginManager()->registerEvents(new BlockListener($this), $this);
+		$this->getServer()->getPluginManager()->registerEvents(new EntityListener($this), $this);
+		$this->getServer()->getPluginManager()->registerEvents(new PlayerListener($this), $this);
+		$this->getServer()->getPluginManager()->registerEvents(new WorldListener($this), $this);
+	}
+
+	public function getParsedConfig() : ConfigParser{
+		return new ConfigParser($this);
+	}
+
+	protected function onDisable() : void{
+		if(($this->database !== null)){
+			$this->database->getQueries()->endTransaction();
+			$this->database->close();
+		}
+		Inspector::clearCache();
+	}
 }

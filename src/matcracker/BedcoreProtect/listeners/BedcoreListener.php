@@ -24,14 +24,12 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\event\Listener;
 
-abstract class BedcoreListener implements Listener
-{
-    protected $plugin;
-    protected $database;
+abstract class BedcoreListener implements Listener{
+	protected $plugin;
+	protected $database;
 
-    public function __construct(Main $plugin)
-    {
-        $this->plugin = $plugin;
-        $this->database = $plugin->getDatabase();
-    }
+	public function __construct(Main $plugin){
+		$this->plugin = $plugin;
+		$this->database = $plugin->getDatabase();
+	}
 }

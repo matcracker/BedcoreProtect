@@ -36,125 +36,123 @@ use pocketmine\event\block\BlockGrowEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 
-final class BlockListener extends BedcoreListener
-{
-    /**
-     * @param BlockBreakEvent $event
-     * @priority MONITOR
-     */
-    public function trackBlockBreak(BlockBreakEvent $event): void
-    {
-        if ($this->plugin->getParsedConfig()->getBlockBreak()) {
-            $player = $event->getPlayer();
-            $block = $event->getBlock();
+final class BlockListener extends BedcoreListener{
+	/**
+	 * @param BlockBreakEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackBlockBreak(BlockBreakEvent $event) : void{
+		if($this->plugin->getParsedConfig()->getBlockBreak()){
+			$player = $event->getPlayer();
+			$block = $event->getBlock();
 
-            if (Inspector::isInspector($player)) { //It checks the block clicked //TODO: Move out of there this check in a properly listener
-                $this->database->getQueries()->requestBlockLog($player, $block);
-                $event->setCancelled();
-            } else {
-                if ($block instanceof Sign) {
-                    if ($this->plugin->getParsedConfig()->getSignText()) {
-                        $this->database->getQueries()->addSignLogByPlayer($player, $block);
-                    }
-                } else {
-                    $air = BlockUtils::createAir($block->asPosition());
-                    $this->database->getQueries()->addBlockLogByEntity($player, $block, $air, QueriesConst::BROKE);
-                }
-            }
-        }
-    }
+			if(Inspector::isInspector($player)){ //It checks the block clicked //TODO: Move out of there this check in a properly listener
+				$this->database->getQueries()->requestBlockLog($player, $block);
+				$event->setCancelled();
+			}else{
+				if($block instanceof Sign){
+					if($this->plugin->getParsedConfig()->getSignText()){
+						$this->database->getQueries()->addSignLogByPlayer($player, $block);
+					}
+				}else{
+					$air = BlockUtils::createAir($block->asPosition());
+					$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, QueriesConst::BROKE);
+				}
+			}
+		}
+	}
 
-    /**
-     * @param BlockPlaceEvent $event
-     * @priority MONITOR
-     */
-    public function trackBlockPlace(BlockPlaceEvent $event): void
-    {
-        if ($this->plugin->getParsedConfig()->getBlockPlace()) {
-            $player = $event->getPlayer();
-            $block = $event->getBlock();
-            $replacedBlock = $event->getBlockReplaced();
+	/**
+	 * @param BlockPlaceEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackBlockPlace(BlockPlaceEvent $event) : void{
+		if($this->plugin->getParsedConfig()->getBlockPlace()){
+			$player = $event->getPlayer();
+			$block = $event->getBlock();
+			$replacedBlock = $event->getBlockReplaced();
 
-            if (Inspector::isInspector($player)) { //It checks the block where the player places. //TODO: Move out of there this check in a properly listener
-                $this->database->getQueries()->requestBlockLog($player, $replacedBlock);
-                $event->setCancelled();
-            } else {
-                /*if ($block instanceof Bed) {
-                    $half = $block->getOtherHalf();
-                    var_dump($half);
-                    if ($half !== null) {
-                        $this->database->getQueries()->logPlayer($player, $replacedBlock, $half, Queries::PLACED);
-                    }
-                } else if ($block instanceof Door) {
-                    $upperDoor = BlockFactory::get($block->getId(), $block->getDamage() | 0x01, $block->asPosition())
-                    $this->database->getQueries()->logPlayer($player, $replacedBlock, $upperDoor, Queries::PLACED);
+			if(Inspector::isInspector($player)){ //It checks the block where the player places. //TODO: Move out of there this check in a properly listener
+				$this->database->getQueries()->requestBlockLog($player, $replacedBlock);
+				$event->setCancelled();
+			}else{
+				/*if ($block instanceof Bed) {
+					$half = $block->getOtherHalf();
+					var_dump($half);
+					if ($half !== null) {
+						$this->database->getQueries()->logPlayer($player, $replacedBlock, $half, Queries::PLACED);
+					}
+				} else if ($block instanceof Door) {
+					$upperDoor = BlockFactory::get($block->getId(), $block->getDamage() | 0x01, $block->asPosition())
+					$this->database->getQueries()->logPlayer($player, $replacedBlock, $upperDoor, Queries::PLACED);
 
-                }*/
-                $this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, QueriesConst::PLACED);
-            }
-        }
-    }
+				}*/
+				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, QueriesConst::PLACED);
+			}
+		}
+	}
 
-    /**
-     * @param BlockSpreadEvent $event
-     * @priority MONITOR
-     */
-    public function trackBlockSpread(BlockSpreadEvent $event): void
-    {
-        $block = $event->getBlock();
-        $source = $event->getSource();
-        $newState = $event->getNewState();
+	/**
+	 * @param BlockSpreadEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackBlockSpread(BlockSpreadEvent $event) : void{
+		$block = $event->getBlock();
+		$source = $event->getSource();
+		$newState = $event->getNewState();
 
-        /*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
-        print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
-        print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
+		/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
+		print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
+		print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
-        if ($source instanceof Liquid) {
-            //var_dump($source->getFlowVector());
-            if (BlockUtils::isStillLiquid($source)) {
+		if($source instanceof Liquid){
+			//var_dump($source->getFlowVector());
+			if(BlockUtils::isStillLiquid($source)){
 
-                /*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
-                print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
-                print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
+				/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
+				print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
+				print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
-                $this->database->getQueries()->addBlockLogByBlock($source, $block, $source, QueriesConst::PLACED);
-            } //TODO: Find player who place water
+				$this->database->getQueries()->addBlockLogByBlock($source, $block, $source, QueriesConst::PLACED);
+			} //TODO: Find player who place water
 
-        }
-    }
+		}
+	}
 
-    /**
-     * @param BlockBurnEvent $event
-     * @priority MONITOR
-     */
-    public function trackBlockBurn(BlockBurnEvent $event): void
-    {
-        if ($this->plugin->getParsedConfig()->getBlockIgnite()) {
-            $block = $event->getBlock();
-            $cause = $event->getCausingBlock();
+	/**
+	 * @param BlockBurnEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackBlockBurn(BlockBurnEvent $event) : void{
+		if($this->plugin->getParsedConfig()->getBlockIgnite()){
+			$block = $event->getBlock();
+			$cause = $event->getCausingBlock();
 
-            $this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, QueriesConst::BROKE);
-        }
-    }
+			$this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, QueriesConst::BROKE);
+		}
+	}
 
-    /**
-     * @param BlockFormEvent $event
-     * @priority MONITOR
-     */
-    public function trackBlockForm(BlockFormEvent $event): void
-    {
-        $block = $event->getBlock();
-        $result = $event->getNewState();
+	/**
+	 * @param BlockFormEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackBlockForm(BlockFormEvent $event) : void{
+		$block = $event->getBlock();
+		$result = $event->getNewState();
 
-        if ($block instanceof Liquid) {
-            $id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
-            $this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, QueriesConst::PLACED, $block->asPosition());
-        }
-    }
+		if($block instanceof Liquid){
+			$id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
+			$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, QueriesConst::PLACED, $block->asPosition());
+		}
+	}
 
-    public function testGrow(BlockGrowEvent $event): void
-    {
-        //TODO
-    }
+	public function testGrow(BlockGrowEvent $event) : void{
+		//TODO
+	}
 
 }

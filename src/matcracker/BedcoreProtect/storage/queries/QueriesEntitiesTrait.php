@@ -31,38 +31,34 @@ use pocketmine\Player;
  * Trait QueriesEntitiesTrait
  * @package matcracker\BedcoreProtect\storage
  */
-trait QueriesEntitiesTrait
-{
+trait QueriesEntitiesTrait{
 
-    /**
-     * @param Entity $damager
-     * @param Entity $entity
-     * @param int $action
-     */
-    public function addLogEntityByEntity(Entity $damager, Entity $entity, int $action = QueriesConst::KILLED): void
-    {
-        $this->addEntity($damager);
-        $this->addEntity($entity);
+	/**
+	 * @param Entity $damager
+	 * @param Entity $entity
+	 * @param int    $action
+	 */
+	public function addLogEntityByEntity(Entity $damager, Entity $entity, int $action = QueriesConst::KILLED) : void{
+		$this->addEntity($damager);
+		$this->addEntity($entity);
 
-        $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
-        $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
-            "uuid" => Utils::getEntityUniqueId($entity)
-        ]);
-    }
+		$this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
+		$this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+			"uuid" => Utils::getEntityUniqueId($entity)
+		]);
+	}
 
-    public function addEntity(Entity $entity): void
-    {
-        $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), ($entity instanceof Player) ? $entity->getNetworkSession()->getIp() : "127.0.0.1");
-    }
+	public function addEntity(Entity $entity) : void{
+		$this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), ($entity instanceof Player) ? $entity->getNetworkSession()->getIp() : "127.0.0.1");
+	}
 
-    private function addRawEntity(string $uuid, string $name, string $address = "127.0.0.1"): void
-    {
-        $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
-            "uuid" => $uuid,
-            "name" => $name,
-            "address" => $address
-        ]);
-    }
+	private function addRawEntity(string $uuid, string $name, string $address = "127.0.0.1") : void{
+		$this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
+			"uuid" => $uuid,
+			"name" => $name,
+			"address" => $address
+		]);
+	}
 
-    //TODO: Rollback and restore entities
+	//TODO: Rollback and restore entities
 }

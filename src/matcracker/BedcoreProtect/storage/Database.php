@@ -25,36 +25,31 @@ use matcracker\BedcoreProtect\storage\queries\Queries;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 
-class Database
-{
-    /**@var DataConnector */
-    private $database;
-    /**@var Queries */
-    private $queries;
+class Database{
+	/**@var DataConnector */
+	private $database;
+	/**@var Queries */
+	private $queries;
 
-    public function __construct(Main $plugin)
-    {
-        $this->database = libasynql::create($plugin, $plugin->getConfig()->get("database"), [
-            "sqlite" => "sqlite.sql",
-            "mysql" => "mysql.sql"
-        ]);
-        $this->queries = new Queries($this->database, $plugin->getParsedConfig());
-    }
+	public function __construct(Main $plugin){
+		$this->database = libasynql::create($plugin, $plugin->getConfig()->get("database"), [
+			"sqlite" => "sqlite.sql",
+			"mysql" => "mysql.sql"
+		]);
+		$this->queries = new Queries($this->database, $plugin->getParsedConfig());
+	}
 
-    public function getQueries(): Queries
-    {
-        return $this->queries;
-    }
+	public function getQueries() : Queries{
+		return $this->queries;
+	}
 
-    public final function close(): void
-    {
-        if ($this->isConnected()) {
-            $this->database->close();
-        }
-    }
+	public final function close() : void{
+		if($this->isConnected()){
+			$this->database->close();
+		}
+	}
 
-    public final function isConnected(): bool
-    {
-        return isset($this->database);
-    }
+	public final function isConnected() : bool{
+		return isset($this->database);
+	}
 }

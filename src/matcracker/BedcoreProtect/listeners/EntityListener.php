@@ -28,38 +28,37 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
 
-final class EntityListener extends BedcoreListener
-{
-    /**
-     * @param EntityExplodeEvent $event
-     * @priority MONITOR
-     */
-    public function trackEntityExplode(EntityExplodeEvent $event): void
-    {
-        if ($this->plugin->getParsedConfig()->getExplosions()) {
-            $entity = $event->getEntity();
-            $blocks = $event->getBlockList();
+final class EntityListener extends BedcoreListener{
+	/**
+	 * @param EntityExplodeEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackEntityExplode(EntityExplodeEvent $event) : void{
+		if($this->plugin->getParsedConfig()->getExplosions()){
+			$entity = $event->getEntity();
+			$blocks = $event->getBlockList();
 
-            if ($entity instanceof PrimedTNT) {
-                $air = BlockUtils::createAir();
-                $this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, QueriesConst::BROKE);
-            }
-        }
-    }
+			if($entity instanceof PrimedTNT){
+				$air = BlockUtils::createAir();
+				$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, QueriesConst::BROKE);
+			}
+		}
+	}
 
-    /**
-     * @param EntityDeathEvent $event
-     * @priority MONITOR
-     */
-    public function trackEntityDeath(EntityDeathEvent $event): void
-    {
-        if ($this->plugin->getParsedConfig()->getEntityKills()) {
-            $entity = $event->getEntity();
-            $ev = $entity->getLastDamageCause();
-            if ($ev instanceof EntityDamageByEntityEvent) {
-                $damager = $ev->getDamager();
-                $this->database->getQueries()->addLogEntityByEntity($damager, $entity);
-            }
-        }
-    }
+	/**
+	 * @param EntityDeathEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackEntityDeath(EntityDeathEvent $event) : void{
+		if($this->plugin->getParsedConfig()->getEntityKills()){
+			$entity = $event->getEntity();
+			$ev = $entity->getLastDamageCause();
+			if($ev instanceof EntityDamageByEntityEvent){
+				$damager = $ev->getDamager();
+				$this->database->getQueries()->addLogEntityByEntity($damager, $entity);
+			}
+		}
+	}
 }
