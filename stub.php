@@ -18,20 +18,19 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect {
 
-    use Phar;
+	use Phar;
 
-    if (!strpos(__FILE__, ".phar")) {
-        echo "/-------------------------------<!WARNING!>----------------.---------------\\\n";
-        echo "|         It is not recommended to run BedcoreProtect from source.         |\n";
-        echo "|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|\n";
-        echo "\--------------------------------------------------------------------------/\n";
-    }
-    require_once(getVendorPath() . "/vendor/autoloader.php");
+	if(!strpos(__FILE__, ".phar")){
+		echo "/-------------------------------<!WARNING!>----------------.---------------\\\n";
+		echo "|         It is not recommended to run BedcoreProtect from source.         |\n";
+		echo "|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|\n";
+		echo "\--------------------------------------------------------------------------/\n";
+	}
+	require_once(getVendorPath() . "/vendor/autoloader.php");
 
-    function getVendorPath(): string
-    {
-        return strpos(__FILE__, ".phar") ? Phar::running() : __DIR__;
-    }
+	function getVendorPath() : string{
+		return strpos(__FILE__, ".phar") ? Phar::running() : __DIR__;
+	}
 }
 
 __HALT_COMPILER();

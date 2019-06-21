@@ -6,5 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'matcracker\\BedcoreProtect\\' => array($baseDir . '/src'),
+	'matcracker\\BedcoreProtect\\' => array($baseDir . '/src'),
 );

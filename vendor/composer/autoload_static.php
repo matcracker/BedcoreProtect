@@ -4,28 +4,26 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitd51c964c54cf68b0369edc8168efba78
-{
-    public static $prefixLengthsPsr4 = array (
-        'm' => 
-        array (
-            'matcracker\\BedcoreProtect\\' => 26,
-        ),
-    );
+class ComposerStaticInitd51c964c54cf68b0369edc8168efba78{
+	public static $prefixLengthsPsr4 = array(
+		'm' =>
+			array(
+				'matcracker\\BedcoreProtect\\' => 26,
+			),
+	);
 
-    public static $prefixDirsPsr4 = array (
-        'matcracker\\BedcoreProtect\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/src',
-        ),
-    );
+	public static $prefixDirsPsr4 = array(
+		'matcracker\\BedcoreProtect\\' =>
+			array(
+				0 => __DIR__ . '/../..' . '/src',
+			),
+	);
 
-    public static function getInitializer(ClassLoader $loader)
-    {
-        return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixDirsPsr4;
+	public static function getInitializer(ClassLoader $loader){
+		return \Closure::bind(function() use ($loader){
+			$loader->prefixLengthsPsr4 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixLengthsPsr4;
+			$loader->prefixDirsPsr4 = ComposerStaticInitd51c964c54cf68b0369edc8168efba78::$prefixDirsPsr4;
 
-        }, null, ClassLoader::class);
-    }
+		}, null, ClassLoader::class);
+	}
 }
