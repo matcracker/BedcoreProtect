@@ -77,8 +77,8 @@ sign-text: true
 # Logs lava and water sources placed/removed by players who are using buckets.
 buckets: true
 
-# Logs natural tree leaf decay.
-leaf-decay: true
+# Logs natural tree leaves decay.
+leaves-decay: true
 
 # Logs tree growth. Trees are linked to the player who planted the sappling.
 tree-growth: true
@@ -86,7 +86,7 @@ tree-growth: true
 # Logs mushroom growth.
 mushroom-growth: true
 
-# Logs natural vine growth.
+# Logs natural vine growth. (NOT SUPPORTED BY POCKETMINE YET)
 vine-growth: true
 
 # Logs water flow. If water destroys other blocks, such as torches,

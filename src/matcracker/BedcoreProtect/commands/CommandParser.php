@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands;
 
 use ArrayOutOfBoundsException;
+use InvalidArgumentException;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -85,7 +86,7 @@ final class CommandParser{
 		if(($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) return false;
 
 		foreach($this->arguments as $argument){
-			$arrayData = explode(":", $argument);
+			$arrayData = explode("=", $argument);
 			if(count($arrayData) !== 2) return false;
 			$param = strtolower($arrayData[0]);
 			$paramValues = $arrayData[1];
@@ -95,12 +96,21 @@ final class CommandParser{
 			}
 
 			switch($param){
-				case "user": //TODO: Add support for more players.
+				case "users":
+				case "user":
 				case "u":
-					$offlinePlayer = Server::getInstance()->getOfflinePlayer($paramValues);
-					if(!$offlinePlayer->hasPlayedBefore()) return false;
+					$users = explode(",", $paramValues);
+					if(count($users) < 1) return false;
 
-					$this->data["user"] = $offlinePlayer->getName();
+					foreach($users as $user){
+						if(mb_substr($user, 0, 1) === "#"){
+							//TODO: Check entity if is valid
+
+						}else if(!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()){
+							return false;
+						}
+					}
+					$this->data["user"] = $users;
 					break;
 				case "time":
 				case "t":
@@ -131,12 +141,16 @@ final class CommandParser{
 
 					$index = substr($param, 0, 1) === "b" ? "blocks" : "exclusions";
 					foreach($blocks as $block){
-						$block = ItemFactory::fromString($block)->getBlock(); //TODO: TEST
+						try{
+							$block = ItemFactory::fromString($block)->getBlock();
 
-						$this->data[$index][] = [
-							"id" => $block->getId(),
-							"damage" => $block->getMeta()
-						];
+							$this->data[$index][] = [
+								"id" => $block->getId(),
+								"damage" => $block->getMeta()
+							];
+						}catch(InvalidArgumentException $exception){
+							return false;
+						}
 					}
 					break;
 				default:
@@ -194,42 +208,46 @@ final class CommandParser{
 		}
 
 		foreach($this->data as $key => $value){
-			if($key === "user" && $value !== null){
-				$query .= "who = (SELECT uuid FROM \"entities\" WHERE entity_name = '$value') AND ";
-			}else if($key === "time" && $value !== null){
-				$diffTime = time() - (int) $value;
-				if($this->configParser->isSQLite()){
-					$query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
-				}else{
-					$query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
-				}
-			}else if($key === "radius" && $vector3 !== null && $value !== null){
-				$minV = $vector3->subtract($value, $value, $value)->floor();
-				$maxV = $vector3->add($value, $value, $value)->floor();
-				$query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
-				$query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
-				$query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
-			}else if($key === "action" && $value !== null){
-				$minAction = CommandParser::toAction($value);
-				$maxAction = $minAction;
-				if($value === "container"){
-					$minAction = QueriesConst::ADDED;
-					$maxAction = QueriesConst::REMOVED;
-				}elseif($value === "block"){
-					$minAction = QueriesConst::PLACED;
-					$maxAction = QueriesConst::BROKE;
-				}
-				$query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
-			}else if(($key === "blocks" || $key === "exclusions") && $value !== null){ //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
-				$operator = $key === "exclusions" ? "<>" : "=";
-				for($i = 0; $i < $cArgs; $i += 2){
-					foreach($value as $blockArray){
-						$id = (int) $blockArray["id"];
-						$damage = (int) $blockArray["damage"];
-						$query .= "{$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
+			if($value !== null){
+				if($key === "user"){
+					foreach($value as $user){
+						$query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$user') AND ";
 					}
-				}
+				}else if($key === "time" && $value !== null){
+					$diffTime = time() - (int) $value;
+					if($this->configParser->isSQLite()){
+						$query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
+					}else{
+						$query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
+					}
+				}else if($key === "radius" && $vector3 !== null){
+					$minV = $vector3->subtract($value, $value, $value)->floor();
+					$maxV = $vector3->add($value, $value, $value)->floor();
+					$query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
+					$query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
+					$query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
+				}else if($key === "action"){
+					$minAction = CommandParser::toAction($value);
+					$maxAction = $minAction;
+					if($value === "container"){
+						$minAction = QueriesConst::ADDED;
+						$maxAction = QueriesConst::REMOVED;
+					}elseif($value === "block"){
+						$minAction = QueriesConst::PLACED;
+						$maxAction = QueriesConst::BROKE;
+					}
+					$query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
+				}else if(($key === "blocks" || $key === "exclusions")){ //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
+					$operator = $key === "exclusions" ? "<>" : "=";
+					for($i = 0; $i < $cArgs; $i += 2){
+						foreach($value as $blockArray){
+							$id = (int) $blockArray["id"];
+							$damage = (int) $blockArray["damage"];
+							$query .= "{$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
+						}
+					}
 
+				}
 			}
 		}
 	}
@@ -276,7 +294,6 @@ final class CommandParser{
 			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
-		$diffTime = time() - $this->getTime();
 		$query = /**@lang text */
 			"SELECT *,
             bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
@@ -284,14 +301,7 @@ final class CommandParser{
             e.entity_name AS entity_from FROM log_history 
             LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
             LEFT JOIN entities e ON log_history.who = e.uuid 
-            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id ";
-
-		if($this->configParser->isSQLite()){
-			$query .= "WHERE time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime')) AND ";
-		}else{
-			$query .= "WHERE time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP AND ";
-		}
-
+            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ";
 
 		$this->buildConditionalQuery($query, null, [
 			"bl.old_block_id", "bl.old_block_damage",
@@ -352,7 +362,7 @@ final class CommandParser{
 		return $this->data;
 	}
 
-	public function getUser() : ?string{
+	public function getUsers() : ?string{
 		return $this->getData("user");
 	}
 

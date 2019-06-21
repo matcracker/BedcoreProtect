@@ -73,12 +73,12 @@ final class BCPHelpCommand{
 					$subCmd = "rollback";
 				}
 				$sender->sendMessage(Utils::translateColors("&3/bcp {$subCmd} &7<params> &f- Perform the {$subCmd}."));
-				$sender->sendMessage(Utils::translateColors("&3| &7u:<users> &f- Specify the user(s) to {$subCmd}."));
-				$sender->sendMessage(Utils::translateColors("&3| &7t:<time> &f- Specify the amount of time to {$subCmd}."));
-				$sender->sendMessage(Utils::translateColors("&3| &7r:<radius> &f- Specify a radius area to limit the {$subCmd} to."));
-				$sender->sendMessage(Utils::translateColors("&3| &7a:<action> &f- Restrict the {$subCmd} to a certain action."));
-				$sender->sendMessage(Utils::translateColors("&3| &7b:<blocks> &f- Restrict the {$subCmd} to certain block types."));
-				$sender->sendMessage(Utils::translateColors("&3| &7e:<exclude> &f- Exclude blocks/users from the {$subCmd}."));
+				$sender->sendMessage(Utils::translateColors("&3| &7u=<users> &f- Specify the user(s) to {$subCmd}."));
+				$sender->sendMessage(Utils::translateColors("&3| &7t=<time> &f- Specify the amount of time to {$subCmd}."));
+				$sender->sendMessage(Utils::translateColors("&3| &7r=<radius> &f- Specify a radius area to limit the {$subCmd} to."));
+				$sender->sendMessage(Utils::translateColors("&3| &7a=<action> &f- Restrict the {$subCmd} to a certain action."));
+				$sender->sendMessage(Utils::translateColors("&3| &7b=<blocks> &f- Restrict the {$subCmd} to certain block types."));
+				$sender->sendMessage(Utils::translateColors("&3| &7e=<exclude> &f- Exclude blocks/users from the {$subCmd}."));
 				$sender->sendMessage(Utils::translateColors("&7Please see &3\"/bcp help <param>\"&7 for detailed parameter info."));
 				break;
 			case "lookup":
@@ -90,44 +90,44 @@ final class BCPHelpCommand{
 				$sender->sendMessage(Utils::translateColors("&7Please see \"/bcp help params\" for detailed parameters."));
 				break;
 			case "purge":
-				$sender->sendMessage(Utils::translateColors("&3/bcp purge t:<time> &f- Delete data older than specified time."));
+				$sender->sendMessage(Utils::translateColors("&3/bcp purge t=<time> &f- Delete data older than specified time."));
 				$sender->sendMessage(Utils::translateColors("&7For example, \"/bcp purge t:30d\" will delete all data older than one month, and only keep the last 30 days of data."));
 				break;
 			case "user":
 			case "u":
-				$sender->sendMessage(Utils::translateColors("&3/bcp lookup u:<users> &f- Specify the user(s) to lookup."));
-				$sender->sendMessage(Utils::translateColors("&7Examples: [u:shoghicp], [u:shoghicp,#zombie]"));
+				$sender->sendMessage(Utils::translateColors("&3/bcp lookup u=<users> &f- Specify the user(s) to lookup."));
+				$sender->sendMessage(Utils::translateColors("&7Examples: [u=shoghicp], [u=shoghicp,#zombie]"));
 				break;
 			case "time":
 			case "t":
-				$sender->sendMessage(Utils::translateColors("&3/bcp lookup t:<time> &f- Specify the amount of time to lookup."));
-				$sender->sendMessage(Utils::translateColors("&7Examples: [t:2w5d7h2m10s], [t:5d2h]."));
+				$sender->sendMessage(Utils::translateColors("&3/bcp lookup t=<time> &f- Specify the amount of time to lookup."));
+				$sender->sendMessage(Utils::translateColors("&7Examples: [t=2w5d7h2m10s], [t=5d2h]."));
 				break;
 			case "radius":
 			case "r":
-				$sender->sendMessage(Utils::translateColors("&3/bcp lookup r:<radius> &f- Specify a radius area."));
-				$sender->sendMessage(Utils::translateColors("&7Examples: [r:10] (Only make changes within 10 blocks of you)."));
+				$sender->sendMessage(Utils::translateColors("&3/bcp lookup r=<radius> &f- Specify a radius area."));
+				$sender->sendMessage(Utils::translateColors("&7Examples: [r=10] (Only make changes within 10 blocks of you)."));
 				break;
 			case "action":
 			case "a":
-				$sender->sendMessage(Utils::translateColors("&3/bcp lookup a:<action> &f- Restrict the lookup to a certain action."));
-				$sender->sendMessage(Utils::translateColors("&7Examples: [a:block], [a:+block], [a:-block] [a:click], [a:container], [a:kill]"));
+				$sender->sendMessage(Utils::translateColors("&3/bcp lookup a=<action> &f- Restrict the lookup to a certain action."));
+				$sender->sendMessage(Utils::translateColors("&7Examples: [a=block], [a=+block], [a=-block] [a=click], [a=container], [a=kill]"));
 				break;
 			case "blocks":
 			case "b":
-				$sender->sendMessage(Utils::translateColors("&3/bcp lookup b:<blocks> &f- Restrict the lookup to certain blocks."));
-				$sender->sendMessage(Utils::translateColors("&7Examples: [b:stone], [b:1,5,7]"));
+				$sender->sendMessage(Utils::translateColors("&3/bcp lookup b=<blocks> &f- Restrict the lookup to certain blocks."));
+				$sender->sendMessage(Utils::translateColors("&7Examples: [b=stone], [b=1,5,stained_glass:8]"));
 				$sender->sendMessage(Utils::translateColors("&7Block Names: https://minecraft.gamepedia.com/Block"));
 				break;
 			case "exclude":
 			case "e":
-				$sender->sendMessage(Utils::translateColors("&3/bcp lookup b:<blocks> &f- Exclude blocks."));
-				$sender->sendMessage(Utils::translateColors("&7Examples: [e:stone], [e:1,5,7]"));
+				$sender->sendMessage(Utils::translateColors("&3/bcp lookup e=<blocks> &f- Exclude blocks."));
+				$sender->sendMessage(Utils::translateColors("&7Examples: [e=stone], [e=1,5,stained_glass:8]"));
 				$sender->sendMessage(Utils::translateColors("&7Block Names: https://minecraft.gamepedia.com/Block"));
 				break;
 			default:
 				$sender->sendMessage(Utils::translateColors("Information for command \"/bcp help {$subCmd}\" not found."));
-
+				break;
 		}
 	}
 }
