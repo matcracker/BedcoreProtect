@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\event\block\LeavesDecayEvent;
-use pocketmine\event\world\WorldSaveEvent;
 
 final class WorldListener extends BedcoreListener{
 	/**
@@ -33,20 +32,10 @@ final class WorldListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackLeavesDecay(LeavesDecayEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getLeavesDecay()){
-			$block = $event->getBlock();
+		$block = $event->getBlock();
+		if($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getLeavesDecay()){
 			$this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), Action::BREAK());
 		}
-	}
-
-	/**
-	 * @param WorldSaveEvent $event
-	 *
-	 * @priority HIGH
-	 */
-	public function onLevelSave(WorldSaveEvent $event) : void{
-		$this->database->getQueries()->endTransaction();
-		$this->database->getQueries()->beginTransaction();
 	}
 
 }

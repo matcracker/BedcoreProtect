@@ -166,13 +166,14 @@ final class Inspector{
 				$damage = (int) $log["{$itemFound}_item_damage"];
 				$amount = (int) $log["{$itemFound}_amount"];
 				$itemName = ItemFactory::get($id, $damage)->getName();
-				$entityTo = "$amount x #$id:$damage ($itemName)";
+				$entityTo = "{$amount} x #{$id}:{$damage} ({$itemName})";
 			}else{
 				throw new UnexpectedValueException("Invalid action parsed: {$action->getEnumName()}");
 			}
 
-			$inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . //TODO: Add strikethrough (&m) when MC fix it.
-														   Utils::timeAgo($timeStamp) . "&f - &3{$entityFrom} &f{$actionName} &3{$entityTo} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+			//TODO: Add strikethrough (&m) when MC fix it.
+			$inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
+														   . "&f - &3{$entityFrom} &f{$actionName} &3{$entityTo} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
 		}
 		$inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
 

@@ -278,7 +278,7 @@ final class CommandParser{
 				switch($param){
 					case "user":
 					case "action":
-						return "This {$param} does not exist";
+						return "This {$param}/s does not exist";
 					case "time":
 					case "radius":
 						return "Please specify the amount of {$param}";

@@ -43,8 +43,8 @@ final class BlockListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackBlockBreak(BlockBreakEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getBlockBreak()){
-			$player = $event->getPlayer();
+		$player = $event->getPlayer();
+		if($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBlockBreak()){
 			$block = $event->getBlock();
 
 			if(Inspector::isInspector($player)){ //It checks the block clicked
@@ -69,8 +69,8 @@ final class BlockListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackBlockPlace(BlockPlaceEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getBlockPlace()){
-			$player = $event->getPlayer();
+		$player = $event->getPlayer();
+		if($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBlockPlace()){
 			$block = $event->getBlock();
 			$replacedBlock = $event->getBlockReplaced();
 
@@ -107,17 +107,19 @@ final class BlockListener extends BedcoreListener{
 		print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
 		print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
-		if($source instanceof Liquid){
-			//var_dump($source->getFlowVector());
-			if(BlockUtils::isStillLiquid($source)){
+		if($this->configParser->isEnabledWorld($block->getWorld())){
+			if($source instanceof Liquid){
+				//var_dump($source->getFlowVector());
+				if(BlockUtils::isStillLiquid($source)){
 
-				/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
-				print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
-				print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
+					/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
+					print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
+					print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
-				$this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
-			} //TODO: Find player who place water
+					$this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
+				} //TODO: Find player who place water
 
+			}
 		}
 	}
 
@@ -127,8 +129,8 @@ final class BlockListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackBlockBurn(BlockBurnEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getBlockIgnite()){
-			$block = $event->getBlock();
+		$block = $event->getBlock();
+		if($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getBlockIgnite()){
 			$cause = $event->getCausingBlock();
 
 			$this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
@@ -144,9 +146,11 @@ final class BlockListener extends BedcoreListener{
 		$block = $event->getBlock();
 		$result = $event->getNewState();
 
-		if($block instanceof Liquid){
-			$id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
-			$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
+		if($this->configParser->isEnabledWorld($block->getWorld())){
+			if($block instanceof Liquid){
+				$id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
+				$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
+			}
 		}
 	}
 

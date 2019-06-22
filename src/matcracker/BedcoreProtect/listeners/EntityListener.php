@@ -36,8 +36,8 @@ final class EntityListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackEntityExplode(EntityExplodeEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getExplosions()){
-			$entity = $event->getEntity();
+		$entity = $event->getEntity();
+		if($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getExplosions()){
 			$blocks = $event->getBlockList();
 
 			if($entity instanceof PrimedTNT){
@@ -53,8 +53,8 @@ final class EntityListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackEntityDeath(EntityDeathEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getEntityKills()){
-			$entity = $event->getEntity();
+		$entity = $event->getEntity();
+		if($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getEntityKills()){
 			$ev = $entity->getLastDamageCause();
 			if($ev instanceof EntityDamageByEntityEvent){
 				$damager = $ev->getDamager();

@@ -63,8 +63,8 @@ final class PlayerListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackPlayerBucket(PlayerBucketEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getBuckets()){
-			$player = $event->getPlayer();
+		$player = $event->getPlayer();
+		if($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBuckets()){
 			$block = $event->getBlockClicked();
 			$fireEmpty = ($event instanceof PlayerBucketEmptyEvent);
 
@@ -100,37 +100,40 @@ final class PlayerListener extends BedcoreListener{
 	 */
 	public function trackPlayerInteraction(PlayerInteractEvent $event) : void{
 		$player = $event->getPlayer();
-		$clickedBlock = $event->getBlock();
-		$item = $event->getItem();
-		$action = $event->getAction();
-		$face = $event->getFace();
 
-		if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
-			if(!$event->isCancelled()){
-				$relativeBlock = $clickedBlock->getSide($face);
-				if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
-					$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::createAir($relativeBlock), Action::BREAK());
+		if($this->configParser->isEnabledWorld($player->getWorld())){
+			$clickedBlock = $event->getBlock();
+			$item = $event->getItem();
+			$action = $event->getAction();
+			$face = $event->getFace();
 
+			if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
+				if(!$event->isCancelled()){
+					$relativeBlock = $clickedBlock->getSide($face);
+					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
+						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::createAir($relativeBlock), Action::BREAK());
+
+					}
 				}
-			}
-		}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
-			if(Inspector::isInspector($player)){
-				if(BlockUtils::hasInventory($clickedBlock)){
-					$this->database->getQueries()->requestTransactionLog($player, $clickedBlock);
-				}else{
-					$this->database->getQueries()->requestBlockLog($player, $clickedBlock);
+			}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
+				if(Inspector::isInspector($player)){
+					if(BlockUtils::hasInventory($clickedBlock)){
+						$this->database->getQueries()->requestTransactionLog($player, $clickedBlock);
+					}else{
+						$this->database->getQueries()->requestBlockLog($player, $clickedBlock);
+					}
+					$event->setCancelled();
+
+					return;
 				}
-				$event->setCancelled();
 
-				return;
-			}
-
-			if(!$event->isCancelled()){
-				if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
-					$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
-					$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::createAir($fire->asPosition()), $fire, Action::PLACE());
-				}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
-					$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+				if(!$event->isCancelled()){
+					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
+						$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
+						$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::createAir($fire->asPosition()), $fire, Action::PLACE());
+					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
+						$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+					}
 				}
 			}
 		}
@@ -142,9 +145,10 @@ final class PlayerListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackInventoryTransaction(InventoryTransactionEvent $event) : void{
-		if($this->plugin->getParsedConfig()->getItemTransactions()){
-			$transaction = $event->getTransaction();
-			$player = $transaction->getSource();
+		$transaction = $event->getTransaction();
+		$player = $transaction->getSource();
+
+		if($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getItemTransactions()){
 			$actions = $transaction->getActions();
 
 			foreach($actions as $action){

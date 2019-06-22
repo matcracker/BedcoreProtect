@@ -25,6 +25,7 @@ use DateTimeZone;
 use matcracker\BedcoreProtect\Main;
 use Particle\Validator\ValidationResult;
 use Particle\Validator\Validator;
+use pocketmine\world\World;
 
 /**
  * It parses the plugin configuration to be an object.
@@ -49,6 +50,14 @@ final class ConfigParser{
 
 	public function getTimezone() : string{
 		return (string) $this->data['timezone'];
+	}
+
+	public function isEnabledWorld(World $world) : bool{
+		return in_array($world->getFolderName(), $this->getEnabledWorlds());
+	}
+
+	public function getEnabledWorlds() : array{
+		return (array) $this->data['enabled-worlds'];
 	}
 
 	public function getBlockPlace() : bool{
@@ -114,6 +123,7 @@ final class ConfigParser{
 		$v->required('database.mysql.password')->string()->allowEmpty(true);
 		$v->required('database.mysql.schema')->string();
 		$v->required('database.worker-limit')->integer()->between(1, PHP_INT_MAX);
+		$v->required('enabled-worlds')->isArray();
 		$v->required('check-updates')->bool();
 		$v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
 		$v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
@@ -121,7 +131,7 @@ final class ConfigParser{
 			return in_array($value, array_values(DateTimeZone::listIdentifiers()));
 		});
 
-		foreach(array_slice(array_keys($this->data), 5) as $key){
+		foreach(array_slice(array_keys($this->data), 6) as $key){
 			$v->required($key)->bool();
 		}
 

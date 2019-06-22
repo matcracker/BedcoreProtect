@@ -27,6 +27,7 @@ use matcracker\BedcoreProtect\listeners\EntityListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
 use UnexpectedValueException;
@@ -38,6 +39,9 @@ final class Main extends PluginBase{
 
 	/**@var Database */
 	private $database;
+
+	/**@var ConfigParser */
+	private $configParser;
 
 	/**
 	 * @return Database
@@ -72,12 +76,13 @@ final class Main extends PluginBase{
 
 			return;
 		}
+		$this->configParser = new ConfigParser($this);
 
-		date_default_timezone_set($this->getParsedConfig()->getTimezone());
+		date_default_timezone_set($this->configParser->getTimezone());
 		$this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
 		$this->database = new Database($this);
 
-		$this->getLogger()->info("Establishing database connection using {$this->getParsedConfig()->getDatabaseType()}...");
+		$this->getLogger()->info("Establishing database connection using {$this->configParser->getDatabaseType()}...");
 		if(!$this->database->isConnected()){
 			$this->getLogger()->alert("Could not connect to the database.");
 			$this->getServer()->getPluginManager()->disablePlugin($this);
@@ -90,19 +95,29 @@ final class Main extends PluginBase{
 
 		$this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
-		$this->getServer()->getPluginManager()->registerEvents(new BlockListener($this), $this);
-		$this->getServer()->getPluginManager()->registerEvents(new EntityListener($this), $this);
-		$this->getServer()->getPluginManager()->registerEvents(new PlayerListener($this), $this);
-		$this->getServer()->getPluginManager()->registerEvents(new WorldListener($this), $this);
+		$events = [
+			new BlockListener($this),
+			new EntityListener($this),
+			new PlayerListener($this),
+			new WorldListener($this)
+		];
+
+		foreach($events as $event){
+			$this->getServer()->getPluginManager()->registerEvents($event, $this);
+		}
+
+		if($this->configParser->isSQLite()){
+			$this->getScheduler()->scheduleRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTime());
+		}
 	}
 
 	public function getParsedConfig() : ConfigParser{
-		return new ConfigParser($this);
+		return $this->configParser;
 	}
 
 	protected function onDisable() : void{
+		$this->getScheduler()->cancelAllTasks();
 		if(($this->database !== null)){
-			$this->database->getQueries()->endTransaction();
 			$this->database->close();
 		}
 		Inspector::clearCache();

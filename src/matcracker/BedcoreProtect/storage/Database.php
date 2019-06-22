@@ -31,7 +31,7 @@ class Database{
 	/**@var Queries */
 	private $queries;
 
-	public function __construct(Main $plugin){
+	public function __construct(Main $plugin){ //TODO: Better handle of database connection
 		$this->database = libasynql::create($plugin, $plugin->getConfig()->get("database"), [
 			"sqlite" => "sqlite.sql",
 			"mysql" => "mysql.sql"
@@ -39,7 +39,7 @@ class Database{
 		$this->queries = new Queries($this->database, $plugin->getParsedConfig());
 	}
 
-	public function getQueries() : Queries{
+	public final function getQueries() : Queries{
 		return $this->queries;
 	}
 
