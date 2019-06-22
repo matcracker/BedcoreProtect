@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
@@ -47,7 +47,7 @@ final class BlockListener extends BedcoreListener{
 			$player = $event->getPlayer();
 			$block = $event->getBlock();
 
-			if(Inspector::isInspector($player)){ //It checks the block clicked //TODO: Move out of there this check in a properly listener
+			if(Inspector::isInspector($player)){ //It checks the block clicked
 				$this->database->getQueries()->requestBlockLog($player, $block);
 				$event->setCancelled();
 			}else{
@@ -57,7 +57,7 @@ final class BlockListener extends BedcoreListener{
 					}
 				}else{
 					$air = BlockUtils::createAir($block->asPosition());
-					$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, QueriesConst::BROKE);
+					$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK());
 				}
 			}
 		}
@@ -74,13 +74,12 @@ final class BlockListener extends BedcoreListener{
 			$block = $event->getBlock();
 			$replacedBlock = $event->getBlockReplaced();
 
-			if(Inspector::isInspector($player)){ //It checks the block where the player places. //TODO: Move out of there this check in a properly listener
+			if(Inspector::isInspector($player)){ //It checks the block where the player places.
 				$this->database->getQueries()->requestBlockLog($player, $replacedBlock);
 				$event->setCancelled();
 			}else{
 				/*if ($block instanceof Bed) {
-					$half = $block->getOtherHalf();
-					var_dump($half);
+					$block->getSide()
 					if ($half !== null) {
 						$this->database->getQueries()->logPlayer($player, $replacedBlock, $half, Queries::PLACED);
 					}
@@ -89,7 +88,7 @@ final class BlockListener extends BedcoreListener{
 					$this->database->getQueries()->logPlayer($player, $replacedBlock, $upperDoor, Queries::PLACED);
 
 				}*/
-				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, QueriesConst::PLACED);
+				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
 			}
 		}
 	}
@@ -116,7 +115,7 @@ final class BlockListener extends BedcoreListener{
 				print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
 				print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
-				$this->database->getQueries()->addBlockLogByBlock($source, $block, $source, QueriesConst::PLACED);
+				$this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
 			} //TODO: Find player who place water
 
 		}
@@ -132,7 +131,7 @@ final class BlockListener extends BedcoreListener{
 			$block = $event->getBlock();
 			$cause = $event->getCausingBlock();
 
-			$this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, QueriesConst::BROKE);
+			$this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
 		}
 	}
 
@@ -147,7 +146,7 @@ final class BlockListener extends BedcoreListener{
 
 		if($block instanceof Liquid){
 			$id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
-			$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, QueriesConst::PLACED, $block->asPosition());
+			$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
 		}
 	}
 

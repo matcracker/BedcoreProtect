@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\InventoryHolder;
@@ -52,21 +53,21 @@ trait QueriesInventoriesTrait{
 				$targetCount = $targetItem->getCount(); //Final count
 				if($targetCount > $sourceCount){
 					$diffAmount = $targetCount - $sourceCount; //Effective number of blocks added/removed
-					$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+					$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
 					$targetItem->setCount($diffAmount);
 				}else{
-					$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
+					$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
 					$this->addInventorySlotLog($slot, $sourceItem, $targetItem);
-					$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+					$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
 				}
 			}else if($sourceItem->getId() !== ItemIds::AIR && $targetItem->getId() !== ItemIds::AIR){
-				$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
+				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
 				$this->addInventorySlotLog($slot, $sourceItem, $targetItem);
-				$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
 			}else if($sourceItem->getId() !== ItemIds::AIR){
-				$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::REMOVED);
+				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
 			}else{
-				$this->addRawLog(Utils::getEntityUniqueId($player), $position, QueriesConst::ADDED);
+				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
 			}
 			$this->addInventorySlotLog($slot, $sourceItem, $targetItem);
 		}

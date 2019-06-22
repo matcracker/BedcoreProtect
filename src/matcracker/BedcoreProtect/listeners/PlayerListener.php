@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
@@ -78,7 +78,7 @@ final class PlayerListener extends BedcoreListener{
 			$liquid = BlockFactory::get($liquidId, 0, $block->asPosition());
 
 			if($fireEmpty){
-				$this->database->getQueries()->addBlockLogByEntity($player, $block, $liquid, QueriesConst::PLACED);
+				$this->database->getQueries()->addBlockLogByEntity($player, $block, $liquid, Action::PLACE());
 			}else{
 				$liquidPos = null;
 				$face = $event->getBlockFace();
@@ -88,7 +88,7 @@ final class PlayerListener extends BedcoreListener{
 					$liquidPos = Position::fromObject($liquid->subtract(0, 1, 0), $liquid->getWorld());
 				}
 
-				$this->database->getQueries()->addBlockLogByEntity($player, $liquid, $block, QueriesConst::BROKE, $liquidPos);
+				$this->database->getQueries()->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), $liquidPos);
 			}
 		}
 	}
@@ -109,7 +109,7 @@ final class PlayerListener extends BedcoreListener{
 			if(!$event->isCancelled()){
 				$relativeBlock = $clickedBlock->getSide($face);
 				if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
-					$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::createAir($relativeBlock), QueriesConst::BROKE);
+					$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::createAir($relativeBlock), Action::BREAK());
 
 				}
 			}
@@ -128,9 +128,9 @@ final class PlayerListener extends BedcoreListener{
 			if(!$event->isCancelled()){
 				if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
 					$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
-					$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::createAir($fire->asPosition()), $fire, QueriesConst::PLACED);
+					$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::createAir($fire->asPosition()), $fire, Action::PLACE());
 				}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
-					$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, QueriesConst::CLICKED);
+					$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
 				}
 			}
 		}

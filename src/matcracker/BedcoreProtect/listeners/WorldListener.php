@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\event\block\LeavesDecayEvent;
 use pocketmine\event\world\WorldSaveEvent;
@@ -35,7 +35,7 @@ final class WorldListener extends BedcoreListener{
 	public function trackLeavesDecay(LeavesDecayEvent $event) : void{
 		if($this->plugin->getParsedConfig()->getLeavesDecay()){
 			$block = $event->getBlock();
-			$this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), QueriesConst::BROKE);
+			$this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), Action::BREAK());
 		}
 	}
 

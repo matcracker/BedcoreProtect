@@ -22,16 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 final class QueriesConst{
-	//Blocks
-	public const PLACED = 0;
-	public const BROKE = 1;
-	public const CLICKED = 2;
-	//Entity
-	public const KILLED = 3;
-	//Inventory
-	public const ADDED = 4;
-	public const REMOVED = 5;
-
 	public const INIT_ENTITY = "bcp.table.entities";
 	public const INIT_BLOCKS = "bcp.table.blocks";
 	public const INIT_LOG_HISTORY = "bcp.table.log_history";

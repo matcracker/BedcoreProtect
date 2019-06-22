@@ -23,36 +23,16 @@ namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
 use InvalidArgumentException;
-use matcracker\BedcoreProtect\storage\QueriesConst;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 use ReflectionClass;
+use ReflectionException;
 
 final class Utils{
 
 	private function __construct(){
-	}
-
-	/**
-	 * It returns the action's name from
-	 *
-	 * @param int $action
-	 *
-	 * @return string
-	 */
-	public static function getActionName(int $action) : string{
-		$class = new ReflectionClass(QueriesConst::class);
-		$map = array_flip(array_filter($class->getConstants(), function($element){
-			return is_int($element);
-		}));
-
-		if(!array_key_exists($action, $map)){
-			throw new InvalidArgumentException('This action does not exist.');
-		}
-
-		return strtolower($map[$action]);
 	}
 
 	public static function translateColors(string $message) : string{
@@ -107,7 +87,7 @@ final class Utils{
 	public static function timeAgo(int $timestamp, int $level = 6) : string{
 		$date = new DateTime();
 		$date->setTimestamp($timestamp);
-		$date = $date->diff(new DateTime());
+		$date = $date->diff(new DateTime(), true);
 		// build array
 		$since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
 		// remove empty date values
@@ -149,8 +129,12 @@ final class Utils{
 	 * @return string
 	 */
 	public static function getEntityName(Entity $entity) : string{
-		$reflect = new ReflectionClass($entity);
+		try{
+			$reflect = new ReflectionClass($entity);
 
-		return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()}");
+			return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()}");
+		}catch(ReflectionException $exception){
+			throw new InvalidArgumentException("Invalid entity class.");
+		}
 	}
 }

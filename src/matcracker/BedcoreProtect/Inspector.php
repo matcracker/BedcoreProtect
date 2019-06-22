@@ -21,12 +21,13 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
+use UnexpectedValueException;
 
 final class Inspector{
 	private static $inspectors = [];
@@ -136,42 +137,42 @@ final class Inspector{
 		$inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page {$fakePage}/{$maxPages}) &f-----"));
 		foreach($chunkLogs[$page] as $log){
 			//Default
-			$entityFromName = (string) $log['entity_from'];
+			$entityFrom = (string) $log['entity_from'];
 			$x = (int) $log['x'];
 			$y = (int) $log['y'];
 			$z = (int) $log['z'];
 			$worldName = (string) $log['world_name'];
-			$action = (int) $log['action'];
+			$action = Action::fromType((int) $log['action']);
 			$rollback = (bool) $log['rollback'];
 
-			$actionName = Utils::getActionName($action); //Convert action to string
+			$actionName = $action->getMessage();
 			$time = $log['time'];
 			$timeStamp = (is_int($time) ? (int) $time : strtotime($time));
 
-			$midMessage = "";
-
-			if($action >= QueriesConst::PLACED && $action <= QueriesConst::CLICKED){
-				$blockFound = $action === QueriesConst::BROKE ? "old" : "new";
+			if($action->isBlockAction()){
+				$blockFound = $action->equals(Action::BREAK()) ? "old" : "new";
 				$id = (int) $log["{$blockFound}_block_id"];
 				$damage = (int) $log["{$blockFound}_block_damage"];
 				$blockName = BlockFactory::get($id, $damage)->getName();
 
-				$midMessage = "#$id:$damage ($blockName)";
-			}elseif($action === QueriesConst::KILLED){
+				$entityTo = "#$id:$damage ($blockName)";
+			}elseif($action->isEntityAction()){
 				$entityToName = $log['entity_to'];
 
-				$midMessage = $entityToName;
-			}elseif($action === QueriesConst::ADDED || $action === QueriesConst::REMOVED){
-				$itemFound = $action === QueriesConst::REMOVED ? "old" : "new";
+				$entityTo = $entityToName;
+			}elseif($action->isInventoryAction()){
+				$itemFound = $action->equals(Action::REMOVE()) ? "old" : "new";
 				$id = (int) $log["{$itemFound}_item_id"];
 				$damage = (int) $log["{$itemFound}_item_damage"];
 				$amount = (int) $log["{$itemFound}_amount"];
 				$itemName = ItemFactory::get($id, $damage)->getName();
-				$midMessage = "$amount x #$id:$damage ($itemName)";
+				$entityTo = "$amount x #$id:$damage ($itemName)";
+			}else{
+				throw new UnexpectedValueException("Invalid action parsed: {$action->getEnumName()}");
 			}
 
 			$inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . //TODO: Add strikethrough (&m) when MC fix it.
-														   Utils::timeAgo($timeStamp) . "&f - &3{$entityFromName} &f{$actionName} &3{$midMessage} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+														   Utils::timeAgo($timeStamp) . "&f - &3{$entityFrom} &f{$actionName} &3{$entityTo} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
 		}
 		$inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
 

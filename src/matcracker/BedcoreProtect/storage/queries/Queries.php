@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
@@ -153,14 +154,14 @@ class Queries{
 		}
 	}
 
-	private function addRawLog(string $uuid, Position $position, int $action) : void{
+	private function addRawLog(string $uuid, Position $position, Action $action) : void{
 		$this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
 			"uuid" => strtolower($uuid),
 			"x" => (int) $position->getX(),
 			"y" => (int) $position->getY(),
 			"z" => (int) $position->getZ(),
 			"world_name" => $position->getWorld()->getFolderName(),
-			"action" => $action
+			"action" => $action->getType()
 		]);
 	}
 
@@ -169,11 +170,11 @@ class Queries{
 	 *
 	 * @param string     $uuid
 	 * @param Position[] $positions
-	 * @param int        $action
+	 * @param Action     $action
 	 *
 	 * @return string
 	 */
-	private function buildMultipleRawLogsQuery(string $uuid, array $positions, int $action) : string{
+	private function buildMultipleRawLogsQuery(string $uuid, array $positions, Action $action) : string{
 		$query = /**@lang text */
 			"INSERT INTO log_history(who, x, y, z, world_name, action) VALUES";
 
@@ -182,7 +183,7 @@ class Queries{
 			$y = (int) $position->getY();
 			$z = (int) $position->getZ();
 			$levelName = $position->getLevel()->getFolderName(); //It picks the first element because the level must be the same.
-			$query .= "((SELECT uuid FROM entities WHERE uuid = '$uuid'), '$x', '$y', '$z', '$levelName', '$action'),";
+			$query .= "((SELECT uuid FROM entities WHERE uuid = '$uuid'), '$x', '$y', '$z', '$levelName', '{$action->getType()}'),";
 		}
 
 		$query = rtrim($query, ",") . ";";

@@ -21,9 +21,10 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\entity\object\PrimedTNT;
+use pocketmine\event\entity\EntityBlockChangeEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
@@ -41,7 +42,7 @@ final class EntityListener extends BedcoreListener{
 
 			if($entity instanceof PrimedTNT){
 				$air = BlockUtils::createAir();
-				$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, QueriesConst::BROKE);
+				$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, Action::BREAK());
 			}
 		}
 	}
@@ -57,8 +58,18 @@ final class EntityListener extends BedcoreListener{
 			$ev = $entity->getLastDamageCause();
 			if($ev instanceof EntityDamageByEntityEvent){
 				$damager = $ev->getDamager();
-				$this->database->getQueries()->addLogEntityByEntity($damager, $entity);
+				$this->database->getQueries()->addLogEntityByEntity($damager, $entity, Action::KILL());
 			}
 		}
+	}
+
+	/**
+	 * @param EntityBlockChangeEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackEntityBlockChange(EntityBlockChangeEvent $event) : void{
+		$this->database->getQueries()->addBlockLogByEntity($event->getEntity(), $event->getBlock(), $event->getTo(), Action::BREAK(), $event->getBlock());
+		$this->database->getQueries()->addBlockLogByEntity($event->getEntity(), $event->getBlock(), $event->getTo(), Action::PLACE());
 	}
 }

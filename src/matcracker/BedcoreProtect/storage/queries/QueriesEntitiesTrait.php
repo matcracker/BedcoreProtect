@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\Player;
@@ -36,9 +37,9 @@ trait QueriesEntitiesTrait{
 	/**
 	 * @param Entity $damager
 	 * @param Entity $entity
-	 * @param int    $action
+	 * @param Action $action
 	 */
-	public function addLogEntityByEntity(Entity $damager, Entity $entity, int $action = QueriesConst::KILLED) : void{
+	public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action) : void{
 		$this->addEntity($damager);
 		$this->addEntity($entity);
 

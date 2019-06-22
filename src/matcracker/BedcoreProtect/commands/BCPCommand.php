@@ -180,7 +180,7 @@ final class BCPCommand extends Command{
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
 									$sender->sendMessage(Utils::translateColors("&f------"));
 									$y = $sender->getWorld()->getHighestBlockAt((int) $sender->getX(), (int) $sender->getZ()) + 1;
-									if((int) $sender->getY() !== $y){
+									if((int) $sender->getY() < $y){
 										$sender->teleport($sender->setComponents($sender->getX(), $y, $sender->getZ()), $sender->getYaw(), $sender->getPitch());
 										$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Teleported to the top."));
 									}

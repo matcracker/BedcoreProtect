@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
@@ -48,10 +49,10 @@ trait QueriesBlocksTrait{
 	 * @param Entity        $entity
 	 * @param Block         $oldBlock
 	 * @param Block         $newBlock
-	 * @param int           $action
+	 * @param Action        $action
 	 * @param Position|null $position
 	 */
-	public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, int $action, ?Position $position = null) : void{
+	public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
 		$uuid = ($entity instanceof Player) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
 		$this->addEntity($entity);
 		$this->addRawBlockLog($uuid, $oldBlock, $newBlock, $action, $position);
@@ -61,12 +62,12 @@ trait QueriesBlocksTrait{
 	 * @param string        $uuid
 	 * @param Block         $oldBlock
 	 * @param Block         $newBlock
-	 * @param int           $action
+	 * @param Action        $action
 	 * @param Position|null $position
 	 *
 	 * @internal
 	 */
-	private function addRawBlockLog(string $uuid, Block $oldBlock, Block $newBlock, int $action, ?Position $position = null) : void{
+	private function addRawBlockLog(string $uuid, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
 		$this->addBlock($oldBlock);
 		$this->addBlock($newBlock);
 
@@ -99,10 +100,10 @@ trait QueriesBlocksTrait{
 	 * @param Block         $who
 	 * @param Block         $oldBlock
 	 * @param Block         $newBlock
-	 * @param int           $action
+	 * @param Action        $action
 	 * @param Position|null $position
 	 */
-	public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, int $action, ?Position $position = null) : void{
+	public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
 		$name = $who->getName();
 		//Particular blocks
 		if($who->getId() instanceof Leaves){
@@ -121,7 +122,7 @@ trait QueriesBlocksTrait{
 	public function addSignLogByPlayer(Player $player, Sign $sign) : void{
 		$air = BlockUtils::createAir($sign->asPosition());
 
-		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, $air, QueriesConst::BROKE);
+		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, $air, Action::BREAK());
 		$this->connector->executeInsert(QueriesConst::ADD_SIGN_LOG, [
 			"lines" => json_encode($sign->getText())
 		]);
@@ -131,9 +132,9 @@ trait QueriesBlocksTrait{
 	 * @param Entity        $entity
 	 * @param Block[]       $oldBlocks
 	 * @param Block[]|Block $newBlocks
-	 * @param int           $action
+	 * @param Action        $action
 	 */
-	public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, $newBlocks, int $action) : void{
+	public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, $newBlocks, Action $action) : void{
 		$this->addEntity($entity);
 
 		$oldBlocksQuery = $this->buildMultipleBlocksQuery($oldBlocks);

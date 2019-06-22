@@ -23,7 +23,7 @@ namespace matcracker\BedcoreProtect\commands;
 
 use ArrayOutOfBoundsException;
 use InvalidArgumentException;
-use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
@@ -31,19 +31,13 @@ use pocketmine\math\Vector3;
 use pocketmine\Server;
 use UnexpectedValueException;
 
+CommandParser::initActions();
+
 final class CommandParser{
 	public const MAX_PARAMETERS = 6;
 
-	public const ACTIONS = [
-		"block" => QueriesConst::PLACED | QueriesConst::BROKE,
-		"+block" => QueriesConst::PLACED,
-		"-block" => QueriesConst::BROKE,
-		"click" => QueriesConst::CLICKED,
-		"container" => QueriesConst::ADDED | QueriesConst::REMOVED,
-		"+container" => QueriesConst::ADDED,
-		"-container" => QueriesConst::REMOVED,
-		"kill" => QueriesConst::KILLED,
-	];
+	/**@var Action[] */
+	private static $ACTIONS = null;
 
 	private $configParser;
 	private $arguments;
@@ -79,7 +73,21 @@ final class CommandParser{
 		if(($dr = $this->configParser->getDefaultRadius()) !== 0){
 			$this->data["radius"] = $dr;
 		}
+	}
 
+	public static function initActions() : void{
+		if(self::$ACTIONS === null){
+			self::$ACTIONS = [
+				"block" => Action::NONE(),
+				"+block" => Action::PLACE(),
+				"-block" => Action::BREAK(),
+				"click" => Action::CLICK(),
+				"container" => Action::NONE(),
+				"+container" => Action::ADD(),
+				"-container" => Action::REMOVE(),
+				"kill" => Action::KILL()
+			];
+		}
 	}
 
 	public function parse() : bool{
@@ -128,7 +136,7 @@ final class CommandParser{
 				case "action":
 				case "a":
 					$paramValues = strtolower($paramValues);
-					if(!array_key_exists($paramValues, self::ACTIONS)) return false;
+					if(!array_key_exists($paramValues, self::$ACTIONS)) return false;
 
 					$this->data["action"] = $paramValues;
 					break;
@@ -230,20 +238,20 @@ final class CommandParser{
 					$minAction = CommandParser::toAction($value);
 					$maxAction = $minAction;
 					if($value === "container"){
-						$minAction = QueriesConst::ADDED;
-						$maxAction = QueriesConst::REMOVED;
+						$minAction = Action::ADD();
+						$maxAction = Action::REMOVE();
 					}elseif($value === "block"){
-						$minAction = QueriesConst::PLACED;
-						$maxAction = QueriesConst::BROKE;
+						$minAction = Action::PLACE();
+						$maxAction = Action::BREAK();
 					}
-					$query .= "action BETWEEN '{$minAction}' AND '{$maxAction}' AND ";
-				}else if(($key === "blocks" || $key === "exclusions")){ //TODO: FIX EXCLUSIONS... I don't know why it doesn't work.
+					$query .= "action BETWEEN '{$minAction->getType()}' AND '{$maxAction->getType()}' AND ";
+				}else if(($key === "blocks" || $key === "exclusions")){
 					$operator = $key === "exclusions" ? "<>" : "=";
 					for($i = 0; $i < $cArgs; $i += 2){
 						foreach($value as $blockArray){
 							$id = (int) $blockArray["id"];
 							$damage = (int) $blockArray["damage"];
-							$query .= "{$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
+							$query .= "({$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
 						}
 					}
 
@@ -252,11 +260,11 @@ final class CommandParser{
 		}
 	}
 
-	public static function toAction(string $cmdAction) : int{
-		if(!isset(self::ACTIONS[$cmdAction]))
+	public static function toAction(string $cmdAction) : Action{
+		if(!isset(self::$ACTIONS[$cmdAction]))
 			throw new ArrayOutOfBoundsException("The $cmdAction is not a valid action.");
 
-		return self::ACTIONS[$cmdAction];
+		return self::$ACTIONS[$cmdAction];
 	}
 
 	/**
