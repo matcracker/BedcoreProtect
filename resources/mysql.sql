@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS log_history
     z          BIGINT           NOT NULL,
     world_name VARCHAR(255)     NOT NULL,
     action     TINYINT UNSIGNED NOT NULL,
-    time       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    rollback   BOOLEAN   DEFAULT FALSE,
+    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    rollback   BOOLEAN      DEFAULT FALSE,
     FOREIGN KEY (who) REFERENCES entities (uuid)
 );
 -- #        }

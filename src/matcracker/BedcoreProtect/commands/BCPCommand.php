@@ -170,7 +170,7 @@ final class BCPCommand extends Command{
 							function(int $countRows, CommandParser $parser) use ($sender, $start){ //onSuccess
 								if($countRows > 0){
 									$diff = microtime(true) - $start;
-									$time = $parser->getTime();
+									$time = time() - $parser->getTime();
 									$radius = $parser->getRadius();
 									$date = Utils::timeAgo($time);
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rollback completed for \"{$sender->getWorld()->getFolderName()}\"."));
@@ -215,7 +215,7 @@ final class BCPCommand extends Command{
 							function(int $countRows, CommandParser $parser) use ($sender, $start){ //onSuccess
 								if($countRows > 0){
 									$diff = microtime(true) - $start;
-									$time = $parser->getTime();
+									$time = time() - $parser->getTime();
 									$radius = $parser->getRadius();
 									$date = Utils::timeAgo($time);
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore completed for \"{$sender->getWorld()->getFolderName()}\"."));

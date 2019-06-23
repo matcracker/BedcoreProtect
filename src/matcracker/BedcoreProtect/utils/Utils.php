@@ -87,7 +87,7 @@ final class Utils{
 	public static function timeAgo(int $timestamp, int $level = 6) : string{
 		$date = new DateTime();
 		$date->setTimestamp($timestamp);
-		$date = $date->diff(new DateTime(), true);
+		$date = $date->diff(DateTime::createFromFormat('0.u00 U', microtime()));
 		// build array
 		$since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
 		// remove empty date values

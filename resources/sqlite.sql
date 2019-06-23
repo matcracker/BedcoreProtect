@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS "log_history"
     z          BIGINT           NOT NULL,
     world_name VARCHAR(255)     NOT NULL,
     action     TINYINT UNSIGNED NOT NULL,
-    time       TIMESTAMP  DEFAULT (DATETIME('now', 'localtime')),
+    time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')),
     "rollback" TINYINT(1) DEFAULT 0,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );

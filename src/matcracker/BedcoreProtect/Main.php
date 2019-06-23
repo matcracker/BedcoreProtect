@@ -54,19 +54,20 @@ final class Main extends PluginBase{
 		return $this->database;
 	}
 
-	protected function onEnable() : void{
-		if(!extension_loaded("curl")){
-			$this->getLogger()->error("Extension 'curl' is missing. Enable it on php.ini file.");
-			$this->getServer()->getPluginManager()->disablePlugin($this);
-		}
+	public function getParsedConfig() : ConfigParser{
+		return $this->configParser;
+	}
 
+	protected function onEnable() : void{
 		include_once($this->getFile() . "/vendor/autoload.php");
 
 		@mkdir($this->getDataFolder());
 		$this->saveDefaultConfig();
 		$this->saveResource("bedcore_database.db");
 
-		$validation = $this->getParsedConfig()->validateConfig();
+		$this->configParser = new ConfigParser($this);
+
+		$validation = $this->configParser->validateConfig();
 		if(!$validation->isValid()){
 			$this->getLogger()->warning("Configuration's file is not correct.");
 			foreach($validation->getFailures() as $failure){
@@ -76,7 +77,6 @@ final class Main extends PluginBase{
 
 			return;
 		}
-		$this->configParser = new ConfigParser($this);
 
 		date_default_timezone_set($this->configParser->getTimezone());
 		$this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
@@ -107,12 +107,8 @@ final class Main extends PluginBase{
 		}
 
 		if($this->configParser->isSQLite()){
-			$this->getScheduler()->scheduleRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTime());
+			$this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTime(), SQLiteTransactionTask::getTime());
 		}
-	}
-
-	public function getParsedConfig() : ConfigParser{
-		return $this->configParser;
 	}
 
 	protected function onDisable() : void{
