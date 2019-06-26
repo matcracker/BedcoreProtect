@@ -24,23 +24,24 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\inventory\ContainerInventory;
-use pocketmine\inventory\InventoryHolder;
+use pocketmine\block\tile\Container;
+use pocketmine\inventory\BlockInventory;
+use pocketmine\inventory\Inventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
 use pocketmine\math\Vector3;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
 
 trait QueriesInventoriesTrait{
-	public function addLogInventoryByPlayer(Player $player, SlotChangeAction $slotAction) : void{
+	public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction) : void{
 		$this->addEntity($player);
 
 		$inventory = $slotAction->getInventory();
-		if($inventory instanceof ContainerInventory){
+		if($inventory instanceof BlockInventory){
 			$holder = $inventory->getHolder();
 			$slot = $slotAction->getSlot();
 			$sourceItem = $slotAction->getSourceItem();
@@ -71,7 +72,6 @@ trait QueriesInventoriesTrait{
 			}
 			$this->addInventorySlotLog($slot, $sourceItem, $targetItem);
 		}
-
 	}
 
 	private function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem) : void{
@@ -87,18 +87,45 @@ trait QueriesInventoriesTrait{
 
 	}
 
-	public function rollbackItems(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
-		$this->executeInventoriesEdit(true, $position, $parser, $onSuccess, $onError);
+	public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition) : void{
+		$size = $inventory->getSize();
+		$logId = $this->getLastLogId() + 1;
+
+		$query = /**@lang text */
+			"INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_damage, old_amount) VALUES";
+
+		$filledSlots = 0;
+		for($slot = 0; $slot < $size; $slot++){
+			$item = $inventory->getItem($slot);
+			if($item->getId() !== ItemIds::AIR){
+				$query .= "('{$logId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$item->getCount()}'),";
+				$filledSlots++;
+				$logId++;
+			}
+		}
+		$query = rtrim($query, ",") . ";";
+
+		/**@var Position[] $positions */
+		$positions = array_fill(0, $filledSlots, $inventoryPosition);
+		$rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($player), $positions, Action::REMOVE());
+
+		$this->connector->executeInsertRaw($rawLogsQuery);
+		$this->connector->executeInsertRaw($query);
 	}
 
-	private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
+	public function rollbackItems(Position $position, CommandParser $parser, ?callable $onError = null) : int{
+		return $this->executeInventoriesEdit(true, $position, $parser, $onError);
+	}
+
+	private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onError = null) : int{
 		$query = $parser->buildInventoriesLogSelectionQuery($position, !$rollback);
+		$totalRows = 0;
 		$this->connector->executeSelectRaw($query, [],
-			function(array $rows) use ($rollback, $position, $onSuccess, $parser){
+			function(array $rows) use ($rollback, $position, $parser, &$totalRows){
 				if(count($rows) > 0){
 					$level = $position->getWorld();
 					$query = /**@lang text */
-						"UPDATE log_history SET \"rollback\" = '{$rollback}' WHERE ";
+						"UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
 					foreach($rows as $row){
 						$logId = (int) $row["log_id"];
@@ -108,7 +135,7 @@ trait QueriesInventoriesTrait{
 						$slot = (int) $row["slot"];
 						$vector = new Vector3((int) $row["x"], (int) $row["y"], (int) $row["z"]);
 						$tile = $level->getTile($vector);
-						if($tile instanceof InventoryHolder){
+						if($tile instanceof Container){
 							$inv = $tile->getInventory();
 							$inv->setItem($slot, $item);
 						}
@@ -119,9 +146,7 @@ trait QueriesInventoriesTrait{
 					$this->connector->executeInsertRaw($query);
 				}
 
-				if($onSuccess !== null){
-					$onSuccess(count($rows), $parser);
-				}
+				$totalRows = count($rows);
 
 			},
 			function(SqlError $error) use ($onError){
@@ -130,9 +155,13 @@ trait QueriesInventoriesTrait{
 				}
 			}
 		);
+
+		$this->connector->waitAll();
+
+		return $totalRows;
 	}
 
-	public function restoreItems(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
-		$this->executeInventoriesEdit(false, $position, $parser, $onSuccess, $onError);
+	public function restoreItems(Position $position, CommandParser $parser, ?callable $onError = null) : int{
+		return $this->executeInventoriesEdit(false, $position, $parser, $onError);
 	}
 }

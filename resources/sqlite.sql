@@ -67,13 +67,13 @@ CREATE TABLE IF NOT EXISTS "signs_log"
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
     history_id      UNSIGNED BIG INT,
-    slot            UNSIGNED TINYINT    NOT NULL,
-    old_item_id     UNSIGNED INTEGER    NOT NULL,
-    old_item_damage UNSIGNED TINYINT(2) NOT NULL,
-    old_amount      UNSIGNED TINYINT    NOT NULL,
-    new_item_id     UNSIGNED INTEGER    NOT NULL,
-    new_item_damage UNSIGNED TINYINT(2) NOT NULL,
-    new_amount      UNSIGNED TINYINT    NOT NULL,
+    slot            UNSIGNED TINYINT NOT NULL,
+    old_item_id     UNSIGNED INTEGER    DEFAULT 0,
+    old_item_damage UNSIGNED TINYINT(2) DEFAULT 0,
+    old_amount      UNSIGNED TINYINT    DEFAULT 0,
+    new_item_id     UNSIGNED INTEGER    DEFAULT 0,
+    new_item_damage UNSIGNED TINYINT(2) DEFAULT 0,
+    new_amount      UNSIGNED TINYINT    DEFAULT 0,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }
@@ -141,12 +141,12 @@ VALUES (LAST_INSERT_ROWID(), :lines);
 -- #            }
 -- #            {to_inventory
 -- #                :slot int
--- #                :old_item_id int
--- #                :old_item_damage int
--- #                :old_amount int
--- #                :new_item_id int
--- #                :new_item_damage int
--- #                :new_amount int
+-- #                :old_item_id int default
+-- #                :old_item_damage int default
+-- #                :old_amount int default
+-- #                :new_item_id int default
+-- #                :new_item_damage int default
+-- #                :new_amount int default
 INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_damage, old_amount, new_item_id,
                               new_item_damage, new_amount)
 VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_damage, :old_amount, :new_item_id,

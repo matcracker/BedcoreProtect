@@ -26,7 +26,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use poggit\libasynql\SqlError;
 
 final class BCPCommand extends Command{
@@ -167,7 +167,7 @@ final class BCPCommand extends Command{
 						$start = microtime(true);
 
 						$this->queries->rollback($sender->asPosition(), $parser,
-							function(int $countRows, CommandParser $parser) use ($sender, $start){ //onSuccess
+							function(int $countRows) use ($sender, $start, $parser){ //onSuccess
 								if($countRows > 0){
 									$diff = microtime(true) - $start;
 									$time = time() - $parser->getTime();
@@ -212,7 +212,7 @@ final class BCPCommand extends Command{
 						$start = microtime(true);
 
 						$this->queries->restore($sender->asPosition(), $parser,
-							function(int $countRows, CommandParser $parser) use ($sender, $start){ //onSuccess
+							function(int $countRows) use ($sender, $start, $parser){ //onSuccess
 								if($countRows > 0){
 									$diff = microtime(true) - $start;
 									$time = time() - $parser->getTime();

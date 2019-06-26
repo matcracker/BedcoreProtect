@@ -24,10 +24,15 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\block\Bed;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
+use pocketmine\block\BlockLegacyMetadata;
+use pocketmine\block\Chest;
+use pocketmine\block\Door;
 use pocketmine\block\Liquid;
 use pocketmine\block\Sign;
+use pocketmine\block\tile\Chest as TileChest;
 use pocketmine\block\Water;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
@@ -35,6 +40,7 @@ use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockGrowEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
+use pocketmine\math\Facing;
 
 final class BlockListener extends BedcoreListener{
 	/**
@@ -51,14 +57,34 @@ final class BlockListener extends BedcoreListener{
 				$this->database->getQueries()->requestBlockLog($player, $block);
 				$event->setCancelled();
 			}else{
+				$air = BlockUtils::getAir($block->asPosition());
 				if($block instanceof Sign){
-					if($this->plugin->getParsedConfig()->getSignText()){
+					if($this->configParser->getSignText()){
 						$this->database->getQueries()->addSignLogByPlayer($player, $block);
+
+						return;
 					}
-				}else{
-					$air = BlockUtils::createAir($block->asPosition());
-					$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK());
+				}elseif($block instanceof Door){
+					$top = $block->getMeta() & BlockLegacyMetadata::DOOR_FLAG_TOP;
+					$other = $block->getSide($top ? Facing::DOWN : Facing::UP);
+					if($other instanceof Door and $other->isSameType($block)){
+						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK());
+					}
+				}elseif($block instanceof Bed){
+					$other = $block->getOtherHalf();
+					if($other !== null){
+						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK());
+					}
+				}elseif($block instanceof Chest){
+					$tileChest = $block->getWorld()->getTile($block);
+					if($tileChest instanceof TileChest){
+						$inventory = $tileChest->getInventory();
+						if(count($inventory->getContents()) > 0){ //If not empty
+							$this->database->getQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
+						}
+					}
 				}
+				$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK());
 			}
 		}
 	}

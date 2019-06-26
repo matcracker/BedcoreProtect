@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 /**
  * It contains all the queries methods related to entities.

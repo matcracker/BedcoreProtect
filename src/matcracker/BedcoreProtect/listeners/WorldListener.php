@@ -34,7 +34,7 @@ final class WorldListener extends BedcoreListener{
 	public function trackLeavesDecay(LeavesDecayEvent $event) : void{
 		$block = $event->getBlock();
 		if($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getLeavesDecay()){
-			$this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::createAir($block->asPosition()), Action::BREAK());
+			$this->database->getQueries()->addBlockLogByBlock($block, $block, BlockUtils::getAir($block->asPosition()), Action::BREAK());
 		}
 	}
 

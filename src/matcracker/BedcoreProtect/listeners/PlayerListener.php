@@ -32,7 +32,7 @@ use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\inventory\ContainerInventory;
+use pocketmine\inventory\BlockInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\ItemIds;
 use pocketmine\math\Facing;
@@ -111,7 +111,7 @@ final class PlayerListener extends BedcoreListener{
 				if(!$event->isCancelled()){
 					$relativeBlock = $clickedBlock->getSide($face);
 					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
-						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::createAir($relativeBlock), Action::BREAK());
+						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::getAir($relativeBlock), Action::BREAK());
 
 					}
 				}
@@ -130,7 +130,7 @@ final class PlayerListener extends BedcoreListener{
 				if(!$event->isCancelled()){
 					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
 						$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
-						$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::createAir($fire->asPosition()), $fire, Action::PLACE());
+						$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::getAir($fire->asPosition()), $fire, Action::PLACE());
 					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
 						$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
 					}
@@ -152,8 +152,8 @@ final class PlayerListener extends BedcoreListener{
 			$actions = $transaction->getActions();
 
 			foreach($actions as $action){
-				if($action instanceof SlotChangeAction && $action->getInventory() instanceof ContainerInventory){
-					$this->database->getQueries()->addLogInventoryByPlayer($player, $action);
+				if($action instanceof SlotChangeAction && $action->getInventory() instanceof BlockInventory){
+					$this->database->getQueries()->addInventorySlotLogByPlayer($player, $action);
 					break;
 				}
 			}

@@ -28,7 +28,7 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\world\Position;
 use poggit\libasynql\DataConnector;
@@ -73,7 +73,7 @@ class Queries{
 	}
 
 	private function addDefaultBlocks() : void{
-		$this->addBlock(BlockUtils::createAir());
+		$this->addBlock(BlockUtils::getAir());
 	}
 
 	/**
@@ -122,13 +122,21 @@ class Queries{
 	}
 
 	public function rollback(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
-		$this->rollbackBlocks($position, $parser, $onSuccess, $onError);
-		$this->rollbackItems($position, $parser);
+		$rows = $this->rollbackBlocks($position, $parser, $onError);
+		$rows += $this->rollbackItems($position, $parser);
+
+		if($onSuccess !== null){
+			$onSuccess($rows);
+		}
 	}
 
 	public function restore(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
-		$this->restoreBlocks($position, $parser, $onSuccess, $onError);
-		$this->restoreItems($position, $parser);
+		$rows = $this->restoreBlocks($position, $parser, $onError);
+		$rows += $this->restoreItems($position, $parser);
+
+		if($onSuccess !== null){
+			$onSuccess($rows);
+		}
 	}
 
 	public function requestTransactionLog(Player $inspector, Position $position) : void{
@@ -182,7 +190,7 @@ class Queries{
 			$x = (int) $position->getX();
 			$y = (int) $position->getY();
 			$z = (int) $position->getZ();
-			$levelName = $position->getLevel()->getFolderName(); //It picks the first element because the level must be the same.
+			$levelName = $position->getWorld()->getFolderName(); //It picks the first element because the level must be the same.
 			$query .= "((SELECT uuid FROM entities WHERE uuid = '$uuid'), '$x', '$y', '$z', '$levelName', '{$action->getType()}'),";
 		}
 

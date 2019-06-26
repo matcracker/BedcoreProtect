@@ -41,7 +41,7 @@ final class EntityListener extends BedcoreListener{
 			$blocks = $event->getBlockList();
 
 			if($entity instanceof PrimedTNT){
-				$air = BlockUtils::createAir();
+				$air = BlockUtils::getAir();
 				$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, Action::BREAK());
 			}
 		}

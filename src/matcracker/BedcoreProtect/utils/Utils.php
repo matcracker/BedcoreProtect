@@ -25,7 +25,7 @@ use DateTime;
 use InvalidArgumentException;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use ReflectionClass;
 use ReflectionException;

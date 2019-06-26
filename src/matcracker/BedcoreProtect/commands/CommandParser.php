@@ -59,10 +59,10 @@ final class CommandParser{
 	 *
 	 * @param ConfigParser $configParser
 	 * @param array        $arguments
-	 * @param array|null   $requiredParams
+	 * @param array        $requiredParams
 	 * @param bool         $shift It shift the first element of array used internally for command arguments. Default false.
 	 */
-	public function __construct(ConfigParser $configParser, array $arguments, ?array $requiredParams, bool $shift = false){
+	public function __construct(ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false){
 		$this->configParser = $configParser;
 		$this->arguments = $arguments;
 		$this->requiredParams = $requiredParams;
@@ -172,10 +172,8 @@ final class CommandParser{
 		if(empty($filter))
 			return false;
 
-		if($this->requiredParams !== null){
-			if(count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)){
-				return false;
-			}
+		if(count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)){
+			return false;
 		}
 
 		$this->parsed = true;
@@ -221,7 +219,7 @@ final class CommandParser{
 					foreach($value as $user){
 						$query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$user') AND ";
 					}
-				}else if($key === "time" && $value !== null){
+				}else if($key === "time"){
 					$diffTime = time() - (int) $value;
 					if($this->configParser->isSQLite()){
 						$query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
@@ -294,7 +292,7 @@ final class CommandParser{
 	}
 
 	private function isRequired(string $param) : bool{
-		return $this->requiredParams !== null ? in_array($param, $this->requiredParams) : false;
+		return in_array($param, $this->requiredParams);
 	}
 
 	public function buildLookupQuery() : string{
@@ -347,7 +345,7 @@ final class CommandParser{
 
 		$query = /**@lang text */
 			"SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_damage, il.{$prefix}_amount, x, y, z FROM log_history 
-            INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '" . (int) $restore . "' AND ";
+            INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
 
 		$this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
 

@@ -26,7 +26,7 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use UnexpectedValueException;
 
 final class Inspector{
@@ -168,7 +168,7 @@ final class Inspector{
 				$itemName = ItemFactory::get($id, $damage)->getName();
 				$entityTo = "{$amount} x #{$id}:{$damage} ({$itemName})";
 			}else{
-				throw new UnexpectedValueException("Invalid action parsed: {$action->getEnumName()}");
+				throw new UnexpectedValueException("Invalid action parsed: {$action->name()}");
 			}
 
 			//TODO: Add strikethrough (&m) when MC fix it.

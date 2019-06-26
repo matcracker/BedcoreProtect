@@ -30,8 +30,7 @@ use pocketmine\block\BlockFactory;
 use pocketmine\block\Leaves;
 use pocketmine\block\Sign;
 use pocketmine\entity\Entity;
-use pocketmine\math\Vector3;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
 
@@ -53,9 +52,8 @@ trait QueriesBlocksTrait{
 	 * @param Position|null $position
 	 */
 	public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
-		$uuid = ($entity instanceof Player) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
 		$this->addEntity($entity);
-		$this->addRawBlockLog($uuid, $oldBlock, $newBlock, $action, $position);
+		$this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, $newBlock, $action, $position);
 	}
 
 	/**
@@ -120,11 +118,11 @@ trait QueriesBlocksTrait{
 	 * @param Sign   $sign
 	 */
 	public function addSignLogByPlayer(Player $player, Sign $sign) : void{
-		$air = BlockUtils::createAir($sign->asPosition());
+		$air = BlockUtils::getAir($sign->asPosition());
 
 		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, $air, Action::BREAK());
 		$this->connector->executeInsert(QueriesConst::ADD_SIGN_LOG, [
-			"lines" => json_encode($sign->getText())
+			"lines" => json_encode($sign->getText()->getLines())
 		]);
 	}
 
@@ -225,38 +223,49 @@ trait QueriesBlocksTrait{
 		return $query;
 	}
 
-	protected function rollbackBlocks(Position $position, CommandParser $parser, ?callable $onSuccessRollback = null, ?callable $onError = null) : void{
-		$this->executeBlocksEdit(true, $position, $parser, $onSuccessRollback, $onError);
+	protected function rollbackBlocks(Position $position, CommandParser $parser, ?callable $onError = null) : int{
+		return $this->executeBlocksEdit(true, $position, $parser, $onError);
 	}
 
-	private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
+	/**
+	 * @param bool          $rollback
+	 * @param Position      $position
+	 * @param CommandParser $parser
+	 * @param callable|null $onError
+	 *
+	 * @return int Returns the rows number
+	 */
+	private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onError = null) : int{
 		$query = $parser->buildBlocksLogSelectionQuery($position, !$rollback);
+		$totalRows = 0;
+		$updateBlocks = [];
+		$world = $position->getWorld();
 		$this->connector->executeSelectRaw($query, [],
-			function(array $rows) use ($rollback, $position, $onSuccess, $parser){
+			function(array $rows) use ($rollback, $world, &$totalRows, &$updateBlocks){
 				if(count($rows) > 0){
 					$query = /**@lang text */
 						"UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
 					foreach($rows as $row){
-						$level = $position->getWorld();
 						$logId = (int) $row["log_id"];
 						$prefix = $rollback ? "old" : "new";
-						$block = BlockFactory::get((int) $row["{$prefix}_block_id"], (int) $row["{$prefix}_block_damage"]);
-						$vector = new Vector3((int) $row["x"], (int) $row["y"], (int) $row["z"]);
-						$level->setBlock($vector, $block);
+						$pos = new Position((int) $row["x"], (int) $row["y"], (int) $row["z"], $world);
+						$updateBlocks[] = $block = BlockFactory::get((int) $row["{$prefix}_block_id"], (int) $row["{$prefix}_block_damage"], $pos);
 
 						if($block instanceof Sign){
-							//$face = $block instanceof WallSign ? $block->getDamage() : Vector3::SIDE_UP;
 							if($this->configParser->getSignText()){
 								$this->connector->executeSelect(QueriesConst::GET_SIGN_LOG, ["id" => $logId],
-									function(array $rows) use ($block){
+									function(array $rows) use ($block, $world){
 										if(count($rows) === 1){
 											$texts = (array) json_decode($rows[0]["text_lines"], true);
 											$block->getText()->setLines($texts);
+											$world->setBlock($block, $block);
 										}
 									}
 								);
 							}
+						}else{
+							$world->setBlock($block, $block);
 						}
 
 						$query .= "log_id = '$logId' OR ";
@@ -266,9 +275,7 @@ trait QueriesBlocksTrait{
 					$this->connector->executeInsertRaw($query);
 				}
 
-				if($onSuccess !== null){
-					$onSuccess(count($rows), $parser);
-				}
+				$totalRows = count($rows);
 			},
 			function(SqlError $error) use ($onError){
 				if($onError !== null){
@@ -276,9 +283,12 @@ trait QueriesBlocksTrait{
 				}
 			}
 		);
+		$this->connector->waitAll();
+
+		return $totalRows;
 	}
 
-	protected function restoreBlocks(Position $position, CommandParser $parser, ?callable $onSuccessRestore = null, ?callable $onError = null) : void{
-		$this->executeBlocksEdit(false, $position, $parser, $onSuccessRestore, $onError);
+	protected function restoreBlocks(Position $position, CommandParser $parser, ?callable $onError = null) : int{
+		return $this->executeBlocksEdit(false, $position, $parser, $onError);
 	}
 }

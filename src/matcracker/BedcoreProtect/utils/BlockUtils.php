@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
-
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
@@ -33,7 +32,7 @@ final class BlockUtils implements BlockLegacyIds{
 	private function __construct(){
 	}
 
-	public static function createAir(?Position $position = null) : Block{
+	public static function getAir(?Position $position = null) : Block{
 		return BlockFactory::get(self::AIR, 0, $position);
 	}
 
