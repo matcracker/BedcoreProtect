@@ -120,10 +120,10 @@ trait QueriesInventoriesTrait{
 	private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onError = null) : int{
 		$query = $parser->buildInventoriesLogSelectionQuery($position, !$rollback);
 		$totalRows = 0;
+		$world = $position->getWorld();
 		$this->connector->executeSelectRaw($query, [],
-			function(array $rows) use ($rollback, $position, $parser, &$totalRows){
+			function(array $rows) use ($rollback, $world, &$totalRows){
 				if(count($rows) > 0){
-					$level = $position->getWorld();
 					$query = /**@lang text */
 						"UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
@@ -134,9 +134,9 @@ trait QueriesInventoriesTrait{
 						$item = ItemFactory::get((int) $row["{$prefix}_item_id"], (int) $row["{$prefix}_item_damage"], $amount);
 						$slot = (int) $row["slot"];
 						$vector = new Vector3((int) $row["x"], (int) $row["y"], (int) $row["z"]);
-						$tile = $level->getTile($vector);
+						$tile = $world->getTile($vector);
 						if($tile instanceof Container){
-							$inv = $tile->getInventory();
+							$inv = $tile->getRealInventory();
 							$inv->setItem($slot, $item);
 						}
 

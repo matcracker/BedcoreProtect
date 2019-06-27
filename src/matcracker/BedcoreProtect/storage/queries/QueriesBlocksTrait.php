@@ -238,10 +238,9 @@ trait QueriesBlocksTrait{
 	private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onError = null) : int{
 		$query = $parser->buildBlocksLogSelectionQuery($position, !$rollback);
 		$totalRows = 0;
-		$updateBlocks = [];
 		$world = $position->getWorld();
 		$this->connector->executeSelectRaw($query, [],
-			function(array $rows) use ($rollback, $world, &$totalRows, &$updateBlocks){
+			function(array $rows) use ($rollback, $world, &$totalRows){
 				if(count($rows) > 0){
 					$query = /**@lang text */
 						"UPDATE log_history SET rollback = '{$rollback}' WHERE ";
@@ -250,7 +249,7 @@ trait QueriesBlocksTrait{
 						$logId = (int) $row["log_id"];
 						$prefix = $rollback ? "old" : "new";
 						$pos = new Position((int) $row["x"], (int) $row["y"], (int) $row["z"], $world);
-						$updateBlocks[] = $block = BlockFactory::get((int) $row["{$prefix}_block_id"], (int) $row["{$prefix}_block_damage"], $pos);
+						$block = BlockFactory::get((int) $row["{$prefix}_block_id"], (int) $row["{$prefix}_block_damage"], $pos);
 
 						if($block instanceof Sign){
 							if($this->configParser->getSignText()){
@@ -260,12 +259,14 @@ trait QueriesBlocksTrait{
 											$texts = (array) json_decode($rows[0]["text_lines"], true);
 											$block->getText()->setLines($texts);
 											$world->setBlock($block, $block);
+
 										}
 									}
 								);
 							}
 						}else{
 							$world->setBlock($block, $block);
+							$block->onPostPlace();
 						}
 
 						$query .= "log_id = '$logId' OR ";

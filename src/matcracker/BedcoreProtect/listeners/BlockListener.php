@@ -68,17 +68,17 @@ final class BlockListener extends BedcoreListener{
 					$top = $block->getMeta() & BlockLegacyMetadata::DOOR_FLAG_TOP;
 					$other = $block->getSide($top ? Facing::DOWN : Facing::UP);
 					if($other instanceof Door and $other->isSameType($block)){
-						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK());
+						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
 					}
 				}elseif($block instanceof Bed){
 					$other = $block->getOtherHalf();
-					if($other !== null){
-						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK());
+					if($other instanceof Bed){
+						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
 					}
 				}elseif($block instanceof Chest){
 					$tileChest = $block->getWorld()->getTile($block);
 					if($tileChest instanceof TileChest){
-						$inventory = $tileChest->getInventory();
+						$inventory = $tileChest->getRealInventory();
 						if(count($inventory->getContents()) > 0){ //If not empty
 							$this->database->getQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
 						}
