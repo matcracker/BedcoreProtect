@@ -38,7 +38,7 @@ final class BCPCommand extends Command{
 		parent::__construct(
 			"bedcoreprotect",
 			"It runs the BedcoreProtect commands.",
-			"Usage: /bcp help",
+			"Usage: /bcp help to display commands list",
 			["core", "co", "bcp"]
 		);
 		$this->plugin = $plugin;
@@ -47,14 +47,16 @@ final class BCPCommand extends Command{
 
 	public function execute(CommandSender $sender, string $commandLabel, array $args) : bool{
 		if(empty($args)){
+			$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
+
 			return false;
 		}
 
-		$subCmd = strtolower($args[0]);
+		$subCmd = $this->removeAbbreviation(strtolower($args[0]));
 		if(!$sender->hasPermission("bcp.command.bedcoreprotect") || !$sender->hasPermission("bcp.subcommand.{$subCmd}")){
 			$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou don't have permission to run this command."));
 
-			return true;
+			return false;
 		}
 
 		//Shared commands between player and console.
@@ -64,7 +66,6 @@ final class BCPCommand extends Command{
 
 				return true;
 			case "lookup":
-			case "l":
 				if(isset($args[1])){
 					$parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
 					if($parser->parse()){
@@ -124,13 +125,12 @@ final class BCPCommand extends Command{
 		if(!($sender instanceof Player)){
 			$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou can't run this command from console."));
 
-			return true;
+			return false;
 		}
 
 		//Only players commands.
 		switch($subCmd){
 			case "inspect":
-			case "i":
 				$b = Inspector::isInspector($sender);
 				$b ? Inspector::removeInspector($sender) : Inspector::addInspector($sender);
 				$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($b ? "Disabled" : "Enabled") . " inspector mode."));
@@ -158,7 +158,6 @@ final class BCPCommand extends Command{
 
 				return true;
 			case "rollback":
-			case "rb":
 				if(isset($args[1])){
 					$parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
 					if($parser->parse()){
@@ -203,7 +202,6 @@ final class BCPCommand extends Command{
 
 				return true;
 			case "restore":
-			case "rs":
 				if(isset($args[1])){
 					$parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
 					if($parser->parse()){
@@ -245,6 +243,20 @@ final class BCPCommand extends Command{
 		}
 
 		return false;
+	}
+
+	private function removeAbbreviation(string $subCmd) : string{
+		if($subCmd === "l"){
+			$subCmd = "lookup";
+		}else if($subCmd === "i"){
+			$subCmd = "inspector";
+		}else if($subCmd === "rb"){
+			$subCmd = "rollback";
+		}else if($subCmd === "rs"){
+			$subCmd = "restore";
+		}
+
+		return $subCmd;
 	}
 
 

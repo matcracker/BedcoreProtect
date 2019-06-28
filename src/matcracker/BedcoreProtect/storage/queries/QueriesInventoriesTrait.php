@@ -36,6 +36,12 @@ use pocketmine\player\Player;
 use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
 
+/**
+ * It contains all the queries methods related to inventories.
+ *
+ * Trait QueriesInventoriesTrait
+ * @package matcracker\BedcoreProtect\storage\queries
+ */
 trait QueriesInventoriesTrait{
 	public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction) : void{
 		$this->addEntity($player);

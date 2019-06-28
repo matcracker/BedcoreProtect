@@ -196,10 +196,10 @@ final class CommandParser{
 		}
 
 		$prefix = $restore ? "new" : "old";
-
+		$clickAction = Action::CLICK()->getType();
 		$query = /**@lang text */
 			"SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_damage, x, y, z FROM log_history 
-            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int) $restore . "' AND ";
+            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int) $restore . "' AND action <> '{$clickAction}' AND ";
 
 		$this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_damage"]);
 

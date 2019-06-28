@@ -30,7 +30,7 @@ use pocketmine\player\Player;
  * It contains all the queries methods related to entities.
  *
  * Trait QueriesEntitiesTrait
- * @package matcracker\BedcoreProtect\storage
+ * @package matcracker\BedcoreProtect\storage\queries
  */
 trait QueriesEntitiesTrait{
 

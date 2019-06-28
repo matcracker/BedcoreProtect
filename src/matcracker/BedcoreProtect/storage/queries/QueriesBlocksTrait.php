@@ -38,7 +38,7 @@ use poggit\libasynql\SqlError;
  * It contains all the queries methods related to blocks.
  *
  * Trait QueriesBlocksTrait
- * @package matcracker\BedcoreProtect\storage
+ * @package matcracker\BedcoreProtect\storage\queries
  */
 trait QueriesBlocksTrait{
 
