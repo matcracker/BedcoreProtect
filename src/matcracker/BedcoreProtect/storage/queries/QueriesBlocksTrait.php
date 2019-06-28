@@ -174,7 +174,7 @@ trait QueriesBlocksTrait{
 			$name = (string) $blockData[2];
 			$query .= "('$id', '$damage', '$name'),";
 		}
-		$query = rtrim($query, ",") . ";";//" ON DUPLICATE KEY UPDATE id=VALUES(id), damage=VALUES(damage);";
+		$query = rtrim($query, ",") . ";";
 
 		return $query;
 	}

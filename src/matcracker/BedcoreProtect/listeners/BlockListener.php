@@ -104,17 +104,16 @@ final class BlockListener extends BedcoreListener{
 				$this->database->getQueries()->requestBlockLog($player, $replacedBlock);
 				$event->setCancelled();
 			}else{
-				/*if ($block instanceof Bed) {
-					$block->getSide()
-					if ($half !== null) {
-						$this->database->getQueries()->logPlayer($player, $replacedBlock, $half, Queries::PLACED);
-					}
-				} else if ($block instanceof Door) {
-					$upperDoor = BlockFactory::get($block->getId(), $block->getDamage() | 0x01, $block->asPosition())
-					$this->database->getQueries()->logPlayer($player, $replacedBlock, $upperDoor, Queries::PLACED);
+				$pos = $block->asPosition();
+				if($block instanceof Bed){ //TODO: Fix bed color
+					$facing = $player->getHorizontalFacing();
+					$pos = $block->getSide($block->isHeadPart() ? Facing::opposite($facing) : $facing)->asPosition();
+				}else if($block instanceof Door){
+					$pos = $block->getSide(Facing::UP)->asPosition();
+				}
 
-				}*/
 				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $pos);
 			}
 		}
 	}
