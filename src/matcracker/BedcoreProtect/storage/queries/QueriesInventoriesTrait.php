@@ -119,11 +119,11 @@ trait QueriesInventoriesTrait{
 		$this->connector->executeInsertRaw($query);
 	}
 
-	public function rollbackItems(Position $position, CommandParser $parser, ?callable $onError = null) : int{
-		return $this->executeInventoriesEdit(true, $position, $parser, $onError);
+	public function rollbackItems(Position $position, CommandParser $parser) : int{
+		return $this->executeInventoriesEdit(true, $position, $parser);
 	}
 
-	private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onError = null) : int{
+	private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser) : int{
 		$query = $parser->buildInventoriesLogSelectionQuery($position, !$rollback);
 		$totalRows = 0;
 		$world = $position->getWorld();
@@ -155,10 +155,8 @@ trait QueriesInventoriesTrait{
 				$totalRows = count($rows);
 
 			},
-			function(SqlError $error) use ($onError){
-				if($onError !== null){
-					$onError($error);
-				}
+			function(SqlError $error){
+				throw $error;
 			}
 		);
 
@@ -167,7 +165,7 @@ trait QueriesInventoriesTrait{
 		return $totalRows;
 	}
 
-	public function restoreItems(Position $position, CommandParser $parser, ?callable $onError = null) : int{
-		return $this->executeInventoriesEdit(false, $position, $parser, $onError);
+	public function restoreItems(Position $position, CommandParser $parser) : int{
+		return $this->executeInventoriesEdit(false, $position, $parser);
 	}
 }

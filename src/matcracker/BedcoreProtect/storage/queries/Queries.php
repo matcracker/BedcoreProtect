@@ -32,6 +32,7 @@ use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\world\Position;
 use poggit\libasynql\DataConnector;
+use poggit\libasynql\SqlError;
 
 class Queries{
 	use QueriesBlocksTrait, QueriesInventoriesTrait, QueriesEntitiesTrait;
@@ -122,20 +123,38 @@ class Queries{
 	}
 
 	public function rollback(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
-		$rows = $this->rollbackBlocks($position, $parser, $onError);
-		$rows += $this->rollbackItems($position, $parser);
+		try{
+			$rows = $this->rollbackBlocks($position, $parser);
+			if($this->configParser->getRollbackItems())
+				$rows += $this->rollbackItems($position, $parser);
+			if($this->configParser->getRollbackEntities())
+				$rows += $this->rollbackEntities($position, $parser);
 
-		if($onSuccess !== null){
-			$onSuccess($rows);
+			if($onSuccess !== null){
+				$onSuccess($rows);
+			}
+		}catch(SqlError $error){
+			if($onError !== null){
+				$onError($error);
+			}
 		}
 	}
 
 	public function restore(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
-		$rows = $this->restoreBlocks($position, $parser, $onError);
-		$rows += $this->restoreItems($position, $parser);
+		try{
+			$rows = $this->restoreBlocks($position, $parser);
+			if($this->configParser->getRollbackItems())
+				$rows += $this->restoreItems($position, $parser);
+			if($this->configParser->getRollbackEntities())
+				$rows += $this->restoreEntities($position, $parser);
 
-		if($onSuccess !== null){
-			$onSuccess($rows);
+			if($onSuccess !== null){
+				$onSuccess($rows);
+			}
+		}catch(SqlError $error){
+			if($onError !== null){
+				$onError($error);
+			}
 		}
 	}
 

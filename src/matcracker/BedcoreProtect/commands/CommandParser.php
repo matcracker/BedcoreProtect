@@ -208,8 +208,8 @@ final class CommandParser{
 		return $query;
 	}
 
-	private function buildConditionalQuery(string &$query, ?Vector3 $vector3, array $args) : void{
-		if(($cArgs = count($args)) % 2 !== 0 || $cArgs < 1){
+	private function buildConditionalQuery(string &$query, ?Vector3 $vector3, ?array $args) : void{
+		if($args !== null && (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1)){
 			throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");
 		}
 
@@ -243,7 +243,7 @@ final class CommandParser{
 						$maxAction = Action::BREAK();
 					}
 					$query .= "action BETWEEN '{$minAction->getType()}' AND '{$maxAction->getType()}' AND ";
-				}else if(($key === "blocks" || $key === "exclusions")){
+				}else if(($key === "blocks" || $key === "exclusions") && $args !== null){
 					$operator = $key === "exclusions" ? "<>" : "=";
 					for($i = 0; $i < $cArgs; $i += 2){
 						foreach($value as $blockArray){
@@ -348,6 +348,24 @@ final class CommandParser{
             INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
 
 		$this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
+
+		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+
+		return $query;
+	}
+
+	public function buildEntitiesLogSelectionQuery(Vector3 $vector3, bool $restore = false) : string{
+		if(!$this->parsed){
+			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+		}
+
+		$query = /**@lang text */
+			"SELECT log_id, e.entity_classpath, el.entityfrom_nbt, x, y, z FROM log_history 
+            INNER JOIN entities_log el ON log_history.log_id = el.history_id
+            INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
+            WHERE rollback = '{$restore}' AND ";
+
+		$this->buildConditionalQuery($query, $vector3, null);
 
 		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
 

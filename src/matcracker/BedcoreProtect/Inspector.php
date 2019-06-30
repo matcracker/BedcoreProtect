@@ -155,11 +155,11 @@ final class Inspector{
 				$damage = (int) $log["{$blockFound}_block_damage"];
 				$blockName = BlockFactory::get($id, $damage)->getName();
 
-				$entityTo = "#$id:$damage ($blockName)";
+				$entityTo = "#{$id}:{$damage} ({$blockName})";
 			}elseif($action->isEntityAction()){
 				$entityToName = $log['entity_to'];
 
-				$entityTo = $entityToName;
+				$entityTo = "#{$entityToName}";
 			}elseif($action->isInventoryAction()){
 				$itemFound = $action->equals(Action::REMOVE()) ? "old" : "new";
 				$id = (int) $log["{$itemFound}_item_id"];

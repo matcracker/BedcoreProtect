@@ -130,9 +130,7 @@ final class Utils{
 	 */
 	public static function getEntityName(Entity $entity) : string{
 		try{
-			$reflect = new ReflectionClass($entity);
-
-			return ($entity instanceof Player) ? $entity->getName() : strtolower("#{$reflect->getShortName()}");
+			return ($entity instanceof Player) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
 		}catch(ReflectionException $exception){
 			throw new InvalidArgumentException("Invalid entity class.");
 		}

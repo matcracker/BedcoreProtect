@@ -60,20 +60,28 @@ final class ConfigParser{
 		return (array) $this->data['enabled-worlds'];
 	}
 
-	public function getBlockPlace() : bool{
-		return (bool) $this->data['block-place'];
-	}
-
-	public function getBlockBreak() : bool{
-		return (bool) $this->data['block-break'];
-	}
-
 	public function getDefaultRadius() : int{
 		return (int) $this->data['default-radius'];
 	}
 
 	public function getMaxRadius() : int{
 		return (int) $this->data['max-radius'];
+	}
+
+	public function getRollbackItems() : bool{
+		return (bool) $this->data['rollback-items'];
+	}
+
+	public function getRollbackEntities() : bool{
+		return (bool) $this->data['rollback-entities'];
+	}
+
+	public function getBlockPlace() : bool{
+		return (bool) $this->data['block-place'];
+	}
+
+	public function getBlockBreak() : bool{
+		return (bool) $this->data['block-break'];
 	}
 
 	public function getBlockIgnite() : bool{

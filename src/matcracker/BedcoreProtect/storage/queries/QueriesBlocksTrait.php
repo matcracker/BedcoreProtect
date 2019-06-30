@@ -223,19 +223,18 @@ trait QueriesBlocksTrait{
 		return $query;
 	}
 
-	protected function rollbackBlocks(Position $position, CommandParser $parser, ?callable $onError = null) : int{
-		return $this->executeBlocksEdit(true, $position, $parser, $onError);
+	protected function rollbackBlocks(Position $position, CommandParser $parser) : int{
+		return $this->executeBlocksEdit(true, $position, $parser);
 	}
 
 	/**
 	 * @param bool          $rollback
 	 * @param Position      $position
 	 * @param CommandParser $parser
-	 * @param callable|null $onError
 	 *
 	 * @return int Returns the rows number
 	 */
-	private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser, ?callable $onError = null) : int{
+	private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser) : int{
 		$query = $parser->buildBlocksLogSelectionQuery($position, !$rollback);
 		$totalRows = 0;
 		$world = $position->getWorld();
@@ -278,10 +277,8 @@ trait QueriesBlocksTrait{
 
 				$totalRows = count($rows);
 			},
-			function(SqlError $error) use ($onError){
-				if($onError !== null){
-					$onError($error);
-				}
+			function(SqlError $error){
+				throw $error;
 			}
 		);
 		$this->connector->waitAll();
@@ -289,7 +286,7 @@ trait QueriesBlocksTrait{
 		return $totalRows;
 	}
 
-	protected function restoreBlocks(Position $position, CommandParser $parser, ?callable $onError = null) : int{
-		return $this->executeBlocksEdit(false, $position, $parser, $onError);
+	protected function restoreBlocks(Position $position, CommandParser $parser) : int{
+		return $this->executeBlocksEdit(false, $position, $parser);
 	}
 }

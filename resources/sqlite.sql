@@ -4,9 +4,10 @@
 -- #        {entities
 CREATE TABLE IF NOT EXISTS "entities"
 (
-    uuid        VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
-    entity_name VARCHAR(16)        NOT NULL,
-    address     VARCHAR(15) DEFAULT '127.0.0.1'
+    uuid             VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
+    entity_name      VARCHAR(16)        NOT NULL,
+    entity_classpath TEXT               NOT NULL,
+    address          VARCHAR(15) DEFAULT '127.0.0.1'
 );
 -- #        }
 -- #        {blocks
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS "entities_log"
 (
     history_id      UNSIGNED BIG INT,
     entityfrom_uuid VARCHAR(36) NOT NULL,
+    entityfrom_nbt  BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
 );
@@ -90,11 +92,12 @@ END TRANSACTION;
 -- #        {entity
 -- #            :uuid string
 -- #            :name string
+-- #            :path string
 -- #            :address string 127.0.0.1
 INSERT OR
 REPLACE
-INTO "entities" (uuid, entity_name, address)
-VALUES (:uuid, :name, :address);
+INTO "entities" (uuid, entity_name, entity_classpath, address)
+VALUES (:uuid, :name, :path, :address);
 -- #        }
 -- #        {block
 -- #            :id int
@@ -131,8 +134,9 @@ VALUES (LAST_INSERT_ROWID(),
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
-INSERT INTO "entities_log"(history_id, entityfrom_uuid)
-VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid));
+-- #                :nbt string default
+INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_nbt)
+VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :nbt);
 -- #            }
 -- #            {to_sign
 -- #                :lines string
