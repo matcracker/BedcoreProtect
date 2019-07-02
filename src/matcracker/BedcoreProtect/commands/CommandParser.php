@@ -198,7 +198,7 @@ final class CommandParser{
 		$prefix = $restore ? "new" : "old";
 		$clickAction = Action::CLICK()->getType();
 		$query = /**@lang text */
-			"SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_damage, x, y, z FROM log_history 
+			"SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_damage, bl.{$prefix}_block_nbt, x, y, z FROM log_history 
             INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int) $restore . "' AND action <> '{$clickAction}' AND ";
 
 		$this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_damage"]);
@@ -209,6 +209,7 @@ final class CommandParser{
 	}
 
 	private function buildConditionalQuery(string &$query, ?Vector3 $vector3, ?array $args) : void{
+		$cArgs = -1;
 		if($args !== null && (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1)){
 			throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");
 		}
@@ -243,7 +244,7 @@ final class CommandParser{
 						$maxAction = Action::BREAK();
 					}
 					$query .= "action BETWEEN '{$minAction->getType()}' AND '{$maxAction->getType()}' AND ";
-				}else if(($key === "blocks" || $key === "exclusions") && $args !== null){
+				}else if(($key === "blocks" || $key === "exclusions") && $cArgs > 0){
 					$operator = $key === "exclusions" ? "<>" : "=";
 					for($i = 0; $i < $cArgs; $i += 2){
 						foreach($value as $blockArray){
@@ -344,7 +345,7 @@ final class CommandParser{
 		$prefix = $restore ? "new" : "old";
 
 		$query = /**@lang text */
-			"SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_damage, il.{$prefix}_amount, x, y, z FROM log_history 
+			"SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_damage, il.{$prefix}_item_nbt, il.{$prefix}_amount, x, y, z FROM log_history 
             INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
 
 		$this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);

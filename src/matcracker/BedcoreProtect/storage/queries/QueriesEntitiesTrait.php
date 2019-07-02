@@ -26,10 +26,6 @@ use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntityFactory;
-use pocketmine\math\Vector3;
-use pocketmine\nbt\BigEndianNbtSerializer;
-use pocketmine\nbt\NbtDataException;
-use pocketmine\nbt\TreeRoot;
 use pocketmine\player\Player;
 use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
@@ -42,23 +38,16 @@ use poggit\libasynql\SqlError;
  */
 trait QueriesEntitiesTrait{
 
-	/**
-	 * @param Entity $damager
-	 * @param Entity $entity
-	 * @param Action $action
-	 */
 	public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action) : void{
 		$this->addEntity($damager);
 		$this->addEntity($entity);
 
 		$this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
-
-		$nbt = new BigEndianNbtSerializer();
 		$tag = $entity->saveNBT()->setFloat("Health", $entity->getMaxHealth());
 
 		$this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
 			"uuid" => Utils::getEntityUniqueId($entity),
-			"nbt" => $nbt->writeCompressed(new TreeRoot($tag))
+			"nbt" => Utils::serializeNBT($tag)
 		]);
 	}
 
@@ -92,16 +81,9 @@ trait QueriesEntitiesTrait{
 					foreach($rows as $row){
 						$logId = (int) $row["log_id"];
 						$entityClass = (string) $row["entity_classpath"];
-						$pos = new Vector3((int) $row["x"], (int) $row["y"], (int) $row["z"]);
-
-						try{
-							$nbt = (new BigEndianNbtSerializer())->readCompressed($row["entityfrom_nbt"])->getTag();
-						}catch(NbtDataException $e){ //zlib decode error / corrupt data
-							$nbt = EntityFactory::createBaseNBT($pos);
-						}
+						$nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
 
 						$entity = EntityFactory::create($entityClass, $world, $nbt);
-						$entity->getId();
 						$entity->spawnToAll();
 
 						$query .= "log_id = '$logId' OR ";

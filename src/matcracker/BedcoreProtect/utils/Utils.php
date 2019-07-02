@@ -25,7 +25,10 @@ use DateTime;
 use InvalidArgumentException;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
-use pocketmine\player\Player;
+use pocketmine\entity\Living;
+use pocketmine\nbt\BigEndianNbtSerializer;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\nbt\TreeRoot;
 use pocketmine\utils\TextFormat;
 use ReflectionClass;
 use ReflectionException;
@@ -130,9 +133,26 @@ final class Utils{
 	 */
 	public static function getEntityName(Entity $entity) : string{
 		try{
-			return ($entity instanceof Player) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
+			return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
 		}catch(ReflectionException $exception){
 			throw new InvalidArgumentException("Invalid entity class.");
 		}
+	}
+
+	public static function serializeNBT(CompoundTag $tag) : string{
+		$nbtSerializer = new BigEndianNbtSerializer();
+
+		return $nbtSerializer->writeCompressed(new TreeRoot($tag));
+	}
+
+	/**
+	 * @param string $data
+	 *
+	 * @return CompoundTag
+	 */
+	public static function deserializeNBT(string $data) : CompoundTag{
+		$nbtSerializer = new BigEndianNbtSerializer();
+
+		return $nbtSerializer->readCompressed($data)->getTag();
 	}
 }

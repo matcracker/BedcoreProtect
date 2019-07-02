@@ -68,14 +68,15 @@ trait QueriesBlocksTrait{
 	private function addRawBlockLog(string $uuid, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
 		$this->addBlock($oldBlock);
 		$this->addBlock($newBlock);
-
 		$pos = $position ?? $newBlock->asPosition();
 		$this->addRawLog($uuid, $pos, $action);
 		$this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
 			"old_id" => $oldBlock->getId(),
 			"old_damage" => $oldBlock->getMeta(),
+			"old_nbt" => BlockUtils::serializeTileNBT($oldBlock),
 			"new_id" => $newBlock->getId(),
-			"new_damage" => $newBlock->getMeta()
+			"new_damage" => $newBlock->getMeta(),
+			"new_nbt" => BlockUtils::serializeTileNBT($newBlock)
 		]);
 	}
 
@@ -193,29 +194,40 @@ trait QueriesBlocksTrait{
 
 		if(!is_array($newBlocks) && $newBlocks instanceof Block){
 			$newId = $newBlocks->getId();
-			$newDamage = $newBlocks->getMeta();
+			$newMeta = $newBlocks->getMeta();
+			$newNBT = BlockUtils::serializeTileNBT($newBlocks);
 
+			/**@var Block $oldBlock */
 			foreach($oldBlocks as $oldBlock){
 				$logId++;
 				$oldId = $oldBlock->getId();
-				$oldDamage = $oldBlock->getDamage();
-				$query .= "('$logId', (SELECT id FROM blocks WHERE blocks.id = '$oldId' AND damage = '$oldDamage'),
-                (SELECT damage FROM blocks WHERE blocks.id = '$oldId' AND damage = '$oldDamage'),
-                (SELECT id FROM blocks WHERE blocks.id = '$newId' AND damage = '$newDamage'),
-                (SELECT damage FROM blocks WHERE blocks.id = '$newId' AND damage = '$newDamage')),";
+				$oldMeta = $oldBlock->getMeta();
+				$oldNBT = BlockUtils::serializeTileNBT($oldBlock);
+				$query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
+                (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
+                '{$oldNBT}',
+                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
+                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}')),
+                '{$newNBT}',";
 			}
 		}else{
+			/**@var Block $oldBlock */
 			foreach($oldBlocks as $key => $oldBlock){
 				$logId++;
+				$newBlock = $newBlocks[$key];
 				$oldId = $oldBlock->getId();
-				$oldDamage = $oldBlock->getDamage();
-				$newId = $newBlocks[$key]->getId();
-				$newDamage = $newBlocks[$key]->getDamage();
+				$oldMeta = $oldBlock->getMeta();
+				$oldNBT = BlockUtils::serializeTileNBT($oldBlock);
+				$newId = $newBlock->getId();
+				$newMeta = $newBlocks->getMeta();
+				$newNBT = BlockUtils::serializeTileNBT($newBlock);
 
-				$query .= "('$logId', (SELECT id FROM blocks WHERE blocks.id = '$oldId' AND damage = '$oldDamage'),
-                (SELECT damage FROM blocks WHERE blocks.id = '$oldId' AND damage = '$oldDamage'),
-                (SELECT id FROM blocks WHERE blocks.id = '$newId' AND damage = '$newDamage'),
-                (SELECT damage FROM blocks WHERE blocks.id = '$newId' AND damage = '$newDamage')),";
+				$query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
+                (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
+                '{$oldNBT}',
+                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND damage = '${newMeta}'),
+                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}')),
+                '{$newNBT}',";
 			}
 		}
 		$query = rtrim($query, ",") . ";";
@@ -258,13 +270,19 @@ trait QueriesBlocksTrait{
 											$texts = (array) json_decode($rows[0]["text_lines"], true);
 											$block->getText()->setLines($texts);
 											$world->setBlock($block, $block);
-
 										}
 									}
 								);
 							}
 						}else{
 							$world->setBlock($block, $block);
+							if(($tile = BlockUtils::asTile($block)) !== null){
+								$serializedNBT = $row["{$prefix}_block_nbt"];
+								if($serializedNBT !== null){
+									$nbt = Utils::deserializeNBT($serializedNBT);
+									$tile->readSaveData($nbt);
+								}
+							}
 							$block->onPostPlace();
 						}
 

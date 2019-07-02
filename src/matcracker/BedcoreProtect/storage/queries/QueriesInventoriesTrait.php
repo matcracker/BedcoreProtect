@@ -55,7 +55,7 @@ trait QueriesInventoriesTrait{
 
 			$position = Position::fromObject($holder, $player->getWorld());
 
-			if($sourceItem->getId() === $targetItem->getId()){ //TODO: CHECK POSITION OF DOUBLE CHEST
+			if($sourceItem->getId() === $targetItem->getId()){
 				$sourceCount = $sourceItem->getCount();
 				$targetCount = $targetItem->getCount(); //Final count
 				if($targetCount > $sourceCount){
@@ -85,9 +85,11 @@ trait QueriesInventoriesTrait{
 			"slot" => $slot,
 			"old_item_id" => $oldItem->getId(),
 			"old_item_damage" => $oldItem->getMeta(),
+			"old_item_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
 			"old_amount" => $oldItem->getCount(),
 			"new_item_id" => $newItem->getId(),
 			"new_item_damage" => $newItem->getMeta(),
+			"new_item_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
 			"new_amount" => $newItem->getCount()
 		]);
 
@@ -98,19 +100,19 @@ trait QueriesInventoriesTrait{
 		$logId = $this->getLastLogId() + 1;
 
 		$query = /**@lang text */
-			"INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_damage, old_amount) VALUES";
+			"INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_damage, old_item_nbt, old_amount) VALUES";
 
 		$filledSlots = 0;
 		for($slot = 0; $slot < $size; $slot++){
 			$item = $inventory->getItem($slot);
 			if($item->getId() !== ItemIds::AIR){
-				$query .= "('{$logId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$item->getCount()}'),";
+				$nbt = Utils::serializeNBT($item->getNamedTag());
+				$query .= "('{$logId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$nbt}', '{$item->getCount()}'),";
 				$filledSlots++;
 				$logId++;
 			}
 		}
 		$query = rtrim($query, ",") . ";";
-
 		/**@var Position[] $positions */
 		$positions = array_fill(0, $filledSlots, $inventoryPosition);
 		$rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($player), $positions, Action::REMOVE());
@@ -137,7 +139,10 @@ trait QueriesInventoriesTrait{
 						$logId = (int) $row["log_id"];
 						$prefix = $rollback ? "old" : "new";
 						$amount = (int) $row["{$prefix}_amount"];
-						$item = ItemFactory::get((int) $row["{$prefix}_item_id"], (int) $row["{$prefix}_item_damage"], $amount);
+						//TODO: Fix NbtDataException
+						//$nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
+						$nbt = null;
+						$item = ItemFactory::get((int) $row["{$prefix}_item_id"], (int) $row["{$prefix}_item_damage"], $amount, $nbt);
 						$slot = (int) $row["slot"];
 						$vector = new Vector3((int) $row["x"], (int) $row["y"], (int) $row["z"]);
 						$tile = $world->getTile($vector);

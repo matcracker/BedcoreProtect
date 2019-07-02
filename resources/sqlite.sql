@@ -40,8 +40,10 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
     history_id       UNSIGNED BIG INT,
     old_block_id     UNSIGNED INTEGER    NOT NULL,
     old_block_damage UNSIGNED TINYINT(2) NOT NULL,
+    old_block_nbt    BLOB DEFAULT NULL,
     new_block_id     UNSIGNED INTEGER    NOT NULL,
     new_block_damage UNSIGNED TINYINT(2) NOT NULL,
+    new_block_nbt    BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     FOREIGN KEY (old_block_id, old_block_damage) REFERENCES "blocks" (id, damage),
     FOREIGN KEY (new_block_id, new_block_damage) REFERENCES "blocks" (id, damage)
@@ -72,9 +74,11 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
     slot            UNSIGNED TINYINT NOT NULL,
     old_item_id     UNSIGNED INTEGER    DEFAULT 0,
     old_item_damage UNSIGNED TINYINT(2) DEFAULT 0,
+    old_item_nbt    BLOB                DEFAULT NULL,
     old_amount      UNSIGNED TINYINT    DEFAULT 0,
     new_item_id     UNSIGNED INTEGER    DEFAULT 0,
     new_item_damage UNSIGNED TINYINT(2) DEFAULT 0,
+    new_item_nbt    BLOB                DEFAULT NULL,
     new_amount      UNSIGNED TINYINT    DEFAULT 0,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
@@ -123,14 +127,19 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #            {to_block
 -- #                :old_id int
 -- #                :old_damage int
+-- #                :old_nbt string null
 -- #                :new_id int
 -- #                :new_damage int
-INSERT INTO "blocks_log"(history_id, old_block_id, old_block_damage, new_block_id, new_block_damage)
+-- #                :new_nbt string null
+INSERT INTO "blocks_log"(history_id, old_block_id, old_block_damage, old_block_nbt, new_block_id, new_block_damage,
+                         new_block_nbt)
 VALUES (LAST_INSERT_ROWID(),
         (SELECT id FROM "blocks" WHERE blocks.id = :old_id AND damage = :old_damage),
         (SELECT damage FROM "blocks" WHERE blocks.id = :old_id AND damage = :old_damage),
+        :old_nbt,
         (SELECT id FROM "blocks" WHERE blocks.id = :new_id AND damage = :new_damage),
-        (SELECT damage FROM "blocks" WHERE blocks.id = :new_id AND damage = :new_damage));
+        (SELECT damage FROM "blocks" WHERE blocks.id = :new_id AND damage = :new_damage),
+        :new_nbt);
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
@@ -145,16 +154,18 @@ VALUES (LAST_INSERT_ROWID(), :lines);
 -- #            }
 -- #            {to_inventory
 -- #                :slot int
--- #                :old_item_id int default
--- #                :old_item_damage int default
--- #                :old_amount int default
--- #                :new_item_id int default
--- #                :new_item_damage int default
--- #                :new_amount int default
-INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_damage, old_amount, new_item_id,
-                              new_item_damage, new_amount)
-VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_damage, :old_amount, :new_item_id,
-        :new_item_damage, :new_amount);
+-- #                :old_item_id int 0
+-- #                :old_item_damage int 0
+-- #                :old_item_nbt string null
+-- #                :old_amount int 0
+-- #                :new_item_id int 0
+-- #                :new_item_damage int 0
+-- #                :new_item_nbt string null
+-- #                :new_amount int 0
+INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_damage, old_item_nbt, old_amount, new_item_id,
+                              new_item_damage, new_item_nbt, new_amount)
+VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_damage, :old_item_nbt, :old_amount, :new_item_id,
+        :new_item_damage, :new_item_nbt, :new_amount);
 -- #            }
 -- #        }
 -- #    }
@@ -180,8 +191,10 @@ WHERE history_id = :id;
 -- #                :world_name string
 SELECT bl.old_block_id,
        bl.old_block_damage,
+       bl.old_block_nbt,
        bl.new_block_id,
        bl.new_block_damage,
+       bl.new_block_nbt,
        e.entity_name AS entity_from,
        x,
        y,
@@ -238,8 +251,10 @@ ORDER BY time DESC;
 -- #                :world_name string
 SELECT bl.old_block_id,
        bl.old_block_damage,
+       bl.old_block_nbt,
        bl.new_block_id,
        bl.new_block_damage,
+       bl.new_block_nbt,
        e1.entity_name AS entity_from,
        e2.entity_name AS entity_to,
        x,
@@ -271,9 +286,11 @@ ORDER BY time DESC;
 -- #                :world_name string
 SELECT il.old_item_id,
        il.old_item_damage,
+       il.old_item_nbt,
        il.old_amount,
        il.new_item_id,
        il.new_item_damage,
+       il.new_item_nbt,
        il.new_amount,
        e.entity_name AS entity_from,
        x,

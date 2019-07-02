@@ -210,7 +210,7 @@ class Queries{
 			$y = (int) $position->getY();
 			$z = (int) $position->getZ();
 			$levelName = $position->getWorld()->getFolderName(); //It picks the first element because the level must be the same.
-			$query .= "((SELECT uuid FROM entities WHERE uuid = '$uuid'), '$x', '$y', '$z', '$levelName', '{$action->getType()}'),";
+			$query .= "((SELECT uuid FROM entities WHERE uuid = '{$uuid}'), '{$x}', '{$y}', '{$z}', '{$levelName}', '{$action->getType()}'),";
 		}
 
 		$query = rtrim($query, ",") . ";";

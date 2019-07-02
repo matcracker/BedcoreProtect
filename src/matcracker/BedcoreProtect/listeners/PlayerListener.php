@@ -112,7 +112,6 @@ final class PlayerListener extends BedcoreListener{
 					$relativeBlock = $clickedBlock->getSide($face);
 					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
 						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::getAir($relativeBlock), Action::BREAK());
-
 					}
 				}
 			}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){

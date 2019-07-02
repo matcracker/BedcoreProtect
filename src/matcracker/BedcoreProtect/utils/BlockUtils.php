@@ -26,6 +26,7 @@ use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Door;
 use pocketmine\block\Liquid;
+use pocketmine\block\tile\Tile;
 use pocketmine\world\Position;
 
 final class BlockUtils implements BlockLegacyIds{
@@ -62,5 +63,17 @@ final class BlockUtils implements BlockLegacyIds{
 
 	public static function isStillLiquid(Liquid $liquid) : bool{
 		return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
+	}
+
+	public static function serializeTileNBT(Block $block) : ?string{
+		if(($tile = self::asTile($block)) !== null){
+			return Utils::serializeNBT($tile->getCleanedNBT());
+		}
+
+		return null;
+	}
+
+	public static function asTile(Block $block) : ?Tile{
+		return $block->getWorld()->getTile($block->asPosition());
 	}
 }
