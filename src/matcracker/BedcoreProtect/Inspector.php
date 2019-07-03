@@ -149,19 +149,17 @@ final class Inspector{
 			$time = $log['time'];
 			$timeStamp = (is_int($time) ? (int) $time : strtotime($time));
 
-			if($action->isBlockAction()){
-				$blockFound = $action->equals(Action::BREAK()) ? "old" : "new";
+			$blockFound = $action->equals(Action::BREAK()) ? "old" : "new";
+			$itemFound = $action->equals(Action::REMOVE()) ? "old" : "new";
+			if(isset($log["{$blockFound}_block_id"], $log["{$blockFound}_block_damage"])){
 				$id = (int) $log["{$blockFound}_block_id"];
 				$damage = (int) $log["{$blockFound}_block_damage"];
 				$blockName = BlockFactory::get($id, $damage)->getName();
 
 				$entityTo = "#{$id}:{$damage} ({$blockName})";
-			}elseif($action->isEntityAction()){
-				$entityToName = $log['entity_to'];
-
-				$entityTo = "#{$entityToName}";
-			}elseif($action->isInventoryAction()){
-				$itemFound = $action->equals(Action::REMOVE()) ? "old" : "new";
+			}elseif(isset($log['entity_to'])){
+				$entityTo = "#{$log['entity_to']}";
+			}elseif(isset($log["{$itemFound}_item_damage"], $log["{$itemFound}_amount"])){
 				$id = (int) $log["{$itemFound}_item_id"];
 				$damage = (int) $log["{$itemFound}_item_damage"];
 				$amount = (int) $log["{$itemFound}_amount"];

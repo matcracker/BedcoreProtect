@@ -47,6 +47,7 @@ trait QueriesEntitiesTrait{
 
 		$this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
 			"uuid" => Utils::getEntityUniqueId($entity),
+			"id" => $entity->getId(),
 			"nbt" => Utils::serializeNBT($tag)
 		]);
 	}
@@ -80,11 +81,20 @@ trait QueriesEntitiesTrait{
 
 					foreach($rows as $row){
 						$logId = (int) $row["log_id"];
-						$entityClass = (string) $row["entity_classpath"];
-						$nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
+						$action = Action::fromType((int) $row["action"]);
 
-						$entity = EntityFactory::create($entityClass, $world, $nbt);
-						$entity->spawnToAll();
+						if(($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))){
+							$id = (int) $row["entityfrom_id"];
+							$entity = $world->getEntity($id);
+							if($entity !== null){
+								$entity->close();
+							}
+						}else{
+							$entityClass = (string) $row["entity_classpath"];
+							$nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
+							$entity = EntityFactory::create($entityClass, $world, $nbt);
+							$entity->spawnToAll();
+						}
 
 						$query .= "log_id = '$logId' OR ";
 					}

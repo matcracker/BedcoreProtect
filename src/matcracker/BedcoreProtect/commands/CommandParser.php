@@ -361,7 +361,7 @@ final class CommandParser{
 		}
 
 		$query = /**@lang text */
-			"SELECT log_id, e.entity_classpath, el.entityfrom_nbt, x, y, z FROM log_history 
+			"SELECT log_id, e.entity_classpath, el.entityfrom_id, el.entityfrom_nbt, x, y, z, action FROM log_history 
             INNER JOIN entities_log el ON log_history.log_id = el.history_id
             INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
             WHERE rollback = '{$restore}' AND ";

@@ -23,11 +23,14 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use pocketmine\entity\object\PrimedTNT;
+use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
+use pocketmine\event\entity\EntityDespawnEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
+use pocketmine\event\entity\EntitySpawnEvent;
+use pocketmine\player\Player;
 
 final class EntityListener extends BedcoreListener{
 	/**
@@ -40,9 +43,37 @@ final class EntityListener extends BedcoreListener{
 		if($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getExplosions()){
 			$blocks = $event->getBlockList();
 
-			if($entity instanceof PrimedTNT){
-				$air = BlockUtils::getAir();
-				$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, Action::BREAK());
+			$air = BlockUtils::getAir();
+			$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, Action::BREAK());
+		}
+	}
+
+	/**
+	 * @param EntitySpawnEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackEntitySpawn(EntitySpawnEvent $event) : void{
+		$entity = $event->getEntity();
+		if($entity instanceof Painting){
+			$player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
+			if($player !== null){
+				$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
+			}
+		}
+	}
+
+	/**
+	 * @param EntityDespawnEvent $event
+	 *
+	 * @priority MONITOR
+	 */
+	public function trackEntityDespawn(EntityDespawnEvent $event) : void{
+		$entity = $event->getEntity();
+		if($entity instanceof Painting){
+			$player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
+			if($player !== null){
+				$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
 			}
 		}
 	}

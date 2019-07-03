@@ -135,9 +135,10 @@ VALUES (LAST_INSERT_ID(),
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
+-- #                :id int
 -- #                :nbt string null
-INSERT INTO entities_log(history_id, entityfrom_uuid, entityfrom_nbt)
-VALUES (LAST_INSERT_ID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :nbt);
+INSERT INTO entities_log(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
+VALUES (LAST_INSERT_ID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
 -- #            {to_sign
 -- #                :lines string
@@ -230,7 +231,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND action = 3
+  AND action BETWEEN 3 AND 5
 ORDER BY time DESC;
 -- #            }
 -- #            {near
@@ -265,7 +266,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND action BETWEEN 0 AND 3
+  AND action BETWEEN 0 AND 5
 ORDER BY time DESC;
 -- #            }
 -- #            {transaction
@@ -299,7 +300,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND (action = 4 OR action = 5)
+  AND (action = 6 OR action = 7)
 ORDER BY time DESC;
 -- #            }
 -- #        }

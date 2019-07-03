@@ -249,7 +249,7 @@ final class BCPCommand extends Command{
 		if($subCmd === "l"){
 			$subCmd = "lookup";
 		}else if($subCmd === "i"){
-			$subCmd = "inspector";
+			$subCmd = "inspect";
 		}else if($subCmd === "rb"){
 			$subCmd = "rollback";
 		}else if($subCmd === "rs"){

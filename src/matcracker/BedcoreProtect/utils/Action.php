@@ -33,6 +33,8 @@ use pocketmine\utils\EnumTrait;
  * @method static self PLACE()
  * @method static self BREAK()
  * @method static self CLICK()
+ * @method static self SPAWN()
+ * @method static self DESPAWN()
  * @method static self KILL()
  * @method static self ADD()
  * @method static self REMOVE()
@@ -68,12 +70,17 @@ final class Action{
 	protected static function setup() : array{
 		return [
 			new Action("none", -1, "none"),
+			//Blocks actions
 			new Action("place", 0, "placed"),
 			new Action("break", 1, "broke"),
 			new Action("click", 2, "clicked"),
-			new Action("kill", 3, "killed"),
-			new Action("add", 4, "added"),
-			new Action("remove", 5, "removed")
+			//Entities actions
+			new Action("spawn", 3, "placed"),
+			new Action("despawn", 4, "broke"),
+			new Action("kill", 5, "killed"),
+			//Inventories actions
+			new Action("add", 6, "added"),
+			new Action("remove", 7, "removed")
 		];
 	}
 
