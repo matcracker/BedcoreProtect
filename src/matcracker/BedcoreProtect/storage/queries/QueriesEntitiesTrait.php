@@ -56,7 +56,7 @@ trait QueriesEntitiesTrait{
 		$this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getNetworkSession()->getIp() : "127.0.0.1");
 	}
 
-	private function addRawEntity(string $uuid, string $name, string $classPath = "", string $address = "127.0.0.1") : void{
+	protected final function addRawEntity(string $uuid, string $name, string $classPath = "", string $address = "127.0.0.1") : void{
 		$this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
 			"uuid" => $uuid,
 			"name" => $name,
@@ -82,7 +82,6 @@ trait QueriesEntitiesTrait{
 					foreach($rows as $row){
 						$logId = (int) $row["log_id"];
 						$action = Action::fromType((int) $row["action"]);
-
 						if(($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))){
 							$id = (int) $row["entityfrom_id"];
 							$entity = $world->getEntity($id);
@@ -93,6 +92,7 @@ trait QueriesEntitiesTrait{
 							$entityClass = (string) $row["entity_classpath"];
 							$nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
 							$entity = EntityFactory::create($entityClass, $world, $nbt);
+							$this->updateEntityId($logId, $entity);
 							$entity->spawnToAll();
 						}
 
@@ -102,7 +102,6 @@ trait QueriesEntitiesTrait{
 					$query = rtrim($query, " OR ") . ";";
 					$this->connector->executeInsertRaw($query);
 				}
-
 				$totalRows = count($rows);
 			},
 			function(SqlError $error){
@@ -114,8 +113,14 @@ trait QueriesEntitiesTrait{
 		return $totalRows;
 	}
 
+	protected final function updateEntityId(int $logId, Entity $entity){
+		$this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
+			"log_id" => $logId,
+			"entity_id" => $entity->getId()
+		]);
+	}
+
 	protected function restoreEntities(Position $position, CommandParser $parser) : int{
-		//TODO: Currently not working, need to find a way to kill rollback-ed entities.
 		return $this->executeEntitiesEdit(false, $position, $parser);
 	}
 }

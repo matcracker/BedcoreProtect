@@ -44,6 +44,7 @@ final class QueriesConst{
 	public const ADD_ENTITY_LOG = "bcp.add.log.to_entity";
 	public const ADD_SIGN_LOG = "bcp.add.log.to_sign";
 	public const ADD_INVENTORY_LOG = "bcp.add.log.to_inventory";
+	public const UPDATE_ENTITY_ID = "bcp.add.log.update_entity_id";
 	public const GET_LAST_LOG_ID = "bcp.get.log.last_id";
 	public const GET_SIGN_LOG = "bcp.get.log.sign";
 	public const GET_BLOCK_LOG = "bcp.get.log.block";

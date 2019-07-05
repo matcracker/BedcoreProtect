@@ -169,6 +169,13 @@ INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_damage, ol
 VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_damage, :old_item_nbt, :old_amount, :new_item_id,
         :new_item_damage, :new_item_nbt, :new_amount);
 -- #            }
+-- #            {update_entity_id
+-- #                :log_id int
+-- #                :entity_id int
+UPDATE entities_log
+SET entityfrom_id = :entity_id
+WHERE history_id = :log_id;
+-- #            }
 -- #        }
 -- #    }
 -- #    {get
