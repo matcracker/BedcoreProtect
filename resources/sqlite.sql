@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
 CREATE TABLE IF NOT EXISTS "entities_log"
 (
     history_id      UNSIGNED BIG INT,
-    entityfrom_uuid VARCHAR(36) NOT NULL,
+    entityfrom_uuid VARCHAR(36)      NOT NULL,
+    entityfrom_id   UNSIGNED INTEGER NOT NULL,
     entityfrom_nbt  BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
@@ -143,9 +144,10 @@ VALUES (LAST_INSERT_ROWID(),
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
--- #                :nbt string default
-INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_nbt)
-VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :nbt);
+-- #                :id int
+-- #                :nbt string null
+INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
+VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
 -- #            {to_sign
 -- #                :lines string
@@ -238,7 +240,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND action = 3
+  AND action BETWEEN 3 AND 5
 ORDER BY time DESC;
 -- #            }
 -- #            {near
@@ -273,7 +275,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND action BETWEEN 0 AND 3
+  AND action BETWEEN 0 AND 5
 ORDER BY time DESC;
 -- #            }
 -- #            {transaction
@@ -307,7 +309,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND (action = 4 OR action = 5)
+  AND action BETWEEN 6 AND 7
 ORDER BY time DESC;
 -- #            }
 -- #        }

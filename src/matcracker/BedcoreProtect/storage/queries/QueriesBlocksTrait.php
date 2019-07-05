@@ -27,9 +27,11 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
+use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\block\Sign;
 use pocketmine\entity\Entity;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\player\Player;
 use pocketmine\world\Position;
 use poggit\libasynql\SqlError;
@@ -53,19 +55,10 @@ trait QueriesBlocksTrait{
 	 */
 	public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
 		$this->addEntity($entity);
-		$this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, $newBlock, $action, $position);
+		$this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
 	}
 
-	/**
-	 * @param string        $uuid
-	 * @param Block         $oldBlock
-	 * @param Block         $newBlock
-	 * @param Action        $action
-	 * @param Position|null $position
-	 *
-	 * @internal
-	 */
-	private function addRawBlockLog(string $uuid, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
+	protected final function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null) : void{
 		$this->addBlock($oldBlock);
 		$this->addBlock($newBlock);
 		$pos = $position ?? $newBlock->asPosition();
@@ -73,10 +66,10 @@ trait QueriesBlocksTrait{
 		$this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
 			"old_id" => $oldBlock->getId(),
 			"old_damage" => $oldBlock->getMeta(),
-			"old_nbt" => BlockUtils::serializeTileNBT($oldBlock),
+			"old_nbt" => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
 			"new_id" => $newBlock->getId(),
 			"new_damage" => $newBlock->getMeta(),
-			"new_nbt" => BlockUtils::serializeTileNBT($newBlock)
+			"new_nbt" => $newTag !== null ? Utils::serializeNBT($newTag) : null
 		]);
 	}
 
@@ -109,7 +102,7 @@ trait QueriesBlocksTrait{
 			$name = "leaves";
 		}
 
-		$this->addRawBlockLog("{$name}-uuid", $oldBlock, $newBlock, $action, $position);
+		$this->addRawBlockLog("{$name}-uuid", $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
 	}
 
 	/**
@@ -121,10 +114,20 @@ trait QueriesBlocksTrait{
 	public function addSignLogByPlayer(Player $player, Sign $sign) : void{
 		$air = BlockUtils::getAir($sign->asPosition());
 
-		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, $air, Action::BREAK());
+		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, null, $air, null, Action::BREAK());
 		$this->connector->executeInsert(QueriesConst::ADD_SIGN_LOG, [
 			"lines" => json_encode($sign->getText()->getLines())
 		]);
+	}
+
+	/**
+	 * @param Player      $player
+	 * @param ItemFrame   $itemFrame
+	 * @param CompoundTag $oldItemFrameNbt
+	 * @param Action      $action
+	 */
+	public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, ?CompoundTag $oldItemFrameNbt, Action $action) : void{
+		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $itemFrame, $oldItemFrameNbt, $itemFrame, BlockUtils::getCompoundTag($itemFrame), $action);
 	}
 
 	/**
@@ -195,14 +198,14 @@ trait QueriesBlocksTrait{
 		if(!is_array($newBlocks) && $newBlocks instanceof Block){
 			$newId = $newBlocks->getId();
 			$newMeta = $newBlocks->getMeta();
-			$newNBT = BlockUtils::serializeTileNBT($newBlocks);
+			$newNBT = BlockUtils::serializeBlockTileNBT($newBlocks);
 
 			/**@var Block $oldBlock */
 			foreach($oldBlocks as $oldBlock){
 				$logId++;
 				$oldId = $oldBlock->getId();
 				$oldMeta = $oldBlock->getMeta();
-				$oldNBT = BlockUtils::serializeTileNBT($oldBlock);
+				$oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
 				$query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
                 (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
                 '{$oldNBT}',
@@ -217,10 +220,10 @@ trait QueriesBlocksTrait{
 				$newBlock = $newBlocks[$key];
 				$oldId = $oldBlock->getId();
 				$oldMeta = $oldBlock->getMeta();
-				$oldNBT = BlockUtils::serializeTileNBT($oldBlock);
+				$oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
 				$newId = $newBlock->getId();
 				$newMeta = $newBlocks->getMeta();
-				$newNBT = BlockUtils::serializeTileNBT($newBlock);
+				$newNBT = BlockUtils::serializeBlockTileNBT($newBlock);
 
 				$query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
                 (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),

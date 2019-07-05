@@ -108,6 +108,17 @@ final class PlayerListener extends BedcoreListener{
 			$action = $event->getAction();
 			$face = $event->getFace();
 
+			if(Inspector::isInspector($player)){
+				$event->setCancelled();
+				if(BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame){
+					$this->database->getQueries()->requestTransactionLog($player, $clickedBlock);
+				}else{
+					$this->database->getQueries()->requestBlockLog($player, $clickedBlock);
+				}
+
+				return;
+			}
+
 			if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
 				if(!$event->isCancelled()){
 					$relativeBlock = $clickedBlock->getSide($face);
@@ -117,37 +128,37 @@ final class PlayerListener extends BedcoreListener{
 						}else if($clickedBlock instanceof ItemFrame){
 							$framedItem = $clickedBlock->getFramedItem();
 							if($framedItem !== null){
-								$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::REMOVE());
+								$event->setCancelled();
+								$oldNbt = BlockUtils::getCompoundTag($clickedBlock);
+								if($clickedBlock->onAttack($item, $face, $player)){
+									//I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
+									$this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
+
+								}
 							}
 						}
 					}
 				}
 			}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
-				if(Inspector::isInspector($player)){
-					if(BlockUtils::hasInventory($clickedBlock)){
-						$this->database->getQueries()->requestTransactionLog($player, $clickedBlock);
-					}else{
-						$this->database->getQueries()->requestBlockLog($player, $clickedBlock);
-					}
-					$event->setCancelled();
-
-					return;
-				}
-
 				if(!$event->isCancelled()){
-					if($this->plugin->getParsedConfig()->getBlockPlace()){
-						if($item->getId() === ItemIds::FLINT_AND_STEEL){
-							$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
-							$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::getAir($fire->asPosition()), $fire, Action::PLACE());
-						}
+					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
+						$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
+						$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::getAir($fire->asPosition()), $fire, Action::PLACE());
 					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
 						if($clickedBlock instanceof ItemFrame){
 							$framedItem = $clickedBlock->getFramedItem();
-							//I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
-							$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, ($framedItem === null ? Action::ADD() : Action::CLICK()));
-						}else{
-							$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+							if($framedItem === null){
+								$event->setCancelled();
+								$oldNbt = BlockUtils::getCompoundTag($clickedBlock);
+								if($clickedBlock->onInteract($item, $face, $player->getDirectionVector(), $player)){
+									//I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
+									$this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
+
+									return;
+								}
+							}
 						}
+						$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
 					}
 				}
 			}

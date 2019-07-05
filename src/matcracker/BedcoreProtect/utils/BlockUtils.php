@@ -27,6 +27,7 @@ use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Door;
 use pocketmine\block\Liquid;
 use pocketmine\block\tile\Tile;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\world\Position;
 
 final class BlockUtils implements BlockLegacyIds{
@@ -65,9 +66,17 @@ final class BlockUtils implements BlockLegacyIds{
 		return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
 	}
 
-	public static function serializeTileNBT(Block $block) : ?string{
+	public static function serializeBlockTileNBT(Block $block) : ?string{
+		if(($tag = self::getCompoundTag($block)) !== null){
+			return Utils::serializeNBT($tag);
+		}
+
+		return null;
+	}
+
+	public static function getCompoundTag(Block $block) : ?CompoundTag{
 		if(($tile = self::asTile($block)) !== null){
-			return Utils::serializeNBT($tile->getCleanedNBT());
+			return $tile->getCleanedNBT();
 		}
 
 		return null;

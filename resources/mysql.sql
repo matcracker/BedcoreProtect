@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS entities_log
 (
     history_id      BIGINT UNSIGNED,
     entityfrom_uuid VARCHAR(36)      NOT NULL,
-    entityfrom_nbt  LONGBLOB DEFAULT NULL,
     entityfrom_id   INTEGER UNSIGNED NOT NULL,
+    entityfrom_nbt  LONGBLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
 );
@@ -119,10 +119,10 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #            {to_block
 -- #                :old_id int
 -- #                :old_damage int
--- #                :old_nbt string null
+-- #                :old_nbt ?string
 -- #                :new_id int
 -- #                :new_damage int
--- #                :new_nbt string null
+-- #                :new_nbt ?string
 INSERT INTO blocks_log(history_id, old_block_id, old_block_damage, old_block_nbt, new_block_id, new_block_damage,
                        new_block_nbt)
 VALUES (LAST_INSERT_ID(),
@@ -136,7 +136,7 @@ VALUES (LAST_INSERT_ID(),
 -- #            {to_entity
 -- #                :uuid string
 -- #                :id int
--- #                :nbt string null
+-- #                :nbt ?string
 INSERT INTO entities_log(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
 VALUES (LAST_INSERT_ID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
@@ -149,11 +149,11 @@ VALUES (LAST_INSERT_ID(), :lines);
 -- #                :slot int
 -- #                :old_item_id int 0
 -- #                :old_item_damage int 0
--- #                :old_item_nbt string null
+-- #                :old_item_nbt ?string
 -- #                :old_amount int 0
 -- #                :new_item_id int 0
 -- #                :new_item_damage int 0
--- #                :new_item_nbt string null
+-- #                :new_item_nbt ?string
 -- #                :new_amount int 0
 INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_damage, old_item_nbt, old_amount, new_item_id,
                             new_item_damage, new_item_nbt, new_amount)
@@ -300,7 +300,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (y BETWEEN :min_y AND :max_y)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
-  AND (action = 6 OR action = 7)
+  AND action BETWEEN 6 AND 7
 ORDER BY time DESC;
 -- #            }
 -- #        }

@@ -37,7 +37,6 @@ use pocketmine\block\Water;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
 use pocketmine\event\block\BlockFormEvent;
-use pocketmine\event\block\BlockGrowEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\math\Facing;
@@ -105,14 +104,13 @@ final class BlockListener extends BedcoreListener{
 				$event->setCancelled();
 			}else{
 				$pos = $block->asPosition();
-				if($block instanceof Bed){ //TODO: Fix bed color
+				if($block instanceof Bed){
 					$facing = $player->getHorizontalFacing();
 					$pos = $block->getSide($block->isHeadPart() ? Facing::opposite($facing) : $facing)->asPosition();
 				}else if($block instanceof Door){
 					$pos = $block->getSide(Facing::UP)->asPosition();
 				}
 
-				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
 				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $pos);
 			}
 		}
@@ -127,6 +125,10 @@ final class BlockListener extends BedcoreListener{
 		$block = $event->getBlock();
 		$source = $event->getSource();
 		$newState = $event->getNewState();
+
+		/*var_dump("SPREAD BLOCK: " . $event->getBlock()->getName());
+		var_dump("SPREAD NEW STATE: " . $event->getNewState()->getName());
+		var_dump("SPREAD SOURCE: " . $source->getName());*/
 
 		/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
 		print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
@@ -177,10 +179,14 @@ final class BlockListener extends BedcoreListener{
 				$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
 			}
 		}
+
+		/*var_dump("FORM BLOCK: " . $event->getBlock()->getName());
+		var_dump("FORM NEW STATE: " . $event->getNewState()->getName());*/
 	}
 
-	public function testGrow(BlockGrowEvent $event) : void{
-		//TODO
-	}
+	/*public function testGrow(BlockGrowEvent $event) : void{
+		var_dump("GROW BLOCK: " . $event->getBlock()->getName());
+		var_dump("GROW NEW STATE: " . $event->getNewState()->getName());
+	}*/
 
 }

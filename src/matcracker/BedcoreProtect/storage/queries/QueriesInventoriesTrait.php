@@ -44,8 +44,6 @@ use poggit\libasynql\SqlError;
  */
 trait QueriesInventoriesTrait{
 	public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction) : void{
-		$this->addEntity($player);
-
 		$inventory = $slotAction->getInventory();
 		if($inventory instanceof BlockInventory){
 			$holder = $inventory->getHolder();
@@ -80,7 +78,7 @@ trait QueriesInventoriesTrait{
 		}
 	}
 
-	private function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem) : void{
+	protected final function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem) : void{
 		$this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
 			"slot" => $slot,
 			"old_item_id" => $oldItem->getId(),
@@ -121,7 +119,7 @@ trait QueriesInventoriesTrait{
 		$this->connector->executeInsertRaw($query);
 	}
 
-	public function rollbackItems(Position $position, CommandParser $parser) : int{
+	protected function rollbackItems(Position $position, CommandParser $parser) : int{
 		return $this->executeInventoriesEdit(true, $position, $parser);
 	}
 
@@ -139,9 +137,7 @@ trait QueriesInventoriesTrait{
 						$logId = (int) $row["log_id"];
 						$prefix = $rollback ? "old" : "new";
 						$amount = (int) $row["{$prefix}_amount"];
-						//TODO: Fix NbtDataException
-						//$nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
-						$nbt = null;
+						$nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
 						$item = ItemFactory::get((int) $row["{$prefix}_item_id"], (int) $row["{$prefix}_item_damage"], $amount, $nbt);
 						$slot = (int) $row["slot"];
 						$vector = new Vector3((int) $row["x"], (int) $row["y"], (int) $row["z"]);
@@ -170,7 +166,7 @@ trait QueriesInventoriesTrait{
 		return $totalRows;
 	}
 
-	public function restoreItems(Position $position, CommandParser $parser) : int{
+	protected function restoreItems(Position $position, CommandParser $parser) : int{
 		return $this->executeInventoriesEdit(false, $position, $parser);
 	}
 }

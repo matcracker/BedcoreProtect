@@ -141,8 +141,8 @@ final class Utils{
 
 	public static function serializeNBT(CompoundTag $tag) : string{
 		$nbtSerializer = new BigEndianNbtSerializer();
-
-		return $nbtSerializer->writeCompressed(new TreeRoot($tag));
+		//Encoding to Base64 for more safe storing.
+		return base64_encode($nbtSerializer->writeCompressed(new TreeRoot($tag)));
 	}
 
 	/**
@@ -153,6 +153,7 @@ final class Utils{
 	public static function deserializeNBT(string $data) : CompoundTag{
 		$nbtSerializer = new BigEndianNbtSerializer();
 
-		return $nbtSerializer->readCompressed($data)->getTag();
+		return $nbtSerializer->readCompressed(base64_decode($data))->getTag();
 	}
+
 }
