@@ -110,7 +110,7 @@ trait QueriesInventoriesTrait{
 				$logId++;
 			}
 		}
-		$query = rtrim($query, ",") . ";";
+		$query = mb_substr($query, 0, -1) . ";";
 		/**@var Position[] $positions */
 		$positions = array_fill(0, $filledSlots, $inventoryPosition);
 		$rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($player), $positions, Action::REMOVE());
@@ -149,7 +149,7 @@ trait QueriesInventoriesTrait{
 
 						$query .= "log_id = '$logId' OR ";
 					}
-					$query = rtrim($query, " OR ") . ";";
+					$query = mb_substr($query, 0, -4) . ";";
 					$this->connector->executeInsertRaw($query);
 				}
 

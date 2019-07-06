@@ -119,28 +119,24 @@ final class PlayerListener extends BedcoreListener{
 				return;
 			}
 
-			if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
-				if(!$event->isCancelled()){
+			if(!$event->isCancelled()){
+				if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
 					$relativeBlock = $clickedBlock->getSide($face);
-					if($this->plugin->getParsedConfig()->getBlockBreak()){
-						if($relativeBlock->getId() === BlockLegacyIds::FIRE){
-							$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::getAir($relativeBlock), Action::BREAK());
-						}else if($clickedBlock instanceof ItemFrame){
-							$framedItem = $clickedBlock->getFramedItem();
-							if($framedItem !== null){
-								$event->setCancelled();
-								$oldNbt = BlockUtils::getCompoundTag($clickedBlock);
-								if($clickedBlock->onAttack($item, $face, $player)){
-									//I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
-									$this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
-
-								}
+					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
+						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::getAir($relativeBlock), Action::BREAK());
+					}else if($clickedBlock instanceof ItemFrame){
+						$framedItem = $clickedBlock->getFramedItem();
+						if($framedItem !== null){
+							$event->setCancelled();
+							$oldNbt = BlockUtils::getCompoundTag($clickedBlock);
+							if($clickedBlock->onAttack($item, $face, $player)){
+								//I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
+								$this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
 							}
 						}
 					}
-				}
-			}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
-				if(!$event->isCancelled()){
+
+				}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
 					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
 						$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
 						$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::getAir($fire->asPosition()), $fire, Action::PLACE());
@@ -160,6 +156,7 @@ final class PlayerListener extends BedcoreListener{
 						}
 						$this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
 					}
+
 				}
 			}
 		}

@@ -203,7 +203,7 @@ final class CommandParser{
 
 		$this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_damage"]);
 
-		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+		$query .= " ORDER BY time DESC;";
 
 		return $query;
 	}
@@ -257,6 +257,8 @@ final class CommandParser{
 				}
 			}
 		}
+
+		$query = mb_substr($query, 0, -5); //Remove excessive AND
 	}
 
 	public static function toAction(string $cmdAction) : Action{
@@ -315,7 +317,7 @@ final class CommandParser{
 			"bl.new_block_id", "bl.new_block_damage"
 		]);
 
-		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+		$query .= " ORDER BY time DESC;";
 
 		return $query;
 	}
@@ -350,7 +352,7 @@ final class CommandParser{
 
 		$this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
 
-		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+		$query .= " ORDER BY time DESC;";
 
 		return $query;
 	}
@@ -368,7 +370,7 @@ final class CommandParser{
 
 		$this->buildConditionalQuery($query, $vector3, null);
 
-		$query = rtrim($query, " AND ") . " ORDER BY time DESC;";
+		$query .= " ORDER BY time DESC;";
 
 		return $query;
 	}

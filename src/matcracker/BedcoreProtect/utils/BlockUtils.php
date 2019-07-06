@@ -83,6 +83,8 @@ final class BlockUtils implements BlockLegacyIds{
 	}
 
 	public static function asTile(Block $block) : ?Tile{
+		if($block->getWorld() === null) return null;
+
 		return $block->getWorld()->getTile($block->asPosition());
 	}
 }

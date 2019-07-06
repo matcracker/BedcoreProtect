@@ -60,14 +60,6 @@ CREATE TABLE IF NOT EXISTS "entities_log"
     FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
 );
 -- #        }
--- #        {signs_log
-CREATE TABLE IF NOT EXISTS "signs_log"
-(
-    history_id UNSIGNED BIG INT,
-    text_lines TEXT,
-    FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
-);
--- #        }
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
@@ -149,11 +141,6 @@ VALUES (LAST_INSERT_ROWID(),
 INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
 VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
--- #            {to_sign
--- #                :lines string
-INSERT INTO "signs_log"(history_id, text_lines)
-VALUES (LAST_INSERT_ROWID(), :lines);
--- #            }
 -- #            {to_inventory
 -- #                :slot int
 -- #                :old_item_id int 0
@@ -183,12 +170,6 @@ WHERE history_id = :log_id;
 -- #            {last_id
 SELECT MAX(log_id) AS lastId
 FROM "log_history";
--- #            }
--- #            {sign
--- #                :id int
-SELECT text_lines
-FROM "signs_log"
-WHERE history_id = :id;
 -- #            }
 -- #            {block
 -- #                :min_x int

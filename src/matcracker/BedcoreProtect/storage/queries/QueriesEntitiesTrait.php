@@ -99,7 +99,7 @@ trait QueriesEntitiesTrait{
 						$query .= "log_id = '$logId' OR ";
 					}
 
-					$query = rtrim($query, " OR ") . ";";
+					$query = mb_substr($query, 0, -4) . ";";
 					$this->connector->executeInsertRaw($query);
 				}
 				$totalRows = count($rows);

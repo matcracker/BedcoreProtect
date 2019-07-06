@@ -213,7 +213,7 @@ class Queries{
 			$query .= "((SELECT uuid FROM entities WHERE uuid = '{$uuid}'), '{$x}', '{$y}', '{$z}', '{$levelName}', '{$action->getType()}'),";
 		}
 
-		$query = rtrim($query, ",") . ";";
+		$query = mb_substr($query, 0, -1) . ";";
 
 		return $query;
 	}

@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
@@ -29,7 +30,6 @@ use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
-use pocketmine\block\Sign;
 use pocketmine\entity\Entity;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\player\Player;
@@ -106,21 +106,6 @@ trait QueriesBlocksTrait{
 	}
 
 	/**
-	 * It logs the text and position of the removed sign.
-	 *
-	 * @param Player $player
-	 * @param Sign   $sign
-	 */
-	public function addSignLogByPlayer(Player $player, Sign $sign) : void{
-		$air = BlockUtils::getAir($sign->asPosition());
-
-		$this->addRawBlockLog(Utils::getEntityUniqueId($player), $sign, null, $air, null, Action::BREAK());
-		$this->connector->executeInsert(QueriesConst::ADD_SIGN_LOG, [
-			"lines" => json_encode($sign->getText()->getLines())
-		]);
-	}
-
-	/**
 	 * @param Player      $player
 	 * @param ItemFrame   $itemFrame
 	 * @param CompoundTag $oldItemFrameNbt
@@ -164,8 +149,10 @@ trait QueriesBlocksTrait{
 	 * @return string
 	 */
 	private function buildMultipleBlocksQuery(array $blocks) : string{
+		$sqlite = $this->configParser->isSQLite();
+
 		$query = /**@lang text */
-			"REPLACE INTO blocks (id, damage, block_name) VALUES";
+			($sqlite ? "REPLACE" : "INSERT") . " INTO blocks (id, damage, block_name) VALUES";
 
 		$filtered = array_unique(array_map(function(Block $element){
 			return $element->getId() . ":" . $element->getMeta() . ":" . $element->getName();
@@ -178,7 +165,8 @@ trait QueriesBlocksTrait{
 			$name = (string) $blockData[2];
 			$query .= "('$id', '$damage', '$name'),";
 		}
-		$query = rtrim($query, ",") . ";";
+		$query = mb_substr($query, 0, -1);
+		$query .= ($sqlite ? ";" : " ON DUPLICATE KEY UPDATE id=VALUES(id), damage=VALUES(damage);");
 
 		return $query;
 	}
@@ -191,11 +179,11 @@ trait QueriesBlocksTrait{
 	 */
 	private function buildMultipleRawBlockLogsQuery(array $oldBlocks, $newBlocks) : string{
 		$query = /**@lang text */
-			"INSERT INTO blocks_log(history_id, old_block_id, old_block_damage, new_block_id, new_block_damage) VALUES";
+			"INSERT INTO blocks_log(history_id, old_block_id, old_block_damage, old_block_nbt, new_block_id, new_block_damage, new_block_nbt) VALUES";
 
 		$logId = $this->getLastLogId();
 
-		if(!is_array($newBlocks) && $newBlocks instanceof Block){
+		if($newBlocks instanceof Block){
 			$newId = $newBlocks->getId();
 			$newMeta = $newBlocks->getMeta();
 			$newNBT = BlockUtils::serializeBlockTileNBT($newBlocks);
@@ -210,10 +198,14 @@ trait QueriesBlocksTrait{
                 (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
                 '{$oldNBT}',
                 (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
-                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}')),
-                '{$newNBT}',";
+                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
+                '{$newNBT}'),";
 			}
 		}else{
+			if(count($oldBlocks) !== count($newBlocks)){
+				throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa");
+			}
+
 			/**@var Block $oldBlock */
 			foreach($oldBlocks as $key => $oldBlock){
 				$logId++;
@@ -222,18 +214,18 @@ trait QueriesBlocksTrait{
 				$oldMeta = $oldBlock->getMeta();
 				$oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
 				$newId = $newBlock->getId();
-				$newMeta = $newBlocks->getMeta();
+				$newMeta = $newBlock->getMeta();
 				$newNBT = BlockUtils::serializeBlockTileNBT($newBlock);
 
 				$query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
                 (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
                 '{$oldNBT}',
                 (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND damage = '${newMeta}'),
-                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}')),
-                '{$newNBT}',";
+                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
+                '{$newNBT}'),";
 			}
 		}
-		$query = rtrim($query, ",") . ";";
+		$query = mb_substr($query, 0, -1) . ";";
 
 		return $query;
 	}
@@ -265,34 +257,20 @@ trait QueriesBlocksTrait{
 						$pos = new Position((int) $row["x"], (int) $row["y"], (int) $row["z"], $world);
 						$block = BlockFactory::get((int) $row["{$prefix}_block_id"], (int) $row["{$prefix}_block_damage"], $pos);
 
-						if($block instanceof Sign){
-							if($this->configParser->getSignText()){
-								$this->connector->executeSelect(QueriesConst::GET_SIGN_LOG, ["id" => $logId],
-									function(array $rows) use ($block, $world){
-										if(count($rows) === 1){
-											$texts = (array) json_decode($rows[0]["text_lines"], true);
-											$block->getText()->setLines($texts);
-											$world->setBlock($block, $block);
-										}
-									}
-								);
+						$world->setBlock($block, $block);
+						if(($tile = BlockUtils::asTile($block)) !== null){
+							$serializedNBT = $row["{$prefix}_block_nbt"];
+							if($serializedNBT !== null){
+								$nbt = Utils::deserializeNBT($serializedNBT);
+								$tile->readSaveData($nbt);
 							}
-						}else{
-							$world->setBlock($block, $block);
-							if(($tile = BlockUtils::asTile($block)) !== null){
-								$serializedNBT = $row["{$prefix}_block_nbt"];
-								if($serializedNBT !== null){
-									$nbt = Utils::deserializeNBT($serializedNBT);
-									$tile->readSaveData($nbt);
-								}
-							}
-							$block->onPostPlace();
 						}
+						$block->onPostPlace();
 
 						$query .= "log_id = '$logId' OR ";
 					}
 
-					$query = rtrim($query, " OR ") . ";";
+					$query = mb_substr($query, 0, -4) . ";";
 					$this->connector->executeInsertRaw($query);
 				}
 

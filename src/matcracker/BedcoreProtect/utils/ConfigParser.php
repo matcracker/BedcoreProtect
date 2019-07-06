@@ -84,8 +84,12 @@ final class ConfigParser{
 		return (bool) $this->data['block-break'];
 	}
 
-	public function getBlockIgnite() : bool{
-		return (bool) $this->data['block-ignite'];
+	public function getNaturalBreak() : bool{
+		return (bool) $this->data['natural-break'];
+	}
+
+	public function getBlockBurn() : bool{
+		return (bool) $this->data['block-burn'];
 	}
 
 	public function getExplosions() : bool{
@@ -106,6 +110,10 @@ final class ConfigParser{
 
 	public function getLeavesDecay() : bool{
 		return (bool) $this->data['leaves-decay'];
+	}
+
+	public function getLiquidTracking() : bool{
+		return (bool) $this->data['liquid-tracking'];
 	}
 
 	public function getItemTransactions() : bool{

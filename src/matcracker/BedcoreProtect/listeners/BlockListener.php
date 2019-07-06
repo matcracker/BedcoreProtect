@@ -25,11 +25,13 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Bed;
+use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\BlockLegacyMetadata;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
+use pocketmine\block\Flowable;
 use pocketmine\block\Liquid;
 use pocketmine\block\Sign;
 use pocketmine\block\tile\Chest as TileChest;
@@ -57,13 +59,8 @@ final class BlockListener extends BedcoreListener{
 				$event->setCancelled();
 			}else{
 				$air = BlockUtils::getAir($block->asPosition());
-				if($block instanceof Sign){
-					if($this->configParser->getSignText()){
-						$this->database->getQueries()->addSignLogByPlayer($player, $block);
 
-						return;
-					}
-				}elseif($block instanceof Door){
+				if($block instanceof Door){
 					$top = $block->getMeta() & BlockLegacyMetadata::DOOR_FLAG_TOP;
 					$other = $block->getSide($top ? Facing::DOWN : Facing::UP);
 					if($other instanceof Door and $other->isSameType($block)){
@@ -83,7 +80,28 @@ final class BlockListener extends BedcoreListener{
 						}
 					}
 				}
+
 				$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK());
+
+				if($this->configParser->getNaturalBreak()){
+					/**
+					 * @var Block[] $sides
+					 * Getting all blocks around the broken block that are @see Flowable
+					 */
+					$sides = array_filter($block->getAllSides(), function(Block $side){
+						return $side instanceof Flowable || $side instanceof Sign;
+					});
+					/**
+					 * @var Block[] $airs
+					 */
+					foreach($sides as $key => $side){
+						$airs[$key] = BlockUtils::getAir($side->asPosition());
+					}
+
+					if(!empty($sides)){
+						$this->database->getQueries()->addBlocksLogByEntity($player, $sides, $airs, Action::BREAK());
+					}
+				}
 			}
 		}
 	}
@@ -103,15 +121,19 @@ final class BlockListener extends BedcoreListener{
 				$this->database->getQueries()->requestBlockLog($player, $replacedBlock);
 				$event->setCancelled();
 			}else{
-				$pos = $block->asPosition();
+				$otherHalfPos = null;
 				if($block instanceof Bed){
 					$facing = $player->getHorizontalFacing();
-					$pos = $block->getSide($block->isHeadPart() ? Facing::opposite($facing) : $facing)->asPosition();
+					$otherHalfPos = $block->getSide($block->isHeadPart() ? Facing::opposite($facing) : $facing)->asPosition();
 				}else if($block instanceof Door){
-					$pos = $block->getSide(Facing::UP)->asPosition();
+					$otherHalfPos = $block->getSide(Facing::UP)->asPosition();
 				}
 
-				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $pos);
+				$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+
+				if($otherHalfPos !== null){
+					$this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $otherHalfPos);
+				}
 			}
 		}
 	}
@@ -157,7 +179,7 @@ final class BlockListener extends BedcoreListener{
 	 */
 	public function trackBlockBurn(BlockBurnEvent $event) : void{
 		$block = $event->getBlock();
-		if($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getBlockIgnite()){
+		if($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getBlockBurn()){
 			$cause = $event->getCausingBlock();
 
 			$this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
@@ -174,7 +196,7 @@ final class BlockListener extends BedcoreListener{
 		$result = $event->getNewState();
 
 		if($this->configParser->isEnabledWorld($block->getWorld())){
-			if($block instanceof Liquid){
+			if($block instanceof Liquid && $this->configParser->getLiquidTracking()){
 				$id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
 				$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
 			}
