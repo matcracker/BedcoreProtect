@@ -98,7 +98,7 @@ trait QueriesBlocksTrait{
 	public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null) : void{
 		$name = $who->getName();
 		//Particular blocks
-		if($who->getId() instanceof Leaves){
+		if($who instanceof Leaves){
 			$name = "leaves";
 		}
 
