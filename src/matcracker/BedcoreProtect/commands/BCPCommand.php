@@ -166,8 +166,8 @@ final class BCPCommand extends Command{
 						$start = microtime(true);
 
 						$this->queries->rollback($sender->asPosition(), $parser,
-							function(int $countRows) use ($sender, $start, $parser){ //onSuccess
-								if($countRows > 0){
+							function(int $blocks, int $items, int $entities) use ($sender, $start, $parser){ //onSuccess
+								if(($blocks + $items + $entities) > 0){
 									$diff = microtime(true) - $start;
 									$time = time() - $parser->getTime();
 									$radius = $parser->getRadius();
@@ -175,7 +175,9 @@ final class BCPCommand extends Command{
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rollback completed for \"{$sender->getWorld()->getFolderName()}\"."));
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rolled back {$date}."));
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
-									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$countRows} block(s) changed."));
+									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$blocks} block(s) changed."));
+									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
+									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
 									$sender->sendMessage(Utils::translateColors("&f------"));
 									$y = $sender->getWorld()->getHighestBlockAt((int) $sender->getX(), (int) $sender->getZ()) + 1;
@@ -210,8 +212,8 @@ final class BCPCommand extends Command{
 						$start = microtime(true);
 
 						$this->queries->restore($sender->asPosition(), $parser,
-							function(int $countRows) use ($sender, $start, $parser){ //onSuccess
-								if($countRows > 0){
+							function(int $blocks, int $items, int $entities) use ($sender, $start, $parser){ //onSuccess
+								if(($blocks + $items + $entities) > 0){
 									$diff = microtime(true) - $start;
 									$time = time() - $parser->getTime();
 									$radius = $parser->getRadius();
@@ -219,7 +221,9 @@ final class BCPCommand extends Command{
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore completed for \"{$sender->getWorld()->getFolderName()}\"."));
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restored {$date}."));
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
-									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$countRows} block(s) changed."));
+									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$blocks} block(s) changed."));
+									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
+									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
 									$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
 									$sender->sendMessage(Utils::translateColors("&f------"));
 								}else{

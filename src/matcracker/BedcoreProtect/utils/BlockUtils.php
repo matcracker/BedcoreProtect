@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
+use pocketmine\block\Button;
 use pocketmine\block\Door;
 use pocketmine\block\Liquid;
 use pocketmine\block\tile\Tile;
@@ -39,24 +40,23 @@ final class BlockUtils implements BlockLegacyIds{
 	}
 
 	public static function isActivable(Block $block) : bool{
-		//It supports only PMMP blocks.
+		//It supports only PM-MP blocks.
 		$ids = [
 			self::TRAPDOOR, self::BED_BLOCK,
-			self::ITEM_FRAME_BLOCK, self::WOODEN_BUTTON,
-			self::STONE_BUTTON
+			self::ITEM_FRAME_BLOCK, self::IRON_TRAPDOOR, //Remove it when PM-MP supports redstone.
 		];
 
 		return (
-			$block instanceof Door || in_array($block->getId(), $ids) || self::hasInventory($block)
+			$block instanceof Door || $block instanceof Button || in_array($block->getId(), $ids) || self::hasInventory($block)
 		);
 	}
 
 	public static function hasInventory(Block $block) : bool{
-		//It supports only PMMP blocks.
 		$ids = [
 			self::ENDER_CHEST, self::CHEST,
 			self::FURNACE, self::DISPENSER,
-			self::ENCHANTING_TABLE, self::ANVIL
+			self::ENCHANTING_TABLE, self::ANVIL,
+			self::BREWING_STAND_BLOCK, self::HOPPER_BLOCK
 		];
 
 		return in_array($block->getId(), $ids);

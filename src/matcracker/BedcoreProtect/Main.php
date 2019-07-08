@@ -80,41 +80,37 @@ final class Main extends PluginBase{
 
 		date_default_timezone_set($this->configParser->getTimezone());
 		$this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
+		//Database connection
+		$this->getLogger()->info("Trying to establishing connection with {$this->configParser->getDatabaseType()} database...");
 		$this->database = new Database($this);
+		if($this->database->connect()){
+			$this->getLogger()->info("Connection successfully established.");
 
-		$this->getLogger()->info("Establishing database connection using {$this->configParser->getDatabaseType()}...");
-		if(!$this->database->isConnected()){
-			$this->getLogger()->alert("Could not connect to the database.");
-			$this->getServer()->getPluginManager()->disablePlugin($this);
+			$this->database->getQueries()->init();
 
-			return;
-		}
-		$this->getLogger()->info("Connection established.");
+			$this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
-		$this->database->getQueries()->init();
+			$events = [
+				new BlockListener($this),
+				new EntityListener($this),
+				new PlayerListener($this),
+				new WorldListener($this)
+			];
 
-		$this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+			foreach($events as $event){
+				$this->getServer()->getPluginManager()->registerEvents($event, $this);
+			}
 
-		$events = [
-			new BlockListener($this),
-			new EntityListener($this),
-			new PlayerListener($this),
-			new WorldListener($this)
-		];
-
-		foreach($events as $event){
-			$this->getServer()->getPluginManager()->registerEvents($event, $this);
-		}
-
-		if($this->configParser->isSQLite()){
-			$this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTime(), SQLiteTransactionTask::getTime());
+			if($this->configParser->isSQLite()){
+				$this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+			}
 		}
 	}
 
 	protected function onDisable() : void{
 		$this->getScheduler()->cancelAllTasks();
 		if(($this->database !== null)){
-			$this->database->close();
+			$this->database->disconnect();
 		}
 		Inspector::clearCache();
 	}

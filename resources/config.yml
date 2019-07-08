@@ -16,9 +16,6 @@ database:
     password: ""
     # The database name where plugin stores data.
     schema:
-  # The maximum number of simultaneous SQL queries
-  # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
-  worker-limit: 1
 
 # The timezone where you are located. This is necessary to correctly log the time of events.
 # To find your timezone, check here: https://www.php.net/manual/en/timezones.php
@@ -53,8 +50,7 @@ block-place: true
 block-break: true
 
 # Logs blocks that break off of other blocks; for example, a sign or torch
-# falling off of a dirt block that a player breaks. This is required for
-# beds/doors to properly rollback.
+# falling off of a dirt block that a player breaks.
 natural-break: true
 
 # Properly track block movement, such as sand or gravel falling.
@@ -72,7 +68,7 @@ explosions: true
 # Track when an entity changes a block, such as an Enderman destroying blocks.
 entity-change: true
 
-# Logs killed entities, such as killed cows and enderman.
+# Logs killed entities, such as killed cows and enderman. (NOT SUPPORTED BY POCKETMINE YET)
 entity-kills: true
 
 # Logs text on signs. If disabled, signs will be blank when rolled back.
@@ -84,10 +80,10 @@ buckets: true
 # Logs natural tree leaves decay.
 leaves-decay: true
 
-# Logs tree growth. Trees are linked to the player who planted the sappling.
+# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT SUPPORTED BY POCKETMINE YET)
 tree-growth: true
 
-# Logs mushroom growth.
+# Logs mushroom growth. (NOT SUPPORTED BY POCKETMINE YET)
 mushroom-growth: true
 
 # Logs natural vine growth. (NOT SUPPORTED BY POCKETMINE YET)

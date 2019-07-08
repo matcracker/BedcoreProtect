@@ -124,14 +124,16 @@ class Queries{
 
 	public function rollback(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
 		try{
-			$rows = $this->rollbackBlocks($position, $parser);
+			$itemsCount = 0;
+			$entitiesCount = 0;
+			$blocksCount = $this->rollbackBlocks($position, $parser);
 			if($this->configParser->getRollbackItems())
-				$rows += $this->rollbackItems($position, $parser);
+				$itemsCount = $this->rollbackItems($position, $parser);
 			if($this->configParser->getRollbackEntities())
-				$rows += $this->rollbackEntities($position, $parser);
+				$entitiesCount = $this->rollbackEntities($position, $parser);
 
 			if($onSuccess !== null){
-				$onSuccess($rows);
+				$onSuccess($blocksCount, $itemsCount, $entitiesCount);
 			}
 		}catch(SqlError $error){
 			if($onError !== null){
@@ -142,14 +144,16 @@ class Queries{
 
 	public function restore(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null) : void{
 		try{
-			$rows = $this->restoreBlocks($position, $parser);
+			$itemsCount = 0;
+			$entitiesCount = 0;
+			$blocksCount = $this->restoreBlocks($position, $parser);
 			if($this->configParser->getRollbackItems())
-				$rows += $this->restoreItems($position, $parser);
+				$itemsCount += $this->restoreItems($position, $parser);
 			if($this->configParser->getRollbackEntities())
-				$rows += $this->restoreEntities($position, $parser);
+				$entitiesCount += $this->restoreEntities($position, $parser);
 
 			if($onSuccess !== null){
-				$onSuccess($rows);
+				$onSuccess($blocksCount, $itemsCount, $entitiesCount);
 			}
 		}catch(SqlError $error){
 			if($onError !== null){

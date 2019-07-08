@@ -60,7 +60,6 @@ CREATE TABLE IF NOT EXISTS entities_log
     FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
 );
 -- #        }
--- #        }
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (

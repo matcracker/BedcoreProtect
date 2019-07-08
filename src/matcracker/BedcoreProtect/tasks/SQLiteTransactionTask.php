@@ -33,10 +33,10 @@ final class SQLiteTransactionTask extends Task{
 	}
 
 	/**
-	 * Return the ticks when task is executed (5 minutes)
+	 * Return the ticks when task is executed
 	 * @return int
 	 */
-	public final static function getTime() : int{
+	public final static function getTicks() : int{
 		return 5 * 60 * 60 * 20;
 	}
 

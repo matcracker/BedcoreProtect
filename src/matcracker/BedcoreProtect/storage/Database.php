@@ -24,32 +24,49 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\Queries;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
+use poggit\libasynql\SqlError;
 
 class Database{
+	/**@var Main */
+	private $plugin;
 	/**@var DataConnector */
-	private $database;
+	private $dataConnector;
 	/**@var Queries */
 	private $queries;
 
-	public function __construct(Main $plugin){ //TODO: Better handle of database connection
-		$this->database = libasynql::create($plugin, $plugin->getConfig()->get("database"), [
-			"sqlite" => "sqlite.sql",
-			"mysql" => "mysql.sql"
-		]);
-		$this->queries = new Queries($this->database, $plugin->getParsedConfig());
+	public function __construct(Main $plugin){
+		$this->plugin = $plugin;
+	}
+
+	public final function connect() : bool{
+		try{
+			$this->dataConnector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
+				"sqlite" => "sqlite.sql",
+				"mysql" => "mysql.sql"
+			]);
+			$this->queries = new Queries($this->dataConnector, $this->plugin->getParsedConfig());
+
+			return true;
+		}catch(SqlError $error){
+			$this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+			$this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+		}
+
+		return false;
 	}
 
 	public final function getQueries() : Queries{
 		return $this->queries;
 	}
 
-	public final function close() : void{
+	public final function disconnect() : void{
 		if($this->isConnected()){
-			$this->database->close();
+			$this->dataConnector->close();
 		}
 	}
 
 	public final function isConnected() : bool{
-		return isset($this->database);
+		return isset($this->dataConnector);
 	}
+
 }

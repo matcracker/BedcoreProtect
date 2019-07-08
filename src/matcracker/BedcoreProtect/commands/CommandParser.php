@@ -36,7 +36,7 @@ CommandParser::initActions();
 final class CommandParser{
 	public const MAX_PARAMETERS = 6;
 
-	/**@var Action[] */
+	/**@var Action[][] */
 	private static $ACTIONS = null;
 
 	private $configParser;
@@ -78,14 +78,14 @@ final class CommandParser{
 	public static function initActions() : void{
 		if(self::$ACTIONS === null){
 			self::$ACTIONS = [
-				"block" => Action::NONE(),
-				"+block" => Action::PLACE(),
-				"-block" => Action::BREAK(),
-				"click" => Action::CLICK(),
-				"container" => Action::NONE(),
-				"+container" => Action::ADD(),
-				"-container" => Action::REMOVE(),
-				"kill" => Action::KILL()
+				"block" => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
+				"+block" => [Action::PLACE()],
+				"-block" => [Action::BREAK()],
+				"click" => [Action::CLICK()],
+				"container" => [Action::ADD(), Action::REMOVE()],
+				"+container" => [Action::ADD()],
+				"-container" => [Action::REMOVE()],
+				"kill" => [Action::KILL()]
 			];
 		}
 	}
@@ -234,16 +234,10 @@ final class CommandParser{
 					$query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
 					$query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
 				}else if($key === "action"){
-					$minAction = CommandParser::toAction($value);
-					$maxAction = $minAction;
-					if($value === "container"){
-						$minAction = Action::ADD();
-						$maxAction = Action::REMOVE();
-					}elseif($value === "block"){
-						$minAction = Action::PLACE();
-						$maxAction = Action::BREAK();
+					$actions = CommandParser::toActions($value);
+					foreach($actions as $action){
+						$query .= "action = {$action->getType()} AND ";
 					}
-					$query .= "action BETWEEN '{$minAction->getType()}' AND '{$maxAction->getType()}' AND ";
 				}else if(($key === "blocks" || $key === "exclusions") && $cArgs > 0){
 					$operator = $key === "exclusions" ? "<>" : "=";
 					for($i = 0; $i < $cArgs; $i += 2){
@@ -258,10 +252,15 @@ final class CommandParser{
 			}
 		}
 
-		$query = mb_substr($query, 0, -5); //Remove excessive AND
+		$query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
 	}
 
-	public static function toAction(string $cmdAction) : Action{
+	/**
+	 * @param string $cmdAction
+	 *
+	 * @return Action[]
+	 */
+	public static function toActions(string $cmdAction) : array{
 		if(!isset(self::$ACTIONS[$cmdAction]))
 			throw new ArrayOutOfBoundsException("The $cmdAction is not a valid action.");
 

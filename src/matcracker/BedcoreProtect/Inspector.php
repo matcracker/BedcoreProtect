@@ -169,7 +169,7 @@ final class Inspector{
 				throw new UnexpectedValueException("Invalid action parsed: {$action->name()}");
 			}
 
-			//TODO: Add strikethrough (&m) when MC fix it.
+			//TODO: Use strikethrough (&m) when MC fix it.
 			$inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
 														   . "&f - &3{$entityFrom} &f{$actionName} &3{$entityTo} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
 		}

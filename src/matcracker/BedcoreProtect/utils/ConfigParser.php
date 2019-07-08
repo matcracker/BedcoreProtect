@@ -137,8 +137,7 @@ final class ConfigParser{
 		});
 		$v->required('database.mysql.username')->string();
 		$v->required('database.mysql.password')->string()->allowEmpty(true);
-		$v->required('database.mysql.schema')->string();
-		$v->required('database.worker-limit')->integer()->between(1, PHP_INT_MAX);
+		$v->required('database.mysql.schema')->string()->allowEmpty(true);
 		$v->required('enabled-worlds')->isArray();
 		$v->required('check-updates')->bool();
 		$v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
