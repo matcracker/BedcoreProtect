@@ -72,7 +72,7 @@ final class BlockListener extends BedcoreListener{
 						$this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
 					}
 				}elseif($block instanceof Chest){
-					$tileChest = $block->getWorld()->getTile($block);
+					$tileChest = BlockUtils::asTile($block);
 					if($tileChest instanceof TileChest){
 						$inventory = $tileChest->getRealInventory();
 						if(count($inventory->getContents()) > 0){ //If not empty
@@ -146,28 +146,12 @@ final class BlockListener extends BedcoreListener{
 	public function trackBlockSpread(BlockSpreadEvent $event) : void{
 		$block = $event->getBlock();
 		$source = $event->getSource();
-		$newState = $event->getNewState();
-
-		/*var_dump("SPREAD BLOCK: " . $event->getBlock()->getName());
-		var_dump("SPREAD NEW STATE: " . $event->getNewState()->getName());
-		var_dump("SPREAD SOURCE: " . $source->getName());*/
-
-		/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
-		print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
-		print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
 
 		if($this->configParser->isEnabledWorld($block->getWorld())){
 			if($source instanceof Liquid){
-				//var_dump($source->getFlowVector());
 				if(BlockUtils::isStillLiquid($source)){
-
-					/*print_r("SOURCE(" . $source->getName() . ")\n" . $source->asPosition());
-					print_r("\nBLOCK(" . $block->getName() . ")\n" . $block->asPosition());
-					print_r("\nNEW STATE(" . $newState->getName() . ")\n" . $newState->asPosition() . "\n\n");*/
-
 					$this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
-				} //TODO: Find player who place water
-
+				}
 			}
 		}
 	}
@@ -201,14 +185,6 @@ final class BlockListener extends BedcoreListener{
 				$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
 			}
 		}
-
-		/*var_dump("FORM BLOCK: " . $event->getBlock()->getName());
-		var_dump("FORM NEW STATE: " . $event->getNewState()->getName());*/
 	}
-
-	/*public function testGrow(BlockGrowEvent $event) : void{
-		var_dump("GROW BLOCK: " . $event->getBlock()->getName());
-		var_dump("GROW NEW STATE: " . $event->getNewState()->getName());
-	}*/
 
 }

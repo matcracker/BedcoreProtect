@@ -55,10 +55,12 @@ final class EntityListener extends BedcoreListener{
 	 */
 	public function trackEntitySpawn(EntitySpawnEvent $event) : void{
 		$entity = $event->getEntity();
-		if($entity instanceof Painting){
-			$player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
-			if($player !== null){
-				$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
+		if($this->configParser->isEnabledWorld($entity->getWorld())){
+			if($entity instanceof Painting && $this->configParser->getBlockPlace()){
+				$player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
+				if($player !== null){
+					$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
+				}
 			}
 		}
 	}
@@ -70,10 +72,12 @@ final class EntityListener extends BedcoreListener{
 	 */
 	public function trackEntityDespawn(EntityDespawnEvent $event) : void{
 		$entity = $event->getEntity();
-		if($entity instanceof Painting){
-			$player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
-			if($player !== null){
-				$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
+		if($this->configParser->isEnabledWorld($entity->getWorld())){
+			if($entity instanceof Painting && $this->configParser->getBlockBreak()){
+				$player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
+				if($player !== null){
+					$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
+				}
 			}
 		}
 	}

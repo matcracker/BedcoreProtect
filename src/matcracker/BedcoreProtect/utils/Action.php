@@ -69,18 +69,18 @@ final class Action{
 
 	protected static function setup() : array{
 		return [
-			new Action("none", -1, "none"),
+			new self("none", -1, "none"),
 			//Blocks actions
-			new Action("place", 0, "placed"),
-			new Action("break", 1, "broke"),
-			new Action("click", 2, "clicked"),
+			new self("place", 0, "placed"),
+			new self("break", 1, "broke"),
+			new self("click", 2, "clicked"),
 			//Entities actions
-			new Action("spawn", 3, "placed"),
-			new Action("despawn", 4, "broke"),
-			new Action("kill", 5, "killed"),
+			new self("spawn", 3, "placed"),
+			new self("despawn", 4, "broke"),
+			new self("kill", 5, "killed"),
 			//Inventories actions
-			new Action("add", 6, "added"),
-			new Action("remove", 7, "removed")
+			new self("add", 6, "added"),
+			new self("remove", 7, "removed")
 		];
 	}
 
