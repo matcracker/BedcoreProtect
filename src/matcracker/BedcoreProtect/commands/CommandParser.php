@@ -43,6 +43,7 @@ final class CommandParser{
 	private $arguments;
 	private $requiredParams;
 	private $parsed = false;
+	private $errorMessage;
 
 	//Default data values
 	private $data = [
@@ -91,11 +92,19 @@ final class CommandParser{
 	}
 
 	public function parse() : bool{
-		if(($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) return false;
+		if(($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS){
+			$this->errorMessage = "You are using too few or too many parameters (Max: " . self::MAX_PARAMETERS . ")";
+
+			return false;
+		}
 
 		foreach($this->arguments as $argument){
 			$arrayData = explode("=", $argument);
-			if(count($arrayData) !== 2) return false;
+			if(count($arrayData) !== 2){
+				$this->errorMessage = "Please specify a valid parameter. (" . implode(",", array_keys(self::$ACTIONS)) . ").";
+
+				return false;
+			}
 			$param = strtolower($arrayData[0]);
 			$paramValues = $arrayData[1];
 
@@ -115,6 +124,8 @@ final class CommandParser{
 							//TODO: Check entity if is valid
 
 						}else if(!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()){
+							$this->errorMessage = "The user \"{$user}\" does not exist.";
+
 							return false;
 						}
 					}
@@ -122,21 +133,39 @@ final class CommandParser{
 					break;
 				case "time":
 				case "t":
-					$this->data["time"] = Utils::parseTime($paramValues);
+					$time = Utils::parseTime($paramValues);
+					if($time === null){
+						$this->errorMessage = "Please specify the amount of time.";
+
+						return false;
+					}
+					$this->data["time"] = $time;
 					break;
 				case "radius":
 				case "r":
-					if(!ctype_digit($paramValues)) return false;
+					if(!ctype_digit($paramValues)){
+						$this->errorMessage = "Please specify the amount of radius.";
+
+						return false;
+					}
 					$paramValues = (int) $paramValues;
 					$maxRadius = $this->configParser->getMaxRadius();
-					if($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)) return false;
+					if($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)){
+						$this->errorMessage = "Please specify a valid radius.";
+
+						return false;
+					}
 
 					$this->data["radius"] = $paramValues;
 					break;
 				case "action":
 				case "a":
 					$paramValues = strtolower($paramValues);
-					if(!array_key_exists($paramValues, self::$ACTIONS)) return false;
+					if(!array_key_exists($paramValues, self::$ACTIONS)){
+						$this->errorMessage = "Please specify a valid action.";
+
+						return false;
+					}
 
 					$this->data["action"] = $paramValues;
 					break;
@@ -147,7 +176,7 @@ final class CommandParser{
 					$blocks = explode(",", $paramValues);
 					if(count($blocks) < 1) return false;
 
-					$index = substr($param, 0, 1) === "b" ? "blocks" : "exclusions";
+					$index = mb_substr($param, 0, 1) === "b" ? "blocks" : "exclusions";
 					foreach($blocks as $block){
 						try{
 							$block = ItemFactory::fromString($block)->getBlock();
@@ -157,6 +186,8 @@ final class CommandParser{
 								"damage" => $block->getMeta()
 							];
 						}catch(InvalidArgumentException $exception){
+							$this->errorMessage = "Invalid block \"{$block}\" to " . ($index === "blocks" ? "include" : "exclude") . ".";
+
 							return false;
 						}
 					}
@@ -173,6 +204,8 @@ final class CommandParser{
 			return false;
 
 		if(count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)){
+			$this->errorMessage = "You are missing one of the following parameters: " . implode(",", $this->requiredParams);
+
 			return false;
 		}
 
@@ -236,8 +269,9 @@ final class CommandParser{
 				}else if($key === "action"){
 					$actions = CommandParser::toActions($value);
 					foreach($actions as $action){
-						$query .= "action = {$action->getType()} AND ";
+						$query .= "action = {$action->getType()} OR ";
 					}
+					$query = mb_substr($query, 0, -4) . " AND "; //Remove excessive " OR " string.
 				}else if(($key === "blocks" || $key === "exclusions") && $cArgs > 0){
 					$operator = $key === "exclusions" ? "<>" : "=";
 					for($i = 0; $i < $cArgs; $i += 2){
@@ -273,28 +307,7 @@ final class CommandParser{
 	 * @return string|null
 	 */
 	public function getErrorMessage() : ?string{
-		foreach(array_keys($this->data) as $param){
-			if($this->isRequired($param)){
-				switch($param){
-					case "user":
-					case "action":
-						return "This {$param}/s does not exist";
-					case "time":
-					case "radius":
-						return "Please specify the amount of {$param}";
-					case "blocks":
-						return "Please specify the blocks to include";
-					case "exclude":
-						return "Please specify the blocks to exclude";
-				}
-			}
-		}
-
-		return null;
-	}
-
-	private function isRequired(string $param) : bool{
-		return in_array($param, $this->requiredParams);
+		return $this->errorMessage;
 	}
 
 	public function buildLookupQuery() : string{

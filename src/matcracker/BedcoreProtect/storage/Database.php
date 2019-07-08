@@ -48,25 +48,33 @@ class Database{
 
 			return true;
 		}catch(SqlError $error){
-			$this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
-			$this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+			$this->throwError();
 		}
 
 		return false;
 	}
 
+	private function throwError() : void{
+		$this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+		$this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+	}
+
 	public final function getQueries() : Queries{
+		if(!$this->isConnected()){
+			$this->throwError();
+		}
+
 		return $this->queries;
+	}
+
+	public final function isConnected() : bool{
+		return isset($this->dataConnector);
 	}
 
 	public final function disconnect() : void{
 		if($this->isConnected()){
 			$this->dataConnector->close();
 		}
-	}
-
-	public final function isConnected() : bool{
-		return isset($this->dataConnector);
 	}
 
 }

@@ -92,7 +92,7 @@ final class BCPCommand extends Command{
 							}
 							Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
 						}else{
-							$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
+							$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
 						}
 					}
 				}else{
@@ -113,7 +113,7 @@ final class BCPCommand extends Command{
 
 						return true;
 					}else{
-						$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
+						$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
 					}
 				}else{
 					$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
@@ -196,7 +196,7 @@ final class BCPCommand extends Command{
 							}
 						);
 					}else{
-						$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
+						$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
 					}
 				}else{
 					$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
@@ -237,7 +237,7 @@ final class BCPCommand extends Command{
 							}
 						);
 					}else{
-						$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}."));
+						$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
 					}
 				}else{
 					$sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
