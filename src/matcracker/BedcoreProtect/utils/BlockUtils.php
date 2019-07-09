@@ -39,6 +39,13 @@ final class BlockUtils implements BlockLegacyIds{
 		return BlockFactory::get(self::AIR, 0, $position);
 	}
 
+	/**
+	 * Returns true if the Block can be activated/interacted.
+	 *
+	 * @param Block $block
+	 *
+	 * @return bool
+	 */
 	public static function isActivable(Block $block) : bool{
 		//It supports only PM-MP blocks.
 		$ids = [
@@ -51,6 +58,13 @@ final class BlockUtils implements BlockLegacyIds{
 		);
 	}
 
+	/**
+	 * Returns true if the block contains inventory.
+	 *
+	 * @param Block $block
+	 *
+	 * @return bool
+	 */
 	public static function hasInventory(Block $block) : bool{
 		$ids = [
 			self::ENDER_CHEST, self::CHEST,
@@ -62,10 +76,24 @@ final class BlockUtils implements BlockLegacyIds{
 		return in_array($block->getId(), $ids);
 	}
 
+	/**
+	 * Checks if the liquid is stilled.
+	 *
+	 * @param Liquid $liquid
+	 *
+	 * @return bool
+	 */
 	public static function isStillLiquid(Liquid $liquid) : bool{
 		return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
 	}
 
+	/**
+	 * Serialize a block (tile) NBT into base64. Returns null if block doesn't contain NBT.
+	 *
+	 * @param Block $block
+	 *
+	 * @return string|null
+	 */
 	public static function serializeBlockTileNBT(Block $block) : ?string{
 		if(($tag = self::getCompoundTag($block)) !== null){
 			return Utils::serializeNBT($tag);
@@ -74,6 +102,13 @@ final class BlockUtils implements BlockLegacyIds{
 		return null;
 	}
 
+	/**
+	 * Returns the CompoundTag of block if it exists, else returns null.
+	 *
+	 * @param Block $block
+	 *
+	 * @return CompoundTag|null
+	 */
 	public static function getCompoundTag(Block $block) : ?CompoundTag{
 		if(($tile = self::asTile($block)) !== null){
 			return $tile->getCleanedNBT();
@@ -82,6 +117,14 @@ final class BlockUtils implements BlockLegacyIds{
 		return null;
 	}
 
+
+	/**
+	 * Returns a Tile instance of the given block if it exists.
+	 *
+	 * @param Block $block
+	 *
+	 * @return Tile|null
+	 */
 	public static function asTile(Block $block) : ?Tile{
 		if($block->getWorld() === null) return null;
 

@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands;
 
 use ArrayOutOfBoundsException;
+use BadMethodCallException;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\ConfigParser;
@@ -119,12 +120,16 @@ final class CommandParser{
 					$users = explode(",", $paramValues);
 					if(count($users) < 1) return false;
 
-					foreach($users as $user){
+					foreach($users as &$user){
 						if(mb_substr($user, 0, 1) === "#"){
-							//TODO: Check entity if is valid
+							$user = mb_substr($user, 1);
+							if(!in_array($user, Utils::getEntitySaveNames())){
+								$this->errorMessage = "The entity \"{$user}\" does not exist. (The name is case-sensitive)";
 
+								return false;
+							}
 						}else if(!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()){
-							$this->errorMessage = "The user \"{$user}\" does not exist.";
+							$this->errorMessage = "The player \"{$user}\" does not exist.";
 
 							return false;
 						}
@@ -225,7 +230,7 @@ final class CommandParser{
 	 */
 	public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false) : string{
 		if(!$this->parsed){
-			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+			throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
 		$prefix = $restore ? "new" : "old";
@@ -251,8 +256,9 @@ final class CommandParser{
 			if($value !== null){
 				if($key === "user"){
 					foreach($value as $user){
-						$query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$user') AND ";
+						$query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$user') OR ";
 					}
+					$query = mb_substr($query, 0, -4) . " AND "; //Remove excessive " OR " string.
 				}else if($key === "time"){
 					$diffTime = time() - (int) $value;
 					if($this->configParser->isSQLite()){
@@ -312,7 +318,7 @@ final class CommandParser{
 
 	public function buildLookupQuery() : string{
 		if(!$this->parsed){
-			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+			throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
 		$query = /**@lang text */
@@ -345,7 +351,7 @@ final class CommandParser{
 	 */
 	private function getData(string $key){
 		if(!$this->parsed){
-			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+			throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
 		return $this->data[$key];
@@ -353,7 +359,7 @@ final class CommandParser{
 
 	public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false) : string{
 		if(!$this->parsed){
-			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+			throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
 		$prefix = $restore ? "new" : "old";
@@ -371,7 +377,7 @@ final class CommandParser{
 
 	public function buildEntitiesLogSelectionQuery(Vector3 $vector3, bool $restore = false) : string{
 		if(!$this->parsed){
-			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+			throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
 		$query = /**@lang text */
@@ -395,7 +401,7 @@ final class CommandParser{
 	 */
 	public function getAllData() : array{
 		if(!$this->parsed){
-			throw new UnexpectedValueException("Before invoking this method, you need to invoke CommandParser::parse()");
+			throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
 		}
 
 		return $this->data;

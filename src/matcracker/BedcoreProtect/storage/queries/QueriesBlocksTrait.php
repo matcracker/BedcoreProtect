@@ -45,7 +45,7 @@ use poggit\libasynql\SqlError;
 trait QueriesBlocksTrait{
 
 	/**
-	 * It logs the entity who mades the action for block.
+	 * It logs the entity who makes the action for block.
 	 *
 	 * @param Entity        $entity
 	 * @param Block         $oldBlock

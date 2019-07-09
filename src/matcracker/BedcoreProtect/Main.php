@@ -30,7 +30,6 @@ use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
-use UnexpectedValueException;
 
 final class Main extends PluginBase{
 	public const PLUGIN_NAME = "BedcoreProtect";
@@ -47,10 +46,6 @@ final class Main extends PluginBase{
 	 * @return Database
 	 */
 	public function getDatabase() : Database{
-		if($this->database === null){
-			throw new UnexpectedValueException("Database connection it's not established!");
-		}
-
 		return $this->database;
 	}
 
@@ -109,9 +104,8 @@ final class Main extends PluginBase{
 
 	protected function onDisable() : void{
 		$this->getScheduler()->cancelAllTasks();
-		if(($this->database !== null)){
-			$this->database->disconnect();
-		}
+		$this->database->disconnect();
+
 		Inspector::clearCache();
 	}
 }

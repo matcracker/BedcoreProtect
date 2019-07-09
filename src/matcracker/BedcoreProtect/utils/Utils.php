@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\utils;
 use DateTime;
 use InvalidArgumentException;
 use pocketmine\entity\Entity;
+use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
 use pocketmine\nbt\BigEndianNbtSerializer;
@@ -38,6 +39,13 @@ final class Utils{
 	private function __construct(){
 	}
 
+	/**
+	 * It translates chat colors from format "§" to "&"
+	 *
+	 * @param string $message
+	 *
+	 * @return string
+	 */
 	public static function translateColors(string $message) : string{
 		return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", function(array $matches) : string{
 			return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
@@ -115,7 +123,7 @@ final class Utils{
 	}
 
 	/**
-	 * Returns the entity UUID.
+	 * Returns the entity UUID or the network ID.
 	 *
 	 * @param Entity $entity
 	 *
@@ -127,9 +135,12 @@ final class Utils{
 	}
 
 	/**
+	 * Returns the entity name if is a Living instance else the entity class name.
+	 *
 	 * @param Entity $entity
 	 *
 	 * @return string
+	 * @internal
 	 */
 	public static function getEntityName(Entity $entity) : string{
 		try{
@@ -139,6 +150,13 @@ final class Utils{
 		}
 	}
 
+	/**
+	 * It serializes the CompoundTag to a Base64 string.
+	 *
+	 * @param CompoundTag $tag
+	 *
+	 * @return string
+	 */
 	public static function serializeNBT(CompoundTag $tag) : string{
 		$nbtSerializer = new BigEndianNbtSerializer();
 
@@ -147,6 +165,8 @@ final class Utils{
 	}
 
 	/**
+	 * It de-serializes the CompoundTag to a Base64 string.
+	 *
 	 * @param string $data
 	 *
 	 * @return CompoundTag
@@ -155,6 +175,28 @@ final class Utils{
 		$nbtSerializer = new BigEndianNbtSerializer();
 
 		return $nbtSerializer->readCompressed(base64_decode($data))->getTag();
+	}
+
+	/**
+	 * Returns an array with all registered entities save names
+	 * @return array
+	 */
+	public static function getEntitySaveNames() : array{ //HACK ^-^
+		try{
+			$r = new ReflectionClass(EntityFactory::class);
+			$property = $r->getProperty("saveNames");
+			$property->setAccessible(true);
+			$names = [];
+
+			$values = array_values((array) $property->getValue());
+			foreach($values as $value){
+				$names = array_merge($names, $value);
+			}
+
+			return $names;
+		}catch(ReflectionException $exception){
+			throw new InvalidArgumentException("Could not get entities names.");
+		}
 	}
 
 }

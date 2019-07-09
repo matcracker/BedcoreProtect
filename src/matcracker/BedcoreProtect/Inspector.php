@@ -108,9 +108,9 @@ final class Inspector{
 	 * It sends a message to the inspector with all the log's info.
 	 *
 	 * @param CommandSender $inspector
+	 * @param array         $logs
 	 * @param int           $page
 	 * @param int           $lines
-	 * @param array         $logs
 	 */
 	public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4) : void{
 		if(count($logs) <= 0){
