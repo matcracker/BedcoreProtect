@@ -88,6 +88,10 @@ final class ConfigParser{
 		return (bool) $this->data['natural-break'];
 	}
 
+	public function getBlockMovement() : bool{
+		return (bool) $this->data['block-movement'];
+	}
+
 	public function getBlockBurn() : bool{
 		return (bool) $this->data['block-burn'];
 	}

@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
@@ -61,6 +62,10 @@ final class EntityListener extends BedcoreListener{
 				if($player !== null){
 					$this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
 				}
+			}elseif($entity instanceof FallingBlock && $this->configParser->getBlockMovement()){
+				$block = $entity->getBlock();
+
+				$this->database->getQueries()->addBlockLogByEntity($entity, $block, BlockUtils::getAir(), Action::BREAK(), $entity->asPosition());
 			}
 		}
 	}
@@ -104,7 +109,9 @@ final class EntityListener extends BedcoreListener{
 	 * @priority MONITOR
 	 */
 	public function trackEntityBlockChange(EntityBlockChangeEvent $event) : void{
-		$this->database->getQueries()->addBlockLogByEntity($event->getEntity(), $event->getBlock(), $event->getTo(), Action::BREAK(), $event->getBlock());
-		$this->database->getQueries()->addBlockLogByEntity($event->getEntity(), $event->getBlock(), $event->getTo(), Action::PLACE());
+		$entity = $event->getEntity();
+		if($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getBlockMovement()){
+			$this->database->getQueries()->addBlockLogByEntity($event->getEntity(), $event->getBlock(), $event->getTo(), Action::PLACE());
+		}
 	}
 }

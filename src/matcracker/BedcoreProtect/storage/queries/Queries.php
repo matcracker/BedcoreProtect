@@ -188,9 +188,9 @@ class Queries{
 	private function addRawLog(string $uuid, Position $position, Action $action) : void{
 		$this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
 			"uuid" => strtolower($uuid),
-			"x" => (int) $position->getX(),
-			"y" => (int) $position->getY(),
-			"z" => (int) $position->getZ(),
+			"x" => $position->getFloorX(),
+			"y" => $position->getFloorY(),
+			"z" => $position->getFloorZ(),
 			"world_name" => $position->getWorld()->getFolderName(),
 			"action" => $action->getType()
 		]);
