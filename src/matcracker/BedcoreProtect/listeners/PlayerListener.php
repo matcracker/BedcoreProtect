@@ -27,6 +27,7 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
@@ -35,7 +36,7 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\inventory\BlockInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
-use pocketmine\item\ItemIds;
+use pocketmine\item\VanillaItems;
 use pocketmine\math\Facing;
 use pocketmine\world\Position;
 
@@ -123,7 +124,7 @@ final class PlayerListener extends BedcoreListener{
 				if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
 					$relativeBlock = $clickedBlock->getSide($face);
 					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
-						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockUtils::getAir($relativeBlock), Action::BREAK());
+						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, VanillaBlocks::AIR(), Action::BREAK(), $relativeBlock->asPosition());
 					}else if($clickedBlock instanceof ItemFrame){
 						$framedItem = $clickedBlock->getFramedItem();
 						if($framedItem !== null){
@@ -137,9 +138,9 @@ final class PlayerListener extends BedcoreListener{
 					}
 
 				}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
-					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL){
+					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)){
 						$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
-						$this->database->getQueries()->addBlockLogByEntity($player, BlockUtils::getAir($fire->asPosition()), $fire, Action::PLACE());
+						$this->database->getQueries()->addBlockLogByEntity($player, VanillaBlocks::AIR(), $fire, Action::PLACE(), $fire->asPosition());
 					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
 						if($clickedBlock instanceof ItemFrame){
 							$framedItem = $clickedBlock->getFramedItem();

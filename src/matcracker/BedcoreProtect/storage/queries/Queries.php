@@ -24,9 +24,9 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\Action;
-use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\Server;
@@ -74,7 +74,8 @@ class Queries{
 	}
 
 	private function addDefaultBlocks() : void{
-		$this->addBlock(BlockUtils::getAir());
+		//TODO: Thinking if it's a good way loading all blocks in database, using VanillaBlocks::getAll()
+		$this->addBlock(VanillaBlocks::AIR());
 	}
 
 	/**

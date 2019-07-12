@@ -35,6 +35,7 @@ use pocketmine\block\Flowable;
 use pocketmine\block\Liquid;
 use pocketmine\block\Sign;
 use pocketmine\block\tile\Chest as TileChest;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Water;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
@@ -58,7 +59,7 @@ final class BlockListener extends BedcoreListener{
 				$this->database->getQueries()->requestBlockLog($player, $block);
 				$event->setCancelled();
 			}else{
-				$air = BlockUtils::getAir($block->asPosition());
+				$air = VanillaBlocks::AIR();
 
 				if($block instanceof Door){
 					$top = $block->getMeta() & BlockLegacyMetadata::DOOR_FLAG_TOP;
@@ -81,7 +82,7 @@ final class BlockListener extends BedcoreListener{
 					}
 				}
 
-				$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK());
+				$this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
 
 				if($this->configParser->getNaturalBreak()){
 					/**
@@ -95,7 +96,8 @@ final class BlockListener extends BedcoreListener{
 					 * @var Block[] $airs
 					 */
 					foreach($sides as $key => $side){
-						$airs[$key] = BlockUtils::getAir($side->asPosition());
+						$airs[$key] = VanillaBlocks::AIR();
+						$airs[$key]->position($side->getWorld(), $side->getFloorX(), $side->getFloorY(), $side->getFloorZ());
 					}
 
 					if(!empty($sides)){

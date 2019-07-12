@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\utils\Action;
-use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
@@ -44,8 +44,7 @@ final class EntityListener extends BedcoreListener{
 		if($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getExplosions()){
 			$blocks = $event->getBlockList();
 
-			$air = BlockUtils::getAir();
-			$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, $air, Action::BREAK());
+			$this->database->getQueries()->addBlocksLogByEntity($entity, $blocks, VanillaBlocks::AIR(), Action::BREAK());
 		}
 	}
 
@@ -65,7 +64,7 @@ final class EntityListener extends BedcoreListener{
 			}elseif($entity instanceof FallingBlock && $this->configParser->getBlockMovement()){
 				$block = $entity->getBlock();
 
-				$this->database->getQueries()->addBlockLogByEntity($entity, $block, BlockUtils::getAir(), Action::BREAK(), $entity->asPosition());
+				$this->database->getQueries()->addBlockLogByEntity($entity, $block, VanillaBlocks::AIR(), Action::BREAK(), $entity->asPosition());
 			}
 		}
 	}

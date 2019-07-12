@@ -30,7 +30,6 @@ use pocketmine\inventory\Inventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\Position;
@@ -65,11 +64,11 @@ trait QueriesInventoriesTrait{
 					$this->addInventorySlotLog($slot, $sourceItem, $targetItem);
 					$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
 				}
-			}else if($sourceItem->getId() !== ItemIds::AIR && $targetItem->getId() !== ItemIds::AIR){
+			}else if(!$sourceItem->isNull() && !$targetItem->isNull()){
 				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
 				$this->addInventorySlotLog($slot, $sourceItem, $targetItem);
 				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
-			}else if($sourceItem->getId() !== ItemIds::AIR){
+			}else if(!$sourceItem->isNull()){
 				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
 			}else{
 				$this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
@@ -103,7 +102,7 @@ trait QueriesInventoriesTrait{
 		$filledSlots = 0;
 		for($slot = 0; $slot < $size; $slot++){
 			$item = $inventory->getItem($slot);
-			if($item->getId() !== ItemIds::AIR){
+			if(!$item->isNull()){
 				$nbt = Utils::serializeNBT($item->getNamedTag());
 				$query .= "('{$logId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$nbt}', '{$item->getCount()}'),";
 				$filledSlots++;
