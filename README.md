@@ -1,8 +1,6 @@
 # BedcoreProtect
 BedCoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
-### BedcoreProtect is currently under development so it may not work as expected. Please be careful when using on production servers due to frequent changes or instability.
-
 ## Commands
 The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co**
 
