@@ -31,9 +31,7 @@ use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\BlockLegacyMetadata;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
-use pocketmine\block\Flowable;
 use pocketmine\block\Liquid;
-use pocketmine\block\Sign;
 use pocketmine\block\tile\Chest as TileChest;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Water;
@@ -87,10 +85,10 @@ final class BlockListener extends BedcoreListener{
 				if($this->configParser->getNaturalBreak()){
 					/**
 					 * @var Block[] $sides
-					 * Getting all blocks around the broken block that are @see Flowable
+					 * Getting all blocks around the broken block that are consequently destroyed.
 					 */
 					$sides = array_filter($block->getAllSides(), function(Block $side){
-						return $side instanceof Flowable || $side instanceof Sign;
+						return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
 					});
 					/**
 					 * @var Block[] $airs
