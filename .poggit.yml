@@ -11,5 +11,5 @@ projects:
         branch: "4.0"
       - src: JackMD/UpdateNotifier
         version: ^1.1.0
-        branch: "master"
+        branch: "API-4.0.0"
 ...
