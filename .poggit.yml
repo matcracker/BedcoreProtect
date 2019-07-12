@@ -3,13 +3,13 @@ branches:
   - stable
 projects:
   BedcoreProtect:
-    includeDirs:
-      vendor: vendor
     path: ""
     icon: resources/bedcoreprotect_logo.png
-    stub: "stub.php"
     libs:
       - src: poggit/libasynql/libasynql
         version: ^3.3.0
         branch: "4.0"
+      - src: JackMD/UpdateNotifier
+        version: ^1.1.0
+        branch: "master"
 ...

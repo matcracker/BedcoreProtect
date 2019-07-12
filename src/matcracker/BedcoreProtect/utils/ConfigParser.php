@@ -60,6 +60,10 @@ final class ConfigParser{
 		return (array) $this->data['enabled-worlds'];
 	}
 
+	public function getCheckUpdates() : bool{
+		return (bool) $this->data['check-updates'];
+	}
+
 	public function getDefaultRadius() : int{
 		return (int) $this->data['default-radius'];
 	}

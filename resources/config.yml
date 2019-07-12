@@ -65,10 +65,10 @@ block-ignite: true
 # Logs explosions, such as TNT and Creepers.
 explosions: true
 
-# Track when an entity changes a block, such as an Enderman destroying blocks.
+# Track when an entity changes a block, such as an Enderman destroying blocks. (NOT FULLY IMPLEMENTED BY POCKETMINE YET)
 entity-change: true
 
-# Logs killed entities, such as killed cows and enderman. (NOT SUPPORTED BY POCKETMINE YET)
+# Logs killed entities, such as killed cows and enderman.
 entity-kills: true
 
 # Logs text on signs. If disabled, signs will be blank when rolled back.
@@ -80,13 +80,13 @@ buckets: true
 # Logs natural tree leaves decay.
 leaves-decay: true
 
-# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT SUPPORTED BY POCKETMINE YET)
+# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT IMPLEMENTED BY POCKETMINE YET)
 tree-growth: true
 
-# Logs mushroom growth. (NOT SUPPORTED BY POCKETMINE YET)
+# Logs mushroom growth. (NOT IMPLEMENTED BY POCKETMINE YET)
 mushroom-growth: true
 
-# Logs natural vine growth. (NOT SUPPORTED BY POCKETMINE YET)
+# Logs natural vine growth. (NOT IMPLEMENTED BY POCKETMINE YET)
 vine-growth: true
 
 # Logs water flow. If water destroys other blocks, such as torches,

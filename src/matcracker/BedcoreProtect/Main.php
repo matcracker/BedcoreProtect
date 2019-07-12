@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
+use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
@@ -54,8 +55,6 @@ final class Main extends PluginBase{
 	}
 
 	protected function onEnable() : void{
-		include_once($this->getFile() . "/vendor/autoload.php");
-
 		@mkdir($this->getDataFolder());
 		$this->saveDefaultConfig();
 		$this->saveResource("bedcore_database.db");
@@ -98,6 +97,10 @@ final class Main extends PluginBase{
 
 			if($this->configParser->isSQLite()){
 				$this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+			}
+
+			if($this->configParser->getCheckUpdates()){
+				UpdateNotifier::checkUpdate($this);
 			}
 		}
 	}
