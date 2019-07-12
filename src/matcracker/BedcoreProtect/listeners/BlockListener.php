@@ -26,8 +26,6 @@ use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\BlockLegacyMetadata;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
@@ -181,8 +179,8 @@ final class BlockListener extends BedcoreListener{
 
 		if($this->configParser->isEnabledWorld($block->getWorld())){
 			if($block instanceof Liquid && $this->configParser->getLiquidTracking()){
-				$id = $block instanceof Water ? BlockLegacyIds::LAVA : BlockLegacyIds::WATER;
-				$this->database->getQueries()->addBlockLogByBlock(BlockFactory::get($id), $block, $result, Action::PLACE(), $block->asPosition());
+				$liquid = $block instanceof Water ? VanillaBlocks::LAVA() : VanillaBlocks::WATER();
+				$this->database->getQueries()->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
 			}
 		}
 	}

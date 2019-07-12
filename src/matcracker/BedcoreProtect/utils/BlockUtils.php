@@ -29,7 +29,7 @@ use pocketmine\block\Liquid;
 use pocketmine\block\tile\Tile;
 use pocketmine\nbt\tag\CompoundTag;
 
-final class BlockUtils implements BlockLegacyIds{
+final class BlockUtils implements BlockLegacyIds{ //TODO: Remove id soon...
 	private function __construct(){
 	}
 

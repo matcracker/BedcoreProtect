@@ -24,8 +24,6 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\event\inventory\InventoryTransactionEvent;
@@ -68,19 +66,19 @@ final class PlayerListener extends BedcoreListener{
 		$player = $event->getPlayer();
 		if($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBuckets()){
 			$block = $event->getBlockClicked();
-			$fireEmpty = ($event instanceof PlayerBucketEmptyEvent);
+			$fireEmptyEvent = ($event instanceof PlayerBucketEmptyEvent);
 
-			$bucketDamage = $fireEmpty ? $event->getBucket()->getMeta() : $event->getItem()->getMeta();
+			$bucketMeta = $fireEmptyEvent ? $event->getBucket()->getMeta() : $event->getItem()->getMeta();
 
-			$liquidId = BlockLegacyIds::FLOWING_WATER;
-			if($bucketDamage === 10){
-				$liquidId = BlockLegacyIds::FLOWING_LAVA;
+			$liquid = VanillaBlocks::WATER();
+			if($bucketMeta === VanillaBlocks::LAVA()->getId()){
+				$liquid = VanillaBlocks::LAVA();
 			}
 
-			$liquid = BlockFactory::get($liquidId, 0, $block->asPosition());
+			$liquid->position($block->getWorld(), $block->getFloorX(), $block->getFloorY(), $block->getFloorZ());
 
-			if($fireEmpty){
-				$this->database->getQueries()->addBlockLogByEntity($player, $block, $liquid, Action::PLACE());
+			if($fireEmptyEvent){
+				$this->database->getQueries()->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
 			}else{
 				$liquidPos = null;
 				$face = $event->getBlockFace();
@@ -123,7 +121,7 @@ final class PlayerListener extends BedcoreListener{
 			if(!$event->isCancelled()){
 				if($action === PlayerInteractEvent::LEFT_CLICK_BLOCK){
 					$relativeBlock = $clickedBlock->getSide($face);
-					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockLegacyIds::FIRE){
+					if($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->isSameType(VanillaBlocks::FIRE())){
 						$this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, VanillaBlocks::AIR(), Action::BREAK(), $relativeBlock->asPosition());
 					}else if($clickedBlock instanceof ItemFrame){
 						$framedItem = $clickedBlock->getFramedItem();
@@ -139,8 +137,7 @@ final class PlayerListener extends BedcoreListener{
 
 				}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
 					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)){
-						$fire = BlockFactory::get(BlockLegacyIds::FIRE, 0, $clickedBlock->getSide($face)->asPosition());
-						$this->database->getQueries()->addBlockLogByEntity($player, VanillaBlocks::AIR(), $fire, Action::PLACE(), $fire->asPosition());
+						$this->database->getQueries()->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
 					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
 						if($clickedBlock instanceof ItemFrame){
 							$framedItem = $clickedBlock->getFramedItem();
