@@ -111,7 +111,7 @@ final class Action{
 	}
 
 	public function isEntityAction() : bool{
-		return $this->equals(self::KILL());
+		return $this->equals(self::SPAWN()) || $this->equals(self::DESPAWN()) || $this->equals(self::KILL());
 	}
 
 	public function isInventoryAction() : bool{

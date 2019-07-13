@@ -138,7 +138,7 @@ final class PlayerListener extends BedcoreListener{
 				}else if($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
 					if($this->plugin->getParsedConfig()->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)){
 						$this->database->getQueries()->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
-					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::isActivable($clickedBlock)){
+					}else if($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)){
 						if($clickedBlock instanceof ItemFrame){
 							$framedItem = $clickedBlock->getFramedItem();
 							if($framedItem === null){

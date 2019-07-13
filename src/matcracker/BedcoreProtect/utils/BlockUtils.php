@@ -21,35 +21,48 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
+use pocketmine\block\Anvil;
+use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\BlockLegacyIds;
-use pocketmine\block\Button;
+use pocketmine\block\BrewingStand;
+use pocketmine\block\Chest;
 use pocketmine\block\Door;
+use pocketmine\block\EnchantingTable;
+use pocketmine\block\EnderChest;
+use pocketmine\block\Furnace;
+use pocketmine\block\Hopper;
+use pocketmine\block\ItemFrame;
 use pocketmine\block\Liquid;
+use pocketmine\block\StoneButton;
 use pocketmine\block\tile\Tile;
+use pocketmine\block\Trapdoor;
+use pocketmine\block\TrappedChest;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\block\WoodenButton;
+use pocketmine\block\WoodenDoor;
+use pocketmine\block\WoodenTrapdoor;
 use pocketmine\nbt\tag\CompoundTag;
 
-final class BlockUtils implements BlockLegacyIds{ //TODO: Remove id soon...
+final class BlockUtils{
 	private function __construct(){
 	}
 
 	/**
-	 * Returns true if the Block can be activated/interacted.
+	 * Returns true if the Block can be clicked
 	 *
 	 * @param Block $block
 	 *
 	 * @return bool
 	 */
-	public static function isActivable(Block $block) : bool{
-		//It supports only PM-MP blocks.
-		$ids = [
-			self::TRAPDOOR, self::BED_BLOCK,
-			self::ITEM_FRAME_BLOCK, self::IRON_TRAPDOOR, //Remove it when PM-MP supports redstone.
+	public static function canBeClicked(Block $block) : bool{
+		$blocks = [
+			WoodenDoor::class, Door::class,
+			WoodenTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
+			Bed::class, ItemFrame::class,
+			WoodenButton::class, StoneButton::class
 		];
 
-		return (
-			$block instanceof Door || $block instanceof Button || in_array($block->getId(), $ids) || self::hasInventory($block)
-		);
+		return in_array(get_class($block), $blocks) || self::hasInventory($block);
 	}
 
 	/**
@@ -60,14 +73,13 @@ final class BlockUtils implements BlockLegacyIds{ //TODO: Remove id soon...
 	 * @return bool
 	 */
 	public static function hasInventory(Block $block) : bool{
-		$ids = [
-			self::ENDER_CHEST, self::CHEST,
-			self::FURNACE, self::DISPENSER,
-			self::ENCHANTING_TABLE, self::ANVIL,
-			self::BREWING_STAND_BLOCK, self::HOPPER_BLOCK
+		$blocks = [
+			EnderChest::class, TrappedChest::class,
+			Chest::class, Furnace::class, EnchantingTable::class,
+			Anvil::class, BrewingStand::class, Hopper::class
 		];
 
-		return in_array($block->getId(), $ids);
+		return in_array(get_class($block), $blocks);
 	}
 
 	/**
@@ -78,7 +90,7 @@ final class BlockUtils implements BlockLegacyIds{ //TODO: Remove id soon...
 	 * @return bool
 	 */
 	public static function isStillLiquid(Liquid $liquid) : bool{
-		return $liquid->getId() === self::STILL_WATER || $liquid->getId() === self::STILL_LAVA;
+		return $liquid->isSameType(VanillaBlocks::WATER()) || $liquid->isSameType(VanillaBlocks::LAVA());
 	}
 
 	/**
