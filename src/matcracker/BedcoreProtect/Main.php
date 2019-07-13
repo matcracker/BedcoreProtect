@@ -32,83 +32,88 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
 
-final class Main extends PluginBase{
-	public const PLUGIN_NAME = "BedcoreProtect";
-	public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
-	public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
+final class Main extends PluginBase
+{
+    public const PLUGIN_NAME = "BedcoreProtect";
+    public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
+    public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-	/**@var Database */
-	private $database;
+    /**@var Database */
+    private $database;
 
-	/**@var ConfigParser */
-	private $configParser;
+    /**@var ConfigParser */
+    private $configParser;
 
-	/**
-	 * @return Database
-	 */
-	public function getDatabase() : Database{
-		return $this->database;
-	}
+    /**
+     * @return Database
+     */
+    public function getDatabase(): Database
+    {
+        return $this->database;
+    }
 
-	public function getParsedConfig() : ConfigParser{
-		return $this->configParser;
-	}
+    public function getParsedConfig(): ConfigParser
+    {
+        return $this->configParser;
+    }
 
-	protected function onEnable() : void{
-		@mkdir($this->getDataFolder());
-		$this->saveDefaultConfig();
-		$this->saveResource("bedcore_database.db");
+    protected function onEnable(): void
+    {
+        @mkdir($this->getDataFolder());
+        $this->saveDefaultConfig();
+        $this->saveResource("bedcore_database.db");
 
-		$this->configParser = new ConfigParser($this);
+        $this->configParser = new ConfigParser($this);
 
-		$validation = $this->configParser->validateConfig();
-		if(!$validation->isValid()){
-			$this->getLogger()->warning("Configuration's file is not correct.");
-			foreach($validation->getFailures() as $failure){
-				$this->getLogger()->warning($failure->format());
-			}
-			$this->getServer()->getPluginManager()->disablePlugin($this);
+        $validation = $this->configParser->validateConfig();
+        if (!$validation->isValid()) {
+            $this->getLogger()->warning("Configuration's file is not correct.");
+            foreach ($validation->getFailures() as $failure) {
+                $this->getLogger()->warning($failure->format());
+            }
+            $this->getServer()->getPluginManager()->disablePlugin($this);
 
-			return;
-		}
+            return;
+        }
 
-		date_default_timezone_set($this->configParser->getTimezone());
-		$this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
-		//Database connection
-		$this->getLogger()->info("Trying to establishing connection with {$this->configParser->getDatabaseType()} database...");
-		$this->database = new Database($this);
-		if($this->database->connect()){
-			$this->getLogger()->info("Connection successfully established.");
+        date_default_timezone_set($this->configParser->getTimezone());
+        $this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
+        //Database connection
+        $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getDatabaseType()} database...");
+        $this->database = new Database($this);
+        if ($this->database->connect()) {
+            $this->getLogger()->info("Connection successfully established.");
 
-			$this->database->getQueries()->init();
+            $this->database->getQueries()->init();
 
-			$this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+            $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
-			$events = [
-				new BlockListener($this),
-				new EntityListener($this),
-				new PlayerListener($this),
-				new WorldListener($this)
-			];
+            $events = [
+                new BlockListener($this),
+                new EntityListener($this),
+                new PlayerListener($this),
+                new WorldListener($this)
+            ];
 
-			foreach($events as $event){
-				$this->getServer()->getPluginManager()->registerEvents($event, $this);
-			}
+            foreach ($events as $event) {
+                $this->getServer()->getPluginManager()->registerEvents($event, $this);
+            }
 
-			if($this->configParser->isSQLite()){
-				$this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
-			}
+            if ($this->configParser->isSQLite()) {
+                $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+            }
 
-			if($this->configParser->getCheckUpdates()){
-				UpdateNotifier::checkUpdate($this);
-			}
-		}
-	}
+            if ($this->configParser->getCheckUpdates()) {
+                UpdateNotifier::checkUpdate($this);
+            }
+        }
+    }
 
-	protected function onDisable() : void{
-		$this->getScheduler()->cancelAllTasks();
-		$this->database->disconnect();
+    protected function onDisable(): void
+    {
+        $this->getScheduler()->cancelAllTasks();
+        $this->database->disconnect();
 
-		Inspector::clearCache();
-	}
+        Inspector::clearCache();
+    }
 }

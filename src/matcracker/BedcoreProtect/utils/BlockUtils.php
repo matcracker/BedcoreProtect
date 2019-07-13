@@ -43,97 +43,105 @@ use pocketmine\block\WoodenDoor;
 use pocketmine\block\WoodenTrapdoor;
 use pocketmine\nbt\tag\CompoundTag;
 
-final class BlockUtils{
-	private function __construct(){
-	}
+final class BlockUtils
+{
+    private function __construct()
+    {
+    }
 
-	/**
-	 * Returns true if the Block can be clicked
-	 *
-	 * @param Block $block
-	 *
-	 * @return bool
-	 */
-	public static function canBeClicked(Block $block) : bool{
-		$blocks = [
-			WoodenDoor::class, Door::class,
-			WoodenTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
-			Bed::class, ItemFrame::class,
-			WoodenButton::class, StoneButton::class
-		];
+    /**
+     * Returns true if the Block can be clicked
+     *
+     * @param Block $block
+     *
+     * @return bool
+     */
+    public static function canBeClicked(Block $block): bool
+    {
+        $blocks = [
+            WoodenDoor::class, Door::class,
+            WoodenTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
+            Bed::class, ItemFrame::class,
+            WoodenButton::class, StoneButton::class
+        ];
 
-		return in_array(get_class($block), $blocks) || self::hasInventory($block);
-	}
+        return in_array(get_class($block), $blocks) || self::hasInventory($block);
+    }
 
-	/**
-	 * Returns true if the block contains inventory.
-	 *
-	 * @param Block $block
-	 *
-	 * @return bool
-	 */
-	public static function hasInventory(Block $block) : bool{
-		$blocks = [
-			EnderChest::class, TrappedChest::class,
-			Chest::class, Furnace::class, EnchantingTable::class,
-			Anvil::class, BrewingStand::class, Hopper::class
-		];
+    /**
+     * Returns true if the block contains inventory.
+     *
+     * @param Block $block
+     *
+     * @return bool
+     */
+    public static function hasInventory(Block $block): bool
+    {
+        $blocks = [
+            EnderChest::class, TrappedChest::class,
+            Chest::class, Furnace::class, EnchantingTable::class,
+            Anvil::class, BrewingStand::class, Hopper::class
+        ];
 
-		return in_array(get_class($block), $blocks);
-	}
+        return in_array(get_class($block), $blocks);
+    }
 
-	/**
-	 * Checks if the liquid is stilled.
-	 *
-	 * @param Liquid $liquid
-	 *
-	 * @return bool
-	 */
-	public static function isStillLiquid(Liquid $liquid) : bool{
-		return $liquid->isSameType(VanillaBlocks::WATER()) || $liquid->isSameType(VanillaBlocks::LAVA());
-	}
+    /**
+     * Checks if the liquid is stilled.
+     *
+     * @param Liquid $liquid
+     *
+     * @return bool
+     */
+    public static function isStillLiquid(Liquid $liquid): bool
+    {
+        return $liquid->isSameType(VanillaBlocks::WATER()) || $liquid->isSameType(VanillaBlocks::LAVA());
+    }
 
-	/**
-	 * Serialize a block (tile) NBT into base64. Returns null if block doesn't contain NBT.
-	 *
-	 * @param Block $block
-	 *
-	 * @return string|null
-	 */
-	public static function serializeBlockTileNBT(Block $block) : ?string{
-		if(($tag = self::getCompoundTag($block)) !== null){
-			return Utils::serializeNBT($tag);
-		}
+    /**
+     * Serialize a block (tile) NBT into base64. Returns null if block doesn't contain NBT.
+     *
+     * @param Block $block
+     *
+     * @return string|null
+     */
+    public static function serializeBlockTileNBT(Block $block): ?string
+    {
+        if (($tag = self::getCompoundTag($block)) !== null) {
+            return Utils::serializeNBT($tag);
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	/**
-	 * Returns the CompoundTag of block if it exists, else returns null.
-	 *
-	 * @param Block $block
-	 *
-	 * @return CompoundTag|null
-	 */
-	public static function getCompoundTag(Block $block) : ?CompoundTag{
-		if(($tile = self::asTile($block)) !== null){
-			return $tile->getCleanedNBT();
-		}
+    /**
+     * Returns the CompoundTag of block if it exists, else returns null.
+     *
+     * @param Block $block
+     *
+     * @return CompoundTag|null
+     */
+    public static function getCompoundTag(Block $block): ?CompoundTag
+    {
+        if (($tile = self::asTile($block)) !== null) {
+            return $tile->getCleanedNBT();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
 
-	/**
-	 * Returns a Tile instance of the given block if it exists.
-	 *
-	 * @param Block $block
-	 *
-	 * @return Tile|null
-	 */
-	public static function asTile(Block $block) : ?Tile{
-		if($block->getWorld() === null) return null;
+    /**
+     * Returns a Tile instance of the given block if it exists.
+     *
+     * @param Block $block
+     *
+     * @return Tile|null
+     */
+    public static function asTile(Block $block): ?Tile
+    {
+        if ($block->getWorld() === null) return null;
 
-		return $block->getWorld()->getTile($block->asPosition());
-	}
+        return $block->getWorld()->getTile($block->asPosition());
+    }
 }

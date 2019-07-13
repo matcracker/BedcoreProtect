@@ -34,169 +34,179 @@ use pocketmine\utils\TextFormat;
 use ReflectionClass;
 use ReflectionException;
 
-final class Utils{
+final class Utils
+{
 
-	private function __construct(){
-	}
+    private function __construct()
+    {
+    }
 
-	/**
-	 * It translates chat colors from format "§" to "&"
-	 *
-	 * @param string $message
-	 *
-	 * @return string
-	 */
-	public static function translateColors(string $message) : string{
-		return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", function(array $matches) : string{
-			return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
-		}, $message);
-	}
+    /**
+     * It translates chat colors from format "§" to "&"
+     *
+     * @param string $message
+     *
+     * @return string
+     */
+    public static function translateColors(string $message): string
+    {
+        return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", function (array $matches): string {
+            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
+        }, $message);
+    }
 
-	/**
-	 * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
-	 *
-	 * @param string $strDate the date to parse.
-	 *
-	 * @return int|null how many seconds are in the string. Return null if string can't be parsed.
-	 */
-	public static function parseTime(string $strDate) : ?int{
-		if(empty($strDate)) return null;
-		$strDate = strtolower($strDate);
-		$strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
-		if(empty($strDate)) return null;
+    /**
+     * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
+     *
+     * @param string $strDate the date to parse.
+     *
+     * @return int|null how many seconds are in the string. Return null if string can't be parsed.
+     */
+    public static function parseTime(string $strDate): ?int
+    {
+        if (empty($strDate)) return null;
+        $strDate = strtolower($strDate);
+        $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
+        if (empty($strDate)) return null;
 
-		$time = null;
-		$matches = [];
-		preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
+        $time = null;
+        $matches = [];
+        preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
 
-		foreach($matches[0] as $match){
-			$value = (int) preg_replace("/[^0-9]/", "", $match);
-			$dateType = (string) preg_replace("/[^smhdw]/", "", $match);
+        foreach ($matches[0] as $match) {
+            $value = (int)preg_replace("/[^0-9]/", "", $match);
+            $dateType = (string)preg_replace("/[^smhdw]/", "", $match);
 
-			switch($dateType){
-				case "w":
-					$time += $value * 7 * 24 * 60 * 60;
-					break;
-				case "d":
-					$time += $value * 24 * 60 * 60;
-					break;
-				case "h":
-					$time += $value * 60 * 60;
-					break;
-				case "m":
-					$time += $value * 60;
-					break;
-				case "s":
-					$time += $value;
-					break;
-			}
-		}
+            switch ($dateType) {
+                case "w":
+                    $time += $value * 7 * 24 * 60 * 60;
+                    break;
+                case "d":
+                    $time += $value * 24 * 60 * 60;
+                    break;
+                case "h":
+                    $time += $value * 60 * 60;
+                    break;
+                case "m":
+                    $time += $value * 60;
+                    break;
+                case "s":
+                    $time += $value;
+                    break;
+            }
+        }
 
-		return $time;
-	}
+        return $time;
+    }
 
-	public static function timeAgo(int $timestamp, int $level = 6) : string{
-		$date = new DateTime();
-		$date->setTimestamp($timestamp);
-		$date = $date->diff(DateTime::createFromFormat('0.u00 U', microtime()));
-		// build array
-		$since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
-		// remove empty date values
-		$since = array_filter($since);
-		// output only the first x date values
-		$since = array_slice($since, 0, $level);
-		// build string
-		$last_key = key(array_slice($since, -1, 1, true));
-		$string = '';
-		foreach($since as $key => $val){
-			// separator
-			if($string){
-				$string .= $key != $last_key ? ', ' : ' and ';
-			}
-			// set plural
-			$key .= $val > 1 ? 's' : '';
-			// add date value
-			$string .= $val . ' ' . $key;
-		}
+    public static function timeAgo(int $timestamp, int $level = 6): string
+    {
+        $date = new DateTime();
+        $date->setTimestamp($timestamp);
+        $date = $date->diff(DateTime::createFromFormat('0.u00 U', microtime()));
+        // build array
+        $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
+        // remove empty date values
+        $since = array_filter($since);
+        // output only the first x date values
+        $since = array_slice($since, 0, $level);
+        // build string
+        $last_key = key(array_slice($since, -1, 1, true));
+        $string = '';
+        foreach ($since as $key => $val) {
+            // separator
+            if ($string) {
+                $string .= $key != $last_key ? ', ' : ' and ';
+            }
+            // set plural
+            $key .= $val > 1 ? 's' : '';
+            // add date value
+            $string .= $val . ' ' . $key;
+        }
 
-		return $string . ' ago';
-	}
+        return $string . ' ago';
+    }
 
-	/**
-	 * Returns the entity UUID or the network ID.
-	 *
-	 * @param Entity $entity
-	 *
-	 * @return string
-	 * @internal
-	 */
-	public static function getEntityUniqueId(Entity $entity) : string{
-		return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
-	}
+    /**
+     * Returns the entity UUID or the network ID.
+     *
+     * @param Entity $entity
+     *
+     * @return string
+     * @internal
+     */
+    public static function getEntityUniqueId(Entity $entity): string
+    {
+        return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
+    }
 
-	/**
-	 * Returns the entity name if is a Living instance else the entity class name.
-	 *
-	 * @param Entity $entity
-	 *
-	 * @return string
-	 * @internal
-	 */
-	public static function getEntityName(Entity $entity) : string{
-		try{
-			return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
-		}catch(ReflectionException $exception){
-			throw new InvalidArgumentException("Invalid entity class.");
-		}
-	}
+    /**
+     * Returns the entity name if is a Living instance else the entity class name.
+     *
+     * @param Entity $entity
+     *
+     * @return string
+     * @internal
+     */
+    public static function getEntityName(Entity $entity): string
+    {
+        try {
+            return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
+        } catch (ReflectionException $exception) {
+            throw new InvalidArgumentException("Invalid entity class.");
+        }
+    }
 
-	/**
-	 * It serializes the CompoundTag to a Base64 string.
-	 *
-	 * @param CompoundTag $tag
-	 *
-	 * @return string
-	 */
-	public static function serializeNBT(CompoundTag $tag) : string{
-		$nbtSerializer = new BigEndianNbtSerializer();
+    /**
+     * It serializes the CompoundTag to a Base64 string.
+     *
+     * @param CompoundTag $tag
+     *
+     * @return string
+     */
+    public static function serializeNBT(CompoundTag $tag): string
+    {
+        $nbtSerializer = new BigEndianNbtSerializer();
 
-		//Encoding to Base64 for more safe storing.
-		return base64_encode($nbtSerializer->writeCompressed(new TreeRoot($tag)));
-	}
+        //Encoding to Base64 for more safe storing.
+        return base64_encode($nbtSerializer->writeCompressed(new TreeRoot($tag)));
+    }
 
-	/**
-	 * It de-serializes the CompoundTag to a Base64 string.
-	 *
-	 * @param string $data
-	 *
-	 * @return CompoundTag
-	 */
-	public static function deserializeNBT(string $data) : CompoundTag{
-		$nbtSerializer = new BigEndianNbtSerializer();
+    /**
+     * It de-serializes the CompoundTag to a Base64 string.
+     *
+     * @param string $encodedData
+     *
+     * @return CompoundTag
+     */
+    public static function deserializeNBT(string $encodedData): CompoundTag
+    {
+        $nbtSerializer = new BigEndianNbtSerializer();
 
-		return $nbtSerializer->readCompressed(base64_decode($data))->getTag();
-	}
+        return $nbtSerializer->readCompressed(base64_decode($encodedData))->getTag();
+    }
 
-	/**
-	 * Returns an array with all registered entities save names
-	 * @return array
-	 */
-	public static function getEntitySaveNames() : array{ //HACK ^-^
-		try{
-			$r = new ReflectionClass(EntityFactory::class);
-			$property = $r->getProperty("saveNames");
-			$property->setAccessible(true);
-			$names = [];
+    /**
+     * Returns an array with all registered entities save names
+     * @return array
+     */
+    public static function getEntitySaveNames(): array
+    { //HACK ^-^
+        try {
+            $r = new ReflectionClass(EntityFactory::class);
+            $property = $r->getProperty("saveNames");
+            $property->setAccessible(true);
+            $names = [];
 
-			$values = array_values((array) $property->getValue());
-			foreach($values as $value){
-				$names = array_merge($names, $value);
-			}
+            $values = array_values((array)$property->getValue());
+            foreach ($values as $value) {
+                $names = array_merge($names, $value);
+            }
 
-			return $names;
-		}catch(ReflectionException $exception){
-			throw new InvalidArgumentException("Could not get entities names.");
-		}
-	}
+            return $names;
+        } catch (ReflectionException $exception) {
+            throw new InvalidArgumentException("Could not get entities names.");
+        }
+    }
 
 }

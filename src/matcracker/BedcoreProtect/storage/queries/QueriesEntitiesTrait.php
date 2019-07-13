@@ -36,91 +36,99 @@ use poggit\libasynql\SqlError;
  * Trait QueriesEntitiesTrait
  * @package matcracker\BedcoreProtect\storage\queries
  */
-trait QueriesEntitiesTrait{
+trait QueriesEntitiesTrait
+{
 
-	public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action) : void{
-		$this->addEntity($damager);
-		$this->addEntity($entity);
+    public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action): void
+    {
+        $this->addEntity($damager);
+        $this->addEntity($entity);
 
-		$this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
-		$tag = $entity->saveNBT()->setFloat("Health", $entity->getMaxHealth());
+        $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
+        $tag = $entity->saveNBT()->setFloat("Health", $entity->getMaxHealth());
 
-		$this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
-			"uuid" => Utils::getEntityUniqueId($entity),
-			"id" => $entity->getId(),
-			"nbt" => Utils::serializeNBT($tag)
-		]);
-	}
+        $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+            "uuid" => Utils::getEntityUniqueId($entity),
+            "id" => $entity->getId(),
+            "nbt" => Utils::serializeNBT($tag)
+        ]);
+    }
 
-	public function addEntity(Entity $entity) : void{
-		$this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getNetworkSession()->getIp() : "127.0.0.1");
-	}
+    public function addEntity(Entity $entity): void
+    {
+        $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getNetworkSession()->getIp() : "127.0.0.1");
+    }
 
-	protected final function addRawEntity(string $uuid, string $name, string $classPath = "", string $address = "127.0.0.1") : void{
-		$this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
-			"uuid" => $uuid,
-			"name" => $name,
-			"path" => $classPath,
-			"address" => $address
-		]);
-	}
+    protected final function addRawEntity(string $uuid, string $name, string $classPath = "", string $address = "127.0.0.1"): void
+    {
+        $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
+            "uuid" => $uuid,
+            "name" => $name,
+            "path" => $classPath,
+            "address" => $address
+        ]);
+    }
 
-	protected function rollbackEntities(Position $position, CommandParser $parser) : int{
-		return $this->executeEntitiesEdit(true, $position, $parser);
-	}
+    protected function rollbackEntities(Position $position, CommandParser $parser): int
+    {
+        return $this->executeEntitiesEdit(true, $position, $parser);
+    }
 
-	private function executeEntitiesEdit(bool $rollback, Position $position, CommandParser $parser) : int{
-		$query = $parser->buildEntitiesLogSelectionQuery($position, !$rollback);
-		$totalRows = 0;
-		$world = $position->getWorld();
-		$this->connector->executeSelectRaw($query, [],
-			function(array $rows) use ($rollback, $world, &$totalRows){
-				if(count($rows) > 0){
-					$query = /**@lang text */
-						"UPDATE log_history SET rollback = '{$rollback}' WHERE ";
+    private function executeEntitiesEdit(bool $rollback, Position $position, CommandParser $parser): int
+    {
+        $query = $parser->buildEntitiesLogSelectionQuery($position, !$rollback);
+        $totalRows = 0;
+        $world = $position->getWorld();
+        $this->connector->executeSelectRaw($query, [],
+            function (array $rows) use ($rollback, $world, &$totalRows) {
+                if (count($rows) > 0) {
+                    $query = /**@lang text */
+                        "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
-					foreach($rows as $row){
-						$logId = (int) $row["log_id"];
-						$action = Action::fromType((int) $row["action"]);
-						if(($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))){
-							$id = (int) $row["entityfrom_id"];
-							$entity = $world->getEntity($id);
-							if($entity !== null){
-								$entity->close();
-							}
-						}else{
-							$entityClass = (string) $row["entity_classpath"];
-							$nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
-							$entity = EntityFactory::create($entityClass, $world, $nbt);
-							$this->updateEntityId($logId, $entity);
-							$entity->spawnToAll();
-						}
+                    foreach ($rows as $row) {
+                        $logId = (int)$row["log_id"];
+                        $action = Action::fromType((int)$row["action"]);
+                        if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
+                            $id = (int)$row["entityfrom_id"];
+                            $entity = $world->getEntity($id);
+                            if ($entity !== null) {
+                                $entity->close();
+                            }
+                        } else {
+                            $entityClass = (string)$row["entity_classpath"];
+                            $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
+                            $entity = EntityFactory::create($entityClass, $world, $nbt);
+                            $this->updateEntityId($logId, $entity);
+                            $entity->spawnToAll();
+                        }
 
-						$query .= "log_id = '$logId' OR ";
-					}
+                        $query .= "log_id = '$logId' OR ";
+                    }
 
-					$query = mb_substr($query, 0, -4) . ";";
-					$this->connector->executeInsertRaw($query);
-				}
-				$totalRows = count($rows);
-			},
-			function(SqlError $error){
-				throw $error;
-			}
-		);
-		$this->connector->waitAll();
+                    $query = mb_substr($query, 0, -4) . ";";
+                    $this->connector->executeInsertRaw($query);
+                }
+                $totalRows = count($rows);
+            },
+            function (SqlError $error) {
+                throw $error;
+            }
+        );
+        $this->connector->waitAll();
 
-		return $totalRows;
-	}
+        return $totalRows;
+    }
 
-	protected final function updateEntityId(int $logId, Entity $entity){
-		$this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
-			"log_id" => $logId,
-			"entity_id" => $entity->getId()
-		]);
-	}
+    protected final function updateEntityId(int $logId, Entity $entity)
+    {
+        $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
+            "log_id" => $logId,
+            "entity_id" => $entity->getId()
+        ]);
+    }
 
-	protected function restoreEntities(Position $position, CommandParser $parser) : int{
-		return $this->executeEntitiesEdit(false, $position, $parser);
-	}
+    protected function restoreEntities(Position $position, CommandParser $parser): int
+    {
+        return $this->executeEntitiesEdit(false, $position, $parser);
+    }
 }

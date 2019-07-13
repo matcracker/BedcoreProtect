@@ -39,82 +39,92 @@ use pocketmine\utils\EnumTrait;
  * @method static self ADD()
  * @method static self REMOVE()
  */
-final class Action{
-	use EnumTrait {
-		register as Enum_register;
-		__construct as Enum___construct;
-	}
+final class Action
+{
+    use EnumTrait {
+        register as Enum_register;
+        __construct as Enum___construct;
+    }
 
-	/** @var Action[] */
-	private static $numericIdMap = [];
-	/**@var int */
-	private $type;
-	/**@var string */
-	private $message;
+    /** @var Action[] */
+    private static $numericIdMap = [];
+    /**@var int */
+    private $type;
+    /**@var string */
+    private $message;
 
-	public function __construct(string $enumName, int $type, string $message){
-		$this->Enum___construct($enumName);
-		$this->type = $type;
-		$this->message = $message;
-	}
+    public function __construct(string $enumName, int $type, string $message)
+    {
+        $this->Enum___construct($enumName);
+        $this->type = $type;
+        $this->message = $message;
+    }
 
-	public static function fromType(int $type) : Action{
-		self::checkInit();
-		if(!isset(self::$numericIdMap[$type])){
-			throw new InvalidArgumentException("Unknown action type $type");
-		}
+    public static function fromType(int $type): Action
+    {
+        self::checkInit();
+        if (!isset(self::$numericIdMap[$type])) {
+            throw new InvalidArgumentException("Unknown action type $type");
+        }
 
-		return self::$numericIdMap[$type];
-	}
+        return self::$numericIdMap[$type];
+    }
 
-	protected static function setup() : array{
-		return [
-			new self("none", -1, "none"),
-			//Blocks actions
-			new self("place", 0, "placed"),
-			new self("break", 1, "broke"),
-			new self("click", 2, "clicked"),
-			//Entities actions
-			new self("spawn", 3, "placed"),
-			new self("despawn", 4, "broke"),
-			new self("kill", 5, "killed"),
-			//Inventories actions
-			new self("add", 6, "added"),
-			new self("remove", 7, "removed")
-		];
-	}
+    protected static function setup(): array
+    {
+        return [
+            new self("none", -1, "none"),
+            //Blocks actions
+            new self("place", 0, "placed"),
+            new self("break", 1, "broke"),
+            new self("click", 2, "clicked"),
+            //Entities actions
+            new self("spawn", 3, "placed"),
+            new self("despawn", 4, "broke"),
+            new self("kill", 5, "killed"),
+            //Inventories actions
+            new self("add", 6, "added"),
+            new self("remove", 7, "removed")
+        ];
+    }
 
-	protected static function register(Action $action) : void{
-		self::Enum_register($action);
-		self::$numericIdMap[$action->getType()] = $action;
-	}
+    protected static function register(Action $action): void
+    {
+        self::Enum_register($action);
+        self::$numericIdMap[$action->getType()] = $action;
+    }
 
-	/**
-	 * @return int
-	 */
-	public function getType() : int{
-		return $this->type;
-	}
+    /**
+     * @return int
+     */
+    public function getType(): int
+    {
+        return $this->type;
+    }
 
-	/**
-	 * @return string
-	 */
-	public function getMessage() : string{
-		return $this->message;
-	}
+    /**
+     * @return string
+     */
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
 
-	/**
-	 * @return bool
-	 */
-	public function isBlockAction() : bool{
-		return $this->equals(self::PLACE()) || $this->equals(self::BREAK()) || $this->equals(self::CLICK());
-	}
+    /**
+     * @return bool
+     */
+    public function isBlockAction(): bool
+    {
+        return $this->equals(self::PLACE()) || $this->equals(self::BREAK()) || $this->equals(self::CLICK());
+    }
 
-	public function isEntityAction() : bool{
-		return $this->equals(self::SPAWN()) || $this->equals(self::DESPAWN()) || $this->equals(self::KILL());
-	}
+    public function isEntityAction(): bool
+    {
+        return $this->equals(self::SPAWN()) || $this->equals(self::DESPAWN()) || $this->equals(self::KILL());
+    }
 
-	public function isInventoryAction() : bool{
-		return $this->equals(self::ADD()) || $this->equals(self::REMOVE());
-	}
+    public function isInventoryAction(): bool
+    {
+        return $this->equals(self::ADD()) || $this->equals(self::REMOVE());
+    }
 }

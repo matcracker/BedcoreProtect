@@ -26,55 +26,62 @@ use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
 
-class Database{
-	/**@var Main */
-	private $plugin;
-	/**@var DataConnector */
-	private $dataConnector;
-	/**@var Queries */
-	private $queries;
+class Database
+{
+    /**@var Main */
+    private $plugin;
+    /**@var DataConnector */
+    private $dataConnector;
+    /**@var Queries */
+    private $queries;
 
-	public function __construct(Main $plugin){
-		$this->plugin = $plugin;
-	}
+    public function __construct(Main $plugin)
+    {
+        $this->plugin = $plugin;
+    }
 
-	public final function connect() : bool{
-		try{
-			$this->dataConnector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
-				"sqlite" => "sqlite.sql",
-				"mysql" => "mysql.sql"
-			]);
-			$this->queries = new Queries($this->dataConnector, $this->plugin->getParsedConfig());
+    public final function connect(): bool
+    {
+        try {
+            $this->dataConnector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
+                "sqlite" => "sqlite.sql",
+                "mysql" => "mysql.sql"
+            ]);
+            $this->queries = new Queries($this->dataConnector, $this->plugin->getParsedConfig());
 
-			return true;
-		}catch(SqlError $error){
-			$this->throwError();
-		}
+            return true;
+        } catch (SqlError $error) {
+            $this->throwError();
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	private function throwError() : void{
-		$this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
-		$this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
-	}
+    private function throwError(): void
+    {
+        $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+        $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+    }
 
-	public final function getQueries() : Queries{
-		if(!$this->isConnected()){
-			$this->throwError();
-		}
+    public final function getQueries(): Queries
+    {
+        if (!$this->isConnected()) {
+            $this->throwError();
+        }
 
-		return $this->queries;
-	}
+        return $this->queries;
+    }
 
-	public final function isConnected() : bool{
-		return isset($this->dataConnector);
-	}
+    public final function isConnected(): bool
+    {
+        return isset($this->dataConnector);
+    }
 
-	public final function disconnect() : void{
-		if($this->isConnected()){
-			$this->dataConnector->close();
-		}
-	}
+    public final function disconnect(): void
+    {
+        if ($this->isConnected()) {
+            $this->dataConnector->close();
+        }
+    }
 
 }

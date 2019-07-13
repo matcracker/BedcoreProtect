@@ -25,17 +25,19 @@ use matcracker\BedcoreProtect\utils\Action;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\event\block\LeavesDecayEvent;
 
-final class WorldListener extends BedcoreListener{
-	/**
-	 * @param LeavesDecayEvent $event
-	 *
-	 * @priority MONITOR
-	 */
-	public function trackLeavesDecay(LeavesDecayEvent $event) : void{
-		$block = $event->getBlock();
-		if($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getLeavesDecay()){
-			$this->database->getQueries()->addBlockLogByBlock($block, $block, VanillaBlocks::AIR(), Action::BREAK(), $block->asPosition());
-		}
-	}
+final class WorldListener extends BedcoreListener
+{
+    /**
+     * @param LeavesDecayEvent $event
+     *
+     * @priority MONITOR
+     */
+    public function trackLeavesDecay(LeavesDecayEvent $event): void
+    {
+        $block = $event->getBlock();
+        if ($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getLeavesDecay()) {
+            $this->database->getQueries()->addBlockLogByBlock($block, $block, VanillaBlocks::AIR(), Action::BREAK(), $block->asPosition());
+        }
+    }
 
 }

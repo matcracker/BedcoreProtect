@@ -33,132 +33,158 @@ use pocketmine\world\World;
  * Class ConfigParser
  * @package matcracker\BedcoreProtect\utils
  */
-final class ConfigParser{
-	private $data;
+final class ConfigParser
+{
+    private $data;
 
-	public function __construct(Main $main){
-		$this->data = $main->getConfig()->getAll();
-	}
+    public function __construct(Main $main)
+    {
+        $this->data = $main->getConfig()->getAll();
+    }
 
-	public function isSQLite() : bool{
-		return $this->getDatabaseType() === 'sqlite';
-	}
+    public function isSQLite(): bool
+    {
+        return $this->getDatabaseType() === 'sqlite';
+    }
 
-	public function getDatabaseType() : string{
-		return (string) $this->data['database']['type'];
-	}
+    public function getDatabaseType(): string
+    {
+        return (string)$this->data['database']['type'];
+    }
 
-	public function getTimezone() : string{
-		return (string) $this->data['timezone'];
-	}
+    public function getTimezone(): string
+    {
+        return (string)$this->data['timezone'];
+    }
 
-	public function isEnabledWorld(World $world) : bool{
-		return in_array($world->getFolderName(), $this->getEnabledWorlds());
-	}
+    public function isEnabledWorld(World $world): bool
+    {
+        return in_array($world->getFolderName(), $this->getEnabledWorlds());
+    }
 
-	public function getEnabledWorlds() : array{
-		return (array) $this->data['enabled-worlds'];
-	}
+    public function getEnabledWorlds(): array
+    {
+        return (array)$this->data['enabled-worlds'];
+    }
 
-	public function getCheckUpdates() : bool{
-		return (bool) $this->data['check-updates'];
-	}
+    public function getCheckUpdates(): bool
+    {
+        return (bool)$this->data['check-updates'];
+    }
 
-	public function getDefaultRadius() : int{
-		return (int) $this->data['default-radius'];
-	}
+    public function getDefaultRadius(): int
+    {
+        return (int)$this->data['default-radius'];
+    }
 
-	public function getMaxRadius() : int{
-		return (int) $this->data['max-radius'];
-	}
+    public function getMaxRadius(): int
+    {
+        return (int)$this->data['max-radius'];
+    }
 
-	public function getRollbackItems() : bool{
-		return (bool) $this->data['rollback-items'];
-	}
+    public function getRollbackItems(): bool
+    {
+        return (bool)$this->data['rollback-items'];
+    }
 
-	public function getRollbackEntities() : bool{
-		return (bool) $this->data['rollback-entities'];
-	}
+    public function getRollbackEntities(): bool
+    {
+        return (bool)$this->data['rollback-entities'];
+    }
 
-	public function getBlockPlace() : bool{
-		return (bool) $this->data['block-place'];
-	}
+    public function getBlockPlace(): bool
+    {
+        return (bool)$this->data['block-place'];
+    }
 
-	public function getBlockBreak() : bool{
-		return (bool) $this->data['block-break'];
-	}
+    public function getBlockBreak(): bool
+    {
+        return (bool)$this->data['block-break'];
+    }
 
-	public function getNaturalBreak() : bool{
-		return (bool) $this->data['natural-break'];
-	}
+    public function getNaturalBreak(): bool
+    {
+        return (bool)$this->data['natural-break'];
+    }
 
-	public function getBlockMovement() : bool{
-		return (bool) $this->data['block-movement'];
-	}
+    public function getBlockMovement(): bool
+    {
+        return (bool)$this->data['block-movement'];
+    }
 
-	public function getBlockBurn() : bool{
-		return (bool) $this->data['block-burn'];
-	}
+    public function getBlockBurn(): bool
+    {
+        return (bool)$this->data['block-burn'];
+    }
 
-	public function getExplosions() : bool{
-		return (bool) $this->data['explosions'];
-	}
+    public function getExplosions(): bool
+    {
+        return (bool)$this->data['explosions'];
+    }
 
-	public function getEntityKills() : bool{
-		return (bool) $this->data['entity-kills'];
-	}
+    public function getEntityKills(): bool
+    {
+        return (bool)$this->data['entity-kills'];
+    }
 
-	public function getSignText() : bool{
-		return (bool) $this->data['sign-text'];
-	}
+    public function getSignText(): bool
+    {
+        return (bool)$this->data['sign-text'];
+    }
 
-	public function getBuckets() : bool{
-		return (bool) $this->data['buckets'];
-	}
+    public function getBuckets(): bool
+    {
+        return (bool)$this->data['buckets'];
+    }
 
-	public function getLeavesDecay() : bool{
-		return (bool) $this->data['leaves-decay'];
-	}
+    public function getLeavesDecay(): bool
+    {
+        return (bool)$this->data['leaves-decay'];
+    }
 
-	public function getLiquidTracking() : bool{
-		return (bool) $this->data['liquid-tracking'];
-	}
+    public function getLiquidTracking(): bool
+    {
+        return (bool)$this->data['liquid-tracking'];
+    }
 
-	public function getItemTransactions() : bool{
-		return (bool) $this->data['item-transactions'];
-	}
+    public function getItemTransactions(): bool
+    {
+        return (bool)$this->data['item-transactions'];
+    }
 
-	public function getPlayerInteractions() : bool{
-		return (bool) $this->data['player-interactions'];
-	}
+    public function getPlayerInteractions(): bool
+    {
+        return (bool)$this->data['player-interactions'];
+    }
 
-	public function validateConfig() : ValidationResult{
-		$v = new Validator();
+    public function validateConfig(): ValidationResult
+    {
+        $v = new Validator();
 
-		$v->required('database.type')->string()->callback(function(string $value) : bool{
-			return $value === 'sqlite' || $value === 'mysql';
-		});
-		$v->required('database.sqlite.file')->string();
-		//TODO: Check if mysql
-		$v->required('database.mysql.host')->string()->callback(function(string $value) : bool{
-			return filter_var($value, FILTER_VALIDATE_IP) !== false;
-		});
-		$v->required('database.mysql.username')->string();
-		$v->required('database.mysql.password')->string()->allowEmpty(true);
-		$v->required('database.mysql.schema')->string()->allowEmpty(true);
-		$v->required('enabled-worlds')->isArray();
-		$v->required('check-updates')->bool();
-		$v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
-		$v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
-		$v->required('timezone')->string()->callback(function(string $value) : bool{
-			return in_array($value, array_values(DateTimeZone::listIdentifiers()));
-		});
+        $v->required('database.type')->string()->callback(function (string $value): bool {
+            return $value === 'sqlite' || $value === 'mysql';
+        });
+        $v->required('database.sqlite.file')->string();
+        //TODO: Check if mysql
+        $v->required('database.mysql.host')->string()->callback(function (string $value): bool {
+            return filter_var($value, FILTER_VALIDATE_IP) !== false;
+        });
+        $v->required('database.mysql.username')->string();
+        $v->required('database.mysql.password')->string()->allowEmpty(true);
+        $v->required('database.mysql.schema')->string()->allowEmpty(true);
+        $v->required('enabled-worlds')->isArray();
+        $v->required('check-updates')->bool();
+        $v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
+        $v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
+        $v->required('timezone')->string()->callback(function (string $value): bool {
+            return in_array($value, array_values(DateTimeZone::listIdentifiers()));
+        });
 
-		foreach(array_slice(array_keys($this->data), 6) as $key){
-			$v->required($key)->bool();
-		}
+        foreach (array_slice(array_keys($this->data), 6) as $key) {
+            $v->required($key)->bool();
+        }
 
-		return $v->validate($this->data);
-	}
+        return $v->validate($this->data);
+    }
 
 }
