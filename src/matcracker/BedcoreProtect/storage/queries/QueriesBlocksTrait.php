@@ -129,14 +129,22 @@ trait QueriesBlocksTrait
      */
     public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, $newBlocks, Action $action): void
     {
+        if (empty($oldBlocks)) {
+            return;
+        }
         $this->addEntity($entity);
 
         $oldBlocksQuery = $this->buildMultipleBlocksQuery($oldBlocks);
         $this->connector->executeInsertRaw($oldBlocksQuery);
 
         if (is_array($newBlocks)) {
-            (function (Block ...$_) {
+            if (empty($newBlocks)) {
+                return;
+            }
+
+            (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
+
             $newBlocksQuery = $this->buildMultipleBlocksQuery($newBlocks);
             $this->connector->executeInsertRaw($newBlocksQuery);
         } else {

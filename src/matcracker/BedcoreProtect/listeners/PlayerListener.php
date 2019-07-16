@@ -79,8 +79,6 @@ final class PlayerListener extends BedcoreListener
                 $liquid = VanillaBlocks::LAVA();
             }
 
-            $liquid->position($block->getWorld(), $block->getFloorX(), $block->getFloorY(), $block->getFloorZ());
-
             if ($fireEmptyEvent) {
                 $this->database->getQueries()->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
             } else {
@@ -126,7 +124,7 @@ final class PlayerListener extends BedcoreListener
             if (!$event->isCancelled()) {
                 if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                     $relativeBlock = $clickedBlock->getSide($face);
-                    if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->isSameType(VanillaBlocks::FIRE())) {
+                    if ($this->configParser->getBlockBreak() && $relativeBlock->isSameType(VanillaBlocks::FIRE())) {
                         $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, VanillaBlocks::AIR(), Action::BREAK(), $relativeBlock->asPosition());
                     } else if ($clickedBlock instanceof ItemFrame) {
                         $framedItem = $clickedBlock->getFramedItem();
@@ -141,9 +139,9 @@ final class PlayerListener extends BedcoreListener
                     }
 
                 } else if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
-                    if ($this->plugin->getParsedConfig()->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)) {
+                    if ($this->configParser->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)) {
                         $this->database->getQueries()->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
-                    } else if ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
+                    } else if ($this->configParser->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
                             $framedItem = $clickedBlock->getFramedItem();
                             if ($framedItem === null) {

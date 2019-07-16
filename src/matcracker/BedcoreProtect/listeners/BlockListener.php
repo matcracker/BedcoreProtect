@@ -90,16 +90,9 @@ final class BlockListener extends BedcoreListener
                     $sides = array_filter($block->getAllSides(), function (Block $side) {
                         return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
                     });
-                    /**
-                     * @var Block[] $airs
-                     */
-                    foreach ($sides as $key => $side) {
-                        $airs[$key] = VanillaBlocks::AIR();
-                        $airs[$key]->position($side->getWorld(), $side->getFloorX(), $side->getFloorY(), $side->getFloorZ());
-                    }
 
                     if (!empty($sides)) {
-                        $this->database->getQueries()->addBlocksLogByEntity($player, $sides, $airs, Action::BREAK());
+                        $this->database->getQueries()->addBlocksLogByEntity($player, $sides, VanillaBlocks::AIR(), Action::BREAK());
                     }
                 }
             }
