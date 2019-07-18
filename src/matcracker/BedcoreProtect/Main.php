@@ -64,17 +64,6 @@ final class Main extends PluginBase
         $this->configParser = $this->oldConfigParser;
     }
 
-    public function reloadConfig(): void
-    {
-        if ($this->configParser !== null) {
-            $this->oldConfigParser = clone $this->configParser;
-        }
-
-        parent::reloadConfig();
-        $this->configParser = new ConfigParser($this);
-        $this->configParser->validate();
-    }
-
     protected function onEnable(): void
     {
         $this->database = new Database($this);
@@ -121,6 +110,17 @@ final class Main extends PluginBase
         if ($this->configParser->getCheckUpdates()) {
             UpdateNotifier::checkUpdate($this);
         }
+    }
+
+    public function reloadConfig(): void
+    {
+        if ($this->configParser !== null) {
+            $this->oldConfigParser = clone $this->configParser;
+        }
+
+        parent::reloadConfig();
+        $this->configParser = new ConfigParser($this);
+        $this->configParser->validate();
     }
 
     protected function onDisable(): void

@@ -67,15 +67,6 @@ final class ConfigParser
         return (string)$this->data['database']['type'];
     }
 
-    public function getTimezone(): string
-    {
-        if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
-        }
-
-        return (string)$this->data['timezone'];
-    }
-
     public function isEnabledWorld(World $world): bool
     {
         if (!$this->isValid) {
@@ -291,6 +282,15 @@ final class ConfigParser
 
         date_default_timezone_set($this->getTimezone());
         $this->plugin->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
+    }
+
+    public function getTimezone(): string
+    {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
+
+        return (string)$this->data['timezone'];
     }
 
 }
