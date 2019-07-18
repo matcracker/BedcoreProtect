@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\Database;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
@@ -32,13 +31,10 @@ abstract class BedcoreListener implements Listener
     protected $plugin;
     /**@var Database */
     protected $database;
-    /**@var ConfigParser */
-    protected $configParser;
 
     public function __construct(Main $plugin)
     {
         $this->plugin = $plugin;
         $this->database = $plugin->getDatabase();
-        $this->configParser = $plugin->getParsedConfig();
     }
 }

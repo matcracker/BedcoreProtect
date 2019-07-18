@@ -43,13 +43,13 @@ final class SQLiteTransactionTask extends Task
         return 5 * 60 * 60 * 20;
     }
 
-    public function onRun(int $currentTick)
+    public function onRun(int $currentTick): void
     {
         $this->database->getQueries()->endTransaction();
         $this->database->getQueries()->beginTransaction();
     }
 
-    public function onCancel()
+    public function onCancel(): void
     {
         $this->database->getQueries()->endTransaction();
     }

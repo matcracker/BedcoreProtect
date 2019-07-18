@@ -68,7 +68,7 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBuckets()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getWorld()) && $this->plugin->getParsedConfig()->getBuckets()) {
             $block = $event->getBlockClicked();
             $fireEmptyEvent = ($event instanceof PlayerBucketEmptyEvent);
 
@@ -104,7 +104,7 @@ final class PlayerListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if ($this->configParser->isEnabledWorld($player->getWorld())) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getWorld())) {
             $clickedBlock = $event->getBlock();
             $item = $event->getItem();
             $action = $event->getAction();
@@ -124,7 +124,7 @@ final class PlayerListener extends BedcoreListener
             if (!$event->isCancelled()) {
                 if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                     $relativeBlock = $clickedBlock->getSide($face);
-                    if ($this->configParser->getBlockBreak() && $relativeBlock->isSameType(VanillaBlocks::FIRE())) {
+                    if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->isSameType(VanillaBlocks::FIRE())) {
                         $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, VanillaBlocks::AIR(), Action::BREAK(), $relativeBlock->asPosition());
                     } else if ($clickedBlock instanceof ItemFrame) {
                         $framedItem = $clickedBlock->getFramedItem();
@@ -139,9 +139,9 @@ final class PlayerListener extends BedcoreListener
                     }
 
                 } else if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
-                    if ($this->configParser->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)) {
+                    if ($this->plugin->getParsedConfig()->getBlockPlace() && $item->equals(VanillaItems::FLINT_AND_STEEL(), false, false)) {
                         $this->database->getQueries()->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
-                    } else if ($this->configParser->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
+                    } else if ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
                             $framedItem = $clickedBlock->getFramedItem();
                             if ($framedItem === null) {
@@ -173,7 +173,7 @@ final class PlayerListener extends BedcoreListener
         $transaction = $event->getTransaction();
         $player = $transaction->getSource();
 
-        if ($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getItemTransactions()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getWorld()) && $this->plugin->getParsedConfig()->getItemTransactions()) {
             $actions = $transaction->getActions();
 
             foreach ($actions as $action) {

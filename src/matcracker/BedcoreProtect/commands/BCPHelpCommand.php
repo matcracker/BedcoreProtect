@@ -41,8 +41,8 @@ final class BCPHelpCommand
         $sender->sendMessage(Utils::translateColors("&3/bcp &7restore &3<params> &f- Restore block data."));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7lookup &3<params> &f- Advanced block data lookup."));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7purge &3<params> &f- Delete old block data."));
-        //$sender->sendMessage(Utils::translateColors("&3/bcp &7reload &f- Reloads the configuration file."));
-        //$sender->sendMessage(Utils::translateColors("&3/bcp &7status &f- Displays the plugin status"));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7reload &f- Reloads the configuration file."));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7status &f- Displays the plugin status"));
         $sender->sendMessage(Utils::translateColors("&f------"));
     }
 

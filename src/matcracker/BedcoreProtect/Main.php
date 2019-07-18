@@ -38,11 +38,13 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /**@var Database */
+    /**@var Database $database */
     private $database;
 
-    /**@var ConfigParser */
+    /**@var ConfigParser $configParser */
     private $configParser;
+    /**@var ConfigParser $oldConfigParser */
+    private $oldConfigParser;
 
     /**
      * @return Database
@@ -57,55 +59,67 @@ final class Main extends PluginBase
         return $this->configParser;
     }
 
+    public function restoreConfig(): void
+    {
+        $this->configParser = $this->oldConfigParser;
+    }
+
+    public function reloadConfig(): void
+    {
+        if ($this->configParser !== null) {
+            $this->oldConfigParser = clone $this->configParser;
+        }
+
+        parent::reloadConfig();
+        $this->configParser = new ConfigParser($this);
+        $this->configParser->validate();
+    }
+
     protected function onEnable(): void
     {
+        $this->database = new Database($this);
+
         @mkdir($this->getDataFolder());
-        $this->saveDefaultConfig();
+        $this->reloadConfig();
         $this->saveResource("bedcore_database.db");
 
-        $this->configParser = new ConfigParser($this);
-
-        $validation = $this->configParser->validateConfig();
-        if (!$validation->isValid()) {
-            $this->getLogger()->warning("Configuration's file is not correct.");
-            foreach ($validation->getFailures() as $failure) {
-                $this->getLogger()->warning($failure->format());
-            }
+        if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
-
             return;
         }
 
-        date_default_timezone_set($this->configParser->getTimezone());
-        $this->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
+        $this->configParser->loadData();
+
         //Database connection
-        $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getDatabaseType()} database...");
-        $this->database = new Database($this);
-        if ($this->database->connect()) {
-            $this->getLogger()->info("Connection successfully established.");
+        $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getPrintableDatabaseType()} database...");
+        if (!$this->database->connect()) {
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+            return;
+        }
+        $this->getLogger()->info("Connection successfully established.");
 
-            $this->database->getQueries()->init();
+        $this->database->getQueries()->init();
 
-            $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+        if ($this->configParser->isSQLite()) {
+            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+        }
 
-            $events = [
-                new BlockListener($this),
-                new EntityListener($this),
-                new PlayerListener($this),
-                new WorldListener($this)
-            ];
+        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
-            foreach ($events as $event) {
-                $this->getServer()->getPluginManager()->registerEvents($event, $this);
-            }
+        //Registering events
+        $events = [
+            new BlockListener($this),
+            new EntityListener($this),
+            new PlayerListener($this),
+            new WorldListener($this)
+        ];
 
-            if ($this->configParser->isSQLite()) {
-                $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
-            }
+        foreach ($events as $event) {
+            $this->getServer()->getPluginManager()->registerEvents($event, $this);
+        }
 
-            if ($this->configParser->getCheckUpdates()) {
-                UpdateNotifier::checkUpdate($this);
-            }
+        if ($this->configParser->getCheckUpdates()) {
+            UpdateNotifier::checkUpdate($this);
         }
     }
 

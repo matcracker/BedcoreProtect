@@ -68,6 +68,26 @@ final class BCPCommand extends Command
                 isset($args[1]) ? BCPHelpCommand::showSpecificHelp($sender, $args[1]) : BCPHelpCommand::showGenericHelp($sender);
 
                 return true;
+            case "reload":
+                $this->plugin->reloadConfig();
+                if ($this->plugin->getParsedConfig()->isValidConfig()) {
+                    $this->plugin->getParsedConfig()->loadData();
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Plugin configuration reloaded."));
+                } else {
+                    $this->plugin->restoreConfig();
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cPlugin configuration not reloaded due to some errors. Check your console to see the errors."));
+                    $sender->sendMessage(Utils::translateColors("&cUntil you fix them, it will be used the old configuration."));
+                }
+
+                return true;
+            case "status":
+                $description = $this->plugin->getDescription();
+                $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
+                $sender->sendMessage(Utils::translateColors("&3Version:&f " . $description->getVersion()));
+                $sender->sendMessage(Utils::translateColors("&3Database connection:&f " . $this->plugin->getParsedConfig()->getPrintableDatabaseType()));
+                $sender->sendMessage(Utils::translateColors("&3Author:&f " . implode(",", $description->getAuthors())));
+                $sender->sendMessage(Utils::translateColors("&3Website:&f " . $description->getWebsite()));
+                return true;
             case "lookup":
                 if (isset($args[1])) {
                     $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
@@ -109,7 +129,7 @@ final class BCPCommand extends Command
                     if ($parser->parse()) {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge started. This may take some time."));
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Do not restart your server until completed."));
-                        $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender) {
+                        $this->queries->purge($parser->getTime(), static function (int $affectedRows) use ($sender) {
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge successful."));
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "{$affectedRows} rows of data deleted."));
                         });
@@ -169,7 +189,7 @@ final class BCPCommand extends Command
                         $start = microtime(true);
 
                         $this->queries->rollback($sender->asPosition(), $parser,
-                            function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
+                            static function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
                                 if (($blocks + $items + $entities) > 0) {
                                     $diff = microtime(true) - $start;
                                     $time = time() - $parser->getTime();
@@ -192,7 +212,7 @@ final class BCPCommand extends Command
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to rollback."));
                                 }
                             },
-                            function (SqlError $error) use ($sender) { //onError
+                            static function (SqlError $error) use ($sender) { //onError
                                 $this->plugin->getLogger()->alert($error->getErrorMessage());
                                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
                                 $sender->sendMessage(Utils::translateColors("&f------"));
@@ -215,7 +235,7 @@ final class BCPCommand extends Command
                         $start = microtime(true);
 
                         $this->queries->restore($sender->asPosition(), $parser,
-                            function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
+                            static function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
                                 if (($blocks + $items + $entities) > 0) {
                                     $diff = microtime(true) - $start;
                                     $time = time() - $parser->getTime();
@@ -233,7 +253,7 @@ final class BCPCommand extends Command
                                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to restore."));
                                 }
                             },
-                            function (SqlError $error) use ($sender) { //onError
+                            static function (SqlError $error) use ($sender) { //onError
                                 $this->plugin->getLogger()->alert($error->getErrorMessage());
                                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
                                 $sender->sendMessage(Utils::translateColors("&f------"));

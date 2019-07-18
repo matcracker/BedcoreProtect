@@ -80,7 +80,7 @@ trait QueriesEntitiesTrait
         $totalRows = 0;
         $world = $position->getWorld();
         $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, $world, &$totalRows) {
+            static function (array $rows) use ($rollback, $world, &$totalRows) {
                 if (count($rows) > 0) {
                     $query = /**@lang text */
                         "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
@@ -110,7 +110,7 @@ trait QueriesEntitiesTrait
                 }
                 $totalRows = count($rows);
             },
-            function (SqlError $error) {
+            static function (SqlError $error) {
                 throw $error;
             }
         );

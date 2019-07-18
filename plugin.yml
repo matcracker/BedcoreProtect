@@ -1,7 +1,10 @@
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-version: 0.3.1
+version: 0.4.0
 api: [4.0.0]
+mcpe-protcol:
+  - 354
+  - 361
 
 load: POSTWORLD
 author: matcracker
@@ -14,6 +17,10 @@ permissions:
     children:
       bcp.subcommand.help:
         description: "Allows the user to run the sub-command /bedcoreprotect help"
+      bcp.subcommand.reload:
+        description: "Allows the user to run the sub-command /bedcoreprotect reload"
+      bcp.subcommand.status:
+        description: "Allows the user to run the sub-command /bedcoreprotect status"
       bcp.subcommand.inspect:
         description: "Allows the user to run the sub-command /bedcoreprotect inspect"
       bcp.subcommand.near:
@@ -24,3 +31,5 @@ permissions:
         description: "Allows the user to run the sub-command /bedcoreprotect rollback"
       bcp.subcommand.restore:
         description: "Allows the user to run the sub-command /bedcoreprotect restore"
+      bcp.subcommand.purge:
+        description: "Allows the user to run the sub-command /bedcoreprotect purge"

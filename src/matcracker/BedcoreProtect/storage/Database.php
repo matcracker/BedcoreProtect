@@ -51,22 +51,16 @@ class Database
 
             return true;
         } catch (SqlError $error) {
-            $this->throwError();
+            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
         }
 
         return false;
     }
 
-    private function throwError(): void
-    {
-        $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
-        $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
-    }
-
     public final function getQueries(): Queries
     {
         if (!$this->isConnected()) {
-            $this->throwError();
+            $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
 
         return $this->queries;
@@ -81,6 +75,8 @@ class Database
     {
         if ($this->isConnected()) {
             $this->dataConnector->close();
+            $this->dataConnector = null;
+            $this->queries = null;
         }
     }
 

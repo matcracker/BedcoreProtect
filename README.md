@@ -2,18 +2,20 @@
 BedCoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
 ## Commands
-The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co**
+The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co** (**Main permission:** _bcp.command.bedcoreprotect_)
 
 **Quick command overview:**
-- **/bcp help - _Display a list of commands_**
-- **/bcp inspect - _Toggle the inspector mode_**
-- **/bcp rollback \<params> - _Rollback block data_**
-- **/bcp restore \<params> - _Restore block data_**
-- **/bcp lookup \<params> - _Advanced block data lookup_**
-- **/bcp purge \<params> - _Delete old block data_**
-  
+- **/bcp help - _Display a list of commands_** (**Permission:** _bcp.subcommand.help_)
+- **/bcp inspect - _Toggle the inspector mode_** (**Permission:** _bcp.subcommand.inspect_)
+- **/bcp rollback \<params> - _Rollback block data_** (**Permission:** _bcp.subcommand.rollback_)
+- **/bcp restore \<params> - _Restore block data_** (**Permission:** _bcp.subcommand.restore_)
+- **/bcp lookup \<params> - _Advanced block data lookup_** (**Permission:** _bcp.subcommand.lookup_)
+- **/bcp purge \<params> - _Delete old block data_** (**Permission:** _bcp.subcommand.purge_)
+- **/bcp reload - _Reload the configuration file_** (**Permission:** _bcp.subcommand.reload_)
+- **/bcp status - _View the plugin status_** (**Permission:** _bcp.subcommand.status_)
+
 **Shortcut commands:**
-- **/bcp near \[value]**: _Performs a lookup with radius (default 5)_
+- **/bcp near \[value]**: _Performs a lookup with radius (default 5)_ (**Permission:** _bcp.subcommand.near_)
 ---
 **Advanced command overview:**
 > **/bcp help**<br>

@@ -50,7 +50,7 @@ final class Utils
      */
     public static function translateColors(string $message): string
     {
-        return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", function (array $matches): string {
+        return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", static function (array $matches): string {
             return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
         }, $message);
     }

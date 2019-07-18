@@ -43,7 +43,7 @@ final class EntityListener extends BedcoreListener
     public function trackEntityExplode(EntityExplodeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getExplosions()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld()) && $this->plugin->getParsedConfig()->getExplosions()) {
             $this->database->getQueries()->addBlocksLogByEntity($entity, $event->getBlockList(), VanillaBlocks::AIR(), Action::BREAK());
         }
     }
@@ -56,13 +56,13 @@ final class EntityListener extends BedcoreListener
     public function trackEntitySpawn(EntitySpawnEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->configParser->isEnabledWorld($entity->getWorld())) {
-            if ($entity instanceof Painting && $this->configParser->getBlockPlace()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld())) {
+            if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockPlace()) {
                 $player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
                 if ($player !== null) {
                     $this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
                 }
-            } elseif ($entity instanceof FallingBlock && $this->configParser->getBlockMovement()) {
+            } elseif ($entity instanceof FallingBlock && $this->plugin->getParsedConfig()->getBlockMovement()) {
                 $block = $entity->getBlock();
 
                 $this->database->getQueries()->addBlockLogByEntity($entity, $block, VanillaBlocks::AIR(), Action::BREAK(), $entity->asPosition());
@@ -78,8 +78,8 @@ final class EntityListener extends BedcoreListener
     public function trackEntityDespawn(EntityDespawnEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->configParser->isEnabledWorld($entity->getWorld())) {
-            if ($entity instanceof Painting && $this->configParser->getBlockBreak()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld())) {
+            if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockBreak()) {
                 $player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
                 if ($player !== null) {
                     $this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
@@ -96,7 +96,7 @@ final class EntityListener extends BedcoreListener
     public function trackEntityDeath(EntityDeathEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getEntityKills()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld()) && $this->plugin->getParsedConfig()->getEntityKills()) {
             $ev = $entity->getLastDamageCause();
             if ($ev instanceof EntityDamageByEntityEvent) {
                 $damager = $ev->getDamager();
@@ -113,7 +113,7 @@ final class EntityListener extends BedcoreListener
     public function trackEntityBlockChange(EntityBlockChangeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->configParser->isEnabledWorld($entity->getWorld()) && $this->configParser->getBlockMovement()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld()) && $this->plugin->getParsedConfig()->getBlockMovement()) {
             $this->database->getQueries()->addBlockLogByEntity($event->getEntity(), $event->getBlock(), $event->getTo(), Action::PLACE());
         }
     }

@@ -109,7 +109,7 @@ class Queries
             "min_z" => $minV->getZ(),
             "max_z" => $maxV->getZ(),
             "world_name" => $position->getWorld()->getFolderName()
-        ], function (array $rows) use ($inspector) {
+        ], static function (array $rows) use ($inspector) {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
         });
@@ -118,7 +118,7 @@ class Queries
     public function requestLookup(CommandSender $sender, CommandParser $parser): void
     {
         $query = $parser->buildLookupQuery();
-        $this->connector->executeSelectRaw($query, [], function (array $rows) use ($sender) {
+        $this->connector->executeSelectRaw($query, [], static function (array $rows) use ($sender) {
             Inspector::cacheLogs($sender, $rows);
             Inspector::parseLogs($sender, $rows);
         });
@@ -236,7 +236,7 @@ class Queries
     {
         $id = 0;
         $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [],
-            function (array $rows) use (&$id) {
+            static function (array $rows) use (&$id) {
                 if (count($rows) === 1) {
                     $id = (int)$rows[0]["lastId"];
                 }

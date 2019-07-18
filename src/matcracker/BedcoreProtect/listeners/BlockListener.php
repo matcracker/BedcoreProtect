@@ -50,7 +50,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBlockBreak()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getWorld()) && $this->plugin->getParsedConfig()->getBlockBreak()) {
             $block = $event->getBlock();
 
             if (Inspector::isInspector($player)) { //It checks the block clicked
@@ -82,12 +82,12 @@ final class BlockListener extends BedcoreListener
 
                 $this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
 
-                if ($this->configParser->getNaturalBreak()) {
+                if ($this->plugin->getParsedConfig()->getNaturalBreak()) {
                     /**
                      * @var Block[] $sides
                      * Getting all blocks around the broken block that are consequently destroyed.
                      */
-                    $sides = array_filter($block->getAllSides(), function (Block $side) {
+                    $sides = array_filter($block->getAllSides(), static function (Block $side) {
                         return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
                     });
 
@@ -107,7 +107,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->configParser->isEnabledWorld($player->getWorld()) && $this->configParser->getBlockPlace()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getWorld()) && $this->plugin->getParsedConfig()->getBlockPlace()) {
             $block = $event->getBlock();
             $replacedBlock = $event->getBlockReplaced();
 
@@ -142,11 +142,9 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        if ($this->configParser->isEnabledWorld($block->getWorld())) {
-            if ($source instanceof Liquid) {
-                if (BlockUtils::isStillLiquid($source)) {
-                    $this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
-                }
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getWorld())) {
+            if ($source instanceof Liquid && $source->isStill()) {
+                $this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
             }
         }
     }
@@ -159,7 +157,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->configParser->isEnabledWorld($block->getWorld()) && $this->configParser->getBlockBurn()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getWorld()) && $this->plugin->getParsedConfig()->getBlockBurn()) {
             $cause = $event->getCausingBlock();
 
             $this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
@@ -176,8 +174,8 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $result = $event->getNewState();
 
-        if ($this->configParser->isEnabledWorld($block->getWorld())) {
-            if ($block instanceof Liquid && $this->configParser->getLiquidTracking()) {
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getWorld())) {
+            if ($block instanceof Liquid && $this->plugin->getParsedConfig()->getLiquidTracking()) {
                 $liquid = $block instanceof Water ? VanillaBlocks::LAVA() : VanillaBlocks::WATER();
                 $this->database->getQueries()->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
             }

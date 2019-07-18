@@ -170,7 +170,7 @@ trait QueriesBlocksTrait
         $query = /**@lang text */
             ($sqlite ? "REPLACE" : "INSERT") . " INTO blocks (id, damage, block_name) VALUES";
 
-        $filtered = array_unique(array_map(function (Block $element) {
+        $filtered = array_unique(array_map(static function (Block $element) {
             return $element->getId() . ":" . $element->getMeta() . ":" . $element->getName();
         }, $blocks));
 
@@ -265,7 +265,7 @@ trait QueriesBlocksTrait
         $totalRows = 0;
         $world = $position->getWorld();
         $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, $world, &$totalRows) {
+            static function (array $rows) use ($rollback, $world, &$totalRows) {
                 if (count($rows) > 0) {
                     $query = /**@lang text */
                         "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
@@ -295,7 +295,7 @@ trait QueriesBlocksTrait
 
                 $totalRows = count($rows);
             },
-            function (SqlError $error) {
+            static function (SqlError $error) {
                 throw $error;
             }
         );

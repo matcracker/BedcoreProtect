@@ -32,12 +32,10 @@ use pocketmine\block\EnderChest;
 use pocketmine\block\Furnace;
 use pocketmine\block\Hopper;
 use pocketmine\block\ItemFrame;
-use pocketmine\block\Liquid;
 use pocketmine\block\StoneButton;
 use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
 use pocketmine\block\TrappedChest;
-use pocketmine\block\VanillaBlocks;
 use pocketmine\block\WoodenButton;
 use pocketmine\block\WoodenDoor;
 use pocketmine\block\WoodenTrapdoor;
@@ -84,18 +82,6 @@ final class BlockUtils
         ];
 
         return in_array(get_class($block), $blocks);
-    }
-
-    /**
-     * Checks if the liquid is stilled.
-     *
-     * @param Liquid $liquid
-     *
-     * @return bool
-     */
-    public static function isStillLiquid(Liquid $liquid): bool
-    {
-        return $liquid->isSameType(VanillaBlocks::WATER()) || $liquid->isSameType(VanillaBlocks::LAVA());
     }
 
     /**

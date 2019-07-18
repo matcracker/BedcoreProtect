@@ -21,9 +21,9 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
+use BadMethodCallException;
 use DateTimeZone;
 use matcracker\BedcoreProtect\Main;
-use Particle\Validator\ValidationResult;
 use Particle\Validator\Validator;
 use pocketmine\world\World;
 
@@ -35,11 +35,23 @@ use pocketmine\world\World;
  */
 final class ConfigParser
 {
-    private $data;
+    /**@var Main $plugin */
+    private $plugin;
 
-    public function __construct(Main $main)
+    /**@var array $data */
+    private $data = [];
+
+    /**@var bool $isValid */
+    private $isValid = false;
+
+    public function __construct(Main $plugin)
     {
-        $this->data = $main->getConfig()->getAll();
+        $this->plugin = $plugin;
+    }
+
+    public function getPrintableDatabaseType(): string
+    {
+        return $this->isSQLite() ? "SQLite" : "MySQL";
     }
 
     public function isSQLite(): bool
@@ -49,115 +61,187 @@ final class ConfigParser
 
     public function getDatabaseType(): string
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (string)$this->data['database']['type'];
     }
 
     public function getTimezone(): string
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
+
         return (string)$this->data['timezone'];
     }
 
     public function isEnabledWorld(World $world): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return in_array($world->getFolderName(), $this->getEnabledWorlds());
     }
 
     public function getEnabledWorlds(): array
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (array)$this->data['enabled-worlds'];
     }
 
     public function getCheckUpdates(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['check-updates'];
     }
 
     public function getDefaultRadius(): int
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (int)$this->data['default-radius'];
     }
 
     public function getMaxRadius(): int
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (int)$this->data['max-radius'];
     }
 
     public function getRollbackItems(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['rollback-items'];
     }
 
     public function getRollbackEntities(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['rollback-entities'];
     }
 
     public function getBlockPlace(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['block-place'];
     }
 
     public function getBlockBreak(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['block-break'];
     }
 
     public function getNaturalBreak(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['natural-break'];
     }
 
     public function getBlockMovement(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['block-movement'];
     }
 
     public function getBlockBurn(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['block-burn'];
     }
 
     public function getExplosions(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['explosions'];
     }
 
     public function getEntityKills(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['entity-kills'];
     }
 
     public function getSignText(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['sign-text'];
     }
 
     public function getBuckets(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['buckets'];
     }
 
     public function getLeavesDecay(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['leaves-decay'];
     }
 
     public function getLiquidTracking(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['liquid-tracking'];
     }
 
     public function getItemTransactions(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['item-transactions'];
     }
 
     public function getPlayerInteractions(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
         return (bool)$this->data['player-interactions'];
     }
 
-    public function validateConfig(): ValidationResult
+    public function isValidConfig(): bool
+    {
+        return $this->isValid;
+    }
+
+    public function validate(): void
     {
         $v = new Validator();
 
@@ -180,11 +264,33 @@ final class ConfigParser
             return in_array($value, array_values(DateTimeZone::listIdentifiers()));
         });
 
-        foreach (array_slice(array_keys($this->data), 6) as $key) {
+        $data = $this->plugin->getConfig()->getAll();
+
+        foreach (array_slice(array_keys($data), 6) as $key) {
             $v->required($key)->bool();
         }
 
-        return $v->validate($this->data);
+        $result = $v->validate($data);
+
+        if (!empty($failures = $result->getFailures())) {
+            $this->plugin->getLogger()->warning("Configuration's file is not correct.");
+            foreach ($failures as $failure) {
+                $this->plugin->getLogger()->warning($failure->format());
+            }
+        }
+
+        $this->isValid = $result->isValid();
+    }
+
+    public function loadData(): void
+    {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
+        $this->data = $this->plugin->getConfig()->getAll();
+
+        date_default_timezone_set($this->getTimezone());
+        $this->plugin->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
     }
 
 }

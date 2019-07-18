@@ -205,7 +205,7 @@ final class CommandParser
                     return false;
             }
         }
-        $filter = array_filter($this->data, function ($value) {
+        $filter = array_filter($this->data, static function ($value) {
             return $value !== null;
         });
 
