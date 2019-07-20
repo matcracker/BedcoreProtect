@@ -232,30 +232,42 @@ final class ConfigParser
         return $this->isValid;
     }
 
-    public function validate(): void
+    public function validate(): self
     {
+        $this->isValid = false;
+
         $v = new Validator();
 
-        $v->required('database.type')->string()->callback(function (string $value): bool {
+        $v->required('database.type')->string()->callback(static function (string $value): bool {
             return $value === 'sqlite' || $value === 'mysql';
         });
-        $v->required('database.sqlite.file')->string();
-        //TODO: Check if mysql
-        $v->required('database.mysql.host')->string()->callback(function (string $value): bool {
-            return filter_var($value, FILTER_VALIDATE_IP) !== false;
-        });
-        $v->required('database.mysql.username')->string();
-        $v->required('database.mysql.password')->string()->allowEmpty(true);
-        $v->required('database.mysql.schema')->string()->allowEmpty(true);
+
+        $data = $this->plugin->getConfig()->getAll();
+
+        if (!$v->validate($data)->isValid()) {
+            return $this;
+        }
+
+        $type = (string)$data['database']['type'];
+
+        if ($type === 'sqlite') {
+            $v->required('database.sqlite.file')->string();
+        } else {
+            $v->required('database.mysql.host')->string()->callback(static function (string $value): bool {
+                return filter_var($value, FILTER_VALIDATE_IP) !== false;
+            });
+            $v->required('database.mysql.username')->string();
+            $v->required('database.mysql.password')->string()->allowEmpty(true);
+            $v->required('database.mysql.schema')->string();
+        }
+
         $v->required('enabled-worlds')->isArray();
         $v->required('check-updates')->bool();
         $v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
         $v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
-        $v->required('timezone')->string()->callback(function (string $value): bool {
+        $v->required('timezone')->string()->callback(static function (string $value): bool {
             return in_array($value, array_values(DateTimeZone::listIdentifiers()));
         });
-
-        $data = $this->plugin->getConfig()->getAll();
 
         foreach (array_slice(array_keys($data), 6) as $key) {
             $v->required($key)->bool();
@@ -270,18 +282,15 @@ final class ConfigParser
             }
         }
 
-        $this->isValid = $result->isValid();
-    }
+        if ($result->isValid()) {
+            $this->isValid = true;
+            $this->data = $data;
 
-    public function loadData(): void
-    {
-        if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            date_default_timezone_set($this->getTimezone());
+            $this->plugin->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
         }
-        $this->data = $this->plugin->getConfig()->getAll();
 
-        date_default_timezone_set($this->getTimezone());
-        $this->plugin->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
+        return $this;
     }
 
     public function getTimezone(): string
@@ -292,5 +301,4 @@ final class ConfigParser
 
         return (string)$this->data['timezone'];
     }
-
 }

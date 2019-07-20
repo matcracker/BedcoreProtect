@@ -69,12 +69,10 @@ final class BCPCommand extends Command
 
                 return true;
             case "reload":
-                $this->plugin->reloadConfig();
-                if ($this->plugin->getParsedConfig()->isValidConfig()) {
-                    $this->plugin->getParsedConfig()->loadData();
+                if ($this->plugin->reloadPlugin()) {
                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Plugin configuration reloaded."));
                 } else {
-                    $this->plugin->restoreConfig();
+                    $this->plugin->restoreParsedConfig();
                     $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cPlugin configuration not reloaded due to some errors. Check your console to see the errors."));
                     $sender->sendMessage(Utils::translateColors("&cUntil you fix them, it will be used the old configuration."));
                 }

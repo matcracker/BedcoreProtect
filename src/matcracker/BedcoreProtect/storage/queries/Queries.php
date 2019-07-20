@@ -220,10 +220,10 @@ class Queries
             "INSERT INTO log_history(who, x, y, z, world_name, action) VALUES";
 
         foreach ($positions as $position) {
-            $x = (int)$position->getX();
-            $y = (int)$position->getY();
-            $z = (int)$position->getZ();
-            $levelName = $position->getWorld()->getFolderName(); //It picks the first element because the level must be the same.
+            $x = $position->getFloorX();
+            $y = $position->getFloorY();
+            $z = $position->getFloorZ();
+            $levelName = $position->getWorld()->getFolderName();
             $query .= "((SELECT uuid FROM entities WHERE uuid = '{$uuid}'), '{$x}', '{$y}', '{$z}', '{$levelName}', '{$action->getType()}'),";
         }
 

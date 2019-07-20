@@ -59,9 +59,25 @@ final class Main extends PluginBase
         return $this->configParser;
     }
 
-    public function restoreConfig(): void
+    /**
+     * It restores a old copy of @see ConfigParser before plugin reload.
+     */
+    public function restoreParsedConfig(): void
     {
         $this->configParser = $this->oldConfigParser;
+    }
+
+    /**
+     * Reloads the plugin configuration and returns true if config is valid.
+     * @return bool
+     */
+    public function reloadPlugin(): bool
+    {
+        $this->oldConfigParser = clone $this->configParser;
+        var_dump($this->configParser->isValidConfig());
+        var_dump($this->oldConfigParser->isValidConfig());
+        $this->reloadConfig();
+        return $this->configParser->validate()->isValidConfig();
     }
 
     protected function onEnable(): void
@@ -69,15 +85,13 @@ final class Main extends PluginBase
         $this->database = new Database($this);
 
         @mkdir($this->getDataFolder());
-        $this->reloadConfig();
         $this->saveResource("bedcore_database.db");
 
+        $this->configParser = (new ConfigParser($this))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
         }
-
-        $this->configParser->loadData();
 
         //Database connection
         $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getPrintableDatabaseType()} database...");
@@ -110,17 +124,6 @@ final class Main extends PluginBase
         if ($this->configParser->getCheckUpdates()) {
             UpdateNotifier::checkUpdate($this);
         }
-    }
-
-    public function reloadConfig(): void
-    {
-        if ($this->configParser !== null) {
-            $this->oldConfigParser = clone $this->configParser;
-        }
-
-        parent::reloadConfig();
-        $this->configParser = new ConfigParser($this);
-        $this->configParser->validate();
     }
 
     protected function onDisable(): void
