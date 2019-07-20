@@ -22,8 +22,7 @@ database:
 timezone: "Europe/Lisbon"
 
 # A list of worlds where the plugin can track logs
-enabled-worlds:
-  - world
+enabled-worlds: []
 
 # If enabled, BedcoreProtect will check for updates when your server starts up.
 # If an update is available, you'll be notified via your server console.

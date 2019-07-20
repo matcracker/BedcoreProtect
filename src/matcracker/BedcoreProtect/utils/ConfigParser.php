@@ -72,7 +72,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
-        return in_array($world->getFolderName(), $this->getEnabledWorlds());
+        return in_array($world->getFolderName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
     }
 
     public function getEnabledWorlds(): array
@@ -261,7 +261,7 @@ final class ConfigParser
             $v->required('database.mysql.schema')->string();
         }
 
-        $v->required('enabled-worlds')->isArray();
+        $v->required('enabled-worlds')->isArray()->allowEmpty(true);
         $v->required('check-updates')->bool();
         $v->required('default-radius')->integer()->between(0, PHP_INT_MAX);
         $v->required('max-radius')->integer()->between(0, PHP_INT_MAX);
