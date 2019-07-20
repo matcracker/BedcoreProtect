@@ -60,7 +60,7 @@ final class Main extends PluginBase
     }
 
     /**
-     * It restores a old copy of @see ConfigParser before plugin reload.
+     * It restores an old copy of @see ConfigParser before plugin reload.
      */
     public function restoreParsedConfig(): void
     {
@@ -74,8 +74,6 @@ final class Main extends PluginBase
     public function reloadPlugin(): bool
     {
         $this->oldConfigParser = clone $this->configParser;
-        var_dump($this->configParser->isValidConfig());
-        var_dump($this->oldConfigParser->isValidConfig());
         $this->reloadConfig();
         return $this->configParser->validate()->isValidConfig();
     }
