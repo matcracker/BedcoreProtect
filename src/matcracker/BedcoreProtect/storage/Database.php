@@ -40,6 +40,10 @@ class Database
         $this->plugin = $plugin;
     }
 
+    /**
+     * Attempts to connect to the database. Returns true if success.
+     * @return bool
+     */
     public final function connect(): bool
     {
         try {
@@ -60,6 +64,7 @@ class Database
     public final function getQueries(): Queries
     {
         if (!$this->isConnected()) {
+            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
 

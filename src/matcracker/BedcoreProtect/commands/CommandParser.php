@@ -30,7 +30,6 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
-use UnexpectedValueException;
 
 CommandParser::initActions();
 
@@ -230,7 +229,6 @@ final class CommandParser
      * @param bool $restore
      *
      * @return string
-     * @throws UnexpectedValueException if it is used before CommandParser::parse()
      */
     public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
     {
@@ -410,7 +408,6 @@ final class CommandParser
      * It returns an array with the parsed data from the command.
      *
      * @return array
-     * @throws UnexpectedValueException if it is used before CommandParser::parse()
      */
     public function getAllData(): array
     {
