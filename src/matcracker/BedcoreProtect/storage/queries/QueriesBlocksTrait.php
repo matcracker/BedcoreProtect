@@ -67,12 +67,12 @@ trait QueriesBlocksTrait
         $pos = $position ?? $newBlock->asPosition();
         $this->addRawLog($uuid, $pos, $action);
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            "old_id" => $oldBlock->getId(),
-            "old_damage" => $oldBlock->getMeta(),
-            "old_nbt" => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
-            "new_id" => $newBlock->getId(),
-            "new_damage" => $newBlock->getMeta(),
-            "new_nbt" => $newTag !== null ? Utils::serializeNBT($newTag) : null
+            "old_block_id" => $oldBlock->getId(),
+            "old_block_meta" => $oldBlock->getMeta(),
+            "old_block_nbt" => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
+            "new_block_id" => $newBlock->getId(),
+            "new_block_meta" => $newBlock->getMeta(),
+            "new_block_nbt" => $newTag !== null ? Utils::serializeNBT($newTag) : null
         ]);
     }
 
@@ -85,7 +85,7 @@ trait QueriesBlocksTrait
     {
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK, [
             "id" => $block->getId(),
-            "damage" => $block->getMeta(),
+            "meta" => $block->getMeta(),
             "name" => $block->getName()
         ]);
     }
@@ -168,7 +168,7 @@ trait QueriesBlocksTrait
         $sqlite = $this->configParser->isSQLite();
 
         $query = /**@lang text */
-            ($sqlite ? "REPLACE" : "INSERT") . " INTO blocks (id, damage, block_name) VALUES";
+            ($sqlite ? "REPLACE" : "INSERT") . " INTO blocks (id, meta, block_name) VALUES";
 
         $filtered = array_unique(array_map(static function (Block $element) {
             return $element->getId() . ":" . $element->getMeta() . ":" . $element->getName();
@@ -177,12 +177,12 @@ trait QueriesBlocksTrait
         foreach ($filtered as $value) {
             $blockData = explode(":", $value);
             $id = (int)$blockData[0];
-            $damage = (int)$blockData[1];
+            $meta = (int)$blockData[1];
             $name = (string)$blockData[2];
-            $query .= "('$id', '$damage', '$name'),";
+            $query .= "('$id', '$meta', '$name'),";
         }
         $query = mb_substr($query, 0, -1);
-        $query .= ($sqlite ? ";" : " ON DUPLICATE KEY UPDATE id=VALUES(id), damage=VALUES(damage);");
+        $query .= ($sqlite ? ";" : " ON DUPLICATE KEY UPDATE id=VALUES(id), meta=VALUES(meta);");
 
         return $query;
     }
@@ -196,7 +196,7 @@ trait QueriesBlocksTrait
     private function buildMultipleRawBlockLogsQuery(array $oldBlocks, $newBlocks): string
     {
         $query = /**@lang text */
-            "INSERT INTO blocks_log(history_id, old_block_id, old_block_damage, old_block_nbt, new_block_id, new_block_damage, new_block_nbt) VALUES";
+            "INSERT INTO blocks_log(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta, new_block_nbt) VALUES";
 
         $logId = $this->getLastLogId();
 
@@ -211,11 +211,11 @@ trait QueriesBlocksTrait
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
                 $oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
-                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
-                (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
+                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
+                (SELECT meta FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
                 '{$oldNBT}',
-                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
-                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
+                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
+                (SELECT meta FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
                 '{$newNBT}'),";
             }
         } else {
@@ -234,11 +234,11 @@ trait QueriesBlocksTrait
                 $newMeta = $newBlock->getMeta();
                 $newNBT = BlockUtils::serializeBlockTileNBT($newBlock);
 
-                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
-                (SELECT damage FROM blocks WHERE blocks.id = '{$oldId}' AND damage = '{$oldMeta}'),
+                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
+                (SELECT meta FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
                 '{$oldNBT}',
-                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND damage = '${newMeta}'),
-                (SELECT damage FROM blocks WHERE blocks.id = '{$newId}' AND damage = '{$newMeta}'),
+                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND meta = '${newMeta}'),
+                (SELECT meta FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
                 '{$newNBT}'),";
             }
         }
@@ -274,7 +274,7 @@ trait QueriesBlocksTrait
                         $logId = (int)$row["log_id"];
                         $prefix = $rollback ? "old" : "new";
                         $pos = new Position((int)$row["x"], (int)$row["y"], (int)$row["z"], $world);
-                        $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_damage"], $pos);
+                        $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], $pos);
 
                         $world->setBlock($block, $block);
                         if (($tile = BlockUtils::asTile($block)) !== null) {

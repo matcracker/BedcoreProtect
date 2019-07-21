@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS "entities"
 CREATE TABLE IF NOT EXISTS "blocks"
 (
     id         UNSIGNED INTEGER    NOT NULL,
-    damage     UNSIGNED TINYINT(2) NOT NULL,
+    meta       UNSIGNED TINYINT(2) NOT NULL,
     block_name VARCHAR(30)         NOT NULL,
-    PRIMARY KEY (id, damage)
+    PRIMARY KEY (id, meta)
 );
 -- #        }
 -- #        {log_history
@@ -37,16 +37,16 @@ CREATE TABLE IF NOT EXISTS "log_history"
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
-    history_id       UNSIGNED BIG INT,
-    old_block_id     UNSIGNED INTEGER    NOT NULL,
-    old_block_damage UNSIGNED TINYINT(2) NOT NULL,
-    old_block_nbt    BLOB DEFAULT NULL,
-    new_block_id     UNSIGNED INTEGER    NOT NULL,
-    new_block_damage UNSIGNED TINYINT(2) NOT NULL,
-    new_block_nbt    BLOB DEFAULT NULL,
+    history_id     UNSIGNED BIG INT,
+    old_block_id   UNSIGNED INTEGER    NOT NULL,
+    old_block_meta UNSIGNED TINYINT(2) NOT NULL,
+    old_block_nbt  BLOB DEFAULT NULL,
+    new_block_id   UNSIGNED INTEGER    NOT NULL,
+    new_block_meta UNSIGNED TINYINT(2) NOT NULL,
+    new_block_nbt  BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
-    FOREIGN KEY (old_block_id, old_block_damage) REFERENCES "blocks" (id, damage),
-    FOREIGN KEY (new_block_id, new_block_damage) REFERENCES "blocks" (id, damage)
+    FOREIGN KEY (old_block_id, old_block_meta) REFERENCES "blocks" (id, meta),
+    FOREIGN KEY (new_block_id, new_block_meta) REFERENCES "blocks" (id, meta)
 );
 -- #        }
 -- #        {entities_log
@@ -66,13 +66,13 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
     history_id      UNSIGNED BIG INT,
     slot            UNSIGNED TINYINT NOT NULL,
     old_item_id     UNSIGNED INTEGER    DEFAULT 0,
-    old_item_damage UNSIGNED TINYINT(2) DEFAULT 0,
+    old_item_meta   UNSIGNED TINYINT(2) DEFAULT 0,
     old_item_nbt    BLOB                DEFAULT NULL,
-    old_amount      UNSIGNED TINYINT    DEFAULT 0,
+    old_item_amount UNSIGNED TINYINT    DEFAULT 0,
     new_item_id     UNSIGNED INTEGER    DEFAULT 0,
-    new_item_damage UNSIGNED TINYINT(2) DEFAULT 0,
+    new_item_meta   UNSIGNED TINYINT(2) DEFAULT 0,
     new_item_nbt    BLOB                DEFAULT NULL,
-    new_amount      UNSIGNED TINYINT    DEFAULT 0,
+    new_item_amount UNSIGNED TINYINT    DEFAULT 0,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }
@@ -98,12 +98,12 @@ VALUES (:uuid, :name, :path, :address);
 -- #        }
 -- #        {block
 -- #            :id int
--- #            :damage int
+-- #            :meta int
 -- #            :name string
 INSERT OR
 REPLACE
-INTO "blocks" (id, damage, block_name)
-VALUES (:id, :damage, :name);
+INTO "blocks" (id, meta, block_name)
+VALUES (:id, :meta, :name);
 -- #        }
 -- #        {log
 -- #            {main
@@ -118,43 +118,43 @@ INSERT INTO "log_history"(who, x, y, z, world_name,
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
 -- #            }
 -- #            {to_block
--- #                :old_id int
--- #                :old_damage int
--- #                :old_nbt string null
--- #                :new_id int
--- #                :new_damage int
--- #                :new_nbt string null
-INSERT INTO "blocks_log"(history_id, old_block_id, old_block_damage, old_block_nbt, new_block_id, new_block_damage,
+-- #                :old_block_id int
+-- #                :old_block_meta int
+-- #                :old_block_nbt ?string
+-- #                :new_block_id int
+-- #                :new_block_meta int
+-- #                :new_block_nbt ?string
+INSERT INTO "blocks_log"(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta,
                          new_block_nbt)
 VALUES (LAST_INSERT_ROWID(),
-        (SELECT id FROM "blocks" WHERE blocks.id = :old_id AND damage = :old_damage),
-        (SELECT damage FROM "blocks" WHERE blocks.id = :old_id AND damage = :old_damage),
-        :old_nbt,
-        (SELECT id FROM "blocks" WHERE blocks.id = :new_id AND damage = :new_damage),
-        (SELECT damage FROM "blocks" WHERE blocks.id = :new_id AND damage = :new_damage),
-        :new_nbt);
+        (SELECT id FROM "blocks" WHERE blocks.id = :old_block_id AND meta = :old_block_meta),
+        (SELECT meta FROM "blocks" WHERE blocks.id = :old_block_id AND meta = :old_block_meta),
+        :old_block_nbt,
+        (SELECT id FROM "blocks" WHERE blocks.id = :new_block_id AND meta = :new_block_meta),
+        (SELECT meta FROM "blocks" WHERE blocks.id = :new_block_id AND meta = :new_block_meta),
+        :new_block_nbt);
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
 -- #                :id int
--- #                :nbt string null
+-- #                :nbt ?string
 INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
 VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
 -- #            {to_inventory
 -- #                :slot int
 -- #                :old_item_id int 0
--- #                :old_item_damage int 0
--- #                :old_item_nbt string null
--- #                :old_amount int 0
+-- #                :old_item_meta int 0
+-- #                :old_item_nbt ?string
+-- #                :old_item_amount int 0
 -- #                :new_item_id int 0
--- #                :new_item_damage int 0
--- #                :new_item_nbt string null
--- #                :new_amount int 0
-INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_damage, old_item_nbt, old_amount, new_item_id,
-                              new_item_damage, new_item_nbt, new_amount)
-VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_damage, :old_item_nbt, :old_amount, :new_item_id,
-        :new_item_damage, :new_item_nbt, :new_amount);
+-- #                :new_item_meta int 0
+-- #                :new_item_nbt ?string
+-- #                :new_item_amount int 0
+INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_meta, old_item_nbt, old_item_amount, new_item_id,
+                              new_item_meta, new_item_nbt, new_item_amount)
+VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_meta, :old_item_nbt, :old_item_amount, :new_item_id,
+        :new_item_meta, :new_item_nbt, :new_item_amount);
 -- #            }
 -- #            {update_entity_id
 -- #                :log_id int
@@ -180,10 +180,10 @@ FROM "log_history";
 -- #                :max_z int
 -- #                :world_name string
 SELECT bl.old_block_id,
-       bl.old_block_damage,
+       bl.old_block_meta,
        bl.old_block_nbt,
        bl.new_block_id,
-       bl.new_block_damage,
+       bl.new_block_meta,
        bl.new_block_nbt,
        e.entity_name AS entity_from,
        x,
@@ -240,10 +240,10 @@ ORDER BY time DESC;
 -- #                :max_z int
 -- #                :world_name string
 SELECT bl.old_block_id,
-       bl.old_block_damage,
+       bl.old_block_meta,
        bl.old_block_nbt,
        bl.new_block_id,
-       bl.new_block_damage,
+       bl.new_block_meta,
        bl.new_block_nbt,
        e1.entity_name AS entity_from,
        e2.entity_name AS entity_to,
@@ -275,13 +275,13 @@ ORDER BY time DESC;
 -- #                :max_z int
 -- #                :world_name string
 SELECT il.old_item_id,
-       il.old_item_damage,
+       il.old_item_meta,
        il.old_item_nbt,
-       il.old_amount,
+       il.old_item_amount,
        il.new_item_id,
-       il.new_item_damage,
+       il.new_item_meta,
        il.new_item_nbt,
-       il.new_amount,
+       il.new_item_amount,
        e.entity_name AS entity_from,
        x,
        y,

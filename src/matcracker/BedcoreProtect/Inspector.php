@@ -162,17 +162,17 @@ final class Inspector
 
             $blockFound = $action->equals(Action::BREAK()) ? "old" : "new";
             $itemFound = $action->equals(Action::REMOVE()) ? "old" : "new";
-            if (isset($log["{$blockFound}_block_id"], $log["{$blockFound}_block_damage"])) {
+            if (isset($log["{$blockFound}_block_id"], $log["{$blockFound}_block_meta"])) {
                 $id = (int)$log["{$blockFound}_block_id"];
-                $meta = (int)$log["{$blockFound}_block_damage"];
+                $meta = (int)$log["{$blockFound}_block_meta"];
                 $blockName = BlockFactory::get($id, $meta)->getName();
 
                 $entityTo = "#{$id}:{$meta} ({$blockName})";
             } elseif (isset($log['entity_to'])) {
                 $entityTo = "#{$log['entity_to']}";
-            } elseif (isset($log["{$itemFound}_item_damage"], $log["{$itemFound}_amount"])) {
+            } elseif (isset($log["{$itemFound}_item_meta"], $log["{$itemFound}_amount"])) {
                 $id = (int)$log["{$itemFound}_item_id"];
-                $meta = (int)$log["{$itemFound}_item_damage"];
+                $meta = (int)$log["{$itemFound}_item_meta"];
                 $amount = (int)$log["{$itemFound}_amount"];
                 $itemName = ItemFactory::get($id, $meta)->getName();
                 $entityTo = "{$amount} x #{$id}:{$meta} ({$itemName})";

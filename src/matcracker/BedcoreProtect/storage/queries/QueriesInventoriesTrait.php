@@ -84,13 +84,13 @@ trait QueriesInventoriesTrait
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
             "slot" => $slot,
             "old_item_id" => $oldItem->getId(),
-            "old_item_damage" => $oldItem->getMeta(),
+            "old_item_meta" => $oldItem->getMeta(),
             "old_item_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
-            "old_amount" => $oldItem->getCount(),
+            "old_item_amount" => $oldItem->getCount(),
             "new_item_id" => $newItem->getId(),
-            "new_item_damage" => $newItem->getMeta(),
+            "new_item_meta" => $newItem->getMeta(),
             "new_item_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
-            "new_amount" => $newItem->getCount()
+            "new_item_amount" => $newItem->getCount()
         ]);
 
     }
@@ -101,7 +101,7 @@ trait QueriesInventoriesTrait
         $logId = $this->getLastLogId() + 1;
 
         $query = /**@lang text */
-            "INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_damage, old_item_nbt, old_amount) VALUES";
+            "INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_meta, old_item_nbt, old_item_amount) VALUES";
 
         $filledSlots = 0;
         for ($slot = 0; $slot < $size; $slot++) {
@@ -143,7 +143,7 @@ trait QueriesInventoriesTrait
                         $prefix = $rollback ? "old" : "new";
                         $amount = (int)$row["{$prefix}_amount"];
                         $nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
-                        $item = ItemFactory::get((int)$row["{$prefix}_item_id"], (int)$row["{$prefix}_item_damage"], $amount, $nbt);
+                        $item = ItemFactory::get((int)$row["{$prefix}_item_id"], (int)$row["{$prefix}_item_meta"], $amount, $nbt);
                         $slot = (int)$row["slot"];
                         $vector = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                         $tile = $world->getTile($vector);

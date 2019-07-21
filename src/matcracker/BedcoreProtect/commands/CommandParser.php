@@ -40,10 +40,15 @@ final class CommandParser
     /**@var Action[][] */
     private static $ACTIONS = null;
 
+    /**@var ConfigParser $configParser */
     private $configParser;
+    /**@var string[] $arguments */
     private $arguments;
+    /**@var string[] $requiredParams */
     private $requiredParams;
+    /**@var bool $parsed */
     private $parsed = false;
+    /**@var string $errorMessage */
     private $errorMessage;
 
     //Default data values
@@ -60,8 +65,8 @@ final class CommandParser
      * CommandParser constructor.
      *
      * @param ConfigParser $configParser
-     * @param array $arguments
-     * @param array $requiredParams
+     * @param string[] $arguments
+     * @param string[] $requiredParams
      * @param bool $shift It shift the first element of array used internally for command arguments. Default false.
      */
     public function __construct(ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
@@ -78,6 +83,9 @@ final class CommandParser
         }
     }
 
+    /**
+     * @internal
+     */
     public static function initActions(): void
     {
         if (self::$ACTIONS === null) {
@@ -191,7 +199,7 @@ final class CommandParser
 
                             $this->data[$index][] = [
                                 "id" => $block->getId(),
-                                "damage" => $block->getMeta()
+                                "meta" => $block->getMeta()
                             ];
                         } catch (InvalidArgumentException $exception) {
                             $this->errorMessage = "Invalid block \"{$block}\" to " . ($index === "blocks" ? "include" : "exclude") . ".";
@@ -239,10 +247,10 @@ final class CommandParser
         $prefix = $restore ? "new" : "old";
         $clickAction = Action::CLICK()->getType();
         $query = /**@lang text */
-            "SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_damage, bl.{$prefix}_block_nbt, x, y, z FROM log_history 
+            "SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_meta, bl.{$prefix}_block_nbt, x, y, z FROM log_history 
             INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int)$restore . "' AND action <> '{$clickAction}' AND ";
 
-        $this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_damage"]);
+        $this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_meta"]);
 
         $query .= " ORDER BY time DESC;";
 
@@ -287,8 +295,8 @@ final class CommandParser
                     for ($i = 0; $i < $cArgs; $i += 2) {
                         foreach ($value as $blockArray) {
                             $id = (int)$blockArray["id"];
-                            $damage = (int)$blockArray["damage"];
-                            $query .= "({$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$damage') AND ";
+                            $meta = (int)$blockArray["meta"];
+                            $query .= "({$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$meta') AND ";
                         }
                     }
 
@@ -330,16 +338,16 @@ final class CommandParser
 
         $query = /**@lang text */
             "SELECT *,
-            bl.old_block_id, bl.old_block_damage, bl.new_block_id, bl.new_block_damage, 
-            il.old_item_id, il.old_item_damage, il.old_amount, il.new_item_id, il.new_item_damage, il.new_amount, 
+            bl.old_block_id, bl.old_block_meta, bl.new_block_id, bl.new_block_meta, 
+            il.old_item_id, il.old_item_meta, il.old_item_amount, il.new_item_id, il.new_item_meta, il.new_item_amount, 
             e.entity_name AS entity_from FROM log_history 
             LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
             LEFT JOIN entities e ON log_history.who = e.uuid 
             LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ";
 
         $this->buildConditionalQuery($query, null, [
-            "bl.old_block_id", "bl.old_block_damage",
-            "bl.new_block_id", "bl.new_block_damage"
+            "bl.old_block_id", "bl.old_block_meta",
+            "bl.new_block_id", "bl.new_block_meta"
         ]);
 
         $query .= " ORDER BY time DESC;";
@@ -375,10 +383,10 @@ final class CommandParser
         $prefix = $restore ? "new" : "old";
 
         $query = /**@lang text */
-            "SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_damage, il.{$prefix}_item_nbt, il.{$prefix}_amount, x, y, z FROM log_history 
+            "SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_meta, il.{$prefix}_item_nbt, il.{$prefix}_amount, x, y, z FROM log_history 
             INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
 
-        $this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_damage"]);
+        $this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_meta"]);
 
         $query .= " ORDER BY time DESC;";
 
