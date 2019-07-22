@@ -141,7 +141,7 @@ trait QueriesInventoriesTrait
                     foreach ($rows as $row) {
                         $logId = (int)$row["log_id"];
                         $prefix = $rollback ? "old" : "new";
-                        $amount = (int)$row["{$prefix}_amount"];
+                        $amount = (int)$row["{$prefix}_item_amount"];
                         $nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
                         $item = ItemFactory::get((int)$row["{$prefix}_item_id"], (int)$row["{$prefix}_item_meta"], $amount, $nbt);
                         $slot = (int)$row["slot"];

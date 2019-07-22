@@ -170,10 +170,10 @@ final class Inspector
                 $entityTo = "#{$id}:{$meta} ({$blockName})";
             } elseif (isset($log['entity_to'])) {
                 $entityTo = "#{$log['entity_to']}";
-            } elseif (isset($log["{$itemFound}_item_meta"], $log["{$itemFound}_amount"])) {
+            } elseif (isset($log["{$itemFound}_item_meta"], $log["{$itemFound}_item_amount"])) {
                 $id = (int)$log["{$itemFound}_item_id"];
                 $meta = (int)$log["{$itemFound}_item_meta"];
-                $amount = (int)$log["{$itemFound}_amount"];
+                $amount = (int)$log["{$itemFound}_item_amount"];
                 $itemName = ItemFactory::get($id, $meta)->getName();
                 $entityTo = "{$amount} x #{$id}:{$meta} ({$itemName})";
             } else {
