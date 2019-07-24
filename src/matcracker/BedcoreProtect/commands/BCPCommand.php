@@ -85,6 +85,7 @@ final class BCPCommand extends Command
                 $sender->sendMessage(Utils::translateColors("&3Database connection:&f " . $this->plugin->getParsedConfig()->getPrintableDatabaseType()));
                 $sender->sendMessage(Utils::translateColors("&3Author:&f " . implode(",", $description->getAuthors())));
                 $sender->sendMessage(Utils::translateColors("&3Website:&f " . $description->getWebsite()));
+
                 return true;
             case "lookup":
                 if (isset($args[1])) {

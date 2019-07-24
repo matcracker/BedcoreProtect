@@ -64,6 +64,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (string)$this->data['database']['type'];
     }
 
@@ -72,6 +73,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return in_array($world->getFolderName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
     }
 
@@ -80,6 +82,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (array)$this->data['enabled-worlds'];
     }
 
@@ -88,6 +91,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['check-updates'];
     }
 
@@ -96,6 +100,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (int)$this->data['default-radius'];
     }
 
@@ -104,6 +109,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (int)$this->data['max-radius'];
     }
 
@@ -112,6 +118,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['rollback-items'];
     }
 
@@ -120,6 +127,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['rollback-entities'];
     }
 
@@ -128,6 +136,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['block-place'];
     }
 
@@ -136,6 +145,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['block-break'];
     }
 
@@ -144,6 +154,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['natural-break'];
     }
 
@@ -152,6 +163,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['block-movement'];
     }
 
@@ -160,6 +172,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['block-burn'];
     }
 
@@ -168,6 +181,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['explosions'];
     }
 
@@ -176,6 +190,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['entity-kills'];
     }
 
@@ -184,6 +199,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['sign-text'];
     }
 
@@ -192,6 +208,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['buckets'];
     }
 
@@ -200,6 +217,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['leaves-decay'];
     }
 
@@ -208,6 +226,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['liquid-tracking'];
     }
 
@@ -216,6 +235,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['item-transactions'];
     }
 
@@ -224,6 +244,7 @@ final class ConfigParser
         if (!$this->isValid) {
             throw new BadMethodCallException("The configuration must be validated.");
         }
+
         return (bool)$this->data['player-interactions'];
     }
 

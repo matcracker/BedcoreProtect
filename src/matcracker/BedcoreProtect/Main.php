@@ -75,6 +75,7 @@ final class Main extends PluginBase
     {
         $this->oldConfigParser = clone $this->configParser;
         $this->reloadConfig();
+
         return $this->configParser->validate()->isValidConfig();
     }
 
@@ -88,6 +89,7 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
+
             return;
         }
 
@@ -95,6 +97,7 @@ final class Main extends PluginBase
         $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getPrintableDatabaseType()} database...");
         if (!$this->database->connect()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
+
             return;
         }
         $this->getLogger()->info("Connection successfully established.");

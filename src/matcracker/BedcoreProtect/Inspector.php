@@ -44,17 +44,12 @@ final class Inspector
      */
     public static function addInspector(CommandSender $inspector): void
     {
-        self::$inspectors[self::getUUID($inspector)]["enabled"] = true;
+        self::$inspectors[self::getSenderUUID($inspector)]["enabled"] = true;
     }
 
-    private static function getUUID(CommandSender $sender): string
+    private static function getSenderUUID(CommandSender $sender): string
     {
-        $uuid = $sender->getServer()->getServerUniqueId();
-        if ($sender instanceof Player) {
-            $uuid = $sender->getUniqueId();
-        }
-
-        return $uuid->toString();
+        return ($sender instanceof Player ? $sender->getUniqueId() : $sender->getServer()->getServerUniqueId())->toString();
     }
 
     /**
@@ -68,7 +63,7 @@ final class Inspector
     {
         if (!self::isInspector($inspector)) return false;
 
-        unset(self::$inspectors[self::getUUID($inspector)]);
+        unset(self::$inspectors[self::getSenderUUID($inspector)]);
 
         return true;
     }
@@ -82,19 +77,12 @@ final class Inspector
      */
     public static function isInspector(CommandSender $inspector): bool
     {
-        if (!self::issetInspector($inspector)) return false;
-
-        return isset(self::$inspectors[self::getUUID($inspector)]["enabled"]) ?? false;
-    }
-
-    private static function issetInspector(CommandSender $inspector): bool
-    {
-        return isset(self::$inspectors[self::getUUID($inspector)]);
+        return self::$inspectors[self::getSenderUUID($inspector)]["enabled"] ?? false;
     }
 
     public static function cacheLogs(CommandSender $inspector, array $logs = []): void
     {
-        self::$inspectors[self::getUUID($inspector)]["logs"] = $logs;
+        self::$inspectors[self::getSenderUUID($inspector)]["logs"] = $logs;
     }
 
     /**
@@ -104,9 +92,7 @@ final class Inspector
      */
     public static function getCachedLogs(CommandSender $inspector): array
     {
-        if (!self::issetInspector($inspector)) return [];
-
-        return self::$inspectors[self::getUUID($inspector)]["logs"];
+        return self::$inspectors[self::getSenderUUID($inspector)]["logs"] ?? [];
     }
 
     public static function clearCache(): void
@@ -124,7 +110,7 @@ final class Inspector
      */
     public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
-        if (count($logs) <= 0) {
+        if (empty($logs)) {
             $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo block data found for this location."));
 
             return;
@@ -148,7 +134,7 @@ final class Inspector
         $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page {$fakePage}/{$maxPages}) &f-----"));
         foreach ($chunkLogs[$page] as $log) {
             //Default
-            $entityFrom = (string)$log['entity_from'];
+            $from = (string)$log['entity_from'];
             $x = (int)$log['x'];
             $y = (int)$log['y'];
             $z = (int)$log['z'];
@@ -156,33 +142,30 @@ final class Inspector
             $action = Action::fromType((int)$log['action']);
             $rollback = (bool)$log['rollback'];
 
-            $actionName = $action->getMessage();
-            $time = $log['time'];
-            $timeStamp = (is_int($time) ? (int)$time : strtotime($time));
+            $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
 
-            $blockFound = $action->equals(Action::BREAK()) ? "old" : "new";
-            $itemFound = $action->equals(Action::REMOVE()) ? "old" : "new";
-            if (isset($log["{$blockFound}_block_id"], $log["{$blockFound}_block_meta"])) {
-                $id = (int)$log["{$blockFound}_block_id"];
-                $meta = (int)$log["{$blockFound}_block_meta"];
+            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
+            if (isset($log["{$typeColumn}_block_id"], $log["{$typeColumn}_block_meta"])) {
+                $id = (int)$log["{$typeColumn}_block_id"];
+                $meta = (int)$log["{$typeColumn}_block_meta"];
                 $blockName = BlockFactory::get($id, $meta)->getName();
 
-                $entityTo = "#{$id}:{$meta} ({$blockName})";
+                $to = "#{$id}:{$meta} ({$blockName})";
             } elseif (isset($log['entity_to'])) {
-                $entityTo = "#{$log['entity_to']}";
-            } elseif (isset($log["{$itemFound}_item_meta"], $log["{$itemFound}_item_amount"])) {
-                $id = (int)$log["{$itemFound}_item_id"];
-                $meta = (int)$log["{$itemFound}_item_meta"];
-                $amount = (int)$log["{$itemFound}_item_amount"];
+                $to = "#{$log['entity_to']}";
+            } elseif (isset($log["{$typeColumn}_item_meta"], $log["{$typeColumn}_item_amount"])) {
+                $id = (int)$log["{$typeColumn}_item_id"];
+                $meta = (int)$log["{$typeColumn}_item_meta"];
+                $amount = (int)$log["{$typeColumn}_item_amount"];
                 $itemName = ItemFactory::get($id, $meta)->getName();
-                $entityTo = "{$amount} x #{$id}:{$meta} ({$itemName})";
+                $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
             } else {
                 throw new UnexpectedValueException("Invalid action parsed: {$action->name()}");
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
             $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
-                . "&f - &3{$entityFrom} &f{$actionName} &3{$entityTo} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+                . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
         $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
 
