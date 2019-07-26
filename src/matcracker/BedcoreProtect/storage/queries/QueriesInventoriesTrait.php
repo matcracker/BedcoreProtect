@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use http\Exception\UnexpectedValueException;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -36,6 +35,7 @@ use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\tile\Chest;
 use poggit\libasynql\SqlError;
+use UnexpectedValueException;
 
 /**
  * It contains all the queries methods related to inventories.
