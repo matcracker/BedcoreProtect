@@ -56,7 +56,7 @@ trait QueriesEntitiesTrait
 
     public function addEntity(Entity $entity): void
     {
-        $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getNetworkSession()->getIp() : "127.0.0.1");
+        $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
     }
 
     protected final function addRawEntity(string $uuid, string $name, string $classPath = "", string $address = "127.0.0.1"): void
