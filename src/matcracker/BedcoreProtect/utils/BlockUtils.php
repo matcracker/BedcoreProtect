@@ -21,51 +21,112 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
-
+use pocketmine\block\Anvil;
+use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
+use pocketmine\block\BrewingStand;
+use pocketmine\block\Chest;
 use pocketmine\block\Door;
-use pocketmine\block\Liquid;
-use pocketmine\level\Position;
+use pocketmine\block\EnchantingTable;
+use pocketmine\block\EnderChest;
+use pocketmine\block\Furnace;
+use pocketmine\block\IronTrapdoor;
+use pocketmine\block\ItemFrame;
+use pocketmine\block\StoneButton;
+use pocketmine\block\Trapdoor;
+use pocketmine\block\TrappedChest;
+use pocketmine\block\WoodenButton;
+use pocketmine\block\WoodenDoor;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\tile\Tile;
 
-final class BlockUtils implements BlockIds
+final class BlockUtils
 {
     private function __construct()
     {
     }
 
-    public static function createAir(?Position $position = null): Block
+    /**
+     * Returns true if the Block can be clicked
+     *
+     * @param Block $block
+     *
+     * @return bool
+     */
+    public static function canBeClicked(Block $block): bool
     {
-        return BlockFactory::get(self::AIR, 0, $position);
-    }
-
-    public static function isActivable(Block $block): bool
-    {
-        //It supports only PMMP blocks.
-        $ids = [
-            BlockIds::TRAPDOOR, BlockIds::BED_BLOCK,
-            BlockIds::ITEM_FRAME_BLOCK, BlockIds::WOODEN_BUTTON,
-            BlockIds::STONE_BUTTON
+        $blocks = [
+            WoodenDoor::class, Door::class,
+            IronTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
+            Bed::class, ItemFrame::class,
+            WoodenButton::class, StoneButton::class
         ];
-        return (
-            $block instanceof Door || in_array($block->getId(), $ids) || self::hasInventory($block)
-        );
+
+        return in_array(get_class($block), $blocks) || self::hasInventory($block);
     }
 
+    /**
+     * Returns true if the block contains inventory.
+     *
+     * @param Block $block
+     *
+     * @return bool
+     */
     public static function hasInventory(Block $block): bool
     {
-        //It supports only PMMP blocks.
-        $ids = [
-            BlockIds::ENDER_CHEST, BlockIds::CHEST,
-            BlockIds::FURNACE, BlockIds::DISPENSER,
-            BlockIds::ENCHANTING_TABLE, BlockIds::ANVIL
+        $blocks = [
+            EnderChest::class, TrappedChest::class,
+            Chest::class, Furnace::class, EnchantingTable::class,
+            Anvil::class, BrewingStand::class
         ];
-        return in_array($block->getId(), $ids);
+
+        return in_array(get_class($block), $blocks);
     }
 
-    public static function isStillLiquid(Liquid $liquid): bool
+    /**
+     * Serialize a block (tile) NBT into base64. Returns null if block doesn't contain NBT.
+     *
+     * @param Block $block
+     *
+     * @return string|null
+     */
+    public static function serializeBlockTileNBT(Block $block): ?string
     {
-        return $liquid->getId() === BlockIds::STILL_WATER || $liquid->getId() === BlockIds::STILL_LAVA;
+        if (($tag = self::getCompoundTag($block)) !== null) {
+            return Utils::serializeNBT($tag);
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the CompoundTag of block if it exists, else returns null.
+     *
+     * @param Block $block
+     *
+     * @return CompoundTag|null
+     */
+    public static function getCompoundTag(Block $block): ?CompoundTag
+    {
+        if (($tile = self::asTile($block)) !== null) {
+            return $tile->getCleanedNBT();
+        }
+
+        return null;
+    }
+
+
+    /**
+     * Returns a Tile instance of the given block if it exists.
+     *
+     * @param Block $block
+     *
+     * @return Tile|null
+     */
+    public static function asTile(Block $block): ?Tile
+    {
+        if ($block->getLevel() === null) return null;
+
+        return $block->getLevel()->getTile($block->asPosition());
     }
 }

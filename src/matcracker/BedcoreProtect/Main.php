@@ -21,90 +21,117 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
+use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
-use matcracker\BedcoreProtect\listeners\PluginListener;
-use matcracker\BedcoreProtect\listeners\TrackerListener;
+use matcracker\BedcoreProtect\listeners\BlockListener;
+use matcracker\BedcoreProtect\listeners\EntityListener;
+use matcracker\BedcoreProtect\listeners\PlayerListener;
+use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\plugin\PluginBase;
-use UnexpectedValueException;
 
 final class Main extends PluginBase
 {
     public const PLUGIN_NAME = "BedcoreProtect";
+    public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /**@var Database */
+    /**@var Database $database */
     private $database;
 
-    public function onEnable(): void
-    {
-        if (!extension_loaded("curl")) {
-            $this->getLogger()->error("Extension 'curl' is missing. Enable it on php.ini file.");
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-        }
-
-        if (!$this->isPhar()) {
-            $this->getLogger()->warning("/-------------------------------<!WARNING!>--------------------------------\\");
-            $this->getLogger()->warning("|         It is not recommended to run BedcoreProtect from source.         |");
-            $this->getLogger()->warning("|You can get a packaged release at https://poggit.pmmp.io/p/BedcoreProtect/|");
-            $this->getLogger()->warning("\--------------------------------------------------------------------------/");
-        }
-
-        include_once($this->getFile() . "/vendor/autoload.php");
-
-        @mkdir($this->getDataFolder());
-        $this->saveDefaultConfig();
-        $this->saveResource("bedcore_database.db");
-
-        $validation = $this->getParsedConfig()->validateConfig();
-        if (!$validation->isValid()) {
-            $this->getLogger()->warning("Configuration's file is not correct.");
-            foreach ($validation->getFailures() as $failure) {
-                $this->getLogger()->warning($failure->format());
-            }
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-            return;
-        }
-
-        $this->database = new Database($this);
-
-        if (!$this->database->isConnected()) {
-            $this->getLogger()->alert("Could not connect to the database.");
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-            return;
-        }
-
-        $this->database->getQueries()->init();
-
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
-
-        $this->getServer()->getPluginManager()->registerEvents(new TrackerListener($this), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new PluginListener($this), $this);
-    }
-
-    public function getParsedConfig(): ConfigParser
-    {
-        return new ConfigParser($this);
-    }
+    /**@var ConfigParser $configParser */
+    private $configParser;
+    /**@var ConfigParser $oldConfigParser */
+    private $oldConfigParser;
 
     /**
      * @return Database
      */
     public function getDatabase(): Database
     {
-        if ($this->database === null) {
-            throw new UnexpectedValueException("Database connection it's not established!");
-        }
         return $this->database;
+    }
+
+    public function getParsedConfig(): ConfigParser
+    {
+        return $this->configParser;
+    }
+
+    /**
+     * It restores an old copy of @see ConfigParser before plugin reload.
+     */
+    public function restoreParsedConfig(): void
+    {
+        $this->configParser = $this->oldConfigParser;
+    }
+
+    /**
+     * Reloads the plugin configuration and returns true if config is valid.
+     * @return bool
+     */
+    public function reloadPlugin(): bool
+    {
+        $this->oldConfigParser = clone $this->configParser;
+        $this->reloadConfig();
+
+        return $this->configParser->validate()->isValidConfig();
+    }
+
+    public function onEnable(): void
+    {
+        $this->database = new Database($this);
+
+        @mkdir($this->getDataFolder());
+        $this->saveResource("bedcore_database.db");
+
+        $this->configParser = (new ConfigParser($this))->validate();
+        if (!$this->configParser->isValidConfig()) {
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+
+            return;
+        }
+
+        //Database connection
+        $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getPrintableDatabaseType()} database...");
+        if (!$this->database->connect()) {
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+
+            return;
+        }
+        $this->getLogger()->info("Connection successfully established.");
+
+        $this->database->getQueries()->init();
+
+        if ($this->configParser->isSQLite()) {
+            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+        }
+
+        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+
+        //Registering events
+        $events = [
+            new BlockListener($this),
+            new EntityListener($this),
+            new PlayerListener($this),
+            new WorldListener($this)
+        ];
+
+        foreach ($events as $event) {
+            $this->getServer()->getPluginManager()->registerEvents($event, $this);
+        }
+
+        if ($this->configParser->getCheckUpdates()) {
+            UpdateNotifier::checkUpdate($this);
+        }
     }
 
     public function onDisable(): void
     {
-        if (($this->database !== null)) {
-            $this->database->getQueries()->endTransaction();
-            $this->database->close();
-        }
+        $this->getScheduler()->cancelAllTasks();
+        $this->database->disconnect();
+
         Inspector::clearCache();
     }
 }

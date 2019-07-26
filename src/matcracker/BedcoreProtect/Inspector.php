@@ -21,14 +21,13 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
-use matcracker\BedcoreProtect\storage\QueriesConst;
+use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
+use UnexpectedValueException;
 
 final class Inspector
 {
@@ -45,30 +44,26 @@ final class Inspector
      */
     public static function addInspector(CommandSender $inspector): void
     {
-        self::$inspectors[self::getUUID($inspector)]["enabled"] = true;
+        self::$inspectors[self::getSenderUUID($inspector)]["enabled"] = true;
     }
 
-    private static function getUUID(CommandSender $sender): string
+    private static function getSenderUUID(CommandSender $sender): string
     {
-        $uuid = $sender->getServer()->getServerUniqueId();
-        if ($sender instanceof Player) {
-            $uuid = $sender->getUniqueId();
-        }
-
-        return $uuid->toString();
+        return ($sender instanceof Player ? $sender->getUniqueId() : $sender->getServer()->getServerUniqueId())->toString();
     }
 
     /**
      * It removes a player from the inspector mode. It returns the success of operation.
      *
      * @param CommandSender $inspector
+     *
      * @return bool
      */
     public static function removeInspector(CommandSender $inspector): bool
     {
         if (!self::isInspector($inspector)) return false;
 
-        unset(self::$inspectors[self::getUUID($inspector)]);
+        unset(self::$inspectors[self::getSenderUUID($inspector)]);
 
         return true;
     }
@@ -77,34 +72,27 @@ final class Inspector
      * It checks if a player is an inspector.
      *
      * @param CommandSender $inspector
+     *
      * @return bool
      */
     public static function isInspector(CommandSender $inspector): bool
     {
-        if (!self::issetInspector($inspector)) return false;
-
-        return isset(self::$inspectors[self::getUUID($inspector)]["enabled"]) ?? false;
-    }
-
-    private static function issetInspector(CommandSender $inspector): bool
-    {
-        return isset(self::$inspectors[self::getUUID($inspector)]);
+        return self::$inspectors[self::getSenderUUID($inspector)]["enabled"] ?? false;
     }
 
     public static function cacheLogs(CommandSender $inspector, array $logs = []): void
     {
-        self::$inspectors[self::getUUID($inspector)]["logs"] = $logs;
+        self::$inspectors[self::getSenderUUID($inspector)]["logs"] = $logs;
     }
 
     /**
      * @param CommandSender $inspector
+     *
      * @return array
      */
     public static function getCachedLogs(CommandSender $inspector): array
     {
-        if (!self::issetInspector($inspector)) return [];
-
-        return self::$inspectors[self::getUUID($inspector)]["logs"];
+        return self::$inspectors[self::getSenderUUID($inspector)]["logs"] ?? [];
     }
 
     public static function clearCache(): void
@@ -116,19 +104,21 @@ final class Inspector
      * It sends a message to the inspector with all the log's info.
      *
      * @param CommandSender $inspector
+     * @param array $logs
      * @param int $page
      * @param int $lines
-     * @param array $logs
      */
     public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
-        if (count($logs) <= 0) {
+        if (empty($logs)) {
             $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo block data found for this location."));
+
             return;
         }
 
         if ($lines < 1) {
             $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe lines number must be greater than 1."));
+
             return;
         }
 
@@ -137,49 +127,45 @@ final class Inspector
         $fakePage = $page + 1;
         if (!isset($chunkLogs[$page])) {
             $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe page &6{$fakePage}&c does not exist!"));
+
             return;
         }
 
         $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page {$fakePage}/{$maxPages}) &f-----"));
         foreach ($chunkLogs[$page] as $log) {
             //Default
-            $entityFromName = (string)$log['entity_from'];
+            $from = (string)$log['entity_from'];
             $x = (int)$log['x'];
             $y = (int)$log['y'];
             $z = (int)$log['z'];
             $worldName = (string)$log['world_name'];
-            $action = (int)$log['action'];
+            $action = Action::fromType((int)$log['action']);
             $rollback = (bool)$log['rollback'];
 
-            $actionName = Utils::getActionName($action); //Convert action to string
-            $time = $log['time'];
-            $timeStamp = Carbon::createFromTimestamp(is_int($time) ? $time : strtotime($time));
+            $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
 
-            $midMessage = "";
+            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
+            if (isset($log["{$typeColumn}_block_id"], $log["{$typeColumn}_block_meta"])) {
+                $id = (int)$log["{$typeColumn}_block_id"];
+                $meta = (int)$log["{$typeColumn}_block_meta"];
+                $blockName = BlockFactory::get($id, $meta)->getName();
 
-            if ($action >= QueriesConst::PLACED && $action <= QueriesConst::CLICKED) {
-                $blockFound = $action === QueriesConst::BROKE ? "old" : "new";
-                $id = (int)$log["{$blockFound}_block_id"];
-                $damage = (int)$log["{$blockFound}_block_damage"];
-                $blockName = BlockFactory::get($id, $damage)->getName();
-
-                $midMessage = "#$id:$damage ($blockName)";
-            } elseif ($action === QueriesConst::KILLED) {
-                $entityToName = $log['entity_to'];
-
-                $midMessage = $entityToName;
-            } elseif ($action === QueriesConst::ADDED || $action === QueriesConst::REMOVED) {
-                $itemFound = $action === QueriesConst::REMOVED ? "old" : "new";
-                $id = (int)$log["{$itemFound}_item_id"];
-                $damage = (int)$log["{$itemFound}_item_damage"];
-                $amount = (int)$log["{$itemFound}_amount"];
-                $itemName = ItemFactory::get($id, $damage)->getName();
-                $midMessage = "$amount x #$id:$damage ($itemName)";
+                $to = "#{$id}:{$meta} ({$blockName})";
+            } elseif (isset($log['entity_to'])) {
+                $to = "#{$log['entity_to']}";
+            } elseif (isset($log["{$typeColumn}_item_meta"], $log["{$typeColumn}_item_amount"])) {
+                $id = (int)$log["{$typeColumn}_item_id"];
+                $meta = (int)$log["{$typeColumn}_item_meta"];
+                $amount = (int)$log["{$typeColumn}_item_amount"];
+                $itemName = ItemFactory::get($id, $meta)->getName();
+                $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
+            } else {
+                throw new UnexpectedValueException("Invalid action parsed: {$action->name()}");
             }
 
-            $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . //TODO: Add strikethrough (&m) when MC fix it.
-                $timeStamp->ago(null, true, 2, CarbonInterface::JUST_NOW) .
-                "&f - &3{$entityFromName} &f{$actionName} &3{$midMessage} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+            //TODO: Use strikethrough (&m) when MC fix it.
+            $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
+                . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
         $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
 

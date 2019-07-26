@@ -21,39 +21,68 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\storage\queries\Queries;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
+use poggit\libasynql\SqlError;
 
 class Database
 {
+    /**@var Main */
+    private $plugin;
     /**@var DataConnector */
-    private $database;
+    private $dataConnector;
     /**@var Queries */
     private $queries;
 
     public function __construct(Main $plugin)
     {
-        $this->database = libasynql::create($plugin, $plugin->getConfig()->get("database"), [
-            "sqlite" => "sqlite.sql",
-            "mysql" => "mysql.sql"
-        ]);
-        $this->queries = new Queries($this->database, $plugin->getParsedConfig());
+        $this->plugin = $plugin;
     }
 
-    public function getQueries(): Queries
+    /**
+     * Attempts to connect to the database. Returns true if success.
+     * @return bool
+     */
+    public final function connect(): bool
     {
-        return $this->queries;
-    }
+        try {
+            $this->dataConnector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
+                "sqlite" => "sqlite.sql",
+                "mysql" => "mysql.sql"
+            ]);
+            $this->queries = new Queries($this->dataConnector, $this->plugin->getParsedConfig());
 
-    public final function close(): void
-    {
-        if ($this->isConnected()) {
-            $this->database->close();
+            return true;
+        } catch (SqlError $error) {
+            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
         }
+
+        return false;
+    }
+
+    public final function getQueries(): Queries
+    {
+        if (!$this->isConnected()) {
+            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+            $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+        }
+
+        return $this->queries;
     }
 
     public final function isConnected(): bool
     {
-        return isset($this->database);
+        return isset($this->dataConnector);
     }
+
+    public final function disconnect(): void
+    {
+        if ($this->isConnected()) {
+            $this->dataConnector->close();
+            $this->dataConnector = null;
+            $this->queries = null;
+        }
+    }
+
 }

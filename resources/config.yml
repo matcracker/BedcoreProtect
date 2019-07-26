@@ -16,9 +16,13 @@ database:
     password: ""
     # The database name where plugin stores data.
     schema:
-  # The maximum number of simultaneous SQL queries
-  # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
-  worker-limit: 2
+
+# The timezone where you are located. This is necessary to correctly log the time of events.
+# To find your timezone, check here: https://www.php.net/manual/en/timezones.php
+timezone: "Europe/Lisbon"
+
+# A list of worlds where the plugin can track logs
+enabled-worlds: []
 
 # If enabled, BedcoreProtect will check for updates when your server starts up.
 # If an update is available, you'll be notified via your server console.
@@ -45,8 +49,7 @@ block-place: true
 block-break: true
 
 # Logs blocks that break off of other blocks; for example, a sign or torch
-# falling off of a dirt block that a player breaks. This is required for
-# beds/doors to properly rollback.
+# falling off of a dirt block that a player breaks.
 natural-break: true
 
 # Properly track block movement, such as sand or gravel falling.
@@ -61,7 +64,7 @@ block-ignite: true
 # Logs explosions, such as TNT and Creepers.
 explosions: true
 
-# Track when an entity changes a block, such as an Enderman destroying blocks.
+# Track when an entity changes a block, such as an Enderman destroying blocks. (NOT FULLY IMPLEMENTED BY POCKETMINE YET)
 entity-change: true
 
 # Logs killed entities, such as killed cows and enderman.
@@ -73,16 +76,16 @@ sign-text: true
 # Logs lava and water sources placed/removed by players who are using buckets.
 buckets: true
 
-# Logs natural tree leaf decay.
-leaf-decay: true
+# Logs natural tree leaves decay.
+leaves-decay: true
 
-# Logs tree growth. Trees are linked to the player who planted the sappling.
+# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT IMPLEMENTED BY POCKETMINE YET)
 tree-growth: true
 
-# Logs mushroom growth.
+# Logs mushroom growth. (NOT IMPLEMENTED BY POCKETMINE YET)
 mushroom-growth: true
 
-# Logs natural vine growth.
+# Logs natural vine growth. (NOT IMPLEMENTED BY POCKETMINE YET)
 vine-growth: true
 
 # Logs water flow. If water destroys other blocks, such as torches,
