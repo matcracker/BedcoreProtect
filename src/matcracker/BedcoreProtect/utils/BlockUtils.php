@@ -109,7 +109,7 @@ final class BlockUtils
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
         if (($tile = self::asTile($block)) !== null) {
-            return $tile->getCleanedNBT();
+            return $tile->saveNBT();
         }
 
         return null;

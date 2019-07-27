@@ -25,8 +25,8 @@ use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
-use pocketmine\Player;
 use pocketmine\level\Position;
+use pocketmine\Player;
 use poggit\libasynql\SqlError;
 
 /**
@@ -95,9 +95,10 @@ trait QueriesEntitiesTrait
                                 $entity->close();
                             }
                         } else {
+                            /**@var Entity $entityClass */
                             $entityClass = (string)$row["entity_classpath"];
                             $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
-                            $entity = Entity::createEntity($entityClass, $world, $nbt);
+                            $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, $nbt);
                             $this->updateEntityId($logId, $entity);
                             $entity->spawnToAll();
                         }

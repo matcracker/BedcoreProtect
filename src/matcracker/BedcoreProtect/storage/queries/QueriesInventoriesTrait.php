@@ -35,7 +35,6 @@ use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\tile\Chest;
 use poggit\libasynql\SqlError;
-use UnexpectedValueException;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -149,15 +148,10 @@ trait QueriesInventoriesTrait
                         $slot = (int)$row["slot"];
                         $vector = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                         $tile = $world->getTile($vector);
-                        if ($tile instanceof Chest) {
-                            $inv = $tile->getRealInventory();
-                        } elseif ($tile instanceof InventoryHolder) {
-                            $inv = $tile->getInventory();
-                        } else {
-                            throw new UnexpectedValueException("Invalid tile parsed.");
+                        if ($tile instanceof InventoryHolder) {
+                            $inv = $tile instanceof Chest ? $tile->getRealInventory() : $tile->getInventory();
+                            $inv->setItem($slot, $item);
                         }
-
-                        $inv->setItem($slot, $item);
 
                         $query .= "log_id = '$logId' OR ";
                     }

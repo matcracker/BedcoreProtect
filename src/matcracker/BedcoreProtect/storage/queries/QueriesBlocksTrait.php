@@ -31,9 +31,11 @@ use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
+use pocketmine\level\Position;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
-use pocketmine\level\Position;
+use pocketmine\tile\Spawnable;
+use pocketmine\tile\Tile;
 use poggit\libasynql\SqlError;
 
 /**
@@ -277,11 +279,13 @@ trait QueriesBlocksTrait
                         $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], $pos);
 
                         $world->setBlock($block, $block);
-                        if (($tile = BlockUtils::asTile($block)) !== null) {
-                            $serializedNBT = $row["{$prefix}_block_nbt"];
-                            if ($serializedNBT !== null) {
-                                $nbt = Utils::deserializeNBT($serializedNBT);
-                                $tile->readSaveData($nbt);
+
+                        $serializedNBT = $row["{$prefix}_block_nbt"];
+                        if (!empty($serializedNBT)) {
+                            $nbt = Utils::deserializeNBT($serializedNBT);
+                            $tile = Tile::createTile($block->getName(), $block->getLevel(), $nbt);
+                            if ($tile instanceof Spawnable) {
+                                $tile->spawnToAll();
                             }
                         }
 
