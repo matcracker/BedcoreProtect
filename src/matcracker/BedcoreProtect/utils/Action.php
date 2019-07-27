@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use InvalidArgumentException;
-use pocketmine\utils\EnumTrait;
 
 /**
  * This doc-block is generated automatically, do not modify it manually.

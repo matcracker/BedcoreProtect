@@ -59,6 +59,7 @@ final class EntityListener extends BedcoreListener
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld())) {
             if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockPlace()) {
                 $player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
+
                 if ($player !== null) {
                     $this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
                 }
@@ -81,6 +82,7 @@ final class EntityListener extends BedcoreListener
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getWorld())) {
             if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockBreak()) {
                 $player = $entity->getWorld()->getNearestEntity($entity, 5, Player::class);
+
                 if ($player !== null) {
                     $this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
                 }

@@ -172,7 +172,7 @@ final class PlayerListener extends BedcoreListener
     {
         $transaction = $event->getTransaction();
         $player = $transaction->getSource();
-
+		
         if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getWorld()) && $this->plugin->getParsedConfig()->getItemTransactions()) {
             $actions = $transaction->getActions();
 
