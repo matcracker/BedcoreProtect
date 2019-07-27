@@ -85,9 +85,9 @@ final class PlayerListener extends BedcoreListener
                 $liquidPos = null;
                 $face = $event->getBlockFace();
                 if ($face === Facing::DOWN) {
-                    $liquidPos = Position::fromObject($liquid->add(0, 1, 0), $player->getWorld());
+                    $liquidPos = Position::fromObject($block->add(0, 1, 0), $block->getWorld());
                 } else if ($face === Facing::UP) {
-                    $liquidPos = Position::fromObject($liquid->subtract(0, 1, 0), $player->getWorld());
+                    $liquidPos = Position::fromObject($block->subtract(0, 1, 0), $block->getWorld());
                 }
 
                 $this->database->getQueries()->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), $liquidPos);
