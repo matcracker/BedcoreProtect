@@ -25,96 +25,104 @@ namespace matcracker\BedcoreProtect\utils;
 
 use function preg_match;
 
-trait EnumTrait{
-	use RegistryTrait;
+trait EnumTrait
+{
+    use RegistryTrait;
 
-	/**
-	 * Registers the given object as an enum member.
-	 *
-	 * @param self $member
-	 *
-	 * @throws \InvalidArgumentException
-	 */
-	protected static function register(self $member) : void{
-		self::_registryRegister($member->name(), $member);
-	}
+    /** @var string */
+    private $enumName;
 
-	/**
-	 * Returns an array of enum members to be registered.
-	 *
-	 * (This ought to be private, but traits suck too much for that.)
-	 *
-	 * @return self[]|iterable
-	 */
-	abstract protected static function setup() : iterable;
+    /**
+     * @param string $enumName
+     * @throws \InvalidArgumentException
+     */
+    private function __construct(string $enumName)
+    {
+        static $pattern = '/^\D[A-Za-z\d_]+$/u';
+        if (preg_match($pattern, $enumName, $matches) === 0) {
+            throw new \InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
+        }
+        $this->enumName = $enumName;
+    }
 
-	/**
-	 * @internal Lazy-inits the enum if necessary.
-	 *
-	 * @throws \InvalidArgumentException
-	 */
-	protected static function checkInit() : void{
-		if(self::$members === null){
-			self::$members = [];
-			foreach(self::setup() as $item){
-				self::register($item);
-			}
-		}
-	}
+    /**
+     * Returns all members of the enum.
+     * This is overridden to change the return typehint.
+     *
+     * @return self[]
+     */
+    public static function getAll(): array
+    {
+        return self::_registryGetAll();
+    }
 
-	/**
-	 * Returns all members of the enum.
-	 * This is overridden to change the return typehint.
-	 *
-	 * @return self[]
-	 */
-	public static function getAll() : array{
-		return self::_registryGetAll();
-	}
+    /**
+     * Returns the enum member matching the given name.
+     * This is overridden to change the return typehint.
+     *
+     * @param string $name
+     *
+     * @return self
+     * @throws \InvalidArgumentException if no member matches.
+     */
+    public static function fromString(string $name): self
+    {
+        return self::_registryFromString($name);
+    }
 
-	/**
-	 * Returns the enum member matching the given name.
-	 * This is overridden to change the return typehint.
-	 *
-	 * @param string $name
-	 *
-	 * @return self
-	 * @throws \InvalidArgumentException if no member matches.
-	 */
-	public static function fromString(string $name) : self{
-		return self::_registryFromString($name);
-	}
+    /**
+     * @throws \InvalidArgumentException
+     * @internal Lazy-inits the enum if necessary.
+     *
+     */
+    protected static function checkInit(): void
+    {
+        if (self::$members === null) {
+            self::$members = [];
+            foreach (self::setup() as $item) {
+                self::register($item);
+            }
+        }
+    }
 
-	/** @var string */
-	private $enumName;
+    /**
+     * Returns an array of enum members to be registered.
+     *
+     * (This ought to be private, but traits suck too much for that.)
+     *
+     * @return self[]|iterable
+     */
+    abstract protected static function setup(): iterable;
 
-	/**
-	 * @param string $enumName
-	 * @throws \InvalidArgumentException
-	 */
-	private function __construct(string $enumName){
-		static $pattern = '/^\D[A-Za-z\d_]+$/u';
-		if(preg_match($pattern, $enumName, $matches) === 0){
-			throw new \InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
-		}
-		$this->enumName = $enumName;
-	}
+    /**
+     * Registers the given object as an enum member.
+     *
+     * @param self $member
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected static function register(self $member): void
+    {
+        self::_registryRegister($member->name(), $member);
+    }
 
-	/**
-	 * @return string
-	 */
-	public function name() : string{
-		return $this->enumName;
-	}
+    /**
+     * @return string
+     */
+    public function name(): string
+    {
+        return $this->enumName;
+    }
 
-	/**
-	 * Returns whether the two objects are equivalent.
-	 *
-	 * @param self $other
-	 *
-	 * @return bool
-	 */
-	public function equals(self $other) : bool{
-		return $this->enumName === $other->enumName;
-	}
+    /**
+     * Returns whether the two objects are equivalent.
+     *
+     * @param self $other
+     *
+     * @return bool
+     */
+    public function equals(self $other): bool
+    {
+        return $this->enumName === $other->enumName;
+    }
 }
