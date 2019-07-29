@@ -1,5 +1,5 @@
 # BedcoreProtect
-BedCoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
+BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
 ## Features
 - Fast efficient data logging.
