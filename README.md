@@ -1,6 +1,53 @@
 # BedcoreProtect
 BedCoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
+## Features
+- Fast efficient data logging.
+- Fast rollbacks.
+- No configuration required. Put the plugin on your server, and you're good to go.
+- SQLite based data storage.
+- Optional MySQL support.
+- Easy to use commands.
+- Perform rollbacks AND restores. Undo any rollback, anytime.
+- Easy to use block inspector
+- Advanced search-based lookup tool.
+- Paginated logs.
+- Automatic update checker.
+- Multi-world support.
+- Enable or disable any aspect of logging in the configuration file.
+- Rollback per-player all damage around you.
+- Specify certain block types to skip in rollbacks/restores.
+- Restrict rollbacks/restores to specific block types
+- Log basic player actions (such as when a player opens a door)
+- Liquid tracking. Associate liquid flow with players
+- Restrict rollbacks/restores to a radius area.
+- Able to track blocks that fall off of other blocks. If a player breaks a block that had a sign on it, both the block and the sign can be rolled back.
+- Easily delete old log data.
+- Safe default parameters.
+Rollback or restore multiple players at once.ì
+- Lookup, rollback, or restore by a specific action.
+- Exclude multiple blocks.
+Preview rollbacks or restores.
+...and much more!!
+
+## What does it log?
+- Log blocks broken by players
+- Log blocks placed by players
+- Log natural block breakage (ex: if a sign pops off a dirt block that was broken)
+- Log bucket usage
+- Log liquid flow
+- Log explosions
+- Log flint & steel
+- Log fire igniting blocks
+- Log blocks burning up in fires
+- Log block movement (Falling sand/gravel)
+- Log leaves decay
+- Log player interactions
+- Log items taken or placed in chests, furnaces, dispensers, etc.
+- Log paintings and item frames. (With rollback support!)
+- Log entities killed by players (animals/monsters)
+...and the list is still expanding!
+
 ## Commands
 The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co** (**Main permission:** _bcp.command.bedcoreprotect_)
 
