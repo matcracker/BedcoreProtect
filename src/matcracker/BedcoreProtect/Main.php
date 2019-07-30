@@ -94,13 +94,11 @@ final class Main extends PluginBase
         }
 
         //Database connection
-        $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getPrintableDatabaseType()} database...");
         if (!$this->database->connect()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
         }
-        $this->getLogger()->info("Connection successfully established.");
 
         $this->database->getQueries()->init();
 
