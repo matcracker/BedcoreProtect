@@ -184,7 +184,7 @@ final class Utils
 
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
-        if (!$tag instanceof CompoundTag) {
+        if (!($tag instanceof CompoundTag)) {
             throw new UnexpectedValueException("Value must return CompoundTag, got " . get_class($tag));
         }
         return $tag;
