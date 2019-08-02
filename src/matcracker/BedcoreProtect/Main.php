@@ -46,6 +46,9 @@ final class Main extends PluginBase
     /**@var ConfigParser $oldConfigParser */
     private $oldConfigParser;
 
+    /**@var boolean $bsHooked */
+    private $bsHooked = false;
+
     /**
      * @return Database
      */
@@ -86,7 +89,7 @@ final class Main extends PluginBase
         @mkdir($this->getDataFolder());
         $this->saveResource("bedcore_database.db");
 
-        $this->configParser = (new ConfigParser($this))->validate();
+        $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
@@ -99,7 +102,6 @@ final class Main extends PluginBase
 
             return;
         }
-
         $this->database->getQueries()->init();
 
         if ($this->configParser->isSQLite()) {
@@ -120,9 +122,24 @@ final class Main extends PluginBase
             $this->getServer()->getPluginManager()->registerEvents($event, $this);
         }
 
+        if ($this->configParser->getBlockSniperHook()) {
+            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin("BlockSniper");
+            if ($bsPlugin !== null && $bsPlugin->isEnabled()) {
+                $this->getLogger()->info("BlockSniper properly hooked!");
+                $this->bsHooked = true;
+            } else {
+                $this->getLogger()->warning("Unable to hook BlockSniper. Check if the plugin has been properly enabled.");
+            }
+        }
+
         if ($this->configParser->getCheckUpdates()) {
             UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
         }
+    }
+
+    public function isBlockSniperHooked(): bool
+    {
+        return $this->bsHooked;
     }
 
     public function onDisable(): void

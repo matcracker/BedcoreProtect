@@ -10,15 +10,6 @@ CREATE TABLE IF NOT EXISTS "entities"
     address          VARCHAR(15) DEFAULT '127.0.0.1'
 );
 -- #        }
--- #        {blocks
-CREATE TABLE IF NOT EXISTS "blocks"
-(
-    id         UNSIGNED INTEGER    NOT NULL,
-    meta       UNSIGNED TINYINT(2) NOT NULL,
-    block_name VARCHAR(30)         NOT NULL,
-    PRIMARY KEY (id, meta)
-);
--- #        }
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS "log_history"
 (
@@ -44,9 +35,7 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
     new_block_id   UNSIGNED INTEGER    NOT NULL,
     new_block_meta UNSIGNED TINYINT(2) NOT NULL,
     new_block_nbt  BLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
-    FOREIGN KEY (old_block_id, old_block_meta) REFERENCES "blocks" (id, meta),
-    FOREIGN KEY (new_block_id, new_block_meta) REFERENCES "blocks" (id, meta)
+    FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {entities_log
@@ -96,15 +85,6 @@ REPLACE
 INTO "entities" (uuid, entity_name, entity_classpath, address)
 VALUES (:uuid, :name, :path, :address);
 -- #        }
--- #        {block
--- #            :id int
--- #            :meta int
--- #            :name string
-INSERT OR
-REPLACE
-INTO "blocks" (id, meta, block_name)
-VALUES (:id, :meta, :name);
--- #        }
 -- #        {log
 -- #            {main
 -- #                :uuid string
@@ -126,13 +106,7 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #                :new_block_nbt ?string
 INSERT INTO "blocks_log"(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta,
                          new_block_nbt)
-VALUES (LAST_INSERT_ROWID(),
-        (SELECT id FROM "blocks" WHERE blocks.id = :old_block_id AND meta = :old_block_meta),
-        (SELECT meta FROM "blocks" WHERE blocks.id = :old_block_id AND meta = :old_block_meta),
-        :old_block_nbt,
-        (SELECT id FROM "blocks" WHERE blocks.id = :new_block_id AND meta = :new_block_meta),
-        (SELECT meta FROM "blocks" WHERE blocks.id = :new_block_id AND meta = :new_block_meta),
-        :new_block_nbt);
+VALUES (LAST_INSERT_ROWID(), :old_block_id, :old_block_meta, :old_block_nbt, :new_block_id, :new_block_meta, :new_block_nbt);
 -- #            }
 -- #            {to_entity
 -- #                :uuid string

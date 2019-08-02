@@ -23,9 +23,9 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
-use pocketmine\level\Position;
 use pocketmine\Player;
 use poggit\libasynql\SqlError;
 
@@ -69,16 +69,16 @@ trait QueriesEntitiesTrait
         ]);
     }
 
-    protected function rollbackEntities(Position $position, CommandParser $parser): int
+    public function rollbackEntities(Area $area, CommandParser $parser): int
     {
-        return $this->executeEntitiesEdit(true, $position, $parser);
+        return $this->executeEntitiesEdit(true, $area, $parser);
     }
 
-    private function executeEntitiesEdit(bool $rollback, Position $position, CommandParser $parser): int
+    private function executeEntitiesEdit(bool $rollback, Area $area, CommandParser $parser): int
     {
-        $query = $parser->buildEntitiesLogSelectionQuery($position, !$rollback);
+        $query = $parser->buildEntitiesLogSelectionQuery($area->getBoundingBox(), !$rollback);
         $totalRows = 0;
-        $world = $position->getLevel();
+        $world = $area->getWorld();
         $this->connector->executeSelectRaw($query, [],
             function (array $rows) use ($rollback, $world, &$totalRows) {
                 if (count($rows) > 0) {
@@ -120,7 +120,7 @@ trait QueriesEntitiesTrait
         return $totalRows;
     }
 
-    protected final function updateEntityId(int $logId, Entity $entity)
+    protected final function updateEntityId(int $logId, Entity $entity): void
     {
         $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
             "log_id" => $logId,
@@ -128,8 +128,8 @@ trait QueriesEntitiesTrait
         ]);
     }
 
-    protected function restoreEntities(Position $position, CommandParser $parser): int
+    public function restoreEntities(Area $area, CommandParser $parser): int
     {
-        return $this->executeEntitiesEdit(false, $position, $parser);
+        return $this->executeEntitiesEdit(false, $area, $parser);
     }
 }

@@ -23,7 +23,10 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
+use matcracker\BedcoreProtect\tasks\AsyncRestoreTask;
+use matcracker\BedcoreProtect\tasks\AsyncRollbackTask;
 use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
@@ -31,17 +34,14 @@ use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
-use poggit\libasynql\SqlError;
 
 class Queries
 {
     use QueriesBlocksTrait, QueriesInventoriesTrait, QueriesEntitiesTrait;
 
-    /**
-     * @var DataConnector
-     */
+    /**@var DataConnector $connector */
     protected $connector;
-
+    /**@var ConfigParser $configParser */
     protected $configParser;
 
     public function __construct(DataConnector $connector, ConfigParser $configParser)
@@ -124,46 +124,16 @@ class Queries
         });
     }
 
-    public function rollback(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
+    public function rollback(Area $area, CommandParser $commandParser): void
     {
-        try {
-            $itemsCount = 0;
-            $entitiesCount = 0;
-            $blocksCount = $this->rollbackBlocks($position, $parser);
-            if ($this->configParser->getRollbackItems())
-                $itemsCount = $this->rollbackItems($position, $parser);
-            if ($this->configParser->getRollbackEntities())
-                $entitiesCount = $this->rollbackEntities($position, $parser);
-
-            if ($onSuccess !== null) {
-                $onSuccess($blocksCount, $itemsCount, $entitiesCount);
-            }
-        } catch (SqlError $error) {
-            if ($onError !== null) {
-                $onError($error);
-            }
-        }
+        $blocks = $this->getBlocksToEdit(true, $area->getBoundingBox(), $commandParser);
+        Server::getInstance()->getAsyncPool()->submitTask(new AsyncRollbackTask($area, $blocks, $commandParser));
     }
 
-    public function restore(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
+    public function restore(Area $area, CommandParser $commandParser): void
     {
-        try {
-            $itemsCount = 0;
-            $entitiesCount = 0;
-            $blocksCount = $this->restoreBlocks($position, $parser);
-            if ($this->configParser->getRollbackItems())
-                $itemsCount += $this->restoreItems($position, $parser);
-            if ($this->configParser->getRollbackEntities())
-                $entitiesCount += $this->restoreEntities($position, $parser);
-
-            if ($onSuccess !== null) {
-                $onSuccess($blocksCount, $itemsCount, $entitiesCount);
-            }
-        } catch (SqlError $error) {
-            if ($onError !== null) {
-                $onError($error);
-            }
-        }
+        $blocks = $this->getBlocksToEdit(false, $area->getBoundingBox(), $commandParser);
+        Server::getInstance()->getAsyncPool()->submitTask(new AsyncRestoreTask($area, $blocks, $commandParser));
     }
 
     public function requestTransactionLog(Player $inspector, Position $position): void

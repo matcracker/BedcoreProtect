@@ -26,6 +26,7 @@ use InvalidArgumentException;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
+use pocketmine\level\format\Chunk;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\utils\TextFormat;
@@ -213,4 +214,14 @@ final class Utils
         }
     }
 
+    /**
+     * @param Chunk[] $chunks
+     * @return string[]
+     */
+    public static function serializeChunks(array $chunks): array
+    {
+        return array_map(static function (Chunk $chunk): string {
+            return $chunk->fastSerialize();
+        }, $chunks);
+    }
 }

@@ -28,7 +28,7 @@ use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
-use pocketmine\math\Vector3;
+use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
 
 CommandParser::initActions();
@@ -40,6 +40,8 @@ final class CommandParser
     /**@var Action[][] */
     private static $ACTIONS = null;
 
+    /**@var string $senderName */
+    private $senderName;
     /**@var ConfigParser $configParser */
     private $configParser;
     /**@var string[] $arguments */
@@ -63,14 +65,15 @@ final class CommandParser
 
     /**
      * CommandParser constructor.
-     *
+     * @param string $senderName
      * @param ConfigParser $configParser
      * @param string[] $arguments
      * @param string[] $requiredParams
      * @param bool $shift It shift the first element of array used internally for command arguments. Default false.
      */
-    public function __construct(ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
+    public function __construct(string $senderName, ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
     {
+        $this->senderName = $senderName;
         $this->configParser = $configParser;
         $this->arguments = $arguments;
         $this->requiredParams = $requiredParams;
@@ -233,12 +236,12 @@ final class CommandParser
     /**
      * It returns a 'select' query to get all optional data from log table
      *
-     * @param Vector3 $vector3
+     * @param AxisAlignedBB $vector3
      * @param bool $restore
      *
      * @return string
      */
-    public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
+    public function buildBlocksLogSelectionQuery(AxisAlignedBB $vector3, bool $restore = false): string
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
@@ -257,7 +260,7 @@ final class CommandParser
         return $query;
     }
 
-    private function buildConditionalQuery(string &$query, ?Vector3 $vector3, ?array $args): void
+    private function buildConditionalQuery(string &$query, ?AxisAlignedBB $bb, ?array $args): void
     {
         $cArgs = -1;
         if ($args !== null && (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1)) {
@@ -268,7 +271,7 @@ final class CommandParser
             if ($value !== null) {
                 if ($key === "user") {
                     foreach ($value as $user) {
-                        $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$user') OR ";
+                        $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '{$user}') OR ";
                     }
                     $query = mb_substr($query, 0, -4) . " AND "; //Remove excessive " OR " string.
                 } else if ($key === "time") {
@@ -276,14 +279,12 @@ final class CommandParser
                     if ($this->configParser->isSQLite()) {
                         $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
                     } else {
-                        $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
+                        $query .= "(time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP) AND ";
                     }
-                } else if ($key === "radius" && $vector3 !== null) {
-                    $minV = $vector3->subtract($value, $value, $value)->floor();
-                    $maxV = $vector3->add($value, $value, $value)->floor();
-                    $query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
-                    $query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
-                    $query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
+                } else if ($key === "radius" && $bb !== null) {
+                    $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
+                    $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
+                    $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
                 } else if ($key === "action") {
                     $actions = CommandParser::toActions($value);
                     foreach ($actions as $action) {
@@ -296,7 +297,7 @@ final class CommandParser
                         foreach ($value as $blockArray) {
                             $id = (int)$blockArray["id"];
                             $meta = (int)$blockArray["meta"];
-                            $query .= "({$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$meta') AND ";
+                            $query .= "({$args[$i]} {$operator} '{$id}' AND {$args[$i+1]} {$operator} '{$meta}') AND ";
                         }
                     }
 
@@ -355,6 +356,14 @@ final class CommandParser
         return $query;
     }
 
+    /**
+     * @return string
+     */
+    public function getSenderName(): string
+    {
+        return $this->senderName;
+    }
+
     public function getTime(): ?int
     {
         return $this->getData("time");
@@ -374,7 +383,7 @@ final class CommandParser
         return $this->data[$key];
     }
 
-    public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
+    public function buildInventoriesLogSelectionQuery(AxisAlignedBB $bb, bool $restore = false): string
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
@@ -386,14 +395,14 @@ final class CommandParser
             "SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_meta, il.{$prefix}_item_nbt, il.{$prefix}_item_amount, x, y, z FROM log_history 
             INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
 
-        $this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_meta"]);
+        $this->buildConditionalQuery($query, $bb, ["il.{$prefix}_item_id", "il.{$prefix}_item_meta"]);
 
         $query .= " ORDER BY time DESC;";
 
         return $query;
     }
 
-    public function buildEntitiesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
+    public function buildEntitiesLogSelectionQuery(AxisAlignedBB $bb, bool $restore = false): string
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
@@ -405,7 +414,7 @@ final class CommandParser
             INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
             WHERE rollback = '{$restore}' AND ";
 
-        $this->buildConditionalQuery($query, $vector3, null);
+        $this->buildConditionalQuery($query, $bb, null);
 
         $query .= " ORDER BY time DESC;";
 
@@ -419,10 +428,6 @@ final class CommandParser
      */
     public function getAllData(): array
     {
-        if (!$this->parsed) {
-            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-
         return $this->data;
     }
 

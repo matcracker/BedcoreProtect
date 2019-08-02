@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\Inventory;
@@ -123,16 +124,16 @@ trait QueriesInventoriesTrait
         $this->connector->executeInsertRaw($query);
     }
 
-    protected function rollbackItems(Position $position, CommandParser $parser): int
+    public function rollbackItems(Area $area, CommandParser $parser): int
     {
-        return $this->executeInventoriesEdit(true, $position, $parser);
+        return $this->executeInventoriesEdit(true, $area, $parser);
     }
 
-    private function executeInventoriesEdit(bool $rollback, Position $position, CommandParser $parser): int
+    private function executeInventoriesEdit(bool $rollback, Area $area, CommandParser $parser): int
     {
-        $query = $parser->buildInventoriesLogSelectionQuery($position, !$rollback);
+        $query = $parser->buildInventoriesLogSelectionQuery($area->getBoundingBox(), !$rollback);
         $totalRows = 0;
-        $world = $position->getLevel();
+        $world = $area->getWorld();
         $this->connector->executeSelectRaw($query, [],
             function (array $rows) use ($rollback, $world, &$totalRows) {
                 if (count($rows) > 0) {
@@ -172,8 +173,8 @@ trait QueriesInventoriesTrait
         return $totalRows;
     }
 
-    protected function restoreItems(Position $position, CommandParser $parser): int
+    public function restoreItems(Area $area, CommandParser $parser): int
     {
-        return $this->executeInventoriesEdit(false, $position, $parser);
+        return $this->executeInventoriesEdit(false, $area, $parser);
     }
 }

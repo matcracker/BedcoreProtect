@@ -21,13 +21,16 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
+use BlockHorizons\BlockSniper\sessions\SessionManager;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\utils\Area;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
+use pocketmine\math\AxisAlignedBB;
 use pocketmine\Player;
-use poggit\libasynql\SqlError;
 
 final class BCPCommand extends Command
 {
@@ -83,13 +86,14 @@ final class BCPCommand extends Command
                 $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
                 $sender->sendMessage(Utils::translateColors("&3Version:&f " . $description->getVersion()));
                 $sender->sendMessage(Utils::translateColors("&3Database connection:&f " . $this->plugin->getParsedConfig()->getPrintableDatabaseType()));
+                $sender->sendMessage(Utils::translateColors("&3BlockSniper hook:&f " . ($this->plugin->isBlockSniperHooked() ? "Yes" : "No")));
                 $sender->sendMessage(Utils::translateColors("&3Author:&f " . implode(",", $description->getAuthors())));
                 $sender->sendMessage(Utils::translateColors("&3Website:&f " . $description->getWebsite()));
 
                 return true;
             case "lookup":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time"], true);
                     if ($parser->parse()) {
                         $this->queries->requestLookup($sender, $parser);
                     } else {
@@ -124,7 +128,7 @@ final class BCPCommand extends Command
                 return true;
             case "purge":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time"], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge started. This may take some time."));
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Do not restart your server until completed."));
@@ -181,42 +185,12 @@ final class BCPCommand extends Command
                 return true;
             case "rollback":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Starting rollback on \"{$sender->getLevel()->getFolderName()}\"."));
-                        $sender->sendMessage(Utils::translateColors("&f------"));
-                        $start = microtime(true);
 
-                        $this->queries->rollback($sender->asPosition(), $parser,
-                            static function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
-                                if (($blocks + $items + $entities) > 0) {
-                                    $diff = microtime(true) - $start;
-                                    $time = time() - $parser->getTime();
-                                    $radius = $parser->getRadius();
-                                    $date = Utils::timeAgo($time);
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rollback completed for \"{$sender->getLevel()->getFolderName()}\"."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rolled back {$date}."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$blocks} block(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
-                                    $sender->sendMessage(Utils::translateColors("&f------"));
-                                    $y = $sender->getLevel()->getHighestBlockAt((int)$sender->getX(), (int)$sender->getZ()) + 1;
-                                    if ((int)$sender->getY() < $y) {
-                                        $sender->teleport($sender->setComponents($sender->getX(), $y, $sender->getZ()), $sender->getYaw(), $sender->getPitch());
-                                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Teleported to the top."));
-                                    }
-                                } else {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to rollback."));
-                                }
-                            },
-                            static function (SqlError $error) use ($sender) { //onError
-                                $this->plugin->getLogger()->alert($error->getErrorMessage());
-                                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
-                                $sender->sendMessage(Utils::translateColors("&f------"));
-                            }
-                        );
+                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
+                        $this->queries->rollback(new Area($sender->getLevel(), $bb), $parser);
                     } else {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
@@ -227,37 +201,12 @@ final class BCPCommand extends Command
                 return true;
             case "restore":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore started on \"{$sender->getLevel()->getFolderName()}\"."));
-                        $sender->sendMessage(Utils::translateColors("&f------"));
-                        $start = microtime(true);
 
-                        $this->queries->restore($sender->asPosition(), $parser,
-                            static function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
-                                if (($blocks + $items + $entities) > 0) {
-                                    $diff = microtime(true) - $start;
-                                    $time = time() - $parser->getTime();
-                                    $radius = $parser->getRadius();
-                                    $date = Utils::timeAgo($time);
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore completed for \"{$sender->getLevel()->getFolderName()}\"."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restored {$date}."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$blocks} block(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
-                                    $sender->sendMessage(Utils::translateColors("&f------"));
-                                } else {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to restore."));
-                                }
-                            },
-                            static function (SqlError $error) use ($sender) { //onError
-                                $this->plugin->getLogger()->alert($error->getErrorMessage());
-                                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
-                                $sender->sendMessage(Utils::translateColors("&f------"));
-                            }
-                        );
+                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
+                        $this->queries->restore(new Area($sender->getLevel(), $bb), $parser);
                     } else {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
@@ -286,5 +235,18 @@ final class BCPCommand extends Command
         return $subCmd;
     }
 
+    private function getSelectionArea(Player $player): ?AxisAlignedBB
+    {
+        if ($this->plugin->isBlockSniperHooked()) {
+            $session = SessionManager::getPlayerSession($player);
+            if ($session !== null) {
+                $selection = $session->getSelection();
+                if ($selection->ready()) {
+                    return $selection->box();
+                }
+            }
+        }
 
+        return null;
+    }
 }

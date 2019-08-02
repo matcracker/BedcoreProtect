@@ -25,6 +25,7 @@ use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use matcracker\BedcoreProtect\utils\PrimitiveBlock;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
@@ -32,11 +33,11 @@ use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\level\Position;
+use pocketmine\math\AxisAlignedBB;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
 use pocketmine\tile\Spawnable;
 use pocketmine\tile\Tile;
-use poggit\libasynql\SqlError;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -64,8 +65,6 @@ trait QueriesBlocksTrait
 
     protected final function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null): void
     {
-        $this->addBlock($oldBlock);
-        $this->addBlock($newBlock);
         $pos = $position ?? $newBlock->asPosition();
         $this->addRawLog($uuid, $pos, $action);
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
@@ -75,20 +74,6 @@ trait QueriesBlocksTrait
             "new_block_id" => $newBlock->getId(),
             "new_block_meta" => $newBlock->getDamage(),
             "new_block_nbt" => $newTag !== null ? Utils::serializeNBT($newTag) : null
-        ]);
-    }
-
-    /**
-     * It registers the block inside 'blocks' table
-     *
-     * @param Block $block
-     */
-    public function addBlock(Block $block): void
-    {
-        $this->connector->executeInsert(QueriesConst::ADD_BLOCK, [
-            "id" => $block->getId(),
-            "meta" => $block->getDamage(),
-            "name" => $block->getName()
         ]);
     }
 
@@ -134,10 +119,6 @@ trait QueriesBlocksTrait
         if (empty($oldBlocks)) {
             return;
         }
-        $this->addEntity($entity);
-
-        $oldBlocksQuery = $this->buildMultipleBlocksQuery($oldBlocks);
-        $this->connector->executeInsertRaw($oldBlocksQuery);
 
         if (is_array($newBlocks)) {
             if (empty($newBlocks)) {
@@ -146,12 +127,9 @@ trait QueriesBlocksTrait
 
             (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
-
-            $newBlocksQuery = $this->buildMultipleBlocksQuery($newBlocks);
-            $this->connector->executeInsertRaw($newBlocksQuery);
-        } else {
-            $this->addBlock($newBlocks);
         }
+
+        $this->addEntity($entity);
 
         $rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($entity), $oldBlocks, $action);
         $rawBlockLogsQuery = $this->buildMultipleRawBlockLogsQuery($oldBlocks, $newBlocks);
@@ -161,36 +139,7 @@ trait QueriesBlocksTrait
     }
 
     /**
-     * @param Block[] $blocks
-     *
-     * @return string
-     */
-    private function buildMultipleBlocksQuery(array $blocks): string
-    {
-        $sqlite = $this->configParser->isSQLite();
-
-        $query = /**@lang text */
-            ($sqlite ? "REPLACE" : "INSERT") . " INTO blocks (id, meta, block_name) VALUES";
-
-        $filtered = array_unique(array_map(static function (Block $element) {
-            return $element->getId() . ":" . $element->getDamage() . ":" . $element->getName();
-        }, $blocks));
-
-        foreach ($filtered as $value) {
-            $blockData = explode(":", $value);
-            $id = (int)$blockData[0];
-            $meta = (int)$blockData[1];
-            $name = (string)$blockData[2];
-            $query .= "('$id', '$meta', '$name'),";
-        }
-        $query = mb_substr($query, 0, -1);
-        $query .= ($sqlite ? ";" : " ON DUPLICATE KEY UPDATE id=VALUES(id), meta=VALUES(meta);");
-
-        return $query;
-    }
-
-    /**
-     * @param array $oldBlocks
+     * @param Block[] $oldBlocks
      * @param Block[]|Block $newBlocks
      *
      * @return string
@@ -213,19 +162,13 @@ trait QueriesBlocksTrait
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getDamage();
                 $oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
-                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                '{$oldNBT}',
-                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
-                '{$newNBT}'),";
+                $query .= "('{$logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
             }
         } else {
             if (count($oldBlocks) !== count($newBlocks)) {
                 throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa");
             }
 
-            /**@var Block $oldBlock */
             foreach ($oldBlocks as $key => $oldBlock) {
                 $logId++;
                 $newBlock = $newBlocks[$key];
@@ -236,12 +179,7 @@ trait QueriesBlocksTrait
                 $newMeta = $newBlock->getDamage();
                 $newNBT = BlockUtils::serializeBlockTileNBT($newBlock);
 
-                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                '{$oldNBT}',
-                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND meta = '${newMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
-                '{$newNBT}'),";
+                $query .= "('{$logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
             }
         }
         $query = mb_substr($query, 0, -1) . ";";
@@ -249,36 +187,28 @@ trait QueriesBlocksTrait
         return $query;
     }
 
-    protected function rollbackBlocks(Position $position, CommandParser $parser): int
-    {
-        return $this->executeBlocksEdit(true, $position, $parser);
-    }
-
     /**
      * @param bool $rollback
-     * @param Position $position
+     * @param AxisAlignedBB $bb
      * @param CommandParser $parser
-     *
-     * @return int Returns the rows number
+     * @return PrimitiveBlock[]
      */
-    private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser): int
+    private function getBlocksToEdit(bool $rollback, AxisAlignedBB $bb, CommandParser $parser): array
     {
-        $query = $parser->buildBlocksLogSelectionQuery($position, !$rollback);
-        $totalRows = 0;
-        $world = $position->getLevel();
+        $query = $parser->buildBlocksLogSelectionQuery($bb, !$rollback);
+        $blocks = [];
         $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, $world, &$totalRows) {
+            function (array $rows) use ($rollback, &$blocks) {
                 if (count($rows) > 0) {
                     $query = /**@lang text */
                         "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
 
+                    $prefix = $rollback ? "old" : "new";
                     foreach ($rows as $row) {
                         $logId = (int)$row["log_id"];
-                        $prefix = $rollback ? "old" : "new";
-                        $pos = new Position((int)$row["x"], (int)$row["y"], (int)$row["z"], $world);
-                        $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], $pos);
-
-                        $world->setBlock($block, $block);
+                        $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"]);
+                        $block->setComponents((int)$row["x"], (int)$row["y"], (int)$row["z"]);
+                        $blocks[] = PrimitiveBlock::toPrimitive($block);
 
                         $serializedNBT = $row["{$prefix}_block_nbt"];
                         if (!empty($serializedNBT)) {
@@ -289,26 +219,16 @@ trait QueriesBlocksTrait
                             }
                         }
 
-                        $query .= "log_id = '$logId' OR ";
+                        $query .= "log_id = '{$logId}' OR ";
                     }
 
                     $query = mb_substr($query, 0, -4) . ";";
                     $this->connector->executeInsertRaw($query);
                 }
-
-                $totalRows = count($rows);
-            },
-            static function (SqlError $error) {
-                throw $error;
             }
         );
         $this->connector->waitAll();
 
-        return $totalRows;
-    }
-
-    protected function restoreBlocks(Position $position, CommandParser $parser): int
-    {
-        return $this->executeBlocksEdit(false, $position, $parser);
+        return $blocks;
     }
 }

@@ -22,8 +22,8 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use BadMethodCallException;
-use matcracker\BedcoreProtect\Main;
 use pocketmine\level\Level;
+use pocketmine\utils\Config;
 
 /**
  * It parses the plugin configuration to be an object.
@@ -33,8 +33,8 @@ use pocketmine\level\Level;
  */
 final class ConfigParser
 {
-    /**@var Main $plugin */
-    private $plugin;
+    /**@var Config $config */
+    private $config;
 
     /**@var array $data */
     private $data = [];
@@ -42,9 +42,9 @@ final class ConfigParser
     /**@var bool $isValid */
     private $isValid = false;
 
-    public function __construct(Main $plugin)
+    public function __construct(Config $config)
     {
-        $this->plugin = $plugin;
+        $this->config = $config;
     }
 
     public function getPrintableDatabaseType(): string
@@ -246,6 +246,14 @@ final class ConfigParser
         return (bool)$this->data['player-interactions'];
     }
 
+    public function getBlockSniperHook(): bool
+    {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
+        return (bool)$this->data['blocksniper-hook'];
+    }
+
     public function isValidConfig(): bool
     {
         return $this->isValid;
@@ -253,14 +261,12 @@ final class ConfigParser
 
     public function validate(): self
     {
-        $data = $this->plugin->getConfig()->getAll();
+        $data = $this->config->getAll();
 
         $this->isValid = true;
         $this->data = $data;
 
         date_default_timezone_set($this->getTimezone());
-        $this->plugin->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
-
         return $this;
     }
 
