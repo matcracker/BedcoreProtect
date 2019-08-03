@@ -27,8 +27,6 @@ use pocketmine\level\Position;
 
 final class PrimitiveBlock
 {
-    /**@var string $name */
-    private $name;
     /**@var int $id */
     private $id;
     /**@var int $meta */
@@ -40,9 +38,8 @@ final class PrimitiveBlock
     /**@var int $z */
     private $z;
 
-    public function __construct(string $name, int $id, int $meta, int $x, int $y, int $z)
+    public function __construct(int $id, int $meta, int $x, int $y, int $z)
     {
-        $this->name = $name;
         $this->id = $id;
         $this->meta = $meta;
         $this->x = $x;
@@ -56,20 +53,12 @@ final class PrimitiveBlock
      */
     public static function toPrimitive(Block $block): self
     {
-        return new self($block->getName(), $block->getId(), $block->getDamage(), $block->getX(), $block->getY(), $block->getZ());
+        return new self($block->getId(), $block->getDamage(), $block->getX(), $block->getY(), $block->getZ());
     }
 
     public function toBlock(): Block
     {
         return BlockFactory::get($this->id, $this->meta, new Position($this->x, $this->y, $this->z));
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**
@@ -114,6 +103,6 @@ final class PrimitiveBlock
 
     public function __toString(): string
     {
-        return "PrimitiveBlock[{$this->name}]({$this->id}:{$this->meta})";
+        return "PrimitiveBlock({$this->id}:{$this->meta})";
     }
 }

@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\utils;
 use pocketmine\block\Anvil;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
+use pocketmine\block\BlockIds;
 use pocketmine\block\BrewingStand;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
@@ -128,5 +129,26 @@ final class BlockUtils
         if ($block->getLevel() === null) return null;
 
         return $block->getLevel()->getTile($block->asPosition());
+    }
+
+    public static function getTileName(int $id): string
+    {
+        $array = [
+            BlockIds::STANDING_BANNER => Tile::BANNER,
+            BlockIds::WALL_BANNER => Tile::BANNER,
+            BlockIds::BED_BLOCK => Tile::BED,
+            BlockIds::BREWING_STAND_BLOCK => Tile::BREWING_STAND,
+            BlockIds::CHEST => Tile::CHEST,
+            BlockIds::ENCHANTING_TABLE => Tile::ENCHANT_TABLE,
+            BlockIds::ENDER_CHEST => Tile::ENDER_CHEST,
+            BlockIds::FLOWER_POT_BLOCK => Tile::FLOWER_POT,
+            BlockIds::FURNACE => Tile::FURNACE,
+            BlockIds::ITEM_FRAME_BLOCK => Tile::ITEM_FRAME,
+            BlockIds::SIGN_POST => Tile::SIGN,
+            BlockIds::WALL_SIGN => Tile::SIGN,
+            BlockIds::SKULL_BLOCK => Tile::SKULL
+        ];
+
+        return $array[$id] ?? 'Unknown';
     }
 }

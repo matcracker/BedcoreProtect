@@ -31,7 +31,6 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\PrimitiveBlock;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
@@ -39,7 +38,6 @@ use pocketmine\level\Position;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
 use pocketmine\Server;
-use pocketmine\tile\Spawnable;
 use pocketmine\tile\Tile;
 
 /**
@@ -205,16 +203,14 @@ trait QueriesBlocksTrait
                 if (count($rows) > 0) {
                     $prefix = $rollback ? "old" : "new";
                     foreach ($rows as $row) {
-                        $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"]);
-                        $block->setComponents((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-                        $blocks[] = PrimitiveBlock::toPrimitive($block);
+                        $blocks[] = $block = new PrimitiveBlock((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"]);
 
                         $serializedNBT = $row["{$prefix}_block_nbt"];
                         if (!empty($serializedNBT)) {
                             $nbt = Utils::deserializeNBT($serializedNBT);
-                            $tile = Tile::createTile($block->getName(), $block->getLevel(), $nbt);
-                            if ($tile instanceof Spawnable) {
-                                $tile->spawnToAll();
+                            $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
+                            if ($tile !== null) {
+                                $area->getWorld()->addTile($tile);
                             }
                         }
                     }

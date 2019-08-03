@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
-use pocketmine\math\Vector3;
 use pocketmine\Server;
 
 final class Area
@@ -54,21 +53,6 @@ final class Area
         return $this->bb;
     }
 
-    /**
-     * @param bool $asVector
-     * @return \Generator
-     */
-    public function getBlocksInside(bool $asVector): \Generator
-    {
-        for ($x = $this->bb->minX; $x <= $this->bb->maxX; $x++) {
-            for ($y = $this->bb->minY; $y <= $this->bb->maxY; $y++) {
-                for ($z = $this->bb->minZ; $z <= $this->bb->maxZ; $z++) {
-                    yield $asVector ? new Vector3((int)$x, (int)$y, (int)$z) : $this->getWorld()->getBlock(new Vector3($x, $y, $z));
-                }
-            }
-        }
-    }
-
     public function getWorld(): ?Level
     {
         return Server::getInstance()->getLevelByName($this->worldName);
@@ -79,17 +63,17 @@ final class Area
      */
     public function getAllChunks(): array
     {
-        $touchedChunks = [];
+        $areaChunks = [];
         for ($x = $this->bb->minX; $x <= $this->bb->maxX; $x += 16) {
             for ($z = $this->bb->minZ; $z <= $this->bb->maxZ; $z += 16) {
                 $chunk = $this->getWorld()->getChunk($x >> 4, $z >> 4, true);
                 if ($chunk === null) {
                     continue;
                 }
-                $touchedChunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk;
+                $areaChunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk;
             }
         }
-        return $touchedChunks;
+        return $areaChunks;
     }
 
     /**
