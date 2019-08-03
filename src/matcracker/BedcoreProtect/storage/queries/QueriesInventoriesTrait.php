@@ -124,6 +124,12 @@ trait QueriesInventoriesTrait
         $this->connector->executeInsertRaw($query);
     }
 
+    /**
+     * @param Area $area
+     * @param CommandParser $parser
+     * @return int
+     * @internal
+     */
     public function rollbackItems(Area $area, CommandParser $parser): int
     {
         return $this->executeInventoriesEdit(true, $area, $parser);
@@ -137,11 +143,7 @@ trait QueriesInventoriesTrait
         $this->connector->executeSelectRaw($query, [],
             function (array $rows) use ($rollback, $world, &$totalRows) {
                 if (count($rows) > 0) {
-                    $query = /**@lang text */
-                        "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
-
                     foreach ($rows as $row) {
-                        $logId = (int)$row["log_id"];
                         $prefix = $rollback ? "old" : "new";
                         $amount = (int)$row["{$prefix}_item_amount"];
                         $nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
@@ -153,11 +155,7 @@ trait QueriesInventoriesTrait
                             $inv = $tile instanceof Chest ? $tile->getRealInventory() : $tile->getInventory();
                             $inv->setItem($slot, $item);
                         }
-
-                        $query .= "log_id = '$logId' OR ";
                     }
-                    $query = mb_substr($query, 0, -4) . ";";
-                    $this->connector->executeInsertRaw($query);
                 }
 
                 $totalRows = count($rows);
@@ -173,6 +171,12 @@ trait QueriesInventoriesTrait
         return $totalRows;
     }
 
+    /**
+     * @param Area $area
+     * @param CommandParser $parser
+     * @return int
+     * @internal
+     */
     public function restoreItems(Area $area, CommandParser $parser): int
     {
         return $this->executeInventoriesEdit(false, $area, $parser);

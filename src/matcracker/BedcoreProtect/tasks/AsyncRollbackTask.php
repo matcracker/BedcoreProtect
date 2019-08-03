@@ -51,19 +51,20 @@ class AsyncRollbackTask extends AsyncTask
      * @param Area $area
      * @param PrimitiveBlock[] $blocks
      * @param CommandParser $parser
+     * @param float $startTime
      */
-    public function __construct(Area $area, array $blocks, CommandParser $parser)
+    public function __construct(Area $area, array $blocks, CommandParser $parser, float $startTime)
     {
         $this->area = $area;
         $this->serializedChunks = Utils::serializeChunks($area->getBlockChunks($blocks));
         $this->worldName = $area->getWorldName();
         $this->blocks = $blocks;
         $this->commandParser = $parser;
+        $this->startTime = $startTime;
     }
 
     public function onRun(): void
     {
-        $this->startTime = microtime(true);
         $chunks = (array)$this->serializedChunks;
 
         foreach ($chunks as $hash => $chunkData) {
@@ -105,6 +106,9 @@ class AsyncRollbackTask extends AsyncTask
                 $entities = $rollback ? $queries->rollbackEntities($this->area, $this->commandParser) : $queries->restoreEntities($this->area, $this->commandParser);
             }
             $duration = round(microtime(true) - $this->startTime, 2);
+
+            $queries->updateRollbackStatus($rollback, $this->area);
+
             if (($sender = $server->getPlayer($this->commandParser->getSenderName())) !== null) {
                 $date = Utils::timeAgo(time() - $this->commandParser->getTime());
 

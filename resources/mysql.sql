@@ -129,6 +129,22 @@ UPDATE entities_log
 SET entityfrom_id = :entity_id
 WHERE history_id = :log_id;
 -- #            }
+-- #            {update_rollback_status
+-- #                :rollback bool
+-- #                :min_x int
+-- #                :max_x int
+-- #                :min_y int
+-- #                :max_y int
+-- #                :min_z int
+-- #                :max_z int
+-- #                :world_name string
+UPDATE log_history
+SET rollback = :rollback
+WHERE (x BETWEEN :min_x AND :max_x)
+  AND (y BETWEEN :min_y AND :max_y)
+  AND (z BETWEEN :min_z AND :max_z)
+  AND world_name = :world_name;
+-- #            }
 -- #        }
 -- #    }
 -- #    {get

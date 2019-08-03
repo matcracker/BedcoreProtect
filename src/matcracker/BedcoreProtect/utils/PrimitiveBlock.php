@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\level\Position;
-use pocketmine\Server;
 
 final class PrimitiveBlock
 {

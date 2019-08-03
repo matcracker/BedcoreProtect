@@ -23,7 +23,10 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\tasks\AsyncRestoreTask;
+use matcracker\BedcoreProtect\tasks\AsyncRollbackTask;
 use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\PrimitiveBlock;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -33,9 +36,9 @@ use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\level\Position;
-use pocketmine\math\AxisAlignedBB;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
+use pocketmine\Server;
 use pocketmine\tile\Spawnable;
 use pocketmine\tile\Tile;
 
@@ -189,23 +192,19 @@ trait QueriesBlocksTrait
 
     /**
      * @param bool $rollback
-     * @param AxisAlignedBB $bb
-     * @param CommandParser $parser
-     * @return PrimitiveBlock[]
+     * @param Area $area
+     * @param CommandParser $commandParser
      */
-    private function getBlocksToEdit(bool $rollback, AxisAlignedBB $bb, CommandParser $parser): array
+    private function startRollback(bool $rollback, Area $area, CommandParser $commandParser): void
     {
-        $query = $parser->buildBlocksLogSelectionQuery($bb, !$rollback);
-        $blocks = [];
+        $startTime = microtime(true);
+        $query = $commandParser->buildBlocksLogSelectionQuery($area->getBoundingBox(), !$rollback);
         $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, &$blocks) {
+            function (array $rows) use ($rollback, &$blocks, $area, $commandParser, $startTime) {
+                $blocks = [];
                 if (count($rows) > 0) {
-                    $query = /**@lang text */
-                        "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
-
                     $prefix = $rollback ? "old" : "new";
                     foreach ($rows as $row) {
-                        $logId = (int)$row["log_id"];
                         $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"]);
                         $block->setComponents((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                         $blocks[] = PrimitiveBlock::toPrimitive($block);
@@ -218,17 +217,11 @@ trait QueriesBlocksTrait
                                 $tile->spawnToAll();
                             }
                         }
-
-                        $query .= "log_id = '{$logId}' OR ";
                     }
-
-                    $query = mb_substr($query, 0, -4) . ";";
-                    $this->connector->executeInsertRaw($query);
                 }
+                $task = $rollback ? new AsyncRollbackTask($area, $blocks, $commandParser, $startTime) : new AsyncRestoreTask($area, $blocks, $commandParser, $startTime);
+                Server::getInstance()->getAsyncPool()->submitTask($task);
             }
         );
-        $this->connector->waitAll();
-
-        return $blocks;
     }
 }

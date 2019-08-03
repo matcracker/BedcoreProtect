@@ -69,6 +69,12 @@ trait QueriesEntitiesTrait
         ]);
     }
 
+    /**
+     * @param Area $area
+     * @param CommandParser $parser
+     * @return int
+     * @internal
+     */
     public function rollbackEntities(Area $area, CommandParser $parser): int
     {
         return $this->executeEntitiesEdit(true, $area, $parser);
@@ -82,9 +88,6 @@ trait QueriesEntitiesTrait
         $this->connector->executeSelectRaw($query, [],
             function (array $rows) use ($rollback, $world, &$totalRows) {
                 if (count($rows) > 0) {
-                    $query = /**@lang text */
-                        "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
-
                     foreach ($rows as $row) {
                         $logId = (int)$row["log_id"];
                         $action = Action::fromType((int)$row["action"]);
@@ -102,12 +105,7 @@ trait QueriesEntitiesTrait
                             $this->updateEntityId($logId, $entity);
                             $entity->spawnToAll();
                         }
-
-                        $query .= "log_id = '$logId' OR ";
                     }
-
-                    $query = mb_substr($query, 0, -4) . ";";
-                    $this->connector->executeInsertRaw($query);
                 }
                 $totalRows = count($rows);
             },
@@ -128,6 +126,12 @@ trait QueriesEntitiesTrait
         ]);
     }
 
+    /**
+     * @param Area $area
+     * @param CommandParser $parser
+     * @return int
+     * @internal
+     */
     public function restoreEntities(Area $area, CommandParser $parser): int
     {
         return $this->executeEntitiesEdit(false, $area, $parser);

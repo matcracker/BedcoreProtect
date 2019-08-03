@@ -106,7 +106,8 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #                :new_block_nbt ?string
 INSERT INTO "blocks_log"(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta,
                          new_block_nbt)
-VALUES (LAST_INSERT_ROWID(), :old_block_id, :old_block_meta, :old_block_nbt, :new_block_id, :new_block_meta, :new_block_nbt);
+VALUES (LAST_INSERT_ROWID(), :old_block_id, :old_block_meta, :old_block_nbt, :new_block_id, :new_block_meta,
+        :new_block_nbt);
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
@@ -136,6 +137,22 @@ VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_meta, :old_item_nbt,
 UPDATE entities_log
 SET entityfrom_id = :entity_id
 WHERE history_id = :log_id;
+-- #            }
+-- #            {update_rollback_status
+-- #                :rollback bool
+-- #                :min_x int
+-- #                :max_x int
+-- #                :min_y int
+-- #                :max_y int
+-- #                :min_z int
+-- #                :max_z int
+-- #                :world_name string
+UPDATE log_history
+SET "rollback" = :rollback
+WHERE (x BETWEEN :min_x AND :max_x)
+  AND (y BETWEEN :min_y AND :max_y)
+  AND (z BETWEEN :min_z AND :max_z)
+  AND world_name = :world_name;
 -- #            }
 -- #        }
 -- #    }

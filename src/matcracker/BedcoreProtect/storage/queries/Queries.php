@@ -23,8 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\tasks\AsyncRestoreTask;
-use matcracker\BedcoreProtect\tasks\AsyncRollbackTask;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\ConfigParser;
@@ -126,14 +124,12 @@ class Queries
 
     public function rollback(Area $area, CommandParser $commandParser): void
     {
-        $blocks = $this->getBlocksToEdit(true, $area->getBoundingBox(), $commandParser);
-        Server::getInstance()->getAsyncPool()->submitTask(new AsyncRollbackTask($area, $blocks, $commandParser));
+        $this->startRollback(true, $area, $commandParser);
     }
 
     public function restore(Area $area, CommandParser $commandParser): void
     {
-        $blocks = $this->getBlocksToEdit(false, $area->getBoundingBox(), $commandParser);
-        Server::getInstance()->getAsyncPool()->submitTask(new AsyncRestoreTask($area, $blocks, $commandParser));
+        $this->startRollback(false, $area, $commandParser);
     }
 
     public function requestTransactionLog(Player $inspector, Position $position): void
@@ -161,6 +157,26 @@ class Queries
         if ($this->configParser->isSQLite()) {
             $this->connector->executeGeneric(QueriesConst::END_TRANSACTION);
         }
+    }
+
+    /**
+     * @param bool $rollback
+     * @param Area $area
+     * @internal
+     */
+    public final function updateRollbackStatus(bool $rollback, Area $area)
+    {
+        $bb = $area->getBoundingBox();
+        $this->connector->executeInsert(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+            "rollback" => $rollback,
+            "min_x" => $bb->minX,
+            "max_x" => $bb->maxX,
+            "min_y" => $bb->minY,
+            "max_y" => $bb->maxY,
+            "min_z" => $bb->minZ,
+            "max_z" => $bb->maxZ,
+            "world_name" => $area->getWorld()->getFolderName()
+        ]);
     }
 
     private function addRawLog(string $uuid, Position $position, Action $action): void
