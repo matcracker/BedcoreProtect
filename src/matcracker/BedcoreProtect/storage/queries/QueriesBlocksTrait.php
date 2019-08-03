@@ -283,9 +283,9 @@ trait QueriesBlocksTrait
                         $serializedNBT = $row["{$prefix}_block_nbt"];
                         if (!empty($serializedNBT)) {
                             $nbt = Utils::deserializeNBT($serializedNBT);
-                            $tile = Tile::createTile($block->getName(), $block->getLevel(), $nbt);
-                            if ($tile instanceof Spawnable) {
-                                $tile->spawnToAll();
+                            $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
+                            if ($tile !== null) {
+                                $area->getWorld()->addTile($tile);
                             }
                         }
 
