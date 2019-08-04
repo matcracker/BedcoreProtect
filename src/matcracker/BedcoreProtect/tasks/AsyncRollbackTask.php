@@ -35,8 +35,6 @@ class AsyncRollbackTask extends AsyncTask
 {
     /**@var Area $area */
     private $area;
-    /**@var string $worldName */
-    private $worldName;
     /**@var PrimitiveBlock[] $blocks */
     private $blocks;
     /**@var CommandParser $commandParser */
@@ -57,7 +55,6 @@ class AsyncRollbackTask extends AsyncTask
     {
         $this->area = $area;
         $this->serializedChunks = Utils::serializeChunks($area->getBlockChunks($blocks));
-        $this->worldName = $area->getWorldName();
         $this->blocks = $blocks;
         $this->commandParser = $parser;
         $this->startTime = $startTime;
@@ -82,7 +79,7 @@ class AsyncRollbackTask extends AsyncTask
 
     public function onCompletion(Server $server): void
     {
-        $world = $server->getLevelByName($this->worldName);
+        $world = $this->area->getWorld();
         if ($world !== null) {
             /**@var Chunk[] $chunks */
             $chunks = $this->getResult();
