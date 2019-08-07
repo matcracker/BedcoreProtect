@@ -1,7 +1,4 @@
 #TODO: Update all branches when API 4.0 will be released.
-branches:
-  - master
-  - stable
 projects:
   BedcoreProtect:
     path: ""
