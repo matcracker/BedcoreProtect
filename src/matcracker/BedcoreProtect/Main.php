@@ -88,6 +88,9 @@ final class Main extends PluginBase
 
         @mkdir($this->getDataFolder());
         $this->saveResource("bedcore_database.db");
+        @chmod($this->getDataFolder() . "patches/.patches", 0777);
+        $this->saveResource("patches/.patches", true);
+        @chmod($this->getDataFolder() . "patches/.patches", 0444);
 
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
@@ -102,9 +105,22 @@ final class Main extends PluginBase
 
             return;
         }
-        $this->database->getQueries()->init();
+        $version = $this->getVersion();
+        $this->database->getQueries()->init($version);
+        $dbVersion = $this->database->getVersion();
+        if (version_compare($version, $dbVersion) < 0) {
+            $this->getLogger()->warning("Your database is running a higher version than BedcoreProtect. Please update the plugin if you want to use it.");
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+
+            return;
+        }
+
+        if ($this->database->getPatchManager()->patch()) {
+            $this->getLogger()->info("Your database is now updated from v{$dbVersion} to v{$version}.");
+        }
 
         if ($this->configParser->isSQLite()) {
+            $this->database->getQueries()->beginTransaction();
             $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
 
@@ -140,6 +156,11 @@ final class Main extends PluginBase
     public function isBlockSniperHooked(): bool
     {
         return $this->bsHooked;
+    }
+
+    public function getVersion(): string
+    {
+        return $this->getDescription()->getVersion();
     }
 
     public function onDisable(): void

@@ -32,6 +32,7 @@ use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
+use UnexpectedValueException;
 
 class Queries
 {
@@ -48,17 +49,23 @@ class Queries
         $this->configParser = $configParser;
     }
 
-    public function init(): void
+    public function init(string $pluginVersion): void
     {
+        if (!preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $pluginVersion)) {
+            throw new UnexpectedValueException("The field $pluginVersion must be a version.");
+        }
+
         foreach (QueriesConst::INIT_TABLES as $queryTable) {
             $this->connector->executeGeneric($queryTable);
         }
-        $this->connector->waitAll();
-        $this->addDefaultEntities();
 
-        if ($this->configParser->isSQLite()) {
-            $this->beginTransaction();
-        }
+        $this->connector->executeInsert(QueriesConst::ADD_DATABASE_VERSION, [
+            "version" => $pluginVersion
+        ]);
+
+        $this->connector->waitAll();
+
+        $this->addDefaultEntities();
     }
 
     private function addDefaultEntities(): void

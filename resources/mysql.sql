@@ -4,31 +4,31 @@
 -- #        {entities
 CREATE TABLE IF NOT EXISTS entities
 (
-    uuid             VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
-    entity_name      VARCHAR(16)        NOT NULL,
-    entity_classpath TEXT               NOT NULL,
-    address          VARCHAR(15) DEFAULT '127.0.0.1'
+    uuid             VARCHAR(36) UNIQUE PRIMARY KEY  NOT NULL,
+    entity_name      VARCHAR(16)                     NOT NULL,
+    entity_classpath TEXT                            NOT NULL,
+    address          VARCHAR(15) DEFAULT '127.0.0.1' NOT NULL
 );
 -- #        }
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS log_history
 (
-    log_id     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    who        VARCHAR(36)      NOT NULL,
-    x          BIGINT           NOT NULL,
-    y          TINYINT UNSIGNED NOT NULL,
-    z          BIGINT           NOT NULL,
-    world_name VARCHAR(255)     NOT NULL,
-    action     TINYINT UNSIGNED NOT NULL,
-    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
-    rollback   BOOLEAN      DEFAULT FALSE,
+    log_id     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    who        VARCHAR(36)                                NOT NULL,
+    x          BIGINT                                     NOT NULL,
+    y          TINYINT UNSIGNED                           NOT NULL,
+    z          BIGINT                                     NOT NULL,
+    world_name VARCHAR(255)                               NOT NULL,
+    action     TINYINT UNSIGNED                           NOT NULL,
+    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP     NOT NULL,
+    rollback   BOOLEAN      DEFAULT FALSE                 NOT NULL,
     FOREIGN KEY (who) REFERENCES entities (uuid)
 );
 -- #        }
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS blocks_log
 (
-    history_id     BIGINT UNSIGNED,
+    history_id     BIGINT UNSIGNED     NOT NULL,
     old_block_id   INTEGER UNSIGNED    NOT NULL,
     old_block_meta TINYINT(2) UNSIGNED NOT NULL,
     old_block_nbt  LONGBLOB DEFAULT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS blocks_log
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS entities_log
 (
-    history_id      BIGINT UNSIGNED,
+    history_id      BIGINT UNSIGNED  NOT NULL,
     entityfrom_uuid VARCHAR(36)      NOT NULL,
     entityfrom_id   INTEGER UNSIGNED NOT NULL,
     entityfrom_nbt  LONGBLOB DEFAULT NULL,
@@ -52,17 +52,26 @@ CREATE TABLE IF NOT EXISTS entities_log
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (
-    history_id      BIGINT UNSIGNED,
-    slot            TINYINT UNSIGNED NOT NULL,
-    old_item_id     INTEGER UNSIGNED    DEFAULT 0,
-    old_item_meta   TINYINT(2) UNSIGNED DEFAULT 0,
+    history_id      BIGINT UNSIGNED               NOT NULL,
+    slot            TINYINT UNSIGNED              NOT NULL,
+    old_item_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
+    old_item_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
     old_item_nbt    LONGBLOB            DEFAULT NULL,
-    old_item_amount TINYINT UNSIGNED    DEFAULT 0,
-    new_item_id     INTEGER UNSIGNED    DEFAULT 0,
-    new_item_meta   TINYINT(2) UNSIGNED DEFAULT 0,
+    old_item_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
+    new_item_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
+    new_item_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
     new_item_nbt    LONGBLOB            DEFAULT NULL,
-    new_item_amount TINYINT UNSIGNED    DEFAULT 0,
+    new_item_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {db_status
+CREATE TABLE IF NOT EXISTS status
+(
+    only_one_row BOOLEAN PRIMARY KEY DEFAULT TRUE              NOT NULL,
+    version      VARCHAR(20)                                   NOT NULL,
+    upgraded_on  TIMESTAMP(6)        DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CHECK (only_one_row)
 );
 -- #        }
 -- #    }
@@ -75,6 +84,12 @@ CREATE TABLE IF NOT EXISTS inventories_log
 INSERT INTO entities (uuid, entity_name, entity_classpath, address)
 VALUES (:uuid, :name, :path, :address)
 ON DUPLICATE KEY UPDATE address=:address;
+-- #        }
+-- #        {db_version
+-- #            :version string
+INSERT INTO status (version)
+VALUES (:version)
+ON DUPLICATE KEY UPDATE version=version;
 -- #        }
 -- #        {log
 -- #            {main
@@ -145,9 +160,21 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name;
 -- #            }
+-- #            {update_db_version
+-- #                :version string
+UPDATE status
+SET version     = :version,
+    upgraded_on = DEFAULT
+LIMIT 1;
+-- #            }
 -- #        }
 -- #    }
 -- #    {get
+-- #        {db_status
+SELECT *
+FROM status
+LIMIT 1;
+-- #        }
 -- #        {log
 -- #            {last_id
 SELECT MAX(log_id) AS lastId

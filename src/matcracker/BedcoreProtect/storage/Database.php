@@ -16,23 +16,27 @@
  * @link https://www.github.com/matcracker/BedcoreProtect
  *
 */
+
 declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\Queries;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
 
 class Database
 {
-    /**@var Main */
+    /**@var Main $plugin */
     private $plugin;
-    /**@var DataConnector */
-    private $dataConnector;
-    /**@var Queries */
+    /**@var DataConnector $connector */
+    private $connector;
+    /**@var PatchManager $patchManager */
+    private $patchManager;
+    /**@var Queries $queries */
     private $queries;
 
     public function __construct(Main $plugin)
@@ -41,17 +45,22 @@ class Database
     }
 
     /**
-     * Attempts to connect to the database. Returns true if success.
+     * Attempts to connect and initialize the database. Returns true if success.
      * @return bool
      */
     public final function connect(): bool
     {
         try {
-            $this->dataConnector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
+            $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
                 "sqlite" => "sqlite.sql",
                 "mysql" => "mysql.sql"
             ]);
-            $this->queries = new Queries($this->dataConnector, $this->plugin->getParsedConfig());
+            $patchResource = $this->plugin->getResource("patches/" . $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql");
+            if ($patchResource !== null) {
+                $this->connector->loadQueryFile($patchResource);
+            }
+            $this->patchManager = new PatchManager($this->plugin, $this->connector);
+            $this->queries = new Queries($this->connector, $this->plugin->getParsedConfig());
 
             return true;
         } catch (SqlError $error) {
@@ -63,7 +72,7 @@ class Database
 
     public final function getQueries(): Queries
     {
-        if (!$this->isConnected()) {
+        if (!$this->isConnected() || !isset($this->queries)) {
             $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
@@ -71,18 +80,38 @@ class Database
         return $this->queries;
     }
 
+    public final function getPatchManager(): PatchManager
+    {
+        return $this->patchManager;
+    }
+
     public final function isConnected(): bool
     {
-        return isset($this->dataConnector);
+        return isset($this->connector);
     }
 
     public final function disconnect(): void
     {
         if ($this->isConnected()) {
-            $this->dataConnector->close();
-            $this->dataConnector = null;
+            $this->connector->close();
+            $this->connector = null;
             $this->queries = null;
         }
+    }
+
+    public function getStatus(): array
+    {
+        $status = [];
+        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], static function (array $rows) use (&$status): void {
+            $status = $rows[0];
+        });
+        $this->connector->waitAll();
+        return $status;
+    }
+
+    public function getVersion(): string
+    {
+        return (string)$this->getStatus()["version"];
     }
 
 }

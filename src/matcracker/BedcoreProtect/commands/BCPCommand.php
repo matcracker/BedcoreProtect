@@ -86,8 +86,9 @@ final class BCPCommand extends Command
                 $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
                 $sender->sendMessage(Utils::translateColors("&3Version:&f " . $description->getVersion()));
                 $sender->sendMessage(Utils::translateColors("&3Database connection:&f " . $this->plugin->getParsedConfig()->getPrintableDatabaseType()));
+                $sender->sendMessage(Utils::translateColors("&3Database version:&f " . $this->plugin->getDatabase()->getStatus()["version"]));
                 $sender->sendMessage(Utils::translateColors("&3BlockSniper hook:&f " . ($this->plugin->isBlockSniperHooked() ? "Yes" : "No")));
-                $sender->sendMessage(Utils::translateColors("&3Author:&f " . implode(",", $description->getAuthors())));
+                $sender->sendMessage(Utils::translateColors("&3Author:&f " . implode(", ", $description->getAuthors())));
                 $sender->sendMessage(Utils::translateColors("&3Website:&f " . $description->getWebsite()));
 
                 return true;

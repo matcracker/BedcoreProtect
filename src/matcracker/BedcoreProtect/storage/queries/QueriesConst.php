@@ -28,19 +28,24 @@ final class QueriesConst
     public const INIT_BLOCKS_LOG = "bcp.table.blocks_log";
     public const INIT_ENTITIES_LOG = "bcp.table.entities_log";
     public const INIT_INVENTORIES_LOG = "bcp.table.inventories_log";
+    public const INIT_DATABASE_STATUS = "bcp.table.db_status";
     public const INIT_TABLES = [
-        self::INIT_ENTITY, self::INIT_LOG_HISTORY, self::INIT_BLOCKS_LOG,
-        self::INIT_ENTITIES_LOG, self::INIT_INVENTORIES_LOG
+        self::INIT_ENTITY, self::INIT_LOG_HISTORY,
+        self::INIT_BLOCKS_LOG, self::INIT_ENTITIES_LOG,
+        self::INIT_INVENTORIES_LOG, self::INIT_DATABASE_STATUS
     ];
     public const BEGIN_TRANSACTION = "bcp.transaction.begin";
     public const END_TRANSACTION = "bcp.transaction.end";
     public const ADD_ENTITY = "bcp.add.entity";
+    public const ADD_DATABASE_VERSION = "bcp.add.db_version";
     public const ADD_HISTORY_LOG = "bcp.add.log.main";
     public const ADD_BLOCK_LOG = "bcp.add.log.to_block";
     public const ADD_ENTITY_LOG = "bcp.add.log.to_entity";
     public const ADD_INVENTORY_LOG = "bcp.add.log.to_inventory";
     public const UPDATE_ENTITY_ID = "bcp.add.log.update_entity_id";
     public const UPDATE_ROLLBACK_STATUS = "bcp.add.log.update_rollback_status";
+    public const UPDATE_DATABASE_VERSION = "bcp.add.log.update_db_version";
+    public const GET_DATABASE_STATUS = "bcp.get.db_status";
     public const GET_LAST_LOG_ID = "bcp.get.log.last_id";
     public const GET_BLOCK_LOG = "bcp.get.log.block";
     public const GET_ENTITY_LOG = "bcp.get.log.entity";
@@ -50,5 +55,10 @@ final class QueriesConst
 
     private function __construct()
     {
+    }
+
+    public static function VERSION_PATCH(string $version, int $patchNumber): string
+    {
+        return "patch.{$version}.{$patchNumber}";
     }
 }
