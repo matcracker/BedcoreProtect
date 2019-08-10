@@ -221,9 +221,10 @@ final class BCPCommand extends Command
                 }
 
                 return true;
+            default:
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
+                return false;
         }
-
-        return false;
     }
 
     private function removeAbbreviation(string $subCmd): string
@@ -236,6 +237,8 @@ final class BCPCommand extends Command
             $subCmd = "rollback";
         } else if ($subCmd === "rs") {
             $subCmd = "restore";
+        } else if ($subCmd === "ui") {
+            $subCmd = "menu";
         }
 
         return $subCmd;

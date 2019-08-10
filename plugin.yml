@@ -34,3 +34,5 @@ permissions:
         description: "Allows the user to run the sub-command /bedcoreprotect restore"
       bcp.subcommand.purge:
         description: "Allows the user to run the sub-command /bedcoreprotect purge"
+      bcp.subcommand.menu:
+        description: "Allows the user to run the sub-command /bedcoreprotect menu"
