@@ -7,6 +7,6 @@ projects:
         version: ^3.2.0
       - src: JackMD/UpdateNotifier/UpdateNotifier
         version: ^1.0.0
-      - src: matcracker/FormLib
+      - src: matcracker/FormLib/FormLib
         version: ^1.0.2
 ...
