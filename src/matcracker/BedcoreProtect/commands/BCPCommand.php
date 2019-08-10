@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\commands;
 use BlockHorizons\BlockSniper\sessions\SessionManager;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\ui\Forms;
 use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -157,6 +158,10 @@ final class BCPCommand extends Command
 
         //Only players commands.
         switch ($subCmd) {
+            case "menu":
+            case "ui":
+                $sender->sendForm((new Forms($this->plugin->getParsedConfig()))->getMainMenu());
+                return true;
             case "inspect":
                 $b = Inspector::isInspector($sender);
                 $b ? Inspector::removeInspector($sender) : Inspector::addInspector($sender);

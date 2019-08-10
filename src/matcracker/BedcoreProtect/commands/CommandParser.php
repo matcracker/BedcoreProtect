@@ -38,7 +38,7 @@ final class CommandParser
     public const MAX_PARAMETERS = 6;
 
     /**@var Action[][] */
-    private static $ACTIONS = null;
+    public static $ACTIONS;
 
     /**@var string $senderName */
     private $senderName;
