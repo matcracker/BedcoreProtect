@@ -22,8 +22,11 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\tasks\async\AsyncInventoriesQueryGenerator;
+use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Area;
+use matcracker\BedcoreProtect\utils\PrimitiveBlock;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\Inventory;
@@ -34,6 +37,7 @@ use pocketmine\item\ItemFactory;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
+use pocketmine\Server;
 use pocketmine\tile\Chest;
 use poggit\libasynql\SqlError;
 
@@ -116,12 +120,21 @@ trait QueriesInventoriesTrait
             }
         }
         $query = mb_substr($query, 0, -1) . ";";
-        /**@var Position[] $positions */
-        $positions = array_fill(0, $filledSlots, $inventoryPosition);
-        $rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($player), $positions, Action::REMOVE());
+        /**@var PrimitiveBlock[] $positions */
+        for ($i = 0; $i < $filledSlots; $i++) {
+            $positions[$i] = new PrimitiveBlock(0, 0,
+                $inventoryPosition->getFloorX(),
+                $inventoryPosition->getFloorY(),
+                $inventoryPosition->getFloorZ(),
+                $inventoryPosition->getLevel()->getName()
+            );
+        }
+        $inventoriesTask = new AsyncInventoriesQueryGenerator($query); //TODO: Hacked for the moment.
+        $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($player), $positions, Action::REMOVE(), $inventoriesTask);
+        Server::getInstance()->getAsyncPool()->submitTask($logsTask);
+        //$rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($player), $positions, Action::REMOVE());
 
-        $this->connector->executeInsertRaw($rawLogsQuery);
-        $this->connector->executeInsertRaw($query);
+        //$this->connector->executeInsertRaw($query);
     }
 
     /**

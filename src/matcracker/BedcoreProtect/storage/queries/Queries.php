@@ -113,7 +113,7 @@ class Queries
             "max_y" => $maxV->getY(),
             "min_z" => $minV->getZ(),
             "max_z" => $maxV->getZ(),
-            "world_name" => $position->getLevel()->getFolderName()
+            "world_name" => $position->getLevel()->getName()
         ], static function (array $rows) use ($inspector) {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -182,7 +182,7 @@ class Queries
             "max_y" => $bb->maxY,
             "min_z" => $bb->minZ,
             "max_z" => $bb->maxZ,
-            "world_name" => $area->getWorld()->getFolderName()
+            "world_name" => $area->getWorld()->getName()
         ]);
     }
 
@@ -193,36 +193,19 @@ class Queries
             "x" => $position->getFloorX(),
             "y" => $position->getFloorY(),
             "z" => $position->getFloorZ(),
-            "world_name" => $position->getLevel()->getFolderName(),
+            "world_name" => $position->getLevel()->getName(),
             "action" => $action->getType()
         ]);
     }
 
     /**
-     * Returns a single query that add multiple raw logs
-     *
-     * @param string $uuid
-     * @param Position[] $positions
-     * @param Action $action
-     *
-     * @return string
+     * @param string $query
+     * @param callable|null $onSuccess
+     * @internal
      */
-    private function buildMultipleRawLogsQuery(string $uuid, array $positions, Action $action): string
+    public function insertRaw(string $query, ?callable $onSuccess = null)
     {
-        $query = /**@lang text */
-            "INSERT INTO log_history(who, x, y, z, world_name, action) VALUES";
-
-        foreach ($positions as $position) {
-            $x = $position->getFloorX();
-            $y = $position->getFloorY();
-            $z = $position->getFloorZ();
-            $levelName = $position->getLevel()->getFolderName();
-            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$uuid}'), '{$x}', '{$y}', '{$z}', '{$levelName}', '{$action->getType()}'),";
-        }
-
-        $query = mb_substr($query, 0, -1) . ";";
-
-        return $query;
+        $this->connector->executeInsertRaw($query, [], $onSuccess);
     }
 
     private function getLastLogId(): int

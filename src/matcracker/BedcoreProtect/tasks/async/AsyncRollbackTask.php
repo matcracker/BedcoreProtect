@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\tasks;
+namespace matcracker\BedcoreProtect\tasks\async;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
@@ -110,7 +110,7 @@ class AsyncRollbackTask extends AsyncTask
                 $date = Utils::timeAgo(time() - $this->commandParser->getTime());
 
                 $sender->sendMessage(Utils::translateColors("&f------"));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($rollback ? "Rollback" : "Restore") . " completed for \"{$world->getFolderName()}\"."));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($rollback ? "Rollback" : "Restore") . " completed for \"{$world->getName()}\"."));
                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($rollback ? "Rolled back" : "Restored") . " {$date}."));
                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$this->commandParser->getRadius()} block(s)."));
                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. " . count($this->blocks) . " block(s) changed."));

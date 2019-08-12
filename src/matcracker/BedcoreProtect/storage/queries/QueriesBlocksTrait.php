@@ -21,10 +21,11 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\commands\CommandParser;
-use matcracker\BedcoreProtect\tasks\AsyncRestoreTask;
-use matcracker\BedcoreProtect\tasks\AsyncRollbackTask;
+use matcracker\BedcoreProtect\tasks\async\AsyncBlocksQueryGenerator;
+use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
+use matcracker\BedcoreProtect\tasks\async\AsyncRestoreTask;
+use matcracker\BedcoreProtect\tasks\async\AsyncRollbackTask;
 use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\BlockUtils;
@@ -121,6 +122,10 @@ trait QueriesBlocksTrait
             return;
         }
 
+        $oldBlocks = array_map(static function (Block $block): PrimitiveBlock {
+            return PrimitiveBlock::toPrimitive($block);
+        }, $oldBlocks);
+
         if (is_array($newBlocks)) {
             if (empty($newBlocks)) {
                 return;
@@ -128,64 +133,18 @@ trait QueriesBlocksTrait
 
             (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
+            $newBlocks = array_map(static function (Block $block): PrimitiveBlock {
+                return PrimitiveBlock::toPrimitive($block);
+            }, $newBlocks);
+        } else {
+            $newBlocks = PrimitiveBlock::toPrimitive($newBlocks);
         }
 
         $this->addEntity($entity);
 
-        $rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($entity), $oldBlocks, $action);
-        $rawBlockLogsQuery = $this->buildMultipleRawBlockLogsQuery($oldBlocks, $newBlocks);
-
-        $this->connector->executeInsertRaw($rawLogsQuery);
-        $this->connector->executeInsertRaw($rawBlockLogsQuery);
-    }
-
-    /**
-     * @param Block[] $oldBlocks
-     * @param Block[]|Block $newBlocks
-     *
-     * @return string
-     */
-    private function buildMultipleRawBlockLogsQuery(array $oldBlocks, $newBlocks): string
-    {
-        $query = /**@lang text */
-            "INSERT INTO blocks_log(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta, new_block_nbt) VALUES";
-
-        $logId = $this->getLastLogId();
-
-        if ($newBlocks instanceof Block) {
-            $newId = $newBlocks->getId();
-            $newMeta = $newBlocks->getDamage();
-            $newNBT = BlockUtils::serializeBlockTileNBT($newBlocks);
-
-            /**@var Block $oldBlock */
-            foreach ($oldBlocks as $oldBlock) {
-                $logId++;
-                $oldId = $oldBlock->getId();
-                $oldMeta = $oldBlock->getDamage();
-                $oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
-                $query .= "('{$logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
-            }
-        } else {
-            if (count($oldBlocks) !== count($newBlocks)) {
-                throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa");
-            }
-
-            foreach ($oldBlocks as $key => $oldBlock) {
-                $logId++;
-                $newBlock = $newBlocks[$key];
-                $oldId = $oldBlock->getId();
-                $oldMeta = $oldBlock->getDamage();
-                $oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
-                $newId = $newBlock->getId();
-                $newMeta = $newBlock->getDamage();
-                $newNBT = BlockUtils::serializeBlockTileNBT($newBlock);
-
-                $query .= "('{$logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
-            }
-        }
-        $query = mb_substr($query, 0, -1) . ";";
-
-        return $query;
+        $blocksTask = new AsyncBlocksQueryGenerator($this->getLastLogId(), $oldBlocks, $newBlocks);
+        $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+        Server::getInstance()->getAsyncPool()->submitTask($logsTask);
     }
 
     /**
@@ -203,7 +162,7 @@ trait QueriesBlocksTrait
                 if (count($rows) > 0) {
                     $prefix = $rollback ? "old" : "new";
                     foreach ($rows as $row) {
-                        $blocks[] = $block = new PrimitiveBlock((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"]);
+                        $blocks[] = $block = new PrimitiveBlock((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"]);
 
                         $serializedNBT = $row["{$prefix}_block_nbt"];
                         if (!empty($serializedNBT)) {

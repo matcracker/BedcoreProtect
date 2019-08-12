@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\tasks;
+namespace matcracker\BedcoreProtect\tasks\async;
 
 class AsyncRestoreTask extends AsyncRollbackTask
 {

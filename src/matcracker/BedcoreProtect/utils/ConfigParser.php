@@ -72,7 +72,7 @@ final class ConfigParser
             throw new BadMethodCallException("The configuration must be validated.");
         }
 
-        return in_array($world->getFolderName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
+        return in_array($world->getName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
     }
 
     public function getEnabledWorlds(): array

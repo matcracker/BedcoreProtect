@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\utils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\level\Position;
+use pocketmine\Server;
 
 final class PrimitiveBlock
 {
@@ -31,20 +32,26 @@ final class PrimitiveBlock
     private $id;
     /**@var int $meta */
     private $meta;
-    /**@var int $x */
+    /**@var int|null $x */
     private $x;
-    /**@var int $y */
+    /**@var int|null $y */
     private $y;
-    /**@var int $z */
+    /**@var int|null $z */
     private $z;
+    /**@var string|null $worldName */
+    private $worldName;
+    /**@var string|null $serializedNbt */
+    private $serializedNbt;
 
-    public function __construct(int $id, int $meta, int $x, int $y, int $z)
+    public function __construct(int $id, int $meta, ?int $x, ?int $y, ?int $z, ?string $worldName, ?string $serializedNbt = null)
     {
         $this->id = $id;
         $this->meta = $meta;
         $this->x = $x;
         $this->y = $y;
         $this->z = $z;
+        $this->worldName = $worldName;
+        $this->serializedNbt = $serializedNbt;
     }
 
     /**
@@ -53,12 +60,16 @@ final class PrimitiveBlock
      */
     public static function toPrimitive(Block $block): self
     {
-        return new self($block->getId(), $block->getDamage(), $block->getX(), $block->getY(), $block->getZ());
+        $worldName = null;
+        if (($world = $block->getLevel()) !== null) {
+            $worldName = $world->getName();
+        }
+        return new self($block->getId(), $block->getDamage(), $block->getX(), $block->getY(), $block->getZ(), $worldName, BlockUtils::serializeBlockTileNBT($block));
     }
 
     public function toBlock(): Block
     {
-        return BlockFactory::get($this->id, $this->meta, new Position($this->x, $this->y, $this->z));
+        return BlockFactory::get($this->id, $this->meta, new Position($this->x, $this->y, $this->z, Server::getInstance()->getLevelByName($this->worldName)));
     }
 
     /**
@@ -80,7 +91,7 @@ final class PrimitiveBlock
     /**
      * @return int
      */
-    public function getX(): int
+    public function getX(): ?int
     {
         return $this->x;
     }
@@ -88,7 +99,7 @@ final class PrimitiveBlock
     /**
      * @return int
      */
-    public function getY(): int
+    public function getY(): ?int
     {
         return $this->y;
     }
@@ -96,9 +107,25 @@ final class PrimitiveBlock
     /**
      * @return int
      */
-    public function getZ(): int
+    public function getZ(): ?int
     {
         return $this->z;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getWorldName(): ?string
+    {
+        return $this->worldName;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getSerializedNbt(): ?string
+    {
+        return $this->serializedNbt;
     }
 
     public function __toString(): string

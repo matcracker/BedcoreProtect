@@ -193,7 +193,7 @@ final class BCPCommand extends Command
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Starting rollback on \"{$sender->getLevel()->getFolderName()}\"."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Starting rollback on \"{$sender->getLevel()->getName()}\"."));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
                         $this->queries->rollback(new Area($sender->getLevel(), $bb), $parser);
@@ -209,7 +209,7 @@ final class BCPCommand extends Command
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore started on \"{$sender->getLevel()->getFolderName()}\"."));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore started on \"{$sender->getLevel()->getName()}\"."));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
                         $this->queries->restore(new Area($sender->getLevel(), $bb), $parser);
