@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\tasks\async;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
@@ -35,7 +35,7 @@ class AsyncRollbackTask extends AsyncTask
 {
     /**@var Area $area */
     private $area;
-    /**@var PrimitiveBlock[] $blocks */
+    /**@var SerializableBlock[] $blocks */
     private $blocks;
     /**@var CommandParser $commandParser */
     private $commandParser;
@@ -47,7 +47,7 @@ class AsyncRollbackTask extends AsyncTask
     /**
      * AsyncRollbackTask constructor.
      * @param Area $area
-     * @param PrimitiveBlock[] $blocks
+     * @param SerializableBlock[] $blocks
      * @param CommandParser $parser
      * @param float $startTime
      */
@@ -88,7 +88,7 @@ class AsyncRollbackTask extends AsyncTask
             }
 
             /**@var Main $plugin */
-            $plugin = $server->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
+            $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
             $configParser = $plugin->getParsedConfig();
             $queries = $plugin->getDatabase()->getQueries();
 

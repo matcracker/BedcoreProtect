@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\tasks\async\AsyncBlocksQueryGenerator;
 use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
 use matcracker\BedcoreProtect\tasks\async\AsyncRestoreTask;
@@ -122,8 +122,8 @@ trait QueriesBlocksTrait
             return;
         }
 
-        $oldBlocks = array_map(static function (Block $block): PrimitiveBlock {
-            return PrimitiveBlock::toPrimitive($block);
+        $oldBlocks = array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::toSerializableBlock($block);
         }, $oldBlocks);
 
         if (is_array($newBlocks)) {
@@ -133,11 +133,11 @@ trait QueriesBlocksTrait
 
             (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
-            $newBlocks = array_map(static function (Block $block): PrimitiveBlock {
-                return PrimitiveBlock::toPrimitive($block);
+            $newBlocks = array_map(static function (Block $block): SerializableBlock {
+                return SerializableBlock::toSerializableBlock($block);
             }, $newBlocks);
         } else {
-            $newBlocks = PrimitiveBlock::toPrimitive($newBlocks);
+            $newBlocks = SerializableBlock::toSerializableBlock($newBlocks);
         }
 
         $this->addEntity($entity);
@@ -162,7 +162,7 @@ trait QueriesBlocksTrait
                 if (count($rows) > 0) {
                     $prefix = $rollback ? "old" : "new";
                     foreach ($rows as $row) {
-                        $blocks[] = $block = new PrimitiveBlock((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"]);
+                        $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"]);
 
                         $serializedNBT = $row["{$prefix}_block_nbt"];
                         if (!empty($serializedNBT)) {

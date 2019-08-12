@@ -21,7 +21,7 @@ namespace matcracker\BedcoreProtect\tasks\async;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
+use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 
@@ -29,17 +29,17 @@ class AsyncLogsQueryGenerator extends AsyncTask
 {
     /**@var string $uuid */
     private $uuid;
-    /**@var PrimitiveBlock[] $blocks */
-    private $blocks;
+    /**@var SerializableWorld[] $positions */
+    private $positions;
     /**@var Action $action */
     private $action;
-    /**@var AsyncTask|null $nextTask */
+    /**@var AsyncTask $nextTask */
     private $nextTask;
 
-    public function __construct(string $uuid, array $blocks, Action $action, ?AsyncTask $nextTask = null)
+    public function __construct(string $uuid, array $positions, Action $action, AsyncTask $nextTask)
     {
         $this->uuid = $uuid;
-        $this->blocks = $blocks;
+        $this->positions = $positions;
         $this->action = $action;
         $this->nextTask = $nextTask;
     }
@@ -49,11 +49,11 @@ class AsyncLogsQueryGenerator extends AsyncTask
         $query = /**@lang text */
             "INSERT INTO log_history(who, x, y, z, world_name, action) VALUES";
 
-        foreach ($this->blocks as $block) {
-            $x = $block->getX();
-            $y = $block->getY();
-            $z = $block->getZ();
-            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$this->uuid}'), '{$x}', '{$y}', '{$z}', '{$block->getWorldName()}', '{$this->action->getType()}'),";
+        foreach ($this->positions as $position) {
+            $x = $position->getX();
+            $y = $position->getY();
+            $z = $position->getZ();
+            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$this->uuid}'), '{$x}', '{$y}', '{$z}', '{$position->getWorldName()}', '{$this->action->getType()}'),";
         }
 
         $query = mb_substr($query, 0, -1) . ";";
@@ -68,9 +68,7 @@ class AsyncLogsQueryGenerator extends AsyncTask
             return;
         }
         $plugin->getDatabase()->getQueries()->insertRaw((string)$this->getResult(), function () {
-            if ($this->nextTask !== null) {
-                Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
-            }
+            Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
         });
     }
 }

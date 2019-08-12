@@ -23,7 +23,7 @@ namespace matcracker\BedcoreProtect\tasks\async;
 
 use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 
@@ -31,9 +31,9 @@ class AsyncBlocksQueryGenerator extends AsyncTask
 {
     /**@var int $lastLogId */
     private $lastLogId;
-    /**@var PrimitiveBlock[] $oldBlocks */
+    /**@var SerializableBlock[] $oldBlocks */
     private $oldBlocks;
-    /**@var PrimitiveBlock[]|PrimitiveBlock $newBlocks */
+    /**@var SerializableBlock[]|SerializableBlock $newBlocks */
     private $newBlocks;
 
     public function __construct(int $lastLogId, array $oldBlocks, $newBlocks)
