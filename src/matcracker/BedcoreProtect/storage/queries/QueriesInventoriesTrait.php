@@ -24,7 +24,8 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
+use matcracker\BedcoreProtect\serializable\SerializableItem;
+use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use matcracker\BedcoreProtect\tasks\async\AsyncInventoriesQueryGenerator;
 use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -103,38 +104,23 @@ trait QueriesInventoriesTrait
 
     public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
     {
-        $size = $inventory->getSize();
         $logId = $this->getLastLogId() + 1;
 
-        $query = /**@lang text */
-            "INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_meta, old_item_nbt, old_item_amount) VALUES";
+        /**@var SerializableItem[] $contents */
+        $contents = array_map(static function (Item $item): SerializableItem {
+            return SerializableItem::toSerializableItem($item);
+        }, $inventory->getContents());
 
-        $filledSlots = 0;
-        for ($slot = 0; $slot < $size; $slot++) {
-            $item = $inventory->getItem($slot);
-            if (!$item->isNull()) {
-                $nbt = Utils::serializeNBT($item->getNamedTag());
-                $query .= "('{$logId}', '{$slot}', '{$item->getId()}', '{$item->getDamage()}', '{$nbt}', '{$item->getCount()}'),";
-                $filledSlots++;
-                $logId++;
-            }
-        }
-        $query = mb_substr($query, 0, -1) . ";";
-        /**@var PrimitiveBlock[] $positions */
-        for ($i = 0; $i < $filledSlots; $i++) {
-            $positions[$i] = new PrimitiveBlock(0, 0,
-                $inventoryPosition->getFloorX(),
-                $inventoryPosition->getFloorY(),
-                $inventoryPosition->getFloorZ(),
-                $inventoryPosition->getLevel()->getName()
-            );
-        }
-        $inventoriesTask = new AsyncInventoriesQueryGenerator($query); //TODO: Hacked for the moment.
+        $positions = array_fill(0, count($contents), new SerializableWorld(
+            $inventoryPosition->getFloorX(),
+            $inventoryPosition->getFloorY(),
+            $inventoryPosition->getFloorZ(),
+            $inventoryPosition->getLevel()->getName()
+        ));
+
+        $inventoriesTask = new AsyncInventoriesQueryGenerator($logId, $contents);
         $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($player), $positions, Action::REMOVE(), $inventoriesTask);
         Server::getInstance()->getAsyncPool()->submitTask($logsTask);
-        //$rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($player), $positions, Action::REMOVE());
-
-        //$this->connector->executeInsertRaw($query);
     }
 
     /**
