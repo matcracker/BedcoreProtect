@@ -36,6 +36,7 @@ final class BCPHelpCommand
     {
         $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &3Help Page &f-----"));
         $sender->sendMessage(Utils::translateColors("&3/bcp help &7<command> &f- Display more info for that command."));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7menu &f- Allows to use commands with a graphic interface."));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7inspect &f- Turns the blocks inspector on or off."));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7rollback &3<params> &f- Rollback block data."));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7restore &3<params> &f- Restore block data."));
@@ -53,6 +54,10 @@ final class BCPHelpCommand
         switch ($subCmd) {
             case "help":
                 $sender->sendMessage(Utils::translateColors("&3/bcp help &f- Displays a list of all commands."));
+                break;
+            case "menu":
+            case "ui":
+                $sender->sendMessage(Utils::translateColors("&3/bcp menu &f- Allows to use commands with a graphic interface."));
                 break;
             case "inspect":
             case "i":
