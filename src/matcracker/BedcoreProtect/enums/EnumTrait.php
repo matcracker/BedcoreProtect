@@ -21,7 +21,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\enums;
 
 use InvalidArgumentException;
 use function preg_match;

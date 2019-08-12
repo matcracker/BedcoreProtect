@@ -22,9 +22,9 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\utils\Action;
-use matcracker\BedcoreProtect\utils\Area;
+use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;

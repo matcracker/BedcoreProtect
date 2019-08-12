@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\math;
 
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;

@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\primitive;
 
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;

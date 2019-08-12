@@ -23,8 +23,8 @@ namespace matcracker\BedcoreProtect\tasks\async;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\utils\Area;
-use matcracker\BedcoreProtect\utils\PrimitiveBlock;
+use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;

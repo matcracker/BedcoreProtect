@@ -22,14 +22,14 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\primitive\PrimitiveBlock;
 use matcracker\BedcoreProtect\tasks\async\AsyncBlocksQueryGenerator;
 use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
 use matcracker\BedcoreProtect\tasks\async\AsyncRestoreTask;
 use matcracker\BedcoreProtect\tasks\async\AsyncRollbackTask;
-use matcracker\BedcoreProtect\utils\Action;
-use matcracker\BedcoreProtect\utils\Area;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use matcracker\BedcoreProtect\utils\PrimitiveBlock;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;

@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\commands;
 use ArrayOutOfBoundsException;
 use BadMethodCallException;
 use InvalidArgumentException;
-use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;

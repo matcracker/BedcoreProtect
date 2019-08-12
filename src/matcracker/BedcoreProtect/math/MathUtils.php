@@ -17,7 +17,7 @@
  *
 */
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\math;
 
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Vector3;
