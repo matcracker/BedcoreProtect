@@ -36,6 +36,12 @@ class AsyncBlocksQueryGenerator extends AsyncTask
     /**@var SerializableBlock[]|SerializableBlock $newBlocks */
     private $newBlocks;
 
+    /**
+     * AsyncBlocksQueryGenerator constructor.
+     * @param int $lastLogId
+     * @param array $oldBlocks
+     * @param SerializableBlock[]|SerializableBlock $newBlocks
+     */
     public function __construct(int $lastLogId, array $oldBlocks, $newBlocks)
     {
         $this->lastLogId = $lastLogId;
@@ -86,7 +92,7 @@ class AsyncBlocksQueryGenerator extends AsyncTask
     public function onCompletion(Server $server): void
     {
         /**@var Main $plugin */
-        $plugin = $server->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
+        $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
         if ($plugin === null) {
             return;
         }

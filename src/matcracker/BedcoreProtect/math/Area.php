@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\math;
 
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
+use pocketmine\block\Block;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -77,7 +79,7 @@ final class Area
     }
 
     /**
-     * @param PrimitiveBlock[] $blocks
+     * @param SerializableBlock[]|Block[] $blocks
      * @return Chunk[]
      */
     public function getBlockChunks(array $blocks): array

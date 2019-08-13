@@ -131,7 +131,7 @@ final class BlockUtils
         return $block->getLevel()->getTile($block->asPosition());
     }
 
-    public static function getTileName(int $id): string
+    public static function getTileName(int $blockId): string //Remove on 4.0
     {
         $array = [
             BlockIds::STANDING_BANNER => Tile::BANNER,
@@ -149,6 +149,6 @@ final class BlockUtils
             BlockIds::SKULL_BLOCK => Tile::SKULL
         ];
 
-        return $array[$id] ?? 'Unknown';
+        return $array[$blockId] ?? 'Unknown';
     }
 }

@@ -67,7 +67,7 @@ class AsyncLogsQueryGenerator extends AsyncTask
         if ($plugin === null) {
             return;
         }
-        $plugin->getDatabase()->getQueries()->insertRaw((string)$this->getResult(), function () {
+        $plugin->getDatabase()->getQueries()->insertRaw((string)$this->getResult(), function (): void {
             Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
         });
     }

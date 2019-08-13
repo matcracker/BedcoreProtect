@@ -157,7 +157,7 @@ trait QueriesBlocksTrait
         $startTime = microtime(true);
         $query = $commandParser->buildBlocksLogSelectionQuery($area->getBoundingBox(), !$rollback);
         $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, &$blocks, $area, $commandParser, $startTime) {
+            function (array $rows) use ($rollback, &$blocks, $area, $commandParser, $startTime): void {
                 $blocks = [];
                 if (count($rows) > 0) {
                     $prefix = $rollback ? "old" : "new";

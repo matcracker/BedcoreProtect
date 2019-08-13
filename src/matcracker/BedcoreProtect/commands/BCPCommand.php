@@ -134,7 +134,7 @@ final class BCPCommand extends Command
                     if ($parser->parse()) {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge started. This may take some time."));
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Do not restart your server until completed."));
-                        $this->queries->purge($parser->getTime(), static function (int $affectedRows) use ($sender) {
+                        $this->queries->purge($parser->getTime(), static function (int $affectedRows) use ($sender): void {
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge successful."));
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "{$affectedRows} rows of data deleted."));
                         });

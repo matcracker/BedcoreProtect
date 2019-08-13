@@ -25,6 +25,7 @@ use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
@@ -70,8 +71,8 @@ class Queries
 
     private function addDefaultEntities(): void
     {
-        $uuid = Server::getInstance()->getServerUniqueId()->toString();
-        $this->addRawEntity($uuid, "#console");
+        $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
+        $this->addRawEntity($serverUuid, "#console");
         $this->addRawEntity("flow-uuid", "#flow");
         $this->addRawEntity("water-uuid", "#water");
         $this->addRawEntity("still water-uuid", "#water");
@@ -114,7 +115,7 @@ class Queries
             "min_z" => $minV->getZ(),
             "max_z" => $maxV->getZ(),
             "world_name" => $position->getLevel()->getName()
-        ], static function (array $rows) use ($inspector) {
+        ], static function (array $rows) use ($inspector): void {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
         });
@@ -123,7 +124,7 @@ class Queries
     public function requestLookup(CommandSender $sender, CommandParser $parser): void
     {
         $query = $parser->buildLookupQuery();
-        $this->connector->executeSelectRaw($query, [], static function (array $rows) use ($sender) {
+        $this->connector->executeSelectRaw($query, [], static function (array $rows) use ($sender): void {
             Inspector::cacheLogs($sender, $rows);
             Inspector::parseLogs($sender, $rows);
         });
@@ -212,7 +213,7 @@ class Queries
     {
         $id = 0;
         $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [],
-            static function (array $rows) use (&$id) {
+            static function (array $rows) use (&$id): void {
                 if (count($rows) === 1) {
                     $id = (int)$rows[0]["lastId"];
                 }
