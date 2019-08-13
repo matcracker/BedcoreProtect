@@ -175,6 +175,7 @@ class Queries
     public final function updateRollbackStatus(bool $rollback, Area $area)
     {
         $bb = $area->getBoundingBox();
+        MathUtils::floorBoundingBox($bb);
         $this->connector->executeInsert(QueriesConst::UPDATE_ROLLBACK_STATUS, [
             "rollback" => $rollback,
             "min_x" => $bb->minX,

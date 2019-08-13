@@ -25,6 +25,7 @@ use ArrayOutOfBoundsException;
 use BadMethodCallException;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\ItemFactory;
@@ -282,6 +283,7 @@ final class CommandParser
                         $query .= "(time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP) AND ";
                     }
                 } else if ($key === "radius" && $bb !== null) {
+                    MathUtils::floorBoundingBox($bb);
                     $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
                     $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
                     $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";

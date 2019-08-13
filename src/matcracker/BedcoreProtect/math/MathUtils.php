@@ -33,4 +33,16 @@ final class MathUtils
         $bb = new AxisAlignedBB($vector3->getX(), $vector3->getY(), $vector3->getZ(), $vector3->getX(), $vector3->getY(), $vector3->getZ());
         return $bb->expand($range, $range, $range);
     }
+
+    public static function floorBoundingBox(AxisAlignedBB &$bb): void
+    {
+        $bb->setBounds(
+            (int)floor($bb->minX),
+            (int)floor($bb->minY),
+            (int)floor($bb->minZ),
+            (int)floor($bb->maxX),
+            (int)floor($bb->maxY),
+            (int)floor($bb->maxZ)
+        );
+    }
 }
