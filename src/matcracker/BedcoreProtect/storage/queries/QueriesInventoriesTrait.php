@@ -140,25 +140,21 @@ trait QueriesInventoriesTrait
         $totalRows = 0;
         $world = $area->getWorld();
         $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, $world, &$totalRows) {
-                if (count($rows) > 0) {
-                    foreach ($rows as $row) {
-                        $prefix = $rollback ? "old" : "new";
-                        $amount = (int)$row["{$prefix}_item_amount"];
-                        $nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
-                        $item = ItemFactory::get((int)$row["{$prefix}_item_id"], (int)$row["{$prefix}_item_meta"], $amount, $nbt);
+            static function (array $rows) use ($rollback, $world, &$totalRows): void {
+                $totalRows = count($rows);
+                foreach ($rows as $row) {
+                    $prefix = $rollback ? "old" : "new";
+                    $amount = (int)$row["{$prefix}_item_amount"];
+                    $nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
+                    $item = ItemFactory::get((int)$row["{$prefix}_item_id"], (int)$row["{$prefix}_item_meta"], $amount, $nbt);
+                    $vector = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
+                    $tile = $world->getTile($vector);
+                    if ($tile instanceof InventoryHolder) {
                         $slot = (int)$row["slot"];
-                        $vector = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-                        $tile = $world->getTile($vector);
-                        if ($tile instanceof InventoryHolder) {
-                            $inv = $tile instanceof Chest ? $tile->getRealInventory() : $tile->getInventory();
-                            $inv->setItem($slot, $item);
-                        }
+                        $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
+                        $inv->setItem($slot, $item);
                     }
                 }
-
-                $totalRows = count($rows);
-
             },
             static function (SqlError $error) {
                 throw $error;

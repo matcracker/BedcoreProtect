@@ -87,27 +87,25 @@ trait QueriesEntitiesTrait
         $world = $area->getWorld();
         $this->connector->executeSelectRaw($query, [],
             function (array $rows) use ($rollback, $world, &$totalRows) {
-                if (count($rows) > 0) {
-                    foreach ($rows as $row) {
-                        $logId = (int)$row["log_id"];
-                        $action = Action::fromType((int)$row["action"]);
-                        if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
-                            $id = (int)$row["entityfrom_id"];
-                            $entity = $world->getEntity($id);
-                            if ($entity !== null) {
-                                $entity->close();
-                            }
-                        } else {
-                            /**@var Entity $entityClass */
-                            $entityClass = (string)$row["entity_classpath"];
-                            $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
-                            $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, $nbt);
-                            $this->updateEntityId($logId, $entity);
-                            $entity->spawnToAll();
+                $totalRows = count($rows);
+                foreach ($rows as $row) {
+                    $logId = (int)$row["log_id"];
+                    $action = Action::fromType((int)$row["action"]);
+                    if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
+                        $id = (int)$row["entityfrom_id"];
+                        $entity = $world->getEntity($id);
+                        if ($entity !== null) {
+                            $entity->close();
                         }
+                    } else {
+                        /**@var Entity $entityClass */
+                        $entityClass = (string)$row["entity_classpath"];
+                        $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
+                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, $nbt);
+                        $this->updateEntityId($logId, $entity);
+                        $entity->spawnToAll();
                     }
                 }
-                $totalRows = count($rows);
             },
             static function (SqlError $error) {
                 throw $error;
