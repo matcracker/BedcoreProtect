@@ -390,7 +390,7 @@ final class CommandParser
         }
 
         $prefix = $restore ? "new" : "old";
-
+        $restore = intval($restore);
         $query = /**@lang text */
             "SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_meta, il.{$prefix}_item_nbt, il.{$prefix}_item_amount, x, y, z FROM log_history 
             INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
@@ -407,7 +407,7 @@ final class CommandParser
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
-
+        $restore = intval($restore);
         $query = /**@lang text */
             "SELECT log_id, e.entity_classpath, el.entityfrom_id, el.entityfrom_nbt, x, y, z, action FROM log_history 
             INNER JOIN entities_log el ON log_history.log_id = el.history_id

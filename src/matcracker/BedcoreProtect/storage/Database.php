@@ -93,6 +93,7 @@ class Database
     public final function disconnect(): void
     {
         if ($this->isConnected()) {
+            $this->connector->waitAll();
             $this->connector->close();
             $this->connector = null;
             $this->queries = null;
