@@ -35,6 +35,7 @@ use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
+use pocketmine\inventory\InventoryHolder;
 use pocketmine\level\Position;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
@@ -169,6 +170,9 @@ trait QueriesBlocksTrait
                             $nbt = Utils::deserializeNBT($serializedNBT);
                             $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
                             if ($tile !== null) {
+                                if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) { //TODO: Hack
+                                    $tile->getInventory()->clearAll();
+                                }
                                 $area->getWorld()->addTile($tile);
                             }
                         }
