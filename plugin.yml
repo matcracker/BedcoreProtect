@@ -1,6 +1,6 @@
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-version: 0.4.1
+version: 0.4.2
 api: [3.4.0]
 mcpe-protcol:
   - 354
