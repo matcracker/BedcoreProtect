@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect;
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\listeners\BlockListener;
+use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
@@ -131,7 +132,8 @@ final class Main extends PluginBase
             new BlockListener($this),
             new EntityListener($this),
             new PlayerListener($this),
-            new WorldListener($this)
+            new WorldListener($this),
+            new BlockSniperListener($this)
         ];
 
         foreach ($events as $event) {

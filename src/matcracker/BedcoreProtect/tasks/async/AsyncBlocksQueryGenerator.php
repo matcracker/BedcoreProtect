@@ -31,22 +31,22 @@ class AsyncBlocksQueryGenerator extends AsyncTask
 {
     /**@var int $lastLogId */
     private $lastLogId;
-    /**@var SerializableBlock[] $oldBlocks */
+    /**@var string $oldBlocks */
     private $oldBlocks;
-    /**@var SerializableBlock[]|SerializableBlock $newBlocks */
+    /**@var string $newBlocks */
     private $newBlocks;
 
     /**
      * AsyncBlocksQueryGenerator constructor.
      * @param int $lastLogId
-     * @param array $oldBlocks
+     * @param SerializableBlock[] $oldBlocks
      * @param SerializableBlock[]|SerializableBlock $newBlocks
      */
     public function __construct(int $lastLogId, array $oldBlocks, $newBlocks)
     {
         $this->lastLogId = $lastLogId;
-        $this->oldBlocks = $oldBlocks;
-        $this->newBlocks = $newBlocks;
+        $this->oldBlocks = serialize($oldBlocks);
+        $this->newBlocks = serialize($newBlocks);
     }
 
     public function onRun(): void
@@ -54,12 +54,17 @@ class AsyncBlocksQueryGenerator extends AsyncTask
         $query = /**@lang text */
             "INSERT INTO blocks_log(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta, new_block_nbt) VALUES";
 
-        if (!is_array($this->newBlocks)) {
-            $newId = $this->newBlocks->getId();
-            $newMeta = $this->newBlocks->getMeta();
-            $newNBT = $this->newBlocks->getSerializedNbt();
+        /** @var SerializableBlock[] $oldBlocks */
+        $oldBlocks = unserialize($this->oldBlocks);
+        /** @var SerializableBlock[]|SerializableBlock $newBlocks */
+        $newBlocks = unserialize($this->newBlocks);
 
-            foreach ($this->oldBlocks as $oldBlock) {
+        if (!is_array($newBlocks)) {
+            $newId = $newBlocks->getId();
+            $newMeta = $newBlocks->getMeta();
+            $newNBT = $newBlocks->getSerializedNbt();
+
+            foreach ($oldBlocks as $oldBlock) {
                 $this->lastLogId++;
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
@@ -67,13 +72,13 @@ class AsyncBlocksQueryGenerator extends AsyncTask
                 $query .= "('{$this->lastLogId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
             }
         } else {
-            if (count($this->oldBlocks) !== count($this->newBlocks)) {
+            if (count($oldBlocks) !== count($newBlocks)) {
                 throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa");
             }
 
-            foreach ($this->oldBlocks as $key => $oldBlock) {
+            foreach ($oldBlocks as $key => $oldBlock) {
                 $this->lastLogId++;
-                $newBlock = $this->newBlocks[$key];
+                $newBlock = $newBlocks[$key];
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
                 $oldNBT = $oldBlock->getSerializedNbt();
