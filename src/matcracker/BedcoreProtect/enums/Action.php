@@ -109,9 +109,6 @@ final class Action
         return $this->message;
     }
 
-    /**
-     * @return bool
-     */
     public function isBlockAction(): bool
     {
         return $this->equals(self::PLACE()) || $this->equals(self::BREAK()) || $this->equals(self::CLICK());

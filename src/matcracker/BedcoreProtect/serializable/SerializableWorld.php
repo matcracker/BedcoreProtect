@@ -59,7 +59,7 @@ class SerializableWorld
     }
 
     /**
-     * @return int
+     * @return int|null
      */
     public function getX(): ?int
     {
@@ -67,7 +67,7 @@ class SerializableWorld
     }
 
     /**
-     * @return int
+     * @return int|null
      */
     public function getY(): ?int
     {
@@ -75,7 +75,7 @@ class SerializableWorld
     }
 
     /**
-     * @return int
+     * @return int|null
      */
     public function getZ(): ?int
     {

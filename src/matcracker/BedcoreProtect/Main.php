@@ -158,6 +158,10 @@ final class Main extends PluginBase
         return $this->bsHooked;
     }
 
+    /**
+     * Returns the plugin version.
+     * @return string
+     */
     public function getVersion(): string
     {
         return $this->getDescription()->getVersion();

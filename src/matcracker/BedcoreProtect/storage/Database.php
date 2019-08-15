@@ -110,6 +110,10 @@ class Database
         return $status;
     }
 
+    /**
+     * Returns the database version.
+     * @return string
+     */
     public function getVersion(): string
     {
         return (string)$this->getStatus()["version"];

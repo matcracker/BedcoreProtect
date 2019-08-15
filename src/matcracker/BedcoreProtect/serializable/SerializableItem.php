@@ -77,7 +77,7 @@ final class SerializableItem
     /**
      * @return int
      */
-    public function getCount(): ?int
+    public function getCount(): int
     {
         return $this->count;
     }

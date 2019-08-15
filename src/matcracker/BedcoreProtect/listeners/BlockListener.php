@@ -74,7 +74,7 @@ final class BlockListener extends BedcoreListener
                     $tileChest = BlockUtils::asTile($block);
                     if ($tileChest instanceof TileChest) {
                         $inventory = $tileChest->getRealInventory();
-                        if (count($inventory->getContents()) > 0) { //If not empty
+                        if (!empty($inventory->getContents())) {
                             $this->database->getQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                         }
                     }

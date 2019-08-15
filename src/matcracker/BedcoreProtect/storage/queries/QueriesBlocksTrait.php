@@ -168,7 +168,7 @@ trait QueriesBlocksTrait
                         $serializedNBT = $row["{$prefix}_block_nbt"];
                         if (!empty($serializedNBT)) {
                             $nbt = Utils::deserializeNBT($serializedNBT);
-                            $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
+                            $tile = Tile::createTile(BlockUtils::getTileName($block), $area->getWorld(), $nbt);
                             if ($tile !== null) {
                                 if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) { //TODO: Hack
                                     $tile->getInventory()->clearAll();
