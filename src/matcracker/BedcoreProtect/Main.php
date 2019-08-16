@@ -85,7 +85,7 @@ final class Main extends PluginBase
         return $this->configParser->validate()->isValidConfig();
     }
 
-    public function onLoad()
+    public function onLoad(): void
     {
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
@@ -98,7 +98,7 @@ final class Main extends PluginBase
 
         if ($this->configParser->getBlockSniperHook()) {
             $bsPlugin = $this->getServer()->getPluginManager()->getPlugin("BlockSniper");
-            if ($bsPlugin !== null && $bsPlugin->isEnabled()) {
+            if ($bsPlugin !== null) {
                 $this->getLogger()->info($this->baseLang->translateString("blocksniper.hook.success"));
                 $this->bsHooked = true;
             } else {
