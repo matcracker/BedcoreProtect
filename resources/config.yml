@@ -1,4 +1,6 @@
 #BedcoreProtect Config
+language: eng
+
 database:
   # The database type. "sqlite" and "mysql" are supported.
   type: sqlite

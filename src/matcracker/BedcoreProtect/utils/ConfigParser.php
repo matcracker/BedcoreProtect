@@ -47,6 +47,15 @@ final class ConfigParser
         $this->config = $config;
     }
 
+    public function getLanguage(): string
+    {
+        if (!$this->isValid) {
+            throw new BadMethodCallException("The configuration must be validated.");
+        }
+
+        return (string)$this->data['language'];
+    }
+
     public function getPrintableDatabaseType(): string
     {
         return $this->isSQLite() ? "SQLite" : "MySQL";

@@ -31,6 +31,7 @@ use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
 
 final class Main extends PluginBase
@@ -46,7 +47,8 @@ final class Main extends PluginBase
     private $configParser;
     /**@var ConfigParser $oldConfigParser */
     private $oldConfigParser;
-
+    /**@var BaseLang $baseLang */
+    private $baseLang;
     /**@var boolean $bsHooked */
     private $bsHooked = false;
 
@@ -85,6 +87,13 @@ final class Main extends PluginBase
 
     public function onEnable(): void
     {
+        var_dump($this->getFile());
+        /*if (!empty(\Phar::running())) {
+            define('matcracker\BedcoreProtect\PATH', \Phar::running() . "/");
+        } else {
+            define('matcracker\BedcoreProtect\PATH', dirname(__FILE__, 3) . DIRECTORY_SEPARATOR);
+        }*/
+
         $this->database = new Database($this);
 
         @mkdir($this->getDataFolder());
@@ -100,6 +109,8 @@ final class Main extends PluginBase
             return;
         }
 
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+
         //Database connection
         if (!$this->database->connect()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -110,7 +121,7 @@ final class Main extends PluginBase
         $this->database->getQueries()->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning("Your database is running a higher version than BedcoreProtect. Please update the plugin if you want to use it.");
+            $this->getLogger()->warning($this->baseLang->translateString("database.version.higher"));
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
@@ -143,7 +154,7 @@ final class Main extends PluginBase
         if ($this->configParser->getBlockSniperHook()) {
             $bsPlugin = $this->getServer()->getPluginManager()->getPlugin("BlockSniper");
             if ($bsPlugin !== null && $bsPlugin->isEnabled()) {
-                $this->getLogger()->info("BlockSniper properly hooked!");
+                $this->getLogger()->info($this->baseLang->translateString("blocksniper.hook.success"));
                 $this->bsHooked = true;
             } else {
                 $this->getLogger()->warning("Unable to hook BlockSniper. Check if the plugin has been properly enabled.");
