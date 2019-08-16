@@ -85,23 +85,8 @@ final class Main extends PluginBase
         return $this->configParser->validate()->isValidConfig();
     }
 
-    public function onEnable(): void
+    public function onLoad()
     {
-        var_dump($this->getFile());
-        /*if (!empty(\Phar::running())) {
-            define('matcracker\BedcoreProtect\PATH', \Phar::running() . "/");
-        } else {
-            define('matcracker\BedcoreProtect\PATH', dirname(__FILE__, 3) . DIRECTORY_SEPARATOR);
-        }*/
-
-        $this->database = new Database($this);
-
-        @mkdir($this->getDataFolder());
-        $this->saveResource("bedcore_database.db");
-        @chmod($this->getDataFolder() . "patches/.patches", 0777);
-        $this->saveResource("patches/.patches", true);
-        @chmod($this->getDataFolder() . "patches/.patches", 0444);
-
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -110,6 +95,31 @@ final class Main extends PluginBase
         }
 
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+
+        if ($this->configParser->getBlockSniperHook()) {
+            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin("BlockSniper");
+            if ($bsPlugin !== null && $bsPlugin->isEnabled()) {
+                $this->getLogger()->info($this->baseLang->translateString("blocksniper.hook.success"));
+                $this->bsHooked = true;
+            } else {
+                $this->getLogger()->warning("Unable to hook BlockSniper. Check if the plugin has been properly enabled.");
+            }
+        }
+
+        if ($this->configParser->getCheckUpdates()) {
+            UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
+        }
+    }
+
+    public function onEnable(): void
+    {
+        $this->database = new Database($this);
+
+        @mkdir($this->getDataFolder());
+        $this->saveResource("bedcore_database.db");
+        @chmod($this->getDataFolder() . "patches/.patches", 0777);
+        $this->saveResource("patches/.patches", true);
+        @chmod($this->getDataFolder() . "patches/.patches", 0444);
 
         //Database connection
         if (!$this->database->connect()) {
@@ -149,20 +159,6 @@ final class Main extends PluginBase
 
         foreach ($events as $event) {
             $this->getServer()->getPluginManager()->registerEvents($event, $this);
-        }
-
-        if ($this->configParser->getBlockSniperHook()) {
-            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin("BlockSniper");
-            if ($bsPlugin !== null && $bsPlugin->isEnabled()) {
-                $this->getLogger()->info($this->baseLang->translateString("blocksniper.hook.success"));
-                $this->bsHooked = true;
-            } else {
-                $this->getLogger()->warning("Unable to hook BlockSniper. Check if the plugin has been properly enabled.");
-            }
-        }
-
-        if ($this->configParser->getCheckUpdates()) {
-            UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
         }
     }
 
