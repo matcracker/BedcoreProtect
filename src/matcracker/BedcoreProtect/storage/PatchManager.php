@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
-use pocketmine\utils\Config;
 use poggit\libasynql\DataConnector;
 
 final class PatchManager
@@ -32,20 +31,18 @@ final class PatchManager
     private $connector;
     /**@var Main $plugin */
     private $plugin;
-    /**@var Config $patchConfig */
-    private $patchConfig;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
         $this->plugin = $plugin;
         $this->connector = $connector;
-
-        $this->patchConfig = new Config($plugin->getDataFolder() . "patches/.patches", Config::YAML);
     }
 
     private function getVersionsToPatch(string $db_version): array
     {
-        return array_filter($this->patchConfig->getAll(), static function (string $version) use ($db_version): bool {
+        $patchConfig = yaml_parse(stream_get_contents(($res = $this->plugin->getResource("patches/.patches")))) ?? [];
+        fclose($res);
+        return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
             return version_compare($version, $db_version) > 0;
         }, ARRAY_FILTER_USE_KEY);
     }
