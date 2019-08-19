@@ -40,6 +40,9 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
+    /**@var Main $instance */
+    private static $instance;
+
     /**@var Database $database */
     private $database;
 
@@ -79,10 +82,20 @@ final class Main extends PluginBase
      */
     public function reloadPlugin(): bool
     {
-        $this->oldConfigParser = clone $this->configParser;
+        $this->oldConfigParser = $this->configParser;
         $this->reloadConfig();
+        $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
-        return $this->configParser->validate()->isValidConfig();
+        if ($this->configParser->isValidConfig()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static function getInstance(): Main
+    {
+        return self::$instance;
     }
 
     public function onLoad(): void
@@ -113,6 +126,7 @@ final class Main extends PluginBase
 
     public function onEnable(): void
     {
+        self::$instance = $this;
         $this->database = new Database($this);
 
         @mkdir($this->getDataFolder());
@@ -182,5 +196,6 @@ final class Main extends PluginBase
         $this->database->disconnect();
 
         Inspector::clearCache();
+        self::$instance = null;
     }
 }
