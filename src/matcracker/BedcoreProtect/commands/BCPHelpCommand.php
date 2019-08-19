@@ -34,23 +34,25 @@ final class BCPHelpCommand
 
     public static function showGenericHelp(CommandSender $sender): void
     {
-        $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &3Help Page &f-----"));
-        $sender->sendMessage(Utils::translateColors("&3/bcp help &7<command> &f- Display more info for that command."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7menu &f- Allows to use commands with a graphic interface."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7inspect &f- Turns the blocks inspector on or off."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7rollback &3<params> &f- Rollback block data."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7restore &3<params> &f- Restore block data."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7lookup &3<params> &f- Advanced block data lookup."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7purge &3<params> &f- Delete old block data."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7reload &f- Reloads the configuration file."));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7status &f- Displays the plugin status"));
+        $lang = Main::getInstance()->getLanguage();
+        $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &3" . $lang->translateString("command.help.title") . " &f-----"));
+        $sender->sendMessage(Utils::translateColors("&3/bcp help &7<command> &f- " . $lang->translateString("command.help.help")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7menu &f- " . $lang->translateString("command.help.menu")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7inspect &f- " . $lang->translateString("command.help.inspect")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7rollback &3<params> &f- " . $lang->translateString("command.help.rollback")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7restore &3<params> &f- " . $lang->translateString("command.help.restore")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7lookup &3<params> &f- " . $lang->translateString("command.help.lookup")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7purge &3<params> &f-" . $lang->translateString("command.help.purge")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7reload &f- " . $lang->translateString("command.help.reload")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7status &f- " . $lang->translateString("command.help.status")));
         $sender->sendMessage(Utils::translateColors("&f------"));
     }
 
     public static function showSpecificHelp(CommandSender $sender, string $subCmd): void
     {
+        $lang = Main::getInstance()->getLanguage();
         $subCmd = strtolower($subCmd);
-        $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &3Help Page &f-----"));
+        $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &3" . $lang->translateString("command.help.title") . "&f-----"));
         switch ($subCmd) {
             case "help":
                 $sender->sendMessage(Utils::translateColors("&3/bcp help &f- Displays a list of all commands."));

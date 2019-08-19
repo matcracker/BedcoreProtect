@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\ui;
 
 use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
 use matcracker\FormLib\BaseForm;
@@ -42,6 +43,7 @@ final class Forms
 
     public function getMainMenu(): BaseForm
     {
+        $lang = Main::getInstance()->getLanguage();
         return (new Form(
             function (Player $player, $data) {
                 switch ((int)$data) { //Clicked button
@@ -68,41 +70,43 @@ final class Forms
                         break;
                 }
             }
-        ))->setMessage("Select an option:")
-            ->addClassicButton("Enable/Disable inspector mode")
-            ->addClassicButton("Rollback")
-            ->addClassicButton("Restore")
-            ->addClassicButton("Lookup data")
-            ->addClassicButton("Purge data")
-            ->addClassicButton("Reload plugin")
-            ->addClassicButton("Show plugin status")
-            ->setTitle(Utils::translateColors("&3&lBedcoreProtect Main Menu"));
+        ))->setMessage($lang->translateString("form.menu.option"))
+            ->addClassicButton($lang->translateString("form.menu.inspector"))
+            ->addClassicButton($lang->translateString("general.rollback"))
+            ->addClassicButton($lang->translateString("general.restore"))
+            ->addClassicButton($lang->translateString("form.menu.lookup"))
+            ->addClassicButton($lang->translateString("form.menu.purge"))
+            ->addClassicButton($lang->translateString("form.menu.reload"))
+            ->addClassicButton($lang->translateString("form.menu.status"))
+            ->setTitle(Utils::translateColors("&3&l" . Main::PLUGIN_NAME . $lang->translateString("form.menu.title")));
     }
 
     private function getPurgeMenu(): BaseForm
     {
+        $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
             function (Player $player, $data) {
                 if (is_array($data)) {
                     $player->chat("/bcp purge t={$data[0]}");
                 }
             }
-        ))->addInput("Time to delete data", "1h3m10s")
-            ->setTitle(Utils::translateColors("&3&lPurge"));
+        ))->addInput($lang->translateString("form.purge-menu.time"), "1h3m10s")
+            ->setTitle(Utils::translateColors("&3&l" . $lang->translateString("form.menu.purge")));
     }
 
     private function getInputMenu(string $type): BaseForm
     {
+        $lang = Main::getInstance()->getLanguage();
         return (new CustomForm($this->parseForm($type)))
-            ->addLabel("Required fields:")
-            ->addInput("Time", "1h3m10s")
-            ->addSlider("Radius", 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
-            ->addLabel("Optional fields:")
-            ->addInput("User/Entity name", "Insert player name or #entity")
-            ->addDropdown("Action", array_keys(CommandParser::$ACTIONS), -1)
-            ->addInput("Restrict blocks (accepts ID:meta)", "stone,dirt,2:0")
-            ->addInput("Exclude blocks (accepts ID:meta)", "stone,dirt,2:0")
-            ->setTitle(Utils::translateColors("&3&l" . ucfirst($type)));
+            ->addLabel($lang->translateString("form.input-menu.required-fields"))
+            ->addInput($lang->translateString("form.input-menu.time"), "1h3m10s")
+            ->addSlider($lang->translateString("form.input-menu.radius"), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
+            ->addLabel($lang->translateString("form.input-menu.optional-fields"))
+            ->addInput($lang->translateString("form.input-menu.user-entity"), $lang->translateString("form.input-menu.user-entity-placeholder"))
+            ->addDropdown($lang->translateString("general.action"), array_keys(CommandParser::$ACTIONS), -1)
+            ->addInput($lang->translateString("form.input-menu.restrict-blocks"), "stone,dirt,2:0")
+            ->addInput($lang->translateString("form.input-menu.exclude-blocks"), "stone,dirt,2:0")
+            ->setTitle(Utils::translateColors("&3&l" . $lang->translateString("general.{$type}")));
     }
 
     private function parseForm(string $subCmd): Closure

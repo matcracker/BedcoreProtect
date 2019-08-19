@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\enums;
 
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\Main;
 
 /**
  * This doc-block is generated automatically, do not modify it manually.
@@ -71,19 +72,19 @@ final class Action
 
     protected static function setup(): array
     {
+        $lang = Main::getInstance()->getLanguage();
         return [
-            new self("none", -1, "none"),
             //Blocks actions
-            new self("place", 0, "placed"),
-            new self("break", 1, "broke"),
-            new self("click", 2, "clicked"),
+            new self("place", 0, $lang->translateString("action.place")),
+            new self("break", 1, $lang->translateString("action.break")),
+            new self("click", 2, $lang->translateString("action.click")),
             //Entities actions
-            new self("spawn", 3, "placed"),
-            new self("despawn", 4, "broke"),
-            new self("kill", 5, "killed"),
+            new self("spawn", 3, $lang->translateString("action.place")),
+            new self("despawn", 4, $lang->translateString("action.break")),
+            new self("kill", 5, $lang->translateString("action.kill")),
             //Inventories actions
-            new self("add", 6, "added"),
-            new self("remove", 7, "removed")
+            new self("add", 6, $lang->translateString("action.add")),
+            new self("remove", 7, $lang->translateString("action.remove"))
         ];
     }
 

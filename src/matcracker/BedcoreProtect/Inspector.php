@@ -27,7 +27,6 @@ use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
-use UnexpectedValueException;
 
 final class Inspector
 {
@@ -110,14 +109,15 @@ final class Inspector
      */
     public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
+        $lang = Main::getInstance()->getLanguage();
         if (empty($logs)) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo block data found for this location."));
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.no-data")));
 
             return;
         }
 
         if ($lines < 1) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe lines number must be greater than 1."));
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.more-lines")));
 
             return;
         }
@@ -126,12 +126,12 @@ final class Inspector
         $maxPages = count($chunkLogs);
         $fakePage = $page + 1;
         if (!isset($chunkLogs[$page])) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe page &6{$fakePage}&c does not exist!"));
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.page-not-exist", [$fakePage])));
 
             return;
         }
 
-        $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page {$fakePage}/{$maxPages}) &f-----"));
+        $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$fakePage, $maxPages]) . ") &f-----"));
         foreach ($chunkLogs[$page] as $log) {
             //Default
             $from = (string)$log['entity_from'];
@@ -159,15 +159,13 @@ final class Inspector
                 $amount = (int)$log["{$typeColumn}_item_amount"];
                 $itemName = ItemFactory::get($id, $meta)->getName();
                 $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
-            } else {
-                throw new UnexpectedValueException("Invalid action parsed: {$action->name()}");
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
             $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
                 . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
-        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
+        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("inspector.view-old-data") . " /bcp l <page>:<lines>."));
 
     }
 

@@ -64,7 +64,7 @@ class Database
 
             return true;
         } catch (SqlError $error) {
-            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
         }
 
         return false;
@@ -73,7 +73,7 @@ class Database
     public final function getQueries(): Queries
     {
         if (!$this->isConnected() || !isset($this->queries)) {
-            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
 

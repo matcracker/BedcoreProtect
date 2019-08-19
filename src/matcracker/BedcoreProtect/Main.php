@@ -87,6 +87,7 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
         if ($this->configParser->isValidConfig()) {
+            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
             return true;
         }
 
@@ -115,7 +116,7 @@ final class Main extends PluginBase
                 $this->getLogger()->info($this->baseLang->translateString("blocksniper.hook.success"));
                 $this->bsHooked = true;
             } else {
-                $this->getLogger()->warning("Unable to hook BlockSniper. Check if the plugin has been properly enabled.");
+                $this->getLogger()->warning($this->baseLang->translateString("blocksniper.hook.no-hook"));
             }
         }
 
@@ -131,9 +132,6 @@ final class Main extends PluginBase
 
         @mkdir($this->getDataFolder());
         $this->saveResource("bedcore_database.db");
-        @chmod($this->getDataFolder() . "patches/.patches", 0777);
-        $this->saveResource("patches/.patches", true);
-        @chmod($this->getDataFolder() . "patches/.patches", 0444);
 
         //Database connection
         if (!$this->database->connect()) {
@@ -152,7 +150,7 @@ final class Main extends PluginBase
         }
 
         if ($this->database->getPatchManager()->patch()) {
-            $this->getLogger()->info("Your database is now updated from v{$dbVersion} to v{$version}.");
+            $this->getLogger()->info($this->baseLang->translateString("database.version.updated", [$dbVersion, $version]));
         }
 
         if ($this->configParser->isSQLite()) {
@@ -179,6 +177,11 @@ final class Main extends PluginBase
     public function isBlockSniperHooked(): bool
     {
         return $this->bsHooked;
+    }
+
+    public function getLanguage(): BaseLang
+    {
+        return $this->baseLang;
     }
 
     /**
