@@ -108,21 +108,22 @@ class AsyncRollbackTask extends AsyncTask
 
             if (($sender = $server->getPlayer($this->commandParser->getSenderName())) !== null) {
                 $date = Utils::timeAgo(time() - $this->commandParser->getTime());
+                $lang = $plugin->getLanguage();
 
                 $sender->sendMessage(Utils::translateColors("&f------"));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($rollback ? "Rollback" : "Restore") . " completed for \"{$world->getName()}\"."));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($rollback ? "Rolled back" : "Restored") . " {$date}."));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$this->commandParser->getRadius()} block(s)."));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. " . count($this->blocks) . " block(s) changed."));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$world->getName()])));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date])));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.radius", [$this->commandParser->getRadius()])));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.blocks", [count($this->blocks)])));
                 if ($items > 0) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.items", [$items])));
                 }
                 if ($entities > 0) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.entities", [$entities])));
                 }
 
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Modified " . count($chunks) . " chunks(s)."));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: {$duration} second(s)."));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.modified-chunks", [count($chunks)])));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.time-taken", [$duration])));
                 $sender->sendMessage(Utils::translateColors("&f------"));
             }
         }

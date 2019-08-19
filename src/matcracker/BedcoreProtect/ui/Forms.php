@@ -78,7 +78,7 @@ final class Forms
             ->addClassicButton($lang->translateString("form.menu.purge"))
             ->addClassicButton($lang->translateString("form.menu.reload"))
             ->addClassicButton($lang->translateString("form.menu.status"))
-            ->setTitle(Utils::translateColors("&3&l" . Main::PLUGIN_NAME . $lang->translateString("form.menu.title")));
+            ->setTitle(Utils::translateColors("&3&l" . Main::PLUGIN_NAME . " " . $lang->translateString("form.menu.title")));
     }
 
     private function getPurgeMenu(): BaseForm
