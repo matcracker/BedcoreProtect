@@ -41,7 +41,6 @@ final class BCPCommand extends Command
 
     public function __construct(Main $plugin)
     {
-
         parent::__construct(
             "bedcoreprotect",
             $plugin->getLanguage()->translateString("command.description"),
