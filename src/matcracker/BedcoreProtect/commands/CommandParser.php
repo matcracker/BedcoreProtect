@@ -26,6 +26,7 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -239,12 +240,12 @@ final class CommandParser
     /**
      * It returns a 'select' query to get all optional data from log table
      *
-     * @param AxisAlignedBB $vector3
+     * @param AxisAlignedBB $bb
      * @param bool $restore
      *
      * @return string
      */
-    public function buildBlocksLogSelectionQuery(AxisAlignedBB $vector3, bool $restore = false): string
+    public function buildBlocksLogSelectionQuery(AxisAlignedBB $bb, bool $restore = false): string
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
@@ -252,19 +253,38 @@ final class CommandParser
 
         $prefix = $restore ? "new" : "old";
         $clickAction = Action::CLICK()->getType();
+        $restore = intval($restore);
         $query = /**@lang text */
             "SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_meta, bl.{$prefix}_block_nbt, x, y, z, world_name FROM log_history 
-            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int)$restore . "' AND action <> '{$clickAction}' AND ";
+            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '{$restore}' AND action <> '{$clickAction}' AND ";
 
-        $this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_meta"]);
+        $this->buildConditionalQuery($query, $bb, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_meta"]);
 
         $query .= " ORDER BY time DESC;";
 
         return $query;
     }
 
-    private function buildConditionalQuery(string &$query, ?AxisAlignedBB $bb, ?array $args): void
+    public function buildUpdateRollbackStatusQuery(bool $rollback, Area $area): string
     {
+        if (!$this->parsed) {
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+
+        $rollback = intval($rollback);
+        $query = /**@lang text */
+            "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
+        $this->buildConditionalQuery($query, $area->getBoundingBox(), null);
+        $query .= " ORDER BY time DESC;";
+        return $query;
+    }
+
+    protected function buildConditionalQuery(string &$query, ?AxisAlignedBB $bb, ?array $args): void
+    {
+        if (!$this->parsed) {
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+
         $cArgs = -1;
         if ($args !== null && (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1)) {
             throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");

@@ -104,7 +104,7 @@ class AsyncRollbackTask extends AsyncTask
             }
             $duration = round(microtime(true) - $this->startTime, 2);
 
-            $queries->updateRollbackStatus($rollback, $this->area);
+            $queries->updateRollbackStatus($rollback, $this->area, $this->commandParser);
 
             if (($sender = $server->getPlayer($this->commandParser->getSenderName())) !== null) {
                 $date = Utils::timeAgo(time() - $this->commandParser->getTime());

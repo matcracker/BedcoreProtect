@@ -25,7 +25,6 @@ use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
@@ -170,22 +169,12 @@ class Queries
     /**
      * @param bool $rollback
      * @param Area $area
+     * @param CommandParser $commandParser
      * @internal
      */
-    public final function updateRollbackStatus(bool $rollback, Area $area)
+    public final function updateRollbackStatus(bool $rollback, Area $area, CommandParser $commandParser): void
     {
-        $bb = $area->getBoundingBox();
-        MathUtils::floorBoundingBox($bb);
-        $this->connector->executeInsert(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            "rollback" => $rollback,
-            "min_x" => $bb->minX,
-            "max_x" => $bb->maxX,
-            "min_y" => $bb->minY,
-            "max_y" => $bb->maxY,
-            "min_z" => $bb->minZ,
-            "max_z" => $bb->maxZ,
-            "world_name" => $area->getWorld()->getName()
-        ]);
+        $this->connector->executeChangeRaw($commandParser->buildUpdateRollbackStatusQuery($rollback, $area));
     }
 
     private function addRawLog(string $uuid, Position $position, Action $action): void
