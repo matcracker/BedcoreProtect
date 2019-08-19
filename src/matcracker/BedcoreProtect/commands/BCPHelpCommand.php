@@ -42,7 +42,7 @@ final class BCPHelpCommand
         $sender->sendMessage(Utils::translateColors("&3/bcp &7rollback &3<params> &f- " . $lang->translateString("command.help.rollback")));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7restore &3<params> &f- " . $lang->translateString("command.help.restore")));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7lookup &3<params> &f- " . $lang->translateString("command.help.lookup")));
-        $sender->sendMessage(Utils::translateColors("&3/bcp &7purge &3<params> &f-" . $lang->translateString("command.help.purge")));
+        $sender->sendMessage(Utils::translateColors("&3/bcp &7purge &3<params> &f- " . $lang->translateString("command.help.purge")));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7reload &f- " . $lang->translateString("command.help.reload")));
         $sender->sendMessage(Utils::translateColors("&3/bcp &7status &f- " . $lang->translateString("command.help.status")));
         $sender->sendMessage(Utils::translateColors("&f------"));

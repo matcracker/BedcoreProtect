@@ -85,13 +85,14 @@ final class BCPCommand extends Command
                 return true;
             case "status":
                 $description = $this->plugin->getDescription();
+                $lang = $this->plugin->getLanguage();
                 $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
-                $sender->sendMessage(Utils::translateColors("&3" . $this->plugin->getLanguage()->translateString("command.status.version", [$this->plugin->getVersion()])));
-                $sender->sendMessage(Utils::translateColors("&3" . $this->plugin->getLanguage()->translateString("command.status.database-connection", [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
-                $sender->sendMessage(Utils::translateColors("&3" . $this->plugin->getLanguage()->translateString("command.status.database-version", [$this->plugin->getDatabase()->getStatus()["version"]])));
-                $sender->sendMessage(Utils::translateColors("&3" . $this->plugin->getLanguage()->translateString("command.status.blocksniper-hook", [$this->plugin->isBlockSniperHooked() ? "Yes" : "No"])));
-                $sender->sendMessage(Utils::translateColors("&3" . $this->plugin->getLanguage()->translateString("command.status.author", [implode(", ", $description->getAuthors())])));
-                $sender->sendMessage(Utils::translateColors("&3" . $this->plugin->getLanguage()->translateString("command.status.website", [$description->getWebsite()])));
+                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.version", [$this->plugin->getVersion()])));
+                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.database-connection", [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
+                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.database-version", [$this->plugin->getDatabase()->getStatus()["version"]])));
+                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.blocksniper-hook", [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
+                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.author", [implode(", ", $description->getAuthors())])));
+                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.website", [$description->getWebsite()])));
 
                 return true;
             case "lookup":
@@ -135,7 +136,7 @@ final class BCPCommand extends Command
                     if ($parser->parse()) {
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.started")));
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.no-restart")));
-                        $this->queries->purge($parser->getTime(), static function (int $affectedRows) use ($sender): void {
+                        $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender): void {
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.success")));
                             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.deleted-rows", [$affectedRows])));
                         });
