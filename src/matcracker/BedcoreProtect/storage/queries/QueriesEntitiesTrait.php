@@ -27,7 +27,7 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\Player;
-use poggit\libasynql\SqlError;
+use SOFe\AwaitGenerator\Await;
 
 /**
  * It contains all the queries methods related to entities.
@@ -72,48 +72,36 @@ trait QueriesEntitiesTrait
     /**
      * @param Area $area
      * @param CommandParser $parser
-     * @return int
      * @internal
      */
-    public function rollbackEntities(Area $area, CommandParser $parser): int
+    public function rollbackEntities(Area $area, CommandParser $parser, array $logIds): void
     {
-        return $this->executeEntitiesEdit(true, $area, $parser);
+        $this->executeEntitiesEdit(true, $area, $parser, $logIds);
     }
 
-    private function executeEntitiesEdit(bool $rollback, Area $area, CommandParser $parser): int
+    private function executeEntitiesEdit(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): void
     {
-        $query = $parser->buildEntitiesLogSelectionQuery($area->getBoundingBox(), !$rollback);
-        $totalRows = 0;
-        $world = $area->getWorld();
-        $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, $world, &$totalRows) {
-                $totalRows = count($rows);
-                foreach ($rows as $row) {
-                    $logId = (int)$row["log_id"];
-                    $action = Action::fromType((int)$row["action"]);
-                    if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
-                        $id = (int)$row["entityfrom_id"];
-                        $entity = $world->getEntity($id);
-                        if ($entity !== null) {
-                            $entity->close();
-                        }
-                    } else {
-                        /**@var Entity $entityClass */
-                        $entityClass = (string)$row["entity_classpath"];
-                        $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
-                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, $nbt);
-                        $this->updateEntityId($logId, $entity);
-                        $entity->spawnToAll();
+        Await::f2c(function () use ($rollback, $area, $commandParser, $logIds) {
+            $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+            foreach ($entityRows as $row) {
+                $action = Action::fromType((int)$row["action"]);
+                if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
+                    $id = (int)$row["entityfrom_id"];
+                    $entity = $area->getWorld()->getEntity($id);
+                    if ($entity !== null) {
+                        $entity->close();
                     }
+                } else {
+                    $logId = (int)$row['log_id'];
+                    /**@var Entity $entityClass */
+                    $entityClass = (string)$row["entity_classpath"];
+                    $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
+                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
+                    $this->updateEntityId($logId, $entity);
+                    $entity->spawnToAll();
                 }
-            },
-            static function (SqlError $error) {
-                throw $error;
             }
-        );
-        $this->connector->waitAll();
-
-        return $totalRows;
+        });
     }
 
     protected final function updateEntityId(int $logId, Entity $entity): void
@@ -127,11 +115,10 @@ trait QueriesEntitiesTrait
     /**
      * @param Area $area
      * @param CommandParser $parser
-     * @return int
      * @internal
      */
-    public function restoreEntities(Area $area, CommandParser $parser): int
+    public function restoreEntities(Area $area, CommandParser $parser, array $logIds): void
     {
-        return $this->executeEntitiesEdit(false, $area, $parser);
+        $this->executeEntitiesEdit(false, $area, $parser, $logIds);
     }
 }

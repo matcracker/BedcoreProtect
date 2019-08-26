@@ -112,7 +112,7 @@ INSERT INTO "log_history"(who, x, y, z, world_name,
                           action)
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
 -- #            }
--- #            {to_block
+-- #            {block
 -- #                :old_block_id int
 -- #                :old_block_meta int
 -- #                :old_block_nbt ?string
@@ -124,14 +124,14 @@ INSERT INTO "blocks_log"(history_id, old_block_id, old_block_meta, old_block_nbt
 VALUES (LAST_INSERT_ROWID(), :old_block_id, :old_block_meta, :old_block_nbt, :new_block_id, :new_block_meta,
         :new_block_nbt);
 -- #            }
--- #            {to_entity
+-- #            {entity
 -- #                :uuid string
 -- #                :id int
 -- #                :nbt ?string
 INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
 VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
--- #            {to_inventory
+-- #            {inventory
 -- #                :slot int
 -- #                :old_item_id int 0
 -- #                :old_item_meta int 0
@@ -146,19 +146,28 @@ INSERT INTO "inventories_log"(history_id, slot, old_item_id, old_item_meta, old_
 VALUES (LAST_INSERT_ROWID(), :slot, :old_item_id, :old_item_meta, :old_item_nbt, :old_item_amount, :new_item_id,
         :new_item_meta, :new_item_nbt, :new_item_amount);
 -- #            }
--- #            {update_entity_id
--- #                :log_id int
--- #                :entity_id int
+-- #        }
+-- #    }
+-- #    {update
+-- #        {entity_id
+-- #            :log_id int
+-- #            :entity_id int
 UPDATE entities_log
 SET entityfrom_id = :entity_id
 WHERE history_id = :log_id;
--- #            }
--- #            {update_db_version
--- #                :version string
+-- #        }
+-- #        {db_version
+-- #             :version string
 UPDATE status
 SET version     = :version,
     upgraded_on = (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime'));
--- #            }
+-- #        }
+-- #        {rollback_status
+-- #             :rollback bool
+-- #             :log_ids list:int
+UPDATE log_history
+SET "rollback" = :rollback
+WHERE log_id IN :log_ids;
 -- #        }
 -- #    }
 -- #    {get
@@ -171,6 +180,74 @@ LIMIT 1;
 -- #            {last_id
 SELECT MAX(log_id) AS lastId
 FROM "log_history";
+-- #            }
+-- #            {old_blocks
+-- #                :log_ids list:int
+SELECT bl.old_block_id,
+       bl.old_block_meta,
+       bl.old_block_nbt,
+       x,
+       y,
+       z,
+       world_name
+FROM "log_history"
+         INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {new_blocks
+-- #                :log_ids list:int
+SELECT bl.new_block_id,
+       bl.new_block_meta,
+       bl.new_block_nbt,
+       x,
+       y,
+       z,
+       world_name
+FROM "log_history"
+         INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {old_inventories
+-- #                :log_ids list:int
+SELECT il.slot,
+       il.old_item_id,
+       il.old_item_meta,
+       il.old_item_nbt,
+       il.old_item_amount,
+       x,
+       y,
+       z
+FROM "log_history"
+         INNER JOIN inventories_log il ON log_history.log_id = il.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {new_inventories
+-- #                :log_ids list:int
+SELECT il.slot,
+       il.new_item_id,
+       il.new_item_meta,
+       il.new_item_nbt,
+       il.new_item_amount,
+       x,
+       y,
+       z
+FROM "log_history"
+         INNER JOIN inventories_log il ON log_history.log_id = il.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {entities
+-- #                :log_ids list:int
+SELECT e.entity_classpath,
+       el.entityfrom_id,
+       el.entityfrom_nbt,
+       x,
+       y,
+       z,
+       action
+FROM "log_history"
+         INNER JOIN entities_log el ON log_history.log_id = el.history_id
+         INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
+WHERE log_id IN :log_ids;
 -- #            }
 -- #            {block
 -- #                :min_x int

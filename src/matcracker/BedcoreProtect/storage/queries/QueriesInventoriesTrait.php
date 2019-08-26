@@ -126,22 +126,19 @@ trait QueriesInventoriesTrait
     /**
      * @param Area $area
      * @param CommandParser $parser
-     * @return int
      * @internal
      */
-    public function rollbackItems(Area $area, CommandParser $parser): int
+    public function rollbackItems(Area $area, CommandParser $parser): void
     {
-        return $this->executeInventoriesEdit(true, $area, $parser);
+        $this->startRollbackInventories(true, $area, $parser);
     }
 
-    private function executeInventoriesEdit(bool $rollback, Area $area, CommandParser $parser): int
+    private function startRollbackInventories(bool $rollback, Area $area, CommandParser $parser): void
     {
         $query = $parser->buildInventoriesLogSelectionQuery($area->getBoundingBox(), !$rollback);
-        $totalRows = 0;
         $world = $area->getWorld();
         $this->connector->executeSelectRaw($query, [],
-            static function (array $rows) use ($rollback, $world, &$totalRows): void {
-                $totalRows = count($rows);
+            static function (array $rows) use ($rollback, $world): void {
                 foreach ($rows as $row) {
                     $prefix = $rollback ? "old" : "new";
                     $amount = (int)$row["{$prefix}_item_amount"];
@@ -160,20 +157,17 @@ trait QueriesInventoriesTrait
                 throw $error;
             }
         );
-
-        $this->connector->waitAll();
-
-        return $totalRows;
     }
 
     /**
      * @param Area $area
      * @param CommandParser $parser
-     * @return int
      * @internal
      */
-    public function restoreItems(Area $area, CommandParser $parser): int
+    public function restoreItems(Area $area, CommandParser $parser): void
     {
-        return $this->executeInventoriesEdit(false, $area, $parser);
+        $this->startRollbackInventories(false, $area, $parser);
     }
+
+
 }

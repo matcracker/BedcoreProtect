@@ -168,13 +168,15 @@ class Queries
 
     /**
      * @param bool $rollback
-     * @param Area $area
-     * @param CommandParser $commandParser
+     * @param int[] $logIds
      * @internal
      */
-    public final function updateRollbackStatus(bool $rollback, Area $area, CommandParser $commandParser): void
+    public final function updateRollbackStatus(bool $rollback, array $logIds): void
     {
-        $this->connector->executeChangeRaw($commandParser->buildUpdateRollbackStatusQuery($rollback, $area));
+        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+            "rollback" => $rollback,
+            "log_ids" => $logIds
+        ]);
     }
 
     private function addRawLog(string $uuid, Position $position, Action $action): void

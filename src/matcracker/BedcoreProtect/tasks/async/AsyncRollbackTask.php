@@ -50,14 +50,16 @@ class AsyncRollbackTask extends AsyncTask
      * @param SerializableBlock[] $blocks
      * @param CommandParser $parser
      * @param float $startTime
+     * @param int[] $logIds
      */
-    public function __construct(Area $area, array $blocks, CommandParser $parser, float $startTime)
+    public function __construct(Area $area, array $blocks, CommandParser $parser, float $startTime, array $logIds)
     {
         $this->area = $area;
-        $this->serializedChunks = Utils::serializeChunks($area->getBlockChunks($blocks));
+        $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
         $this->blocks = $blocks;
         $this->commandParser = $parser;
         $this->startTime = $startTime;
+        $this->storeLocal($logIds);
     }
 
     public function onRun(): void
@@ -68,10 +70,10 @@ class AsyncRollbackTask extends AsyncTask
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
         /**@var Chunk[] $chunks */
-        foreach ($this->blocks as $block) {
-            $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
+        foreach ($this->blocks as $vector) {
+            $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
             if (isset($chunks[$index])) {
-                $chunks[$index]->setBlock((int)$block->getX() & 0x0f, $block->getY(), (int)$block->getZ() & 0x0f, $block->getId(), $block->getMeta());
+                $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, $vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
             }
         }
         $this->setResult($chunks);
@@ -89,22 +91,27 @@ class AsyncRollbackTask extends AsyncTask
 
             /**@var Main $plugin */
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-            $configParser = $plugin->getParsedConfig();
+            //$configParser = $plugin->getParsedConfig();
             $queries = $plugin->getDatabase()->getQueries();
 
             $rollback = $this->isRollback();
-            $items = 0;
+            if ($rollback) {
+                $queries->rollbackEntities($this->area, $this->commandParser, (array)$this->fetchLocal());
+            } else {
+                $queries->restoreEntities($this->area, $this->commandParser, (array)$this->fetchLocal());
+            }
+            /*$items = 0;
             $entities = 0;
             if ($configParser->getRollbackItems()) {
-                $items = $rollback ? $queries->rollbackItems($this->area, $this->commandParser) : $queries->restoreItems($this->area, $this->commandParser);
+                $rollback ? $queries->rollbackItems($this->area, $this->commandParser) : $queries->restoreItems($this->area, $this->commandParser);
             }
 
             if ($configParser->getRollbackEntities()) {
-                $entities = $rollback ? $queries->rollbackEntities($this->area, $this->commandParser) : $queries->restoreEntities($this->area, $this->commandParser);
+                $rollback ? $queries->rollbackEntities($this->area, $this->commandParser) : $queries->restoreEntities($this->area, $this->commandParser);
             }
             $duration = round(microtime(true) - $this->startTime, 2);
 
-            $queries->updateRollbackStatus($rollback, $this->area, $this->commandParser);
+            $queries->updateRollbackStatus($rollback, (array)$this->fetchLocal());
 
             if (($sender = $server->getPlayer($this->commandParser->getSenderName())) !== null) {
                 $date = Utils::timeAgo(time() - $this->commandParser->getTime());
@@ -125,7 +132,7 @@ class AsyncRollbackTask extends AsyncTask
                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.modified-chunks", [count($chunks)])));
                 $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.time-taken", [$duration])));
                 $sender->sendMessage(Utils::translateColors("&f------"));
-            }
+            }*/
         }
     }
 

@@ -265,6 +265,23 @@ final class CommandParser
         return $query;
     }
 
+    public function buildLogsSelectionQuery(AxisAlignedBB $bb, bool $restore = false): string
+    {
+        if (!$this->parsed) {
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+
+        $restore = intval($restore);
+        $query = /**@lang text */
+            "SELECT log_id FROM log_history WHERE rollback = '{$restore}' AND ";
+
+        $this->buildConditionalQuery($query, $bb, null);
+
+        $query .= " ORDER BY time DESC;";
+
+        return $query;
+    }
+
     public function buildUpdateRollbackStatusQuery(bool $rollback, Area $area): string
     {
         if (!$this->parsed) {
@@ -275,7 +292,6 @@ final class CommandParser
         $query = /**@lang text */
             "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
         $this->buildConditionalQuery($query, $area->getBoundingBox(), null);
-        $query .= " ORDER BY time DESC;";
         return $query;
     }
 
@@ -305,7 +321,7 @@ final class CommandParser
                         $query .= "(time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP) AND ";
                     }
                 } else if ($key === "radius" && $bb !== null) {
-                    MathUtils::floorBoundingBox($bb);
+                    $bb = MathUtils::floorBoundingBox($bb);
                     $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
                     $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
                     $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
