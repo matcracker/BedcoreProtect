@@ -87,7 +87,7 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
         if ($this->configParser->isValidConfig()) {
-            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
             return true;
         }
 
@@ -108,15 +108,15 @@ final class Main extends PluginBase
             return;
         }
 
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
         if ($this->configParser->getBlockSniperHook()) {
-            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin("BlockSniper");
+            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin('BlockSniper');
             if ($bsPlugin !== null) {
-                $this->getLogger()->info($this->baseLang->translateString("blocksniper.hook.success"));
+                $this->getLogger()->info($this->baseLang->translateString('blocksniper.hook.success'));
                 $this->bsHooked = true;
             } else {
-                $this->getLogger()->warning($this->baseLang->translateString("blocksniper.hook.no-hook"));
+                $this->getLogger()->warning($this->baseLang->translateString('blocksniper.hook.no-hook'));
             }
         }
 
@@ -131,7 +131,7 @@ final class Main extends PluginBase
         $this->database = new Database($this);
 
         @mkdir($this->getDataFolder());
-        $this->saveResource("bedcore_database.db");
+        $this->saveResource('bedcore_database.db');
 
         //Database connection
         if (!$this->database->connect()) {
@@ -143,14 +143,14 @@ final class Main extends PluginBase
         $this->database->getQueries()->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning($this->baseLang->translateString("database.version.higher"));
+            $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
         }
 
         if ($this->database->getPatchManager()->patch()) {
-            $this->getLogger()->info($this->baseLang->translateString("database.version.updated", [$dbVersion, $version]));
+            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
         }
 
         if ($this->configParser->isSQLite()) {
@@ -158,7 +158,7 @@ final class Main extends PluginBase
             $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
 
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+        $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
 
         //Registering events
         $events = [

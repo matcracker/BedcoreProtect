@@ -29,12 +29,12 @@ CREATE TABLE IF NOT EXISTS log_history
 CREATE TABLE IF NOT EXISTS blocks_log
 (
     history_id     BIGINT UNSIGNED     NOT NULL,
-    old_block_id   INTEGER UNSIGNED    NOT NULL,
-    old_block_meta TINYINT(2) UNSIGNED NOT NULL,
-    old_block_nbt  LONGBLOB DEFAULT NULL,
-    new_block_id   INTEGER UNSIGNED    NOT NULL,
-    new_block_meta TINYINT(2) UNSIGNED NOT NULL,
-    new_block_nbt  LONGBLOB DEFAULT NULL,
+    old_id   INTEGER UNSIGNED    NOT NULL,
+    old_meta TINYINT(2) UNSIGNED NOT NULL,
+    old_nbt  LONGBLOB DEFAULT NULL,
+    new_id   INTEGER UNSIGNED    NOT NULL,
+    new_meta TINYINT(2) UNSIGNED NOT NULL,
+    new_nbt  LONGBLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
@@ -54,14 +54,14 @@ CREATE TABLE IF NOT EXISTS inventories_log
 (
     history_id      BIGINT UNSIGNED               NOT NULL,
     slot            TINYINT UNSIGNED              NOT NULL,
-    old_item_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
-    old_item_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
-    old_item_nbt    LONGBLOB            DEFAULT NULL,
-    old_item_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
-    new_item_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
-    new_item_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
-    new_item_nbt    LONGBLOB            DEFAULT NULL,
-    new_item_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
+    old_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
+    old_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
+    old_nbt    LONGBLOB            DEFAULT NULL,
+    old_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
+    new_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
+    new_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
+    new_nbt    LONGBLOB            DEFAULT NULL,
+    new_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
@@ -104,16 +104,16 @@ INSERT INTO log_history(who, x, y, z, world_name,
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
 -- #            }
 -- #            {to_block
--- #                :old_block_id int
--- #                :old_block_meta int
--- #                :old_block_nbt ?string
--- #                :new_block_id int
--- #                :new_block_meta int
--- #                :new_block_nbt ?string
-INSERT INTO blocks_log(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta,
-                       new_block_nbt)
-VALUES (LAST_INSERT_ID(), :old_block_id, :old_block_meta, :old_block_nbt, :new_block_id, :new_block_meta,
-        :new_block_nbt);
+-- #                :old_id int
+-- #                :old_meta int
+-- #                :old_nbt ?string
+-- #                :new_id int
+-- #                :new_meta int
+-- #                :new_nbt ?string
+INSERT INTO blocks_log(history_id, old_id, old_meta, old_nbt, new_id, new_meta,
+                       new_nbt)
+VALUES (LAST_INSERT_ID(), :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
+        :new_nbt);
 -- #            }
 -- #            {to_entity
 -- #                :uuid string
@@ -124,18 +124,18 @@ VALUES (LAST_INSERT_ID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :
 -- #            }
 -- #            {to_inventory
 -- #                :slot int
--- #                :old_item_id int 0
--- #                :old_item_meta int 0
--- #                :old_item_nbt ?string
--- #                :old_item_amount int 0
--- #                :new_item_id int 0
--- #                :new_item_meta int 0
--- #                :new_item_nbt ?string
--- #                :new_item_amount int 0
-INSERT INTO inventories_log(history_id, slot, old_item_id, old_item_meta, old_item_nbt, old_item_amount, new_item_id,
-                            new_item_meta, new_item_nbt, new_item_amount)
-VALUES (LAST_INSERT_ID(), :slot, :old_item_id, :old_item_meta, :old_item_nbt, :old_item_amount, :new_item_id,
-        :new_item_meta, :new_item_nbt, :new_item_amount);
+-- #                :old_id int 0
+-- #                :old_meta int 0
+-- #                :old_nbt ?string
+-- #                :old_amount int 0
+-- #                :new_id int 0
+-- #                :new_meta int 0
+-- #                :new_nbt ?string
+-- #                :new_amount int 0
+INSERT INTO inventories_log(history_id, slot, old_id, old_meta, old_nbt, old_amount, new_id,
+                            new_meta, new_nbt, new_amount)
+VALUES (LAST_INSERT_ID(), :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id,
+        :new_meta, :new_nbt, :new_amount);
 -- #            }
 -- #            {update_entity_id
 -- #                :log_id int
@@ -172,12 +172,12 @@ FROM log_history;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT bl.old_block_id,
-       bl.old_block_meta,
-       bl.old_block_nbt,
-       bl.new_block_id,
-       bl.new_block_meta,
-       bl.new_block_nbt,
+SELECT bl.old_id,
+       bl.old_meta,
+       bl.old_nbt,
+       bl.new_id,
+       bl.new_meta,
+       bl.new_nbt,
        e.entity_name AS entity_from,
        x,
        y,
@@ -232,12 +232,12 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT bl.old_block_id,
-       bl.old_block_meta,
-       bl.old_block_nbt,
-       bl.new_block_id,
-       bl.new_block_meta,
-       bl.new_block_nbt,
+SELECT bl.old_id,
+       bl.old_meta,
+       bl.old_nbt,
+       bl.new_id,
+       bl.new_meta,
+       bl.new_nbt,
        e1.entity_name AS entity_from,
        e2.entity_name AS entity_to,
        x,
@@ -267,14 +267,14 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT il.old_item_id,
-       il.old_item_meta,
-       il.old_item_nbt,
-       il.old_item_amount,
-       il.new_item_id,
-       il.new_item_meta,
-       il.new_item_nbt,
-       il.new_item_amount,
+SELECT il.old_id,
+       il.old_meta,
+       il.old_nbt,
+       il.old_amount,
+       il.new_id,
+       il.new_meta,
+       il.new_nbt,
+       il.new_amount,
        e.entity_name AS entity_from,
        x,
        y,

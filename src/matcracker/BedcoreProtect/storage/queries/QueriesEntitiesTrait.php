@@ -48,9 +48,9 @@ trait QueriesEntitiesTrait
         $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
 
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
-            "uuid" => Utils::getEntityUniqueId($entity),
-            "id" => $entity->getId(),
-            "nbt" => Utils::serializeNBT($entity->namedtag)
+            'uuid' => Utils::getEntityUniqueId($entity),
+            'id' => $entity->getId(),
+            'nbt' => Utils::serializeNBT($entity->namedtag)
         ]);
     }
 
@@ -59,66 +59,48 @@ trait QueriesEntitiesTrait
         $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
     }
 
-    protected final function addRawEntity(string $uuid, string $name, string $classPath = "", string $address = "127.0.0.1"): void
+    protected final function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
-            "uuid" => $uuid,
-            "name" => $name,
-            "path" => $classPath,
-            "address" => $address
+            'uuid' => $uuid,
+            'name' => $name,
+            'path' => $classPath,
+            'address' => $address
         ]);
     }
 
-    /**
-     * @param Area $area
-     * @param CommandParser $parser
-     * @internal
-     */
-    public function rollbackEntities(Area $area, CommandParser $parser, array $logIds): void
+    public function rollbackEntities(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): void
     {
-        $this->executeEntitiesEdit(true, $area, $parser, $logIds);
-    }
-
-    private function executeEntitiesEdit(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): void
-    {
-        Await::f2c(function () use ($rollback, $area, $commandParser, $logIds) {
-            $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
-            foreach ($entityRows as $row) {
-                $action = Action::fromType((int)$row["action"]);
-                if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
-                    $id = (int)$row["entityfrom_id"];
-                    $entity = $area->getWorld()->getEntity($id);
-                    if ($entity !== null) {
-                        $entity->close();
+        if ($this->configParser->getRollbackEntities()) {
+            Await::f2c(function () use ($rollback, $area, $commandParser, $logIds) {
+                $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+                foreach ($entityRows as $row) {
+                    $action = Action::fromType((int)$row['action']);
+                    if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
+                        $id = (int)$row['entityfrom_id'];
+                        $entity = $area->getWorld()->getEntity($id);
+                        if ($entity !== null) {
+                            $entity->close();
+                        }
+                    } else {
+                        $logId = (int)$row['log_id'];
+                        /**@var Entity $entityClass */
+                        $entityClass = (string)$row['entity_classpath'];
+                        $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
+                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
+                        $this->updateEntityId($logId, $entity);
+                        $entity->spawnToAll();
                     }
-                } else {
-                    $logId = (int)$row['log_id'];
-                    /**@var Entity $entityClass */
-                    $entityClass = (string)$row["entity_classpath"];
-                    $nbt = Utils::deserializeNBT($row["entityfrom_nbt"]);
-                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
-                    $this->updateEntityId($logId, $entity);
-                    $entity->spawnToAll();
                 }
-            }
-        });
+            });
+        }
     }
 
     protected final function updateEntityId(int $logId, Entity $entity): void
     {
         $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
-            "log_id" => $logId,
-            "entity_id" => $entity->getId()
+            'log_id' => $logId,
+            'entity_id' => $entity->getId()
         ]);
-    }
-
-    /**
-     * @param Area $area
-     * @param CommandParser $parser
-     * @internal
-     */
-    public function restoreEntities(Area $area, CommandParser $parser, array $logIds): void
-    {
-        $this->executeEntitiesEdit(false, $area, $parser, $logIds);
     }
 }

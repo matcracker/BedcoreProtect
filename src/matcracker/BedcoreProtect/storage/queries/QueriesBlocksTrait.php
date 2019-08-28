@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
@@ -77,12 +76,12 @@ trait QueriesBlocksTrait
         $pos = $position ?? $newBlock->asPosition();
         $this->addRawLog($uuid, $pos, $action);
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            "old_block_id" => $oldBlock->getId(),
-            "old_block_meta" => $oldBlock->getDamage(),
-            "old_block_nbt" => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
-            "new_block_id" => $newBlock->getId(),
-            "new_block_meta" => $newBlock->getDamage(),
-            "new_block_nbt" => $newTag !== null ? Utils::serializeNBT($newTag) : null
+            'old_id' => $oldBlock->getId(),
+            'old_meta' => $oldBlock->getDamage(),
+            'old_nbt' => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
+            'new_id' => $newBlock->getId(),
+            'new_meta' => $newBlock->getDamage(),
+            'new_nbt' => $newTag !== null ? Utils::serializeNBT($newTag) : null
         ]);
     }
 
@@ -100,7 +99,7 @@ trait QueriesBlocksTrait
         $name = $who->getName();
         //Particular blocks
         if ($who instanceof Leaves) {
-            $name = "leaves";
+            $name = 'leaves';
         }
 
         $this->addRawBlockLog("{$name}-uuid", $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
@@ -149,9 +148,16 @@ trait QueriesBlocksTrait
 
         $this->addEntity($entity);
 
-        $blocksTask = new AsyncBlocksQueryGenerator($this->getLastLogId(), $oldBlocks, $newBlocks);
-        $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
-        Server::getInstance()->getAsyncPool()->submitTask($logsTask);
+        Await::f2c(function () use ($entity, $oldBlocks, $newBlocks, $action) {
+            $lastLogId = (int)(yield $this->getLastLogId()[0]['lastId']);
+            var_dump($lastLogId);
+            $blocksTask = new AsyncBlocksQueryGenerator($lastLogId, $oldBlocks, $newBlocks);
+            $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+            Server::getInstance()->getAsyncPool()->submitTask($logsTask);
+        }, function () {
+            //NOOP
+        });
+
     }
 
     /**
@@ -161,10 +167,12 @@ trait QueriesBlocksTrait
      */
     private function startRollback(bool $rollback, Area $area, CommandParser $commandParser): void
     {
-        $startTime = microtime(true);
-        $query = $commandParser->buildLogsSelectionQuery($area->getBoundingBox(), !$rollback);
+        Await::f2c(function () use ($rollback, $area, $commandParser) {
+            $startTime = microtime(true);
+            $prefix = $rollback ? 'old' : 'new';
+            $world = $area->getWorld();
 
-        Await::f2c(function () use ($rollback, $area, $commandParser, $startTime, $query) {
+            $query = $commandParser->buildLogsSelectionQuery(!$rollback, $area->getBoundingBox());
             $logRows = yield $this->connector->executeSelectRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
 
             /**@var int[] $logIds */
@@ -173,16 +181,39 @@ trait QueriesBlocksTrait
                 $logIds[] = (int)$logRow['log_id'];
             }
 
-            $blockRows = yield $this->connector->executeSelect($rollback ? QueriesConst::GET_ROLLBACK_OLD_BLOCKS : QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ["log_ids" => $logIds], yield, yield Await::REJECT) => Await::ONCE;
-            $world = $area->getWorld();
+            $blockRows = yield $this->connector->executeSelect($rollback ? QueriesConst::GET_ROLLBACK_OLD_BLOCKS : QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+
+            $inclusions = $commandParser->getBlocks();
+            $exclusions = $commandParser->getExclusions();
             /**@var SerializableBlock[] $blocks */
             $blocks = [];
+            foreach ($blockRows as $index => $row) {
+                $historyId = (int)$row['history_id'];
+                $id = (int)$row["{$prefix}_id"];
+                $meta = (int)$row["{$prefix}_meta"];
+                if (!empty($inclusions)) {
+                    foreach ($inclusions as $inclusion) {
+                        if ($inclusion->getId() !== $id && $inclusion->getDamage() !== $meta) {
+                            unset($blockRows[$index]);
+                            unset($logIds[array_search($historyId, $logIds)]);
+                            continue;
+                        }
+                    }
+                }
+                if (!empty($exclusions)) {
+                    foreach ($exclusions as $exclusion) {
+                        if ($exclusion->getId() === $id && $exclusion->getDamage() === $meta) {
+                            unset($blockRows[$index]);
+                            unset($logIds[array_search($historyId, $logIds)]);
+                            continue;
+                        }
+                    }
+                }
+            }
 
-            $prefix = $rollback ? "old" : "new";
             foreach ($blockRows as $row) {
-                $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"]);
-
-                $serializedNBT = $row["{$prefix}_block_nbt"];
+                $serializedNBT = (string)$row["{$prefix}_nbt"];
+                $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
                 if (!empty($serializedNBT)) {
                     $nbt = Utils::deserializeNBT($serializedNBT);
                     $tile = Tile::createTile(BlockUtils::getTileName($block), $world, $nbt);
@@ -196,55 +227,57 @@ trait QueriesBlocksTrait
             }
             $touchedChunks = $area->getTouchedChunks($blocks);
 
-            $inventoryRows = yield $this->connector->executeSelect($rollback ? QueriesConst::GET_ROLLBACK_OLD_INVENTORIES : QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ["log_ids" => $logIds], yield, yield Await::REJECT) => Await::ONCE;
-            foreach ($inventoryRows as $row) {
-                $amount = (int)$row["{$prefix}_item_amount"];
-                $nbt = Utils::deserializeNBT($row["{$prefix}_item_nbt"]);
-                $item = ItemFactory::get((int)$row["{$prefix}_item_id"], (int)$row["{$prefix}_item_meta"], $amount, $nbt);
-                $vector = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-                $tile = $world->getTile($vector);
-                if ($tile instanceof InventoryHolder) {
-                    $slot = (int)$row["slot"];
-                    $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
-                    $inv->setItem($slot, $item);
+            $inventoryRows = [];
+            if ($this->configParser->getRollbackItems()) {
+                $inventoryRows = yield $this->connector->executeSelect($rollback ? QueriesConst::GET_ROLLBACK_OLD_INVENTORIES : QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+                foreach ($inventoryRows as $row) {
+                    $amount = (int)$row["{$prefix}_amount"];
+                    $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
+                    $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
+                    $vector = new Vector3((int)$row['x'], (int)$row['y'], (int)$row['z']);
+                    $tile = $world->getTile($vector);
+                    if ($tile instanceof InventoryHolder) {
+                        $slot = (int)$row['slot'];
+                        $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
+                        $inv->setItem($slot, $item);
+                    }
                 }
             }
 
-            $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds], yield, yield Await::REJECT) => Await::ONCE;
-
+            $entityRows = [];
+            if ($this->configParser->getRollbackEntities()) {
+                $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+            }
             $task = $rollback ? new AsyncRollbackTask($area, $blocks, $commandParser, $startTime, $logIds) : new AsyncRestoreTask($area, $blocks, $commandParser, $startTime, $logIds);
             Server::getInstance()->getAsyncPool()->submitTask($task);
 
-            yield $this->onRollbackComplete($rollback, $area, $commandParser, $startTime, count($touchedChunks), count($blockRows), count($inventoryRows), count($entityRows));
+            $this->onRollbackComplete($rollback, $area, $commandParser, $startTime, count($touchedChunks), count($blocks), count($inventoryRows), count($entityRows));
         }, function () {
             //NOOP
         });
     }
 
-    private function onRollbackComplete(bool $rollback, Area $area, CommandParser $commandParser, float $startTime, int $chunks, int $blocks, int $items, int $entities): Generator
+    private function onRollbackComplete(bool $rollback, Area $area, CommandParser $commandParser, float $startTime, int $chunks, int $blocks, int $items, int $entities): void
     {
         $duration = round(microtime(true) - $startTime, 2);
         if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
             $date = Utils::timeAgo(time() - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
-            $sender->sendMessage(Utils::translateColors("&f------"));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$area->getWorld()->getName()])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.radius", [$commandParser->getRadius()])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.blocks", [$blocks])));
+            $sender->sendMessage(Utils::translateColors('&f------'));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.blocks', [$blocks])));
             if ($items > 0) {
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.items", [$items])));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.items', [$items])));
             }
             if ($entities > 0) {
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.entities", [$entities])));
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.entities', [$entities])));
             }
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.modified-chunks", [$chunks])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.time-taken", [$duration])));
-            $sender->sendMessage(Utils::translateColors("&f------"));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.modified-chunks', [$chunks])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
+            $sender->sendMessage(Utils::translateColors('&f------'));
         }
-        yield;
-        yield Await::REJECT;
-        return yield Await::ONCE;
     }
 }

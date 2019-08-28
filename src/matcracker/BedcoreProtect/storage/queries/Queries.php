@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
@@ -32,6 +33,7 @@ use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
+use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 
 class Queries
@@ -52,7 +54,7 @@ class Queries
     public function init(string $pluginVersion): void
     {
         if (!preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $pluginVersion)) {
-            throw new UnexpectedValueException("The field $pluginVersion must be a version.");
+            throw new UnexpectedValueException("The field {$pluginVersion} must be a version.");
         }
 
         foreach (QueriesConst::INIT_TABLES as $queryTable) {
@@ -60,7 +62,7 @@ class Queries
         }
 
         $this->connector->executeInsert(QueriesConst::ADD_DATABASE_VERSION, [
-            "version" => $pluginVersion
+            'version' => $pluginVersion
         ]);
 
         $this->connector->waitAll();
@@ -71,13 +73,13 @@ class Queries
     private function addDefaultEntities(): void
     {
         $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-        $this->addRawEntity($serverUuid, "#console");
-        $this->addRawEntity("flow-uuid", "#flow");
-        $this->addRawEntity("water-uuid", "#water");
-        $this->addRawEntity("still water-uuid", "#water");
-        $this->addRawEntity("lava-uuid", "#lava");
-        $this->addRawEntity("fire block-uuid", "#fire");
-        $this->addRawEntity("leaves-uuid", "#decay");
+        $this->addRawEntity($serverUuid, '#console');
+        $this->addRawEntity('flow-uuid', '#flow');
+        $this->addRawEntity('water-uuid', '#water');
+        $this->addRawEntity('still water-uuid', '#water');
+        $this->addRawEntity('lava-uuid', '#lava');
+        $this->addRawEntity('fire block-uuid', '#fire');
+        $this->addRawEntity('leaves-uuid', '#decay');
     }
 
     /**
@@ -107,13 +109,13 @@ class Queries
         $maxV = $position->add($near, $near, $near)->floor();
 
         $this->connector->executeSelect($queryName, [
-            "min_x" => $minV->getX(),
-            "max_x" => $maxV->getX(),
-            "min_y" => $minV->getY(),
-            "max_y" => $maxV->getY(),
-            "min_z" => $minV->getZ(),
-            "max_z" => $maxV->getZ(),
-            "world_name" => $position->getLevel()->getName()
+            'min_x' => $minV->getX(),
+            'max_x' => $maxV->getX(),
+            'min_y' => $minV->getY(),
+            'max_y' => $maxV->getY(),
+            'min_z' => $minV->getZ(),
+            'max_z' => $maxV->getZ(),
+            'world_name' => $position->getLevel()->getName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -152,7 +154,7 @@ class Queries
     public function purge(int $time, ?callable $onSuccess = null): void
     {
         $this->connector->executeChange(QueriesConst::PURGE, [
-            "time" => $time
+            'time' => $time
         ], $onSuccess);
     }
 
@@ -174,20 +176,20 @@ class Queries
     public final function updateRollbackStatus(bool $rollback, array $logIds): void
     {
         $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            "rollback" => $rollback,
-            "log_ids" => $logIds
+            'rollback' => $rollback,
+            'log_ids' => $logIds
         ]);
     }
 
     private function addRawLog(string $uuid, Position $position, Action $action): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            "uuid" => strtolower($uuid),
-            "x" => $position->getFloorX(),
-            "y" => $position->getFloorY(),
-            "z" => $position->getFloorZ(),
-            "world_name" => $position->getLevel()->getName(),
-            "action" => $action->getType()
+            'uuid' => strtolower($uuid),
+            'x' => $position->getFloorX(),
+            'y' => $position->getFloorY(),
+            'z' => $position->getFloorZ(),
+            'world_name' => $position->getLevel()->getName(),
+            'action' => $action->getType()
         ]);
     }
 
@@ -201,18 +203,9 @@ class Queries
         $this->connector->executeInsertRaw($query, [], $onSuccess);
     }
 
-    private function getLastLogId(): int
+    private function getLastLogId(): Generator
     {
-        $id = 0;
-        $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [],
-            static function (array $rows) use (&$id): void {
-                if (count($rows) === 1) {
-                    $id = (int)$rows[0]["lastId"];
-                }
-            }
-        );
-        $this->connector->waitAll();
-
-        return $id;
+        $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [], yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 }

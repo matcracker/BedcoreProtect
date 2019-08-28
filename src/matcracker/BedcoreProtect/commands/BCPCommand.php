@@ -32,6 +32,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Player;
+use SOFe\AwaitGenerator\Await;
 
 final class BCPCommand extends Command
 {
@@ -42,10 +43,10 @@ final class BCPCommand extends Command
     public function __construct(Main $plugin)
     {
         parent::__construct(
-            "bedcoreprotect",
-            $plugin->getLanguage()->translateString("command.description"),
-            $plugin->getLanguage()->translateString("command.usage"),
-            ["core", "co", "bcp"]
+            'bedcoreprotect',
+            $plugin->getLanguage()->translateString('command.description'),
+            $plugin->getLanguage()->translateString('command.usage'),
+            ['core', 'co', 'bcp']
         );
         $this->plugin = $plugin;
         $this->queries = $plugin->getDatabase()->getQueries();
@@ -60,8 +61,8 @@ final class BCPCommand extends Command
         }
 
         $subCmd = $this->removeAbbreviation(strtolower($args[0]));
-        if (!$sender->hasPermission("bcp.command.bedcoreprotect") || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.no-permission")));
+        if (!$sender->hasPermission('bcp.command.bedcoreprotect') || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.no-permission')));
 
             return false;
         }
@@ -72,31 +73,34 @@ final class BCPCommand extends Command
                 isset($args[1]) ? BCPHelpCommand::showSpecificHelp($sender, $args[1]) : BCPHelpCommand::showGenericHelp($sender);
 
                 return true;
-            case "reload":
+            case 'reload':
                 if ($this->plugin->reloadPlugin()) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.reload.success")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.reload.success')));
                 } else {
                     $this->plugin->restoreParsedConfig();
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.reload.no-success")));
-                    $sender->sendMessage(Utils::translateColors("&c"));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.reload.no-success')));
                 }
 
                 return true;
-            case "status":
-                $description = $this->plugin->getDescription();
-                $lang = $this->plugin->getLanguage();
-                $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
-                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.version", [$this->plugin->getVersion()])));
-                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.database-connection", [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
-                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.database-version", [$this->plugin->getDatabase()->getStatus()["version"]])));
-                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.blocksniper-hook", [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
-                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.author", [implode(", ", $description->getAuthors())])));
-                $sender->sendMessage(Utils::translateColors("&3" . $lang->translateString("command.status.website", [$description->getWebsite()])));
-
+            case 'status':
+                Await::f2c(function () use ($sender) {
+                    $description = $this->plugin->getDescription();
+                    $lang = $this->plugin->getLanguage();
+                    $dbVersion = (string)yield $this->plugin->getDatabase()->getStatus()[0]["version"];
+                    $sender->sendMessage(Utils::translateColors('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
+                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
+                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
+                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
+                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
+                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
+                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
+                }, function () {
+                    //NOOP
+                });
                 return true;
-            case "lookup":
+            case 'lookup':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
                         $this->queries->requestLookup($sender, $parser);
                     } else {
@@ -114,7 +118,7 @@ final class BCPCommand extends Command
                                 }
 
                                 if (!$ctype) {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.no-numeric-value")));
+                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-numeric-value')));
 
                                     return true;
                                 }
@@ -125,19 +129,19 @@ final class BCPCommand extends Command
                         }
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.one-parameter")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
-            case "purge":
+            case 'purge':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.started")));
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.no-restart")));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.started')));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.no-restart')));
                         $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender): void {
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.success")));
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.purge.deleted-rows", [$affectedRows])));
+                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.success')));
+                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });
 
                         return true;
@@ -145,46 +149,46 @@ final class BCPCommand extends Command
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.one-parameter")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
         }
 
         if (!($sender instanceof Player)) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.no-console")));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-console')));
 
             return false;
         }
 
         //Only players commands.
         switch ($subCmd) {
-            case "menu":
-            case "ui":
+            case 'menu':
+            case 'ui':
                 $sender->sendForm((new Forms($this->plugin->getParsedConfig()))->getMainMenu());
                 return true;
-            case "inspect":
+            case 'inspect':
                 if (Inspector::isInspector($sender)) {
                     Inspector::removeInspector($sender);
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.inspect.disabled")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.inspect.disabled')));
                 } else {
                     Inspector::addInspector($sender);
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.inspect.enabled")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.inspect.enabled')));
                 }
                 return true;
-            case "near":
+            case 'near':
                 $near = 5;
 
                 if (isset($args[1])) {
                     if (!ctype_digit($args[1])) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.no-numeric-value")));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-numeric-value')));
 
                         return true;
                     }
                     $near = (int)$args[1];
                     $maxRadius = $this->plugin->getParsedConfig()->getMaxRadius();
                     if ($near < 1 || $near > $maxRadius) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.near.range-value")));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.near.range-value')));
 
                         return true;
                     }
@@ -193,11 +197,11 @@ final class BCPCommand extends Command
                 $this->queries->requestNearLog($sender, $sender, $near);
 
                 return true;
-            case "rollback":
+            case 'rollback':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.rollback.started", [$sender->getLevel()->getName()])));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
                         $this->queries->rollback(new Area($sender->getLevel(), $bb), $parser);
@@ -205,15 +209,15 @@ final class BCPCommand extends Command
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.one-parameter")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
-            case "restore":
+            case 'restore':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString("command.restore.started", [$sender->getLevel()->getName()])));
+                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.restore.started', [$sender->getLevel()->getName()])));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
                         $this->queries->restore(new Area($sender->getLevel(), $bb), $parser);
@@ -221,7 +225,7 @@ final class BCPCommand extends Command
                         $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $this->plugin->getLanguage()->translateString("command.error.one-parameter")));
+                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
@@ -233,16 +237,16 @@ final class BCPCommand extends Command
 
     private function removeAbbreviation(string $subCmd): string
     {
-        if ($subCmd === "l") {
-            $subCmd = "lookup";
-        } else if ($subCmd === "i") {
-            $subCmd = "inspect";
-        } else if ($subCmd === "rb") {
-            $subCmd = "rollback";
-        } else if ($subCmd === "rs") {
-            $subCmd = "restore";
-        } else if ($subCmd === "ui") {
-            $subCmd = "menu";
+        if ($subCmd === 'l') {
+            $subCmd = 'lookup';
+        } else if ($subCmd === 'i') {
+            $subCmd = 'inspect';
+        } else if ($subCmd === 'rb') {
+            $subCmd = 'rollback';
+        } else if ($subCmd === 'rs') {
+            $subCmd = 'restore';
+        } else if ($subCmd === 'ui') {
+            $subCmd = 'menu';
         }
 
         return $subCmd;

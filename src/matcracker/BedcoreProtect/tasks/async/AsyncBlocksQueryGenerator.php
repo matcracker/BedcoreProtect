@@ -52,7 +52,7 @@ class AsyncBlocksQueryGenerator extends AsyncTask
     public function onRun(): void
     {
         $query = /**@lang text */
-            "INSERT INTO blocks_log(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta, new_block_nbt) VALUES";
+            "INSERT INTO blocks_log(history_id, old_id, old_meta, old_nbt, new_id, new_meta, new_nbt) VALUES";
 
         /** @var SerializableBlock[] $oldBlocks */
         $oldBlocks = unserialize($this->oldBlocks);
@@ -73,7 +73,7 @@ class AsyncBlocksQueryGenerator extends AsyncTask
             }
         } else {
             if (count($oldBlocks) !== count($newBlocks)) {
-                throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa");
+                throw new ArrayOutOfBoundsException('The number of old blocks must be the same as new blocks, or vice-versa');
             }
 
             foreach ($oldBlocks as $key => $oldBlock) {
@@ -89,7 +89,7 @@ class AsyncBlocksQueryGenerator extends AsyncTask
                 $query .= "('{$this->lastLogId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
             }
         }
-        $query = mb_substr($query, 0, -1) . ";";
+        $query = mb_substr($query, 0, -1) . ';';
 
         $this->setResult($query);
     }

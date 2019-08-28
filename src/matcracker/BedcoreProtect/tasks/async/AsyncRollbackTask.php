@@ -91,48 +91,12 @@ class AsyncRollbackTask extends AsyncTask
 
             /**@var Main $plugin */
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-            //$configParser = $plugin->getParsedConfig();
-            $queries = $plugin->getDatabase()->getQueries();
-
-            $rollback = $this->isRollback();
-            if ($rollback) {
-                $queries->rollbackEntities($this->area, $this->commandParser, (array)$this->fetchLocal());
-            } else {
-                $queries->restoreEntities($this->area, $this->commandParser, (array)$this->fetchLocal());
+            if ($plugin === null) {
+                return;
             }
-            /*$items = 0;
-            $entities = 0;
-            if ($configParser->getRollbackItems()) {
-                $rollback ? $queries->rollbackItems($this->area, $this->commandParser) : $queries->restoreItems($this->area, $this->commandParser);
-            }
-
-            if ($configParser->getRollbackEntities()) {
-                $rollback ? $queries->rollbackEntities($this->area, $this->commandParser) : $queries->restoreEntities($this->area, $this->commandParser);
-            }
-            $duration = round(microtime(true) - $this->startTime, 2);
-
-            $queries->updateRollbackStatus($rollback, (array)$this->fetchLocal());
-
-            if (($sender = $server->getPlayer($this->commandParser->getSenderName())) !== null) {
-                $date = Utils::timeAgo(time() - $this->commandParser->getTime());
-                $lang = $plugin->getLanguage();
-
-                $sender->sendMessage(Utils::translateColors("&f------"));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$world->getName()])));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date])));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.radius", [$this->commandParser->getRadius()])));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.blocks", [count($this->blocks)])));
-                if ($items > 0) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.items", [$items])));
-                }
-                if ($entities > 0) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.entities", [$entities])));
-                }
-
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.modified-chunks", [count($chunks)])));
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("rollback.time-taken", [$duration])));
-                $sender->sendMessage(Utils::translateColors("&f------"));
-            }*/
+            $logIds = (array)$this->fetchLocal();
+            $plugin->getDatabase()->getQueries()->rollbackEntities($this->isRollback(), $this->area, $this->commandParser, $logIds);
+            $plugin->getDatabase()->getQueries()->updateRollbackStatus($this->isRollback(), $logIds);
         }
     }
 

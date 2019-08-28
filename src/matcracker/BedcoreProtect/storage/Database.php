@@ -21,12 +21,14 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage;
 
+use Generator;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\Queries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
+use SOFe\AwaitGenerator\Await;
 
 class Database
 {
@@ -51,11 +53,11 @@ class Database
     public final function connect(): bool
     {
         try {
-            $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
-                "sqlite" => "sqlite.sql",
-                "mysql" => "mysql.sql"
+            $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
+                'sqlite' => 'sqlite.sql',
+                'mysql' => 'mysql.sql'
             ]);
-            $patchResource = $this->plugin->getResource("patches/" . $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql");
+            $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
             if ($patchResource !== null) {
                 $this->connector->loadQueryFile($patchResource);
             }
@@ -64,7 +66,7 @@ class Database
 
             return true;
         } catch (SqlError $error) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
         }
 
         return false;
@@ -73,7 +75,7 @@ class Database
     public final function getQueries(): Queries
     {
         if (!$this->isConnected() || !isset($this->queries)) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
 
@@ -100,23 +102,24 @@ class Database
         }
     }
 
-    public function getStatus(): array
+    public function getStatus(): Generator
     {
-        $status = [];
-        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], static function (array $rows) use (&$status): void {
-            $status = $rows[0];
-        });
-        $this->connector->waitAll();
-        return $status;
+        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 
     /**
      * Returns the database version.
      * @return string
+     * @internal
      */
     public function getVersion(): string
     {
-        return (string)$this->getStatus()["version"];
+        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], static function (array $rows) use (&$version) {
+            $version = (string)$rows[0]['version'];
+        });
+        $this->connector->waitAll();
+        return $version;
     }
 
 }

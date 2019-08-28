@@ -23,40 +23,40 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 final class QueriesConst
 {
-    public const INIT_ENTITY = "bcp.table.entities";
-    public const INIT_LOG_HISTORY = "bcp.table.log_history";
-    public const INIT_BLOCKS_LOG = "bcp.table.blocks_log";
-    public const INIT_ENTITIES_LOG = "bcp.table.entities_log";
-    public const INIT_INVENTORIES_LOG = "bcp.table.inventories_log";
-    public const INIT_DATABASE_STATUS = "bcp.table.db_status";
+    public const INIT_ENTITY = 'bcp.table.entities';
+    public const INIT_LOG_HISTORY = 'bcp.table.log_history';
+    public const INIT_BLOCKS_LOG = 'bcp.table.blocks_log';
+    public const INIT_ENTITIES_LOG = 'bcp.table.entities_log';
+    public const INIT_INVENTORIES_LOG = 'bcp.table.inventories_log';
+    public const INIT_DATABASE_STATUS = 'bcp.table.db_status';
     public const INIT_TABLES = [
         self::INIT_ENTITY, self::INIT_LOG_HISTORY,
         self::INIT_BLOCKS_LOG, self::INIT_ENTITIES_LOG,
         self::INIT_INVENTORIES_LOG, self::INIT_DATABASE_STATUS
     ];
-    public const BEGIN_TRANSACTION = "bcp.transaction.begin";
-    public const END_TRANSACTION = "bcp.transaction.end";
-    public const ADD_ENTITY = "bcp.add.entity";
-    public const ADD_DATABASE_VERSION = "bcp.add.db_version";
-    public const ADD_HISTORY_LOG = "bcp.add.log.main";
-    public const ADD_BLOCK_LOG = "bcp.add.log.block";
-    public const ADD_ENTITY_LOG = "bcp.add.log.entity";
-    public const ADD_INVENTORY_LOG = "bcp.add.log.inventory";
-    public const UPDATE_ENTITY_ID = "bcp.update.entity_id";
-    public const UPDATE_ROLLBACK_STATUS = "bcp.update.rollback_status";
-    public const UPDATE_DATABASE_VERSION = "bcp.update.db_version";
-    public const GET_DATABASE_STATUS = "bcp.get.db_status";
-    public const GET_ROLLBACK_OLD_BLOCKS = "bcp.get.log.old_blocks";
-    public const GET_ROLLBACK_NEW_BLOCKS = "bcp.get.log.new_blocks";
-    public const GET_ROLLBACK_OLD_INVENTORIES = "bcp.get.log.old_inventories";
-    public const GET_ROLLBACK_NEW_INVENTORIES = "bcp.get.log.new_inventories";
-    public const GET_ROLLBACK_ENTITIES = "bcp.get.log.entities";
-    public const GET_LAST_LOG_ID = "bcp.get.log.last_id";
-    public const GET_BLOCK_LOG = "bcp.get.log.block";
-    public const GET_ENTITY_LOG = "bcp.get.log.entity";
-    public const GET_NEAR_LOG = "bcp.get.log.near";
-    public const GET_TRANSACTION_LOG = "bcp.get.log.transaction";
-    public const PURGE = "bcp.purge";
+    public const BEGIN_TRANSACTION = 'bcp.transaction.begin';
+    public const END_TRANSACTION = 'bcp.transaction.end';
+    public const ADD_ENTITY = 'bcp.add.entity';
+    public const ADD_DATABASE_VERSION = 'bcp.add.db_version';
+    public const ADD_HISTORY_LOG = 'bcp.add.log.main';
+    public const ADD_BLOCK_LOG = 'bcp.add.log.block';
+    public const ADD_ENTITY_LOG = 'bcp.add.log.entity';
+    public const ADD_INVENTORY_LOG = 'bcp.add.log.inventory';
+    public const UPDATE_ENTITY_ID = 'bcp.update.entity_id';
+    public const UPDATE_ROLLBACK_STATUS = 'bcp.update.rollback_status';
+    public const UPDATE_DATABASE_VERSION = 'bcp.update.db_version';
+    public const GET_DATABASE_STATUS = 'bcp.get.db_status';
+    public const GET_ROLLBACK_OLD_BLOCKS = 'bcp.get.log.old_blocks';
+    public const GET_ROLLBACK_NEW_BLOCKS = 'bcp.get.log.new_blocks';
+    public const GET_ROLLBACK_OLD_INVENTORIES = 'bcp.get.log.old_inventories';
+    public const GET_ROLLBACK_NEW_INVENTORIES = 'bcp.get.log.new_inventories';
+    public const GET_ROLLBACK_ENTITIES = 'bcp.get.log.entities';
+    public const GET_LAST_LOG_ID = 'bcp.get.log.last_id';
+    public const GET_BLOCK_LOG = 'bcp.get.log.block';
+    public const GET_ENTITY_LOG = 'bcp.get.log.entity';
+    public const GET_NEAR_LOG = 'bcp.get.log.near';
+    public const GET_TRANSACTION_LOG = 'bcp.get.log.transaction';
+    public const PURGE = 'bcp.purge';
 
     private function __construct()
     {

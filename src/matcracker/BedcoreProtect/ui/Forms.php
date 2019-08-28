@@ -48,37 +48,37 @@ final class Forms
             function (Player $player, $data) {
                 switch ((int)$data) { //Clicked button
                     case 0: //Inspector
-                        $player->chat("/bcp inspect");
+                        $player->chat('/bcp inspect');
                         break;
                     case 1: //Rollback
-                        $player->sendForm($this->getInputMenu("rollback"));
+                        $player->sendForm($this->getInputMenu('rollback'));
                         break;
                     case 2: //Restore
-                        $player->sendForm($this->getInputMenu("restore"));
+                        $player->sendForm($this->getInputMenu('restore'));
                         break;
                     case 3: //Lookup
-                        $player->sendForm($this->getInputMenu("lookup"));
+                        $player->sendForm($this->getInputMenu('lookup'));
                         break;
                     case 4: //Purge
                         $player->sendForm($this->getPurgeMenu());
                         break;
                     case 5: //Reload
-                        $player->chat("/bcp reload");
+                        $player->chat('/bcp reload');
                         break;
                     case 6: //Status
-                        $player->chat("/bcp status");
+                        $player->chat('/bcp status');
                         break;
                 }
             }
-        ))->setMessage($lang->translateString("form.menu.option"))
-            ->addClassicButton($lang->translateString("form.menu.inspector"))
-            ->addClassicButton($lang->translateString("general.rollback"))
-            ->addClassicButton($lang->translateString("general.restore"))
-            ->addClassicButton($lang->translateString("form.menu.lookup"))
-            ->addClassicButton($lang->translateString("form.menu.purge"))
-            ->addClassicButton($lang->translateString("form.menu.reload"))
-            ->addClassicButton($lang->translateString("form.menu.status"))
-            ->setTitle(Utils::translateColors("&3&l" . Main::PLUGIN_NAME . " " . $lang->translateString("form.menu.title")));
+        ))->setMessage($lang->translateString('form.menu.option'))
+            ->addClassicButton($lang->translateString('form.menu.inspector'))
+            ->addClassicButton($lang->translateString('general.rollback'))
+            ->addClassicButton($lang->translateString('general.restore'))
+            ->addClassicButton($lang->translateString('form.menu.lookup'))
+            ->addClassicButton($lang->translateString('form.menu.purge'))
+            ->addClassicButton($lang->translateString('form.menu.reload'))
+            ->addClassicButton($lang->translateString('form.menu.status'))
+            ->setTitle(Utils::translateColors('&3&l' . Main::PLUGIN_NAME . " " . $lang->translateString('form.menu.title')));
     }
 
     private function getPurgeMenu(): BaseForm
@@ -90,23 +90,23 @@ final class Forms
                     $player->chat("/bcp purge t={$data[0]}");
                 }
             }
-        ))->addInput($lang->translateString("form.purge-menu.time"), "1h3m10s")
-            ->setTitle(Utils::translateColors("&3&l" . $lang->translateString("form.menu.purge")));
+        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
+            ->setTitle(Utils::translateColors('&3&l' . $lang->translateString('form.menu.purge')));
     }
 
     private function getInputMenu(string $type): BaseForm
     {
         $lang = Main::getInstance()->getLanguage();
         return (new CustomForm($this->parseForm($type)))
-            ->addLabel($lang->translateString("form.input-menu.required-fields"))
-            ->addInput($lang->translateString("form.input-menu.time"), "1h3m10s")
-            ->addSlider($lang->translateString("form.input-menu.radius"), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
-            ->addLabel($lang->translateString("form.input-menu.optional-fields"))
-            ->addInput($lang->translateString("form.input-menu.user-entity"), $lang->translateString("form.input-menu.user-entity-placeholder"))
-            ->addDropdown($lang->translateString("general.action"), array_keys(CommandParser::$ACTIONS), -1)
-            ->addInput($lang->translateString("form.input-menu.restrict-blocks"), "stone,dirt,2:0")
-            ->addInput($lang->translateString("form.input-menu.exclude-blocks"), "stone,dirt,2:0")
-            ->setTitle(Utils::translateColors("&3&l" . $lang->translateString("general.{$type}")));
+            ->addLabel($lang->translateString('form.input-menu.required-fields'))
+            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s")
+            ->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
+            ->addLabel($lang->translateString('form.input-menu.optional-fields'))
+            ->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'))
+            ->addDropdown($lang->translateString('general.action'), array_keys(CommandParser::$ACTIONS), -1)
+            ->addInput($lang->translateString('form.input-menu.restrict-blocks'), 'stone,dirt,2:0')
+            ->addInput($lang->translateString('form.input-menu.exclude-blocks'), 'stone,dirt,2:0')
+            ->setTitle(Utils::translateColors('&3&l' . $lang->translateString("general.{$type}")));
     }
 
     private function parseForm(string $subCmd): Closure
@@ -115,14 +115,14 @@ final class Forms
             if (is_array($data)) {
                 $time = "t={$data[1]}";
                 $radius = "r={$data[2]}";
-                $user = empty($data[4]) ? "" : "u={$data[4]}";
-                $action = "";
+                $user = empty($data[4]) ? '' : "u={$data[4]}";
+                $action = '';
                 if ($data[5] !== -1) {
                     $a = array_keys(CommandParser::$ACTIONS)[$data[5]];
                     $action = "a={$a}";
                 }
-                $includeBlocks = empty($data[6]) ? "" : "b={$data[6]}";
-                $excludeBlocks = empty($data[7]) ? "" : "e={$data[7]}";
+                $includeBlocks = empty($data[6]) ? '' : "b={$data[6]}";
+                $excludeBlocks = empty($data[7]) ? '' : "e={$data[7]}";
                 $player->chat("/bcp {$subCmd} {$time} {$radius} {$user} {$action} {$includeBlocks} {$excludeBlocks}");
             }
         };

@@ -27,6 +27,7 @@ use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
+use UnexpectedValueException;
 
 final class Inspector
 {
@@ -76,12 +77,12 @@ final class Inspector
      */
     public static function isInspector(CommandSender $inspector): bool
     {
-        return self::$inspectors[self::getSenderUUID($inspector)]["enabled"] ?? false;
+        return self::$inspectors[self::getSenderUUID($inspector)]['enabled'] ?? false;
     }
 
     public static function cacheLogs(CommandSender $inspector, array $logs = []): void
     {
-        self::$inspectors[self::getSenderUUID($inspector)]["logs"] = $logs;
+        self::$inspectors[self::getSenderUUID($inspector)]['logs'] = $logs;
     }
 
     /**
@@ -91,7 +92,7 @@ final class Inspector
      */
     public static function getCachedLogs(CommandSender $inspector): array
     {
-        return self::$inspectors[self::getSenderUUID($inspector)]["logs"] ?? [];
+        return self::$inspectors[self::getSenderUUID($inspector)]['logs'] ?? [];
     }
 
     public static function clearCache(): void
@@ -111,13 +112,13 @@ final class Inspector
     {
         $lang = Main::getInstance()->getLanguage();
         if (empty($logs)) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.no-data")));
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.no-data')));
 
             return;
         }
 
         if ($lines < 1) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.more-lines")));
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.more-lines')));
 
             return;
         }
@@ -126,12 +127,12 @@ final class Inspector
         $maxPages = count($chunkLogs);
         $fakePage = $page + 1;
         if (!isset($chunkLogs[$page])) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.page-not-exist", [$fakePage])));
+            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.page-not-exist', [$fakePage])));
 
             return;
         }
 
-        $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$fakePage, $maxPages]) . ") &f-----"));
+        $inspector->sendMessage(Utils::translateColors('&f-----&3 ' . Main::PLUGIN_NAME . ' &7(' . $lang->translateString('inspector.page', [$fakePage, $maxPages]) . ') &f-----'));
         foreach ($chunkLogs[$page] as $log) {
             //Default
             $from = (string)$log['entity_from'];
@@ -144,28 +145,30 @@ final class Inspector
 
             $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
 
-            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
-            if (isset($log["{$typeColumn}_block_id"], $log["{$typeColumn}_block_meta"])) {
-                $id = (int)$log["{$typeColumn}_block_id"];
-                $meta = (int)$log["{$typeColumn}_block_meta"];
-                $blockName = BlockFactory::get($id, $meta)->getName();
+            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? 'old' : 'new';
+            if (isset($log["{$typeColumn}_id"], $log["{$typeColumn}_meta"])) {
+                $id = (int)$log["{$typeColumn}_id"];
+                $meta = (int)$log["{$typeColumn}_meta"];
+                if (isset($log["{$typeColumn}_amount"])) {
+                    $amount = (int)$log["{$typeColumn}_amount"];
 
-                $to = "#{$id}:{$meta} ({$blockName})";
+                    $itemName = ItemFactory::get($id, $meta)->getName();
+                    $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
+                } else {
+                    $blockName = BlockFactory::get($id, $meta)->getName();
+                    $to = "#{$id}:{$meta} ({$blockName})";
+                }
             } elseif (isset($log['entity_to'])) {
                 $to = "#{$log['entity_to']}";
-            } elseif (isset($log["{$typeColumn}_item_meta"], $log["{$typeColumn}_item_amount"])) {
-                $id = (int)$log["{$typeColumn}_item_id"];
-                $meta = (int)$log["{$typeColumn}_item_meta"];
-                $amount = (int)$log["{$typeColumn}_item_amount"];
-                $itemName = ItemFactory::get($id, $meta)->getName();
-                $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
+            } else {
+                throw new UnexpectedValueException('Unexpected log parsed. Is your database up to date?');
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
-            $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
+            $inspector->sendMessage(Utils::translateColors(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
                 . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
-        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString("inspector.view-old-data") . " /bcp l <page>:<lines>."));
+        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data') . ' /bcp l <page>:<lines>.'));
 
     }
 

@@ -47,7 +47,7 @@ class AsyncLogsQueryGenerator extends AsyncTask
     public function onRun(): void
     {
         $query = /**@lang text */
-            "INSERT INTO log_history(who, x, y, z, world_name, action) VALUES";
+            'INSERT INTO log_history(who, x, y, z, world_name, action) VALUES';
 
         foreach ($this->positions as $position) {
             $x = $position->getX();
@@ -56,7 +56,7 @@ class AsyncLogsQueryGenerator extends AsyncTask
             $query .= "((SELECT uuid FROM entities WHERE uuid = '{$this->uuid}'), '{$x}', '{$y}', '{$z}', '{$position->getWorldName()}', '{$this->action->getType()}'),";
         }
 
-        $query = mb_substr($query, 0, -1) . ";";
+        $query = mb_substr($query, 0, -1) . ';';
         $this->setResult($query);
     }
 

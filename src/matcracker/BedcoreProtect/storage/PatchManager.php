@@ -40,7 +40,7 @@ final class PatchManager
 
     private function getVersionsToPatch(string $db_version): array
     {
-        $patchConfig = yaml_parse(stream_get_contents(($res = $this->plugin->getResource("patches/.patches")))) ?? [];
+        $patchConfig = yaml_parse(stream_get_contents(($res = $this->plugin->getResource('patches/.patches')))) ?? [];
         fclose($res);
         return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
             return version_compare($version, $db_version) > 0;
@@ -55,7 +55,7 @@ final class PatchManager
     {
         $updated = false;
         $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], function (array $rows) use (&$updated): void {
-            $versions = $this->getVersionsToPatch($rows[0]["version"]);
+            $versions = $this->getVersionsToPatch($rows[0]['version']);
             if ($updated = (!empty($versions))) { //This means the database is not updated.
                 /**
                  * @var string $version
@@ -71,7 +71,7 @@ final class PatchManager
         $this->connector->waitAll();
         if ($updated) {
             $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, [
-                "version" => $this->plugin->getVersion()
+                'version' => $this->plugin->getVersion()
             ]);
         }
         return $updated;
