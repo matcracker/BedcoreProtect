@@ -165,9 +165,12 @@ final class Main extends PluginBase
             new BlockListener($this),
             new EntityListener($this),
             new PlayerListener($this),
-            new WorldListener($this),
-            new BlockSniperListener($this)
+            new WorldListener($this)
         ];
+
+        if ($this->bsHooked) {
+            $events[] = new BlockSniperListener($this);
+        }
 
         foreach ($events as $event) {
             $this->getServer()->getPluginManager()->registerEvents($event, $this);
