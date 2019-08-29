@@ -28,13 +28,13 @@ CREATE TABLE IF NOT EXISTS "log_history"
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
-    history_id     UNSIGNED BIG INT    NOT NULL,
-    old_id   UNSIGNED INTEGER    NOT NULL,
-    old_meta UNSIGNED TINYINT(2) NOT NULL,
-    old_nbt  BLOB DEFAULT NULL,
-    new_id   UNSIGNED INTEGER    NOT NULL,
-    new_meta UNSIGNED TINYINT(2) NOT NULL,
-    new_nbt  BLOB DEFAULT NULL,
+    history_id UNSIGNED BIG INT    NOT NULL,
+    old_id     UNSIGNED INTEGER    NOT NULL,
+    old_meta   UNSIGNED TINYINT(2) NOT NULL,
+    old_nbt    BLOB DEFAULT NULL,
+    new_id     UNSIGNED INTEGER    NOT NULL,
+    new_meta   UNSIGNED TINYINT(2) NOT NULL,
+    new_nbt    BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS "entities_log"
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
-    history_id      UNSIGNED BIG INT NOT NULL,
-    slot            UNSIGNED TINYINT NOT NULL,
+    history_id UNSIGNED BIG INT NOT NULL,
+    slot       UNSIGNED TINYINT NOT NULL,
     old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
     old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
     old_nbt    BLOB                DEFAULT NULL,

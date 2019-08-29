@@ -28,13 +28,13 @@ CREATE TABLE IF NOT EXISTS log_history
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS blocks_log
 (
-    history_id     BIGINT UNSIGNED     NOT NULL,
-    old_id   INTEGER UNSIGNED    NOT NULL,
-    old_meta TINYINT(2) UNSIGNED NOT NULL,
-    old_nbt  LONGBLOB DEFAULT NULL,
-    new_id   INTEGER UNSIGNED    NOT NULL,
-    new_meta TINYINT(2) UNSIGNED NOT NULL,
-    new_nbt  LONGBLOB DEFAULT NULL,
+    history_id BIGINT UNSIGNED     NOT NULL,
+    old_id     INTEGER UNSIGNED    NOT NULL,
+    old_meta   TINYINT(2) UNSIGNED NOT NULL,
+    old_nbt    LONGBLOB DEFAULT NULL,
+    new_id     INTEGER UNSIGNED    NOT NULL,
+    new_meta   TINYINT(2) UNSIGNED NOT NULL,
+    new_nbt    LONGBLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS entities_log
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (
-    history_id      BIGINT UNSIGNED               NOT NULL,
-    slot            TINYINT UNSIGNED              NOT NULL,
+    history_id BIGINT UNSIGNED               NOT NULL,
+    slot       TINYINT UNSIGNED              NOT NULL,
     old_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
     old_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
     old_nbt    LONGBLOB            DEFAULT NULL,
@@ -103,7 +103,7 @@ INSERT INTO log_history(who, x, y, z, world_name,
                         action)
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
 -- #            }
--- #            {to_block
+-- #            {block
 -- #                :old_id int
 -- #                :old_meta int
 -- #                :old_nbt ?string
@@ -115,14 +115,14 @@ INSERT INTO blocks_log(history_id, old_id, old_meta, old_nbt, new_id, new_meta,
 VALUES (LAST_INSERT_ID(), :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
         :new_nbt);
 -- #            }
--- #            {to_entity
+-- #            {entity
 -- #                :uuid string
 -- #                :id int
 -- #                :nbt ?string
 INSERT INTO entities_log(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
 VALUES (LAST_INSERT_ID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
--- #            {to_inventory
+-- #            {inventory
 -- #                :slot int
 -- #                :old_id int 0
 -- #                :old_meta int 0
@@ -137,20 +137,29 @@ INSERT INTO inventories_log(history_id, slot, old_id, old_meta, old_nbt, old_amo
 VALUES (LAST_INSERT_ID(), :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id,
         :new_meta, :new_nbt, :new_amount);
 -- #            }
--- #            {update_entity_id
--- #                :log_id int
--- #                :entity_id int
+-- #        }
+-- #    }
+-- #    {update
+-- #        {entity_id
+-- #            :log_id int
+-- #            :entity_id int
 UPDATE entities_log
 SET entityfrom_id = :entity_id
 WHERE history_id = :log_id;
--- #            }
--- #            {update_db_version
--- #                :version string
+-- #        }
+-- #        {db_version
+-- #             :version string
 UPDATE status
 SET version     = :version,
     upgraded_on = DEFAULT
 LIMIT 1;
--- #            }
+-- #        }
+-- #        {rollback_status
+-- #             :rollback bool
+-- #             :log_ids list:int
+UPDATE log_history
+SET rollback = :rollback
+WHERE log_id IN :log_ids;
 -- #        }
 -- #    }
 -- #    {get
@@ -163,6 +172,78 @@ LIMIT 1;
 -- #            {last_id
 SELECT MAX(log_id) AS lastId
 FROM log_history;
+-- #            }
+-- #            {old_blocks
+-- #                :log_ids list:int
+SELECT history_id,
+       bl.old_id,
+       bl.old_meta,
+       bl.old_nbt,
+       x,
+       y,
+       z,
+       world_name
+FROM log_history
+         INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {new_blocks
+-- #                :log_ids list:int
+SELECT history_id,
+       bl.new_id,
+       bl.new_meta,
+       bl.new_nbt,
+       x,
+       y,
+       z,
+       world_name
+FROM log_history
+         INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {old_inventories
+-- #                :log_ids list:int
+SELECT history_id,
+       il.slot,
+       il.old_id,
+       il.old_meta,
+       il.old_nbt,
+       il.old_amount,
+       x,
+       y,
+       z
+FROM log_history
+         INNER JOIN inventories_log il ON log_history.log_id = il.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {new_inventories
+-- #                :log_ids list:int
+SELECT history_id,
+       il.slot,
+       il.new_id,
+       il.new_meta,
+       il.new_nbt,
+       il.new_amount,
+       x,
+       y,
+       z
+FROM log_history
+         INNER JOIN inventories_log il ON log_history.log_id = il.history_id
+WHERE log_id IN :log_ids;
+-- #            }
+-- #            {entities
+-- #                :log_ids list:int
+SELECT e.entity_classpath,
+       el.entityfrom_id,
+       el.entityfrom_nbt,
+       x,
+       y,
+       z,
+       action
+FROM log_history
+         INNER JOIN entities_log el ON log_history.log_id = el.history_id
+         INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
+WHERE log_id IN :log_ids;
 -- #            }
 -- #            {block
 -- #                :min_x int
