@@ -203,5 +203,7 @@ final class Main extends PluginBase
 
         Inspector::clearCache();
         self::$instance = null;
+        $this->bsHooked = false;
+        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
     }
 }
