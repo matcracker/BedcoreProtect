@@ -16,23 +16,29 @@
  * @link https://www.github.com/matcracker/BedcoreProtect
  *
 */
+
 declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage;
 
+use Generator;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\Queries;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
+use SOFe\AwaitGenerator\Await;
 
 class Database
 {
-    /**@var Main */
+    /**@var Main $plugin */
     private $plugin;
-    /**@var DataConnector */
-    private $dataConnector;
-    /**@var Queries */
+    /**@var DataConnector $connector */
+    private $connector;
+    /**@var PatchManager $patchManager */
+    private $patchManager;
+    /**@var Queries $queries */
     private $queries;
 
     public function __construct(Main $plugin)
@@ -41,21 +47,26 @@ class Database
     }
 
     /**
-     * Attempts to connect to the database. Returns true if success.
+     * Attempts to connect and initialize the database. Returns true if success.
      * @return bool
      */
     public final function connect(): bool
     {
         try {
-            $this->dataConnector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
-                "sqlite" => "sqlite.sql",
-                "mysql" => "mysql.sql"
+            $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
+                'sqlite' => 'sqlite.sql',
+                'mysql' => 'mysql.sql'
             ]);
-            $this->queries = new Queries($this->dataConnector, $this->plugin->getParsedConfig());
+            $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
+            if ($patchResource !== null) {
+                $this->connector->loadQueryFile($patchResource);
+            }
+            $this->patchManager = new PatchManager($this->plugin, $this->connector);
+            $this->queries = new Queries($this->connector, $this->plugin->getParsedConfig());
 
             return true;
         } catch (SqlError $error) {
-            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
         }
 
         return false;
@@ -63,27 +74,52 @@ class Database
 
     public final function getQueries(): Queries
     {
-        if (!$this->isConnected()) {
-            $this->plugin->getLogger()->critical("Could not connect to the database! Check your connection, database settings or plugin configuration file");
+        if (!$this->isConnected() || !isset($this->queries)) {
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
 
         return $this->queries;
     }
 
+    public final function getPatchManager(): PatchManager
+    {
+        return $this->patchManager;
+    }
+
     public final function isConnected(): bool
     {
-        return isset($this->dataConnector);
+        return isset($this->connector);
     }
 
     public final function disconnect(): void
     {
         if ($this->isConnected()) {
-            $this->dataConnector->waitAll();
-            $this->dataConnector->close();
-            $this->dataConnector = null;
+            $this->connector->waitAll();
+            $this->connector->close();
+            $this->connector = null;
             $this->queries = null;
         }
+    }
+
+    public function getStatus(): Generator
+    {
+        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    /**
+     * Returns the database version.
+     * @return string
+     * @internal
+     */
+    public function getVersion(): string
+    {
+        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], static function (array $rows) use (&$version) {
+            $version = (string)$rows[0]['version'];
+        });
+        $this->connector->waitAll();
+        return $version;
     }
 
 }

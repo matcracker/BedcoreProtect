@@ -21,9 +21,11 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
@@ -31,17 +33,16 @@ use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
-use poggit\libasynql\SqlError;
+use SOFe\AwaitGenerator\Await;
+use UnexpectedValueException;
 
 class Queries
 {
     use QueriesBlocksTrait, QueriesInventoriesTrait, QueriesEntitiesTrait;
 
-    /**
-     * @var DataConnector
-     */
+    /**@var DataConnector $connector */
     protected $connector;
-
+    /**@var ConfigParser $configParser */
     protected $configParser;
 
     public function __construct(DataConnector $connector, ConfigParser $configParser)
@@ -50,29 +51,35 @@ class Queries
         $this->configParser = $configParser;
     }
 
-    public function init(): void
+    public function init(string $pluginVersion): void
     {
+        if (!preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $pluginVersion)) {
+            throw new UnexpectedValueException("The field {$pluginVersion} must be a version.");
+        }
+
         foreach (QueriesConst::INIT_TABLES as $queryTable) {
             $this->connector->executeGeneric($queryTable);
         }
-        $this->connector->waitAll();
-        $this->addDefaultEntities();
 
-        if ($this->configParser->isSQLite()) {
-            $this->beginTransaction();
-        }
+        $this->connector->executeInsert(QueriesConst::ADD_DATABASE_VERSION, [
+            'version' => $pluginVersion
+        ]);
+
+        $this->connector->waitAll();
+
+        $this->addDefaultEntities();
     }
 
     private function addDefaultEntities(): void
     {
-        $uuid = Server::getInstance()->getServerUniqueId()->toString();
-        $this->addRawEntity($uuid, "#console");
-        $this->addRawEntity("flow-uuid", "#flow");
-        $this->addRawEntity("water-uuid", "#water");
-        $this->addRawEntity("still water-uuid", "#water");
-        $this->addRawEntity("lava-uuid", "#lava");
-        $this->addRawEntity("fire block-uuid", "#fire");
-        $this->addRawEntity("leaves-uuid", "#decay");
+        $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
+        $this->addRawEntity($serverUuid, '#console');
+        $this->addRawEntity('flow-uuid', '#flow');
+        $this->addRawEntity('water-uuid', '#water');
+        $this->addRawEntity('still water-uuid', '#water');
+        $this->addRawEntity('lava-uuid', '#lava');
+        $this->addRawEntity('fire block-uuid', '#fire');
+        $this->addRawEntity('leaves-uuid', '#decay');
     }
 
     /**
@@ -102,14 +109,14 @@ class Queries
         $maxV = $position->add($near, $near, $near)->floor();
 
         $this->connector->executeSelect($queryName, [
-            "min_x" => $minV->getX(),
-            "max_x" => $maxV->getX(),
-            "min_y" => $minV->getY(),
-            "max_y" => $maxV->getY(),
-            "min_z" => $minV->getZ(),
-            "max_z" => $maxV->getZ(),
-            "world_name" => $position->getLevel()->getFolderName()
-        ], static function (array $rows) use ($inspector) {
+            'min_x' => $minV->getX(),
+            'max_x' => $maxV->getX(),
+            'min_y' => $minV->getY(),
+            'max_y' => $maxV->getY(),
+            'min_z' => $minV->getZ(),
+            'max_z' => $maxV->getZ(),
+            'world_name' => $position->getLevel()->getName()
+        ], static function (array $rows) use ($inspector): void {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
         });
@@ -118,52 +125,20 @@ class Queries
     public function requestLookup(CommandSender $sender, CommandParser $parser): void
     {
         $query = $parser->buildLookupQuery();
-        $this->connector->executeSelectRaw($query, [], static function (array $rows) use ($sender) {
+        $this->connector->executeSelectRaw($query, [], static function (array $rows) use ($sender): void {
             Inspector::cacheLogs($sender, $rows);
             Inspector::parseLogs($sender, $rows);
         });
     }
 
-    public function rollback(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
+    public function rollback(Area $area, CommandParser $commandParser): void
     {
-        try {
-            $itemsCount = 0;
-            $entitiesCount = 0;
-            $blocksCount = $this->rollbackBlocks($position, $parser);
-            if ($this->configParser->getRollbackItems())
-                $itemsCount = $this->rollbackItems($position, $parser);
-            if ($this->configParser->getRollbackEntities())
-                $entitiesCount = $this->rollbackEntities($position, $parser);
-
-            if ($onSuccess !== null) {
-                $onSuccess($blocksCount, $itemsCount, $entitiesCount);
-            }
-        } catch (SqlError $error) {
-            if ($onError !== null) {
-                $onError($error);
-            }
-        }
+        $this->startRollback(true, $area, $commandParser);
     }
 
-    public function restore(Position $position, CommandParser $parser, ?callable $onSuccess = null, ?callable $onError = null): void
+    public function restore(Area $area, CommandParser $commandParser): void
     {
-        try {
-            $itemsCount = 0;
-            $entitiesCount = 0;
-            $blocksCount = $this->restoreBlocks($position, $parser);
-            if ($this->configParser->getRollbackItems())
-                $itemsCount += $this->restoreItems($position, $parser);
-            if ($this->configParser->getRollbackEntities())
-                $entitiesCount += $this->restoreEntities($position, $parser);
-
-            if ($onSuccess !== null) {
-                $onSuccess($blocksCount, $itemsCount, $entitiesCount);
-            }
-        } catch (SqlError $error) {
-            if ($onError !== null) {
-                $onError($error);
-            }
-        }
+        $this->startRollback(false, $area, $commandParser);
     }
 
     public function requestTransactionLog(Player $inspector, Position $position): void
@@ -179,7 +154,7 @@ class Queries
     public function purge(int $time, ?callable $onSuccess = null): void
     {
         $this->connector->executeChange(QueriesConst::PURGE, [
-            "time" => $time
+            'time' => $time
         ], $onSuccess);
     }
 
@@ -193,57 +168,34 @@ class Queries
         }
     }
 
-    private function addRawLog(string $uuid, Position $position, Action $action): void
+    /**
+     * @param bool $rollback
+     * @param int[] $logIds
+     * @internal
+     */
+    public final function updateRollbackStatus(bool $rollback, array $logIds): void
     {
-        $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            "uuid" => strtolower($uuid),
-            "x" => $position->getFloorX(),
-            "y" => $position->getFloorY(),
-            "z" => $position->getFloorZ(),
-            "world_name" => $position->getLevel()->getFolderName(),
-            "action" => $action->getType()
+        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+            'rollback' => $rollback,
+            'log_ids' => $logIds
         ]);
     }
 
-    /**
-     * Returns a single query that add multiple raw logs
-     *
-     * @param string $uuid
-     * @param Position[] $positions
-     * @param Action $action
-     *
-     * @return string
-     */
-    private function buildMultipleRawLogsQuery(string $uuid, array $positions, Action $action): string
+    private function addRawLog(string $uuid, Position $position, Action $action): void
     {
-        $query = /**@lang text */
-            "INSERT INTO log_history(who, x, y, z, world_name, action) VALUES";
-
-        foreach ($positions as $position) {
-            $x = $position->getFloorX();
-            $y = $position->getFloorY();
-            $z = $position->getFloorZ();
-            $levelName = $position->getLevel()->getFolderName();
-            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$uuid}'), '{$x}', '{$y}', '{$z}', '{$levelName}', '{$action->getType()}'),";
-        }
-
-        $query = mb_substr($query, 0, -1) . ";";
-
-        return $query;
+        $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
+            'uuid' => strtolower($uuid),
+            'x' => $position->getFloorX(),
+            'y' => $position->getFloorY(),
+            'z' => $position->getFloorZ(),
+            'world_name' => $position->getLevel()->getName(),
+            'action' => $action->getType()
+        ]);
     }
 
-    private function getLastLogId(): int
+    private function getLastLogId(): Generator
     {
-        $id = 0;
-        $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [],
-            static function (array $rows) use (&$id) {
-                if (count($rows) === 1) {
-                    $id = (int)$rows[0]["lastId"];
-                }
-            }
-        );
-        $this->connector->waitAll();
-
-        return $id;
+        $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [], yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 }

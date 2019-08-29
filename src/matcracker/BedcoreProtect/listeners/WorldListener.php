@@ -21,10 +21,9 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockIds;
-use pocketmine\block\VanillaBlocks;
 use pocketmine\event\block\LeavesDecayEvent;
 
 final class WorldListener extends BedcoreListener

@@ -21,8 +21,9 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\enums;
 
+use InvalidArgumentException;
 use function preg_match;
 
 trait EnumTrait
@@ -34,13 +35,13 @@ trait EnumTrait
 
     /**
      * @param string $enumName
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function __construct(string $enumName)
     {
         static $pattern = '/^\D[A-Za-z\d_]+$/u';
         if (preg_match($pattern, $enumName, $matches) === 0) {
-            throw new \InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
+            throw new InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
         }
         $this->enumName = $enumName;
     }
@@ -63,7 +64,7 @@ trait EnumTrait
      * @param string $name
      *
      * @return self
-     * @throws \InvalidArgumentException if no member matches.
+     * @throws InvalidArgumentException if no member matches.
      */
     public static function fromString(string $name): self
     {
@@ -71,7 +72,7 @@ trait EnumTrait
     }
 
     /**
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      * @internal Lazy-inits the enum if necessary.
      *
      */
@@ -99,7 +100,7 @@ trait EnumTrait
      *
      * @param self $member
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected static function register(self $member): void
     {

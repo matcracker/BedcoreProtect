@@ -26,6 +26,7 @@ use InvalidArgumentException;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
+use pocketmine\level\format\Chunk;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\utils\TextFormat;
@@ -49,8 +50,8 @@ final class Utils
      */
     public static function translateColors(string $message): string
     {
-        return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", static function (array $matches): string {
-            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
+        return preg_replace_callback('/(\\\&|\&)[0-9a-fk-or]/', static function (array $matches): string {
+            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace('\\' . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
         }, $message);
     }
 
@@ -65,12 +66,12 @@ final class Utils
     {
         if (empty($strDate)) return null;
         $strDate = strtolower($strDate);
-        $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
+        $strDate = preg_replace('/[^0-9smhdw]/', "", $strDate);
         if (empty($strDate)) return null;
 
         $time = null;
         $matches = [];
-        preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
+        preg_match_all('/([0-9]+)([smhdw])/', $strDate, $matches);
 
         foreach ($matches[0] as $match) {
             $value = (int)preg_replace("/[^0-9]/", "", $match);
@@ -115,7 +116,7 @@ final class Utils
         foreach ($since as $key => $val) {
             // separator
             if ($string) {
-                $string .= $key != $last_key ? ', ' : ' and ';
+                $string .= $key !== $last_key ? ', ' : ' and ';
             }
             // set plural
             $key .= $val > 1 ? 's' : '';
@@ -152,7 +153,7 @@ final class Utils
         try {
             return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
         } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException("Invalid entity class.");
+            throw new InvalidArgumentException('Invalid entity class.');
         }
     }
 
@@ -184,8 +185,8 @@ final class Utils
 
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
-        if (!$tag instanceof CompoundTag) {
-            throw new UnexpectedValueException("Value must return CompoundTag, got " . get_class($tag));
+        if (!($tag instanceof CompoundTag)) {
+            throw new UnexpectedValueException('Value must return CompoundTag, got ' . get_class($tag));
         }
         return $tag;
     }
@@ -198,7 +199,7 @@ final class Utils
     { //HACK ^-^
         try {
             $r = new ReflectionClass(Entity::class);
-            $property = $r->getProperty("saveNames");
+            $property = $r->getProperty('saveNames');
             $property->setAccessible(true);
             $names = [];
 
@@ -209,8 +210,18 @@ final class Utils
 
             return $names;
         } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException("Could not get entities names.");
+            throw new InvalidArgumentException('Could not get entities names.');
         }
     }
 
+    /**
+     * @param Chunk[] $chunks
+     * @return string[]
+     */
+    public static function serializeChunks(array $chunks): array
+    {
+        return array_map(static function (Chunk $chunk): string {
+            return $chunk->fastSerialize();
+        }, $chunks);
+    }
 }

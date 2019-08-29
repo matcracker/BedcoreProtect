@@ -1,4 +1,7 @@
-#BedcoreProtect Config
+# Plugin language
+language: eng
+
+# Database settings
 database:
   # The database type. "sqlite" and "mysql" are supported.
   type: sqlite
@@ -16,6 +19,9 @@ database:
     password: ""
     # The database name where plugin stores data.
     schema:
+  # The maximum number of simultaneous SQL queries
+  # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
+  worker-limit: 1
 
 # The timezone where you are located. This is necessary to correctly log the time of events.
 # To find your timezone, check here: https://www.php.net/manual/en/timezones.php
@@ -64,7 +70,7 @@ block-ignite: true
 # Logs explosions, such as TNT and Creepers.
 explosions: true
 
-# Track when an entity changes a block, such as an Enderman destroying blocks. (NOT FULLY IMPLEMENTED BY POCKETMINE YET)
+# Track when an entity changes a block, such as an Enderman destroying blocks. (NOT FULLY IMPLEMENTED IN POCKETMINE YET)
 entity-change: true
 
 # Logs killed entities, such as killed cows and enderman.
@@ -79,13 +85,13 @@ buckets: true
 # Logs natural tree leaves decay.
 leaves-decay: true
 
-# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT IMPLEMENTED BY POCKETMINE YET)
+# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT IMPLEMENTED IN POCKETMINE YET)
 tree-growth: true
 
-# Logs mushroom growth. (NOT IMPLEMENTED BY POCKETMINE YET)
+# Logs mushroom growth. (NOT IMPLEMENTED IN POCKETMINE YET)
 mushroom-growth: true
 
-# Logs natural vine growth. (NOT IMPLEMENTED BY POCKETMINE YET)
+# Logs natural vine growth. (NOT IMPLEMENTED IN POCKETMINE YET)
 vine-growth: true
 
 # Logs water flow. If water destroys other blocks, such as torches,
@@ -108,3 +114,6 @@ item-transactions: true
 # Track player interactions, such as when a player opens a door, presses
 # a button, or opens a chest. Player interactions can't be rolled back.
 player-interactions: true
+
+# Logs changes made via the plugin "BlockSniper" if it's in use on your server.
+blocksniper-hook: true

@@ -24,12 +24,14 @@ namespace matcracker\BedcoreProtect;
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\listeners\BlockListener;
+use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
 
 final class Main extends PluginBase
@@ -38,6 +40,9 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
+    /**@var Main $instance */
+    private static $instance;
+
     /**@var Database $database */
     private $database;
 
@@ -45,6 +50,10 @@ final class Main extends PluginBase
     private $configParser;
     /**@var ConfigParser $oldConfigParser */
     private $oldConfigParser;
+    /**@var BaseLang $baseLang */
+    private $baseLang;
+    /**@var boolean $bsHooked */
+    private $bsHooked = false;
 
     /**
      * @return Database
@@ -73,25 +82,56 @@ final class Main extends PluginBase
      */
     public function reloadPlugin(): bool
     {
-        $this->oldConfigParser = clone $this->configParser;
+        $this->oldConfigParser = $this->configParser;
         $this->reloadConfig();
+        $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
-        return $this->configParser->validate()->isValidConfig();
+        if ($this->configParser->isValidConfig()) {
+            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+            return true;
+        }
+
+        return false;
     }
 
-    public function onEnable(): void
+    public static function getInstance(): Main
     {
-        $this->database = new Database($this);
+        return self::$instance;
+    }
 
-        @mkdir($this->getDataFolder());
-        $this->saveResource("bedcore_database.db");
-
-        $this->configParser = (new ConfigParser($this))->validate();
+    public function onLoad(): void
+    {
+        $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
         }
+
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+
+        if ($this->configParser->getBlockSniperHook()) {
+            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin('BlockSniper');
+            if ($bsPlugin !== null) {
+                $this->getLogger()->info($this->baseLang->translateString('blocksniper.hook.success'));
+                $this->bsHooked = true;
+            } else {
+                $this->getLogger()->warning($this->baseLang->translateString('blocksniper.hook.no-hook'));
+            }
+        }
+
+        if ($this->configParser->getCheckUpdates()) {
+            UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
+        }
+    }
+
+    public function onEnable(): void
+    {
+        self::$instance = $this;
+        $this->database = new Database($this);
+
+        @mkdir($this->getDataFolder());
+        $this->saveResource('bedcore_database.db');
 
         //Database connection
         if (!$this->database->connect()) {
@@ -99,14 +139,26 @@ final class Main extends PluginBase
 
             return;
         }
+        $version = $this->getVersion();
+        $this->database->getQueries()->init($version);
+        $dbVersion = $this->database->getVersion();
+        if (version_compare($version, $dbVersion) < 0) {
+            $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
+            $this->getServer()->getPluginManager()->disablePlugin($this);
 
-        $this->database->getQueries()->init();
+            return;
+        }
+
+        if ($this->database->getPatchManager()->patch()) {
+            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
+        }
 
         if ($this->configParser->isSQLite()) {
+            $this->database->getQueries()->beginTransaction();
             $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
 
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+        $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
 
         //Registering events
         $events = [
@@ -116,13 +168,32 @@ final class Main extends PluginBase
             new WorldListener($this)
         ];
 
+        if ($this->bsHooked) {
+            $events[] = new BlockSniperListener($this);
+        }
+
         foreach ($events as $event) {
             $this->getServer()->getPluginManager()->registerEvents($event, $this);
         }
+    }
 
-        if ($this->configParser->getCheckUpdates()) {
-            UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
-        }
+    public function isBlockSniperHooked(): bool
+    {
+        return $this->bsHooked;
+    }
+
+    public function getLanguage(): BaseLang
+    {
+        return $this->baseLang;
+    }
+
+    /**
+     * Returns the plugin version.
+     * @return string
+     */
+    public function getVersion(): string
+    {
+        return $this->getDescription()->getVersion();
     }
 
     public function onDisable(): void
@@ -131,5 +202,8 @@ final class Main extends PluginBase
         $this->database->disconnect();
 
         Inspector::clearCache();
+        self::$instance = null;
+        $this->bsHooked = false;
+        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
     }
 }

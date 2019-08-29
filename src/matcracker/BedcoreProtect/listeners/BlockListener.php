@@ -21,8 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
+use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\utils\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
@@ -74,7 +74,7 @@ final class BlockListener extends BedcoreListener
                     $tileChest = BlockUtils::asTile($block);
                     if ($tileChest instanceof TileChest) {
                         $inventory = $tileChest->getRealInventory();
-                        if (count($inventory->getContents()) > 0) { //If not empty
+                        if (!empty($inventory->getContents())) {
                             $this->database->getQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                         }
                     }

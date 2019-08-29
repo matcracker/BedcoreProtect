@@ -22,8 +22,8 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use BadMethodCallException;
-use matcracker\BedcoreProtect\Main;
 use pocketmine\level\Level;
+use pocketmine\utils\Config;
 
 /**
  * It parses the plugin configuration to be an object.
@@ -33,8 +33,8 @@ use pocketmine\level\Level;
  */
 final class ConfigParser
 {
-    /**@var Main $plugin */
-    private $plugin;
+    /**@var Config $config */
+    private $config;
 
     /**@var array $data */
     private $data = [];
@@ -42,14 +42,23 @@ final class ConfigParser
     /**@var bool $isValid */
     private $isValid = false;
 
-    public function __construct(Main $plugin)
+    public function __construct(Config $config)
     {
-        $this->plugin = $plugin;
+        $this->config = $config;
+    }
+
+    public function getLanguage(): string
+    {
+        if (!$this->isValid) {
+            throw new BadMethodCallException('The configuration must be validated.');
+        }
+
+        return (string)$this->data['language'];
     }
 
     public function getPrintableDatabaseType(): string
     {
-        return $this->isSQLite() ? "SQLite" : "MySQL";
+        return $this->isSQLite() ? 'SQLite' : 'MySQL';
     }
 
     public function isSQLite(): bool
@@ -60,7 +69,7 @@ final class ConfigParser
     public function getDatabaseType(): string
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (string)$this->data['database']['type'];
@@ -69,16 +78,16 @@ final class ConfigParser
     public function isEnabledWorld(Level $world): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
-        return in_array($world->getFolderName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
+        return in_array($world->getName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
     }
 
     public function getEnabledWorlds(): array
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (array)$this->data['enabled-worlds'];
@@ -87,7 +96,7 @@ final class ConfigParser
     public function getCheckUpdates(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['check-updates'];
@@ -96,7 +105,7 @@ final class ConfigParser
     public function getDefaultRadius(): int
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (int)$this->data['default-radius'];
@@ -105,7 +114,7 @@ final class ConfigParser
     public function getMaxRadius(): int
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (int)$this->data['max-radius'];
@@ -123,7 +132,7 @@ final class ConfigParser
     public function getRollbackEntities(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['rollback-entities'];
@@ -132,7 +141,7 @@ final class ConfigParser
     public function getBlockPlace(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['block-place'];
@@ -141,7 +150,7 @@ final class ConfigParser
     public function getBlockBreak(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['block-break'];
@@ -150,7 +159,7 @@ final class ConfigParser
     public function getNaturalBreak(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['natural-break'];
@@ -159,7 +168,7 @@ final class ConfigParser
     public function getBlockMovement(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['block-movement'];
@@ -168,7 +177,7 @@ final class ConfigParser
     public function getBlockBurn(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['block-burn'];
@@ -177,7 +186,7 @@ final class ConfigParser
     public function getExplosions(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['explosions'];
@@ -186,7 +195,7 @@ final class ConfigParser
     public function getEntityKills(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['entity-kills'];
@@ -195,7 +204,7 @@ final class ConfigParser
     public function getSignText(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['sign-text'];
@@ -204,7 +213,7 @@ final class ConfigParser
     public function getBuckets(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['buckets'];
@@ -213,7 +222,7 @@ final class ConfigParser
     public function getLeavesDecay(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['leaves-decay'];
@@ -222,7 +231,7 @@ final class ConfigParser
     public function getLiquidTracking(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['liquid-tracking'];
@@ -231,7 +240,7 @@ final class ConfigParser
     public function getItemTransactions(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['item-transactions'];
@@ -240,10 +249,18 @@ final class ConfigParser
     public function getPlayerInteractions(): bool
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (bool)$this->data['player-interactions'];
+    }
+
+    public function getBlockSniperHook(): bool
+    {
+        if (!$this->isValid) {
+            throw new BadMethodCallException('The configuration must be validated.');
+        }
+        return (bool)$this->data['blocksniper-hook'];
     }
 
     public function isValidConfig(): bool
@@ -253,21 +270,19 @@ final class ConfigParser
 
     public function validate(): self
     {
-        $data = $this->plugin->getConfig()->getAll();
+        $data = $this->config->getAll();
 
         $this->isValid = true;
         $this->data = $data;
 
         date_default_timezone_set($this->getTimezone());
-        $this->plugin->getLogger()->debug('Set default timezone to: ' . date_default_timezone_get());
-
         return $this;
     }
 
     public function getTimezone(): string
     {
         if (!$this->isValid) {
-            throw new BadMethodCallException("The configuration must be validated.");
+            throw new BadMethodCallException('The configuration must be validated.');
         }
 
         return (string)$this->data['timezone'];

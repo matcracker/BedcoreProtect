@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use pocketmine\block\Anvil;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
@@ -130,8 +131,12 @@ final class BlockUtils
 
         return $block->getLevel()->getTile($block->asPosition());
     }
-	
-	public static function getTileName(int $id): string
+
+    /**
+     * @param SerializableBlock|Block $block
+     * @return string
+     */
+    public static function getTileName($block): string //Remove on 4.0
     {
         $array = [
             BlockIds::STANDING_BANNER => Tile::BANNER,
@@ -149,6 +154,6 @@ final class BlockUtils
             BlockIds::SKULL_BLOCK => Tile::SKULL
         ];
 
-        return $array[$id] ?? 'Unknown';
+        return $array[$block->getId()] ?? 'Unknown';
     }
 }

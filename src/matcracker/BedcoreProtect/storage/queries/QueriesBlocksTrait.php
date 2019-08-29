@@ -21,22 +21,31 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\commands\CommandParser;
-use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
+use matcracker\BedcoreProtect\tasks\async\AsyncBlocksQueryGenerator;
+use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
+use matcracker\BedcoreProtect\tasks\async\AsyncRestoreTask;
+use matcracker\BedcoreProtect\tasks\async\AsyncRollbackTask;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
+use pocketmine\inventory\InventoryHolder;
+use pocketmine\item\ItemFactory;
 use pocketmine\level\Position;
+use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
-use pocketmine\tile\Spawnable;
+use pocketmine\Server;
+use pocketmine\tile\Chest;
 use pocketmine\tile\Tile;
-use poggit\libasynql\SqlError;
+use SOFe\AwaitGenerator\Await;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -64,31 +73,15 @@ trait QueriesBlocksTrait
 
     protected final function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null): void
     {
-        $this->addBlock($oldBlock);
-        $this->addBlock($newBlock);
         $pos = $position ?? $newBlock->asPosition();
         $this->addRawLog($uuid, $pos, $action);
         $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            "old_block_id" => $oldBlock->getId(),
-            "old_block_meta" => $oldBlock->getDamage(),
-            "old_block_nbt" => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
-            "new_block_id" => $newBlock->getId(),
-            "new_block_meta" => $newBlock->getDamage(),
-            "new_block_nbt" => $newTag !== null ? Utils::serializeNBT($newTag) : null
-        ]);
-    }
-
-    /**
-     * It registers the block inside 'blocks' table
-     *
-     * @param Block $block
-     */
-    public function addBlock(Block $block): void
-    {
-        $this->connector->executeInsert(QueriesConst::ADD_BLOCK, [
-            "id" => $block->getId(),
-            "meta" => $block->getDamage(),
-            "name" => $block->getName()
+            'old_id' => $oldBlock->getId(),
+            'old_meta' => $oldBlock->getDamage(),
+            'old_nbt' => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
+            'new_id' => $newBlock->getId(),
+            'new_meta' => $newBlock->getDamage(),
+            'new_nbt' => $newTag !== null ? Utils::serializeNBT($newTag) : null
         ]);
     }
 
@@ -106,7 +99,7 @@ trait QueriesBlocksTrait
         $name = $who->getName();
         //Particular blocks
         if ($who instanceof Leaves) {
-            $name = "leaves";
+            $name = 'leaves';
         }
 
         $this->addRawBlockLog("{$name}-uuid", $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
@@ -115,7 +108,7 @@ trait QueriesBlocksTrait
     /**
      * @param Player $player
      * @param ItemFrame $itemFrame
-     * @param CompoundTag $oldItemFrameNbt
+     * @param CompoundTag|null $oldItemFrameNbt
      * @param Action $action
      */
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, ?CompoundTag $oldItemFrameNbt, Action $action): void
@@ -134,10 +127,10 @@ trait QueriesBlocksTrait
         if (empty($oldBlocks)) {
             return;
         }
-        $this->addEntity($entity);
 
-        $oldBlocksQuery = $this->buildMultipleBlocksQuery($oldBlocks);
-        $this->connector->executeInsertRaw($oldBlocksQuery);
+        $oldBlocks = array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::toSerializableBlock($block);
+        }, $oldBlocks);
 
         if (is_array($newBlocks)) {
             if (empty($newBlocks)) {
@@ -146,169 +139,142 @@ trait QueriesBlocksTrait
 
             (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
-
-            $newBlocksQuery = $this->buildMultipleBlocksQuery($newBlocks);
-            $this->connector->executeInsertRaw($newBlocksQuery);
+            $newBlocks = array_map(static function (Block $block): SerializableBlock {
+                return SerializableBlock::toSerializableBlock($block);
+            }, $newBlocks);
         } else {
-            $this->addBlock($newBlocks);
+            $newBlocks = SerializableBlock::toSerializableBlock($newBlocks);
         }
 
-        $rawLogsQuery = $this->buildMultipleRawLogsQuery(Utils::getEntityUniqueId($entity), $oldBlocks, $action);
-        $rawBlockLogsQuery = $this->buildMultipleRawBlockLogsQuery($oldBlocks, $newBlocks);
+        $this->addEntity($entity);
 
-        $this->connector->executeInsertRaw($rawLogsQuery);
-        $this->connector->executeInsertRaw($rawBlockLogsQuery);
-    }
+        Await::f2c(function () use ($entity, $oldBlocks, $newBlocks, $action) {
+            $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
+            $blocksTask = new AsyncBlocksQueryGenerator($this->connector, $lastLogId, $oldBlocks, $newBlocks);
+            $logsTask = new AsyncLogsQueryGenerator($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+            Server::getInstance()->getAsyncPool()->submitTask($logsTask);
+        }, function () {
+            //NOOP
+        });
 
-    /**
-     * @param Block[] $blocks
-     *
-     * @return string
-     */
-    private function buildMultipleBlocksQuery(array $blocks): string
-    {
-        $sqlite = $this->configParser->isSQLite();
-
-        $query = /**@lang text */
-            ($sqlite ? "REPLACE" : "INSERT") . " INTO blocks (id, meta, block_name) VALUES";
-
-        $filtered = array_unique(array_map(static function (Block $element) {
-            return $element->getId() . ":" . $element->getDamage() . ":" . $element->getName();
-        }, $blocks));
-
-        foreach ($filtered as $value) {
-            $blockData = explode(":", $value);
-            $id = (int)$blockData[0];
-            $meta = (int)$blockData[1];
-            $name = (string)$blockData[2];
-            $query .= "('$id', '$meta', '$name'),";
-        }
-        $query = mb_substr($query, 0, -1);
-        $query .= ($sqlite ? ";" : " ON DUPLICATE KEY UPDATE id=VALUES(id), meta=VALUES(meta);");
-
-        return $query;
-    }
-
-    /**
-     * @param array $oldBlocks
-     * @param Block[]|Block $newBlocks
-     *
-     * @return string
-     */
-    private function buildMultipleRawBlockLogsQuery(array $oldBlocks, $newBlocks): string
-    {
-        $query = /**@lang text */
-            "INSERT INTO blocks_log(history_id, old_block_id, old_block_meta, old_block_nbt, new_block_id, new_block_meta, new_block_nbt) VALUES";
-
-        $logId = $this->getLastLogId();
-
-        if ($newBlocks instanceof Block) {
-            $newId = $newBlocks->getId();
-            $newMeta = $newBlocks->getDamage();
-            $newNBT = BlockUtils::serializeBlockTileNBT($newBlocks);
-
-            /**@var Block $oldBlock */
-            foreach ($oldBlocks as $oldBlock) {
-                $logId++;
-                $oldId = $oldBlock->getId();
-                $oldMeta = $oldBlock->getDamage();
-                $oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
-                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                '{$oldNBT}',
-                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
-                '{$newNBT}'),";
-            }
-        } else {
-            if (count($oldBlocks) !== count($newBlocks)) {
-                throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa");
-            }
-
-            /**@var Block $oldBlock */
-            foreach ($oldBlocks as $key => $oldBlock) {
-                $logId++;
-                $newBlock = $newBlocks[$key];
-                $oldId = $oldBlock->getId();
-                $oldMeta = $oldBlock->getDamage();
-                $oldNBT = BlockUtils::serializeBlockTileNBT($oldBlock);
-                $newId = $newBlock->getId();
-                $newMeta = $newBlock->getDamage();
-                $newNBT = BlockUtils::serializeBlockTileNBT($newBlock);
-
-                $query .= "('{$logId}', (SELECT id FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$oldId}' AND meta = '{$oldMeta}'),
-                '{$oldNBT}',
-                (SELECT id FROM blocks WHERE blocks.id = '{$newId}' AND meta = '${newMeta}'),
-                (SELECT meta FROM blocks WHERE blocks.id = '{$newId}' AND meta = '{$newMeta}'),
-                '{$newNBT}'),";
-            }
-        }
-        $query = mb_substr($query, 0, -1) . ";";
-
-        return $query;
-    }
-
-    protected function rollbackBlocks(Position $position, CommandParser $parser): int
-    {
-        return $this->executeBlocksEdit(true, $position, $parser);
     }
 
     /**
      * @param bool $rollback
-     * @param Position $position
-     * @param CommandParser $parser
-     *
-     * @return int Returns the rows number
+     * @param Area $area
+     * @param CommandParser $commandParser
      */
-    private function executeBlocksEdit(bool $rollback, Position $position, CommandParser $parser): int
+    private function startRollback(bool $rollback, Area $area, CommandParser $commandParser): void
     {
-        $query = $parser->buildBlocksLogSelectionQuery($position, !$rollback);
-        $totalRows = 0;
-        $world = $position->getLevel();
-        $this->connector->executeSelectRaw($query, [],
-            function (array $rows) use ($rollback, $world, &$totalRows) {
-                if (count($rows) > 0) {
-                    $query = /**@lang text */
-                        "UPDATE log_history SET rollback = '{$rollback}' WHERE ";
+        Await::f2c(function () use ($rollback, $area, $commandParser) {
+            $startTime = microtime(true);
+            $prefix = $rollback ? 'old' : 'new';
+            $world = $area->getWorld();
 
-                    foreach ($rows as $row) {
-                        $logId = (int)$row["log_id"];
-                        $prefix = $rollback ? "old" : "new";
-                        $pos = new Position((int)$row["x"], (int)$row["y"], (int)$row["z"], $world);
-                        $block = BlockFactory::get((int)$row["{$prefix}_block_id"], (int)$row["{$prefix}_block_meta"], $pos);
+            $query = $commandParser->buildLogsSelectionQuery(!$rollback, $area->getBoundingBox());
+            $logRows = yield $this->connector->executeSelectRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
 
-                        $world->setBlock($block, $block);
-
-                        $serializedNBT = $row["{$prefix}_block_nbt"];
-                        if (!empty($serializedNBT)) {
-                            $nbt = Utils::deserializeNBT($serializedNBT);
-                            $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
-                            if ($tile !== null) {
-                                $area->getWorld()->addTile($tile);
-                            }
-                        }
-
-                        $query .= "log_id = '$logId' OR ";
-                    }
-
-                    $query = mb_substr($query, 0, -4) . ";";
-                    $this->connector->executeInsertRaw($query);
-                }
-
-                $totalRows = count($rows);
-            },
-            static function (SqlError $error) {
-                throw $error;
+            /**@var int[] $logIds */
+            $logIds = [];
+            foreach ($logRows as $logRow) {
+                $logIds[] = (int)$logRow['log_id'];
             }
-        );
-        $this->connector->waitAll();
 
-        return $totalRows;
+            $blockRows = yield $this->connector->executeSelect($rollback ? QueriesConst::GET_ROLLBACK_OLD_BLOCKS : QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+
+            $inclusions = $commandParser->getBlocks();
+            $exclusions = $commandParser->getExclusions();
+            /**@var SerializableBlock[] $blocks */
+            $blocks = [];
+            foreach ($blockRows as $index => $row) {
+                $historyId = (int)$row['history_id'];
+                $id = (int)$row["{$prefix}_id"];
+                $meta = (int)$row["{$prefix}_meta"];
+                if (!empty($inclusions)) {
+                    foreach ($inclusions as $inclusion) {
+                        if ($inclusion->getId() !== $id && $inclusion->getDamage() !== $meta) {
+                            unset($blockRows[$index]);
+                            unset($logIds[array_search($historyId, $logIds)]);
+                        }
+                    }
+                }
+                if (!empty($exclusions)) {
+                    foreach ($exclusions as $exclusion) {
+                        if ($exclusion->getId() === $id && $exclusion->getDamage() === $meta) {
+                            unset($blockRows[$index]);
+                            unset($logIds[array_search($historyId, $logIds)]);
+                        }
+                    }
+                }
+            }
+
+            foreach ($blockRows as $row) {
+                $serializedNBT = (string)$row["{$prefix}_nbt"];
+                $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
+                if (!empty($serializedNBT)) {
+                    $nbt = Utils::deserializeNBT($serializedNBT);
+                    $tile = Tile::createTile(BlockUtils::getTileName($block), $world, $nbt);
+                    if ($tile !== null) {
+                        if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
+                            $tile->getInventory()->clearAll();
+                        }
+                        $world->addTile($tile);
+                    }
+                }
+            }
+            $touchedChunks = $area->getTouchedChunks($blocks);
+
+            $inventoryRows = [];
+            if ($this->configParser->getRollbackItems()) {
+                $inventoryRows = yield $this->connector->executeSelect($rollback ? QueriesConst::GET_ROLLBACK_OLD_INVENTORIES : QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+                foreach ($inventoryRows as $row) {
+                    $amount = (int)$row["{$prefix}_amount"];
+                    $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
+                    $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
+                    $vector = new Vector3((int)$row['x'], (int)$row['y'], (int)$row['z']);
+                    $tile = $world->getTile($vector);
+                    if ($tile instanceof InventoryHolder) {
+                        $slot = (int)$row['slot'];
+                        $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
+                        $inv->setItem($slot, $item);
+                    }
+                }
+            }
+
+            $entityRows = [];
+            if ($this->configParser->getRollbackEntities()) {
+                $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
+            }
+            $task = $rollback ? new AsyncRollbackTask($area, $blocks, $commandParser, $startTime, $logIds) : new AsyncRestoreTask($area, $blocks, $commandParser, $startTime, $logIds);
+            Server::getInstance()->getAsyncPool()->submitTask($task);
+
+            $this->onRollbackComplete($rollback, $area, $commandParser, $startTime, count($touchedChunks), count($blocks), count($inventoryRows), count($entityRows));
+        }, function () {
+            //NOOP
+        });
     }
 
-    protected function restoreBlocks(Position $position, CommandParser $parser): int
+    private function onRollbackComplete(bool $rollback, Area $area, CommandParser $commandParser, float $startTime, int $chunks, int $blocks, int $items, int $entities): void
     {
-        return $this->executeBlocksEdit(false, $position, $parser);
+        $duration = round(microtime(true) - $startTime, 2);
+        if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
+            $date = Utils::timeAgo(time() - $commandParser->getTime());
+            $lang = Main::getInstance()->getLanguage();
+
+            $sender->sendMessage(Utils::translateColors('&f------'));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.blocks', [$blocks])));
+            if ($items > 0) {
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.items', [$items])));
+            }
+            if ($entities > 0) {
+                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.entities', [$entities])));
+            }
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.modified-chunks', [$chunks])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
+            $sender->sendMessage(Utils::translateColors('&f------'));
+        }
     }
 }

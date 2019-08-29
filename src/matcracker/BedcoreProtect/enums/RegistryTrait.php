@@ -21,8 +21,13 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\enums;
 
+use ArgumentCountError;
+use Error;
+use InvalidArgumentException;
+use ReflectionClass;
+use ReflectionMethod;
 use function count;
 use function get_class;
 use function implode;
@@ -46,12 +51,12 @@ trait RegistryTrait
     public static function __callStatic($name, $arguments)
     {
         if (!empty($arguments)) {
-            throw new \ArgumentCountError("Expected exactly 0 arguments, " . count($arguments) . " passed");
+            throw new ArgumentCountError("Expected exactly 0 arguments, " . count($arguments) . " passed");
         }
         try {
             return self::fromString($name);
-        } catch (\InvalidArgumentException $e) {
-            throw new \Error($e->getMessage(), 0, $e);
+        } catch (InvalidArgumentException $e) {
+            throw new Error($e->getMessage(), 0, $e);
         }
     }
 
@@ -82,8 +87,8 @@ public static function %1$s() : %2$s{
      */
     public static function _generateMethodAnnotations(): string
     {
-        $traitName = (new \ReflectionClass(__TRAIT__))->getShortName();
-        $fnName = (new \ReflectionMethod(__METHOD__))->getShortName();
+        $traitName = (new ReflectionClass(__TRAIT__))->getShortName();
+        $fnName = (new ReflectionMethod(__METHOD__))->getShortName();
         $lines = ["/**"];
         $lines[] = " * This doc-block is generated automatically, do not modify it manually.";
         $lines[] = " * This must be regenerated whenever registry members are added, removed or changed.";
@@ -91,9 +96,9 @@ public static function %1$s() : %2$s{
         $lines[] = " *";
         static $lineTmpl = " * @method static %2\$s %s()";
 
-        $thisNamespace = (new \ReflectionClass(__CLASS__))->getNamespaceName();
+        $thisNamespace = (new ReflectionClass(__CLASS__))->getNamespaceName();
         foreach (self::getAll() as $name => $member) {
-            $reflect = new \ReflectionClass($member);
+            $reflect = new ReflectionClass($member);
             while ($reflect !== false and $reflect->isAnonymous()) {
                 $reflect = $reflect->getParentClass();
             }
@@ -118,13 +123,13 @@ public static function %1$s() : %2$s{
      * @param string $name
      * @param object $member
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private static function _registryRegister(string $name, object $member): void
     {
         $name = strtoupper($name);
         if (isset(self::$members[$name])) {
-            throw new \InvalidArgumentException("\"$name\" is already reserved");
+            throw new InvalidArgumentException("\"$name\" is already reserved");
         }
         self::$members[strtoupper($name)] = $member;
     }
@@ -133,20 +138,20 @@ public static function %1$s() : %2$s{
      * @param string $name
      *
      * @return object
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private static function _registryFromString(string $name): object
     {
         self::checkInit();
         $name = strtoupper($name);
         if (!isset(self::$members[$name])) {
-            throw new \InvalidArgumentException("No such registry member: " . self::class . "::" . $name);
+            throw new InvalidArgumentException("No such registry member: " . self::class . "::" . $name);
         }
         return self::$members[$name];
     }
 
     /**
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      * @internal Lazy-inits the enum if necessary.
      *
      */
