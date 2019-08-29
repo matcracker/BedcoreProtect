@@ -24,6 +24,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+use poggit\libasynql\DataConnector;
 
 class AsyncLogsQueryGenerator extends AsyncTask
 {
@@ -36,8 +37,17 @@ class AsyncLogsQueryGenerator extends AsyncTask
     /**@var AsyncTask $nextTask */
     private $nextTask;
 
-    public function __construct(string $uuid, array $positions, Action $action, AsyncTask $nextTask)
+    /**
+     * AsyncLogsQueryGenerator constructor.
+     * @param DataConnector $connector
+     * @param string $uuid
+     * @param SerializableWorld[] $positions
+     * @param Action $action
+     * @param AsyncTask $nextTask
+     */
+    public function __construct(DataConnector $connector, string $uuid, array $positions, Action $action, AsyncTask $nextTask)
     {
+        $this->storeLocal($connector);
         $this->uuid = $uuid;
         $this->positions = $positions;
         $this->action = $action;
@@ -67,7 +77,9 @@ class AsyncLogsQueryGenerator extends AsyncTask
         if ($plugin === null) {
             return;
         }
-        $plugin->getDatabase()->getQueries()->insertRaw((string)$this->getResult(), function (): void {
+        /**@var DataConnector $connector */
+        $connector = $this->fetchLocal();
+        $connector->executeInsertRaw((string)$this->getResult(), [], static function (): void {
             Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
         });
     }

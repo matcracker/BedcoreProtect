@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+use poggit\libasynql\DataConnector;
 
 class AsyncBlocksQueryGenerator extends AsyncTask
 {
@@ -38,12 +39,14 @@ class AsyncBlocksQueryGenerator extends AsyncTask
 
     /**
      * AsyncBlocksQueryGenerator constructor.
+     * @param DataConnector $connector
      * @param int $lastLogId
      * @param SerializableBlock[] $oldBlocks
      * @param SerializableBlock[]|SerializableBlock $newBlocks
      */
-    public function __construct(int $lastLogId, array $oldBlocks, $newBlocks)
+    public function __construct(DataConnector $connector, int $lastLogId, array $oldBlocks, $newBlocks)
     {
+        $this->storeLocal($connector);
         $this->lastLogId = $lastLogId;
         $this->oldBlocks = serialize($oldBlocks);
         $this->newBlocks = serialize($newBlocks);
@@ -101,6 +104,8 @@ class AsyncBlocksQueryGenerator extends AsyncTask
         if ($plugin === null) {
             return;
         }
-        $plugin->getDatabase()->getQueries()->insertRaw((string)$this->getResult());
+        /**@var DataConnector $connector */
+        $connector = $this->fetchLocal();
+        $connector->executeInsertRaw((string)$this->getResult());
     }
 }

@@ -116,7 +116,7 @@ final class Utils
         foreach ($since as $key => $val) {
             // separator
             if ($string) {
-                $string .= $key != $last_key ? ', ' : ' and ';
+                $string .= $key !== $last_key ? ', ' : ' and ';
             }
             // set plural
             $key .= $val > 1 ? 's' : '';

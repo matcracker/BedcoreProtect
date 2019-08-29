@@ -25,6 +25,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+use poggit\libasynql\DataConnector;
 
 class AsyncInventoriesQueryGenerator extends AsyncTask
 {
@@ -33,11 +34,13 @@ class AsyncInventoriesQueryGenerator extends AsyncTask
 
     /**
      * AsyncInventoriesQueryGenerator constructor.
+     * @param DataConnector $connector
      * @param int $lastLogId
      * @param SerializableItem[] $items
      */
-    public function __construct(int $lastLogId, array $items)
+    public function __construct(DataConnector $connector, int $lastLogId, array $items)
     {
+        $this->storeLocal($connector);
         $this->lastLogId = ($lastLogId + 1);
         $this->items = $items;
     }
@@ -59,10 +62,12 @@ class AsyncInventoriesQueryGenerator extends AsyncTask
     public function onCompletion(Server $server): void
     {
         /**@var Main $plugin */
-        $plugin = $server->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
+        $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
         if ($plugin === null) {
             return;
         }
-        $plugin->getDatabase()->getQueries()->insertRaw((string)$this->getResult());
+        /**@var DataConnector $connector */
+        $connector = $this->fetchLocal();
+        $connector->executeInsertRaw((string)$this->getResult());
     }
 }

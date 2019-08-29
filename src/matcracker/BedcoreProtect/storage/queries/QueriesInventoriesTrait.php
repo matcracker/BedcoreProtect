@@ -111,8 +111,8 @@ trait QueriesInventoriesTrait
         ));
 
         Await::f2c(function () use ($contents, $player, $positions) {
-            $lastLogId = (int)(yield $this->getLastLogId()[0]['lastId']);
-            var_dump($lastLogId);
+            $lastLogId = yield $this->getLastLogId();
+            $lastLogId = (int)$lastLogId[0]['lastId'];
             $inventoriesTask = new AsyncInventoriesQueryGenerator($lastLogId, $contents);
             $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($player), $positions, Action::REMOVE(), $inventoriesTask);
             Server::getInstance()->getAsyncPool()->submitTask($logsTask);

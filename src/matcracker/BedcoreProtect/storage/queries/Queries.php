@@ -193,16 +193,6 @@ class Queries
         ]);
     }
 
-    /**
-     * @param string $query
-     * @param callable|null $onSuccess
-     * @internal
-     */
-    public function insertRaw(string $query, ?callable $onSuccess = null)
-    {
-        $this->connector->executeInsertRaw($query, [], $onSuccess);
-    }
-
     private function getLastLogId(): Generator
     {
         $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [], yield, yield Await::REJECT);
