@@ -149,8 +149,7 @@ trait QueriesBlocksTrait
         $this->addEntity($entity);
 
         Await::f2c(function () use ($entity, $oldBlocks, $newBlocks, $action) {
-            $lastLogId = yield $this->getLastLogId();
-            $lastLogId = (int)$lastLogId[0]['lastId'];
+            $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
             $blocksTask = new AsyncBlocksQueryGenerator($this->connector, $lastLogId, $oldBlocks, $newBlocks);
             $logsTask = new AsyncLogsQueryGenerator($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
             Server::getInstance()->getAsyncPool()->submitTask($logsTask);

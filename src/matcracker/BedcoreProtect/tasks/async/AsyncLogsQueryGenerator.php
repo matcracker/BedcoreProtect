@@ -79,7 +79,7 @@ class AsyncLogsQueryGenerator extends AsyncTask
         }
         /**@var DataConnector $connector */
         $connector = $this->fetchLocal();
-        $connector->executeInsertRaw((string)$this->getResult(), [], static function (): void {
+        $connector->executeInsertRaw((string)$this->getResult(), [], function (): void {
             Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
         });
     }
