@@ -151,8 +151,8 @@ trait QueriesBlocksTrait
         Await::f2c(function () use ($entity, $oldBlocks, $newBlocks, $action) {
             $lastLogId = yield $this->getLastLogId();
             $lastLogId = (int)$lastLogId[0]['lastId'];
-            $blocksTask = new AsyncBlocksQueryGenerator($lastLogId, $oldBlocks, $newBlocks, $this->connector);
-            $logsTask = new AsyncLogsQueryGenerator(Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+            $blocksTask = new AsyncBlocksQueryGenerator($this->connector, $lastLogId, $oldBlocks, $newBlocks);
+            $logsTask = new AsyncLogsQueryGenerator($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
             Server::getInstance()->getAsyncPool()->submitTask($logsTask);
         }, function () {
             //NOOP
@@ -196,7 +196,6 @@ trait QueriesBlocksTrait
                         if ($inclusion->getId() !== $id && $inclusion->getDamage() !== $meta) {
                             unset($blockRows[$index]);
                             unset($logIds[array_search($historyId, $logIds)]);
-                            continue;
                         }
                     }
                 }
@@ -205,7 +204,6 @@ trait QueriesBlocksTrait
                         if ($exclusion->getId() === $id && $exclusion->getDamage() === $meta) {
                             unset($blockRows[$index]);
                             unset($logIds[array_search($historyId, $logIds)]);
-                            continue;
                         }
                     }
                 }
@@ -218,7 +216,7 @@ trait QueriesBlocksTrait
                     $nbt = Utils::deserializeNBT($serializedNBT);
                     $tile = Tile::createTile(BlockUtils::getTileName($block), $world, $nbt);
                     if ($tile !== null) {
-                        if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) { //TODO: Hack
+                        if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                             $tile->getInventory()->clearAll();
                         }
                         $world->addTile($tile);
