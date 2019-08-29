@@ -9,6 +9,6 @@ projects:
         version: 1.0.0
       - src: matcracker/FormLib/FormLib
         version: 1.1.0
-      - src: SOFe\AwaitGenerator
+      - src: SOF3/await-generator/await-generator
         version: 2.2.0
 ...
