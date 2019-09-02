@@ -1,3 +1,5 @@
+[![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect) [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
+
 # BedcoreProtect
 BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
@@ -5,6 +7,8 @@ BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for Poc
 - Fast efficient data logging.
 - Fast rollbacks.
 - No configuration required. Put the plugin on your server, and you're good to go.
+- Multi-language support.
+- User interface (UI) support.
 - SQLite based data storage.
 - Optional MySQL support.
 - Easy to use commands.
@@ -24,12 +28,12 @@ BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for Poc
 - Able to track blocks that fall off of other blocks. If a player breaks a block that had a sign on it, both the block and the sign can be rolled back.
 - Easily delete old log data.
 - Safe default parameters.
-Rollback or restore multiple players at once.ì
+Rollback or restore multiple players at once.
 - Lookup, rollback, or restore by a specific action.
 - Exclude multiple blocks.
-Preview rollbacks or restores.
-...and much more!!
+- BlockSniper support.
 
+...and much more!!
 ## What does it log?
 - Log blocks broken by players
 - Log blocks placed by players
@@ -46,6 +50,7 @@ Preview rollbacks or restores.
 - Log items taken or placed in chests, furnaces, dispensers, etc.
 - Log paintings and item frames. (With rollback support!)
 - Log entities killed by players (animals/monsters)
+
 ...and the list is still expanding!
 
 ## Commands
@@ -54,6 +59,7 @@ The main command is **/bedcoreprotect** but it accepts the folllowing aliases: *
 **Quick command overview:**
 - **/bcp help - _Display a list of commands_** (**Permission:** _bcp.subcommand.help_)
 - **/bcp inspect - _Toggle the inspector mode_** (**Permission:** _bcp.subcommand.inspect_)
+- **/bcp menu - _Display a graphic interface to use the plugin (UI)._** (**Permission:** _bcp.subcommand.menu_)
 - **/bcp rollback \<params> - _Rollback block data_** (**Permission:** _bcp.subcommand.rollback_)
 - **/bcp restore \<params> - _Restore block data_** (**Permission:** _bcp.subcommand.restore_)
 - **/bcp lookup \<params> - _Advanced block data lookup_** (**Permission:** _bcp.subcommand.lookup_)
@@ -70,6 +76,9 @@ _Diplay a list of commands in-game_
 
 > **/bpc inspect**<br>
 _Enable the inspector. Type the command again to disable it. You can also use just **"/bcp i"**_
+
+> **/bpc menu**<br>
+_Display a graphic interface to simplify the plugin commands usage. You can also use just **"/bcp ui"**_
 
 > **/bcp rollback u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
 _Nearly all of the parameters are optional. Shortcut: **"/bcp rb"**._
