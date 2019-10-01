@@ -115,7 +115,7 @@ class Queries
             'max_y' => $maxV->getY(),
             'min_z' => $minV->getZ(),
             'max_z' => $maxV->getZ(),
-            'world_name' => $position->getLevel()->getName()
+            'world_name' => $position->getLevel()->getFolderName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::cacheLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -188,7 +188,7 @@ class Queries
             'x' => $position->getFloorX(),
             'y' => $position->getFloorY(),
             'z' => $position->getFloorZ(),
-            'world_name' => $position->getLevel()->getName(),
+            'world_name' => $position->getLevel()->getFolderName(),
             'action' => $action->getType()
         ]);
     }

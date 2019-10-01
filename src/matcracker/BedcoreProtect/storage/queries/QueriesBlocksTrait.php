@@ -262,7 +262,7 @@ trait QueriesBlocksTrait
             $lang = Main::getInstance()->getLanguage();
 
             $sender->sendMessage(Utils::translateColors('&f------'));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getFolderName()])));
             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
             $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.blocks', [$blocks])));

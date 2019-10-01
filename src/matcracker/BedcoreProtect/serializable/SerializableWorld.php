@@ -51,7 +51,7 @@ class SerializableWorld
         $worldName = null;
         if ($vector3 instanceof Position) {
             if (($world = $vector3->getLevel()) !== null) {
-                $worldName = $world->getName();
+                $worldName = $world->getFolderName();
             }
         }
 

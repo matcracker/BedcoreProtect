@@ -39,7 +39,7 @@ final class Area
 
     public function __construct(Level $world, AxisAlignedBB $bb)
     {
-        $this->worldName = $world->getName();
+        $this->worldName = $world->getFolderName();
         $this->bb = $bb;
     }
 

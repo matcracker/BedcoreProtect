@@ -52,7 +52,7 @@ final class SerializableBlock extends SerializableWorld
     {
         $worldName = null;
         if (($world = $block->getLevel()) !== null) {
-            $worldName = $world->getName();
+            $worldName = $world->getFolderName();
         }
         return new self($block->getId(), $block->getDamage(), $block->getX(), $block->getY(), $block->getZ(), $worldName, BlockUtils::serializeBlockTileNBT($block));
     }

@@ -107,7 +107,7 @@ trait QueriesInventoriesTrait
             $inventoryPosition->getFloorX(),
             $inventoryPosition->getFloorY(),
             $inventoryPosition->getFloorZ(),
-            $inventoryPosition->getLevel()->getName()
+            $inventoryPosition->getLevel()->getFolderName()
         ));
 
         Await::f2c(function () use ($contents, $player, $positions) {
