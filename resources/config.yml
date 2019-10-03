@@ -116,4 +116,4 @@ item-transactions: true
 player-interactions: true
 
 # Logs changes made via the plugin "BlockSniper" if it's in use on your server.
-blocksniper-hook: true
+blocksniper-hook: false
