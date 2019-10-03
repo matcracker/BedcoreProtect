@@ -112,10 +112,8 @@ final class Main extends PluginBase
 
         if ($this->configParser->getBlockSniperHook()) {
             $bsPlugin = $this->getServer()->getPluginManager()->getPlugin('BlockSniper');
-            if ($bsPlugin !== null) {
-                $this->getLogger()->info($this->baseLang->translateString('blocksniper.hook.success'));
-                $this->bsHooked = true;
-            } else {
+            $this->bsHooked = $bsPlugin !== null;
+            if (!$this->bsHooked) {
                 $this->getLogger()->warning($this->baseLang->translateString('blocksniper.hook.no-hook'));
             }
         }
