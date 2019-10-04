@@ -86,7 +86,7 @@ final class BCPCommand extends Command
                 Await::f2c(function () use ($sender) {
                     $description = $this->plugin->getDescription();
                     $lang = $this->plugin->getLanguage();
-                    $dbVersion = (string)yield $this->plugin->getDatabase()->getStatus()[0]["version"];
+                    $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
                     $sender->sendMessage(Utils::translateColors('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
                     $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
                     $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
