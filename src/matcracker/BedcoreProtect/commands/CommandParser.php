@@ -35,6 +35,8 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
+use function array_keys;
+use function implode;
 
 CommandParser::initActions();
 
@@ -221,6 +223,7 @@ final class CommandParser
                     }
                     break;
                 default:
+                    $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
                     return false;
             }
         }
@@ -341,10 +344,22 @@ final class CommandParser
 
         $query = /**@lang text */
             'SELECT *,
-            bl.old_id, bl.old_meta, bl.new_id, bl.new_meta, 
-            il.old_id, il.old_meta, il.old_amount, il.new_id, il.new_meta, il.new_amount, 
+            bl.old_id, bl.old_meta, bl.new_id, bl.new_meta, il.old_amount, il.new_amount,
+            CASE
+                WHEN il.old_id IS NOT NULL THEN bl.old_id
+            END AS old_id,
+            CASE
+                WHEN il.old_meta IS NULL THEN bl.old_meta
+            END AS old_meta,  
+            CASE
+                WHEN il.new_id IS NULL THEN bl.new_id
+                WHEN il.new_meta IS NULL THEN bl.new_meta
+            END AS new_id,  
+            CASE
+                WHEN il.new_meta IS NULL THEN bl.new_meta
+            END AS new_meta,  
             e.entity_name AS entity_from FROM log_history 
-            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
+            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
             LEFT JOIN entities e ON log_history.who = e.uuid 
             LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ';
 

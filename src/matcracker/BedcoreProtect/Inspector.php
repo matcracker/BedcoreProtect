@@ -28,6 +28,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 use UnexpectedValueException;
+use function var_export;
 
 final class Inspector
 {
@@ -146,6 +147,7 @@ final class Inspector
             $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
 
             $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? 'old' : 'new';
+
             if (isset($log["{$typeColumn}_id"], $log["{$typeColumn}_meta"])) {
                 $id = (int)$log["{$typeColumn}_id"];
                 $meta = (int)$log["{$typeColumn}_meta"];
@@ -161,7 +163,7 @@ final class Inspector
             } elseif (isset($log['entity_to'])) {
                 $to = "#{$log['entity_to']}";
             } else {
-                throw new UnexpectedValueException('Unexpected log parsed. Is your database up to date?');
+                throw new UnexpectedValueException('Unexpected log parsed. Is your database up to date?' . var_export($log, true));
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
