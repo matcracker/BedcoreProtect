@@ -213,7 +213,7 @@ trait QueriesBlocksTrait
                 $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
                 if (!empty($serializedNBT)) {
                     $nbt = Utils::deserializeNBT($serializedNBT);
-                    $tile = Tile::createTile(BlockUtils::getTileName($block), $world, $nbt);
+                    $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $world, $nbt);
                     if ($tile !== null) {
                         if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                             $tile->getInventory()->clearAll();
