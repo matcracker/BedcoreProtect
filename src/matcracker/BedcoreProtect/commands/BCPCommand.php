@@ -36,7 +36,6 @@ use SOFe\AwaitGenerator\Await;
 
 final class BCPCommand extends Command
 {
-
     private $plugin;
     private $queries;
 
@@ -239,13 +238,13 @@ final class BCPCommand extends Command
     {
         if ($subCmd === 'l') {
             $subCmd = 'lookup';
-        } else if ($subCmd === 'i') {
+        } elseif ($subCmd === 'i') {
             $subCmd = 'inspect';
-        } else if ($subCmd === 'rb') {
+        } elseif ($subCmd === 'rb') {
             $subCmd = 'rollback';
-        } else if ($subCmd === 'rs') {
+        } elseif ($subCmd === 'rs') {
             $subCmd = 'restore';
-        } else if ($subCmd === 'ui') {
+        } elseif ($subCmd === 'ui') {
             $subCmd = 'menu';
         }
 

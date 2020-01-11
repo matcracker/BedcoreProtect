@@ -43,6 +43,59 @@ trait RegistryTrait
     private static $members = null;
 
     /**
+     * Adds the given object to the registry.
+     *
+     * @param string $name
+     * @param object $member
+     *
+     * @throws InvalidArgumentException
+     */
+    private static function _registryRegister(string $name, object $member): void
+    {
+        $name = strtoupper($name);
+        if (isset(self::$members[$name])) {
+            throw new InvalidArgumentException("\"$name\" is already reserved");
+        }
+        self::$members[strtoupper($name)] = $member;
+    }
+
+    /**
+     * Inserts default entries into the registry.
+     *
+     * (This ought to be private, but traits suck too much for that.)
+     */
+    abstract protected static function setup(): void;
+
+    /**
+     * @throws InvalidArgumentException
+     * @internal Lazy-inits the enum if necessary.
+     *
+     */
+    protected static function checkInit(): void
+    {
+        if (self::$members === null) {
+            self::$members = [];
+            self::setup();
+        }
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return object
+     * @throws InvalidArgumentException
+     */
+    private static function _registryFromString(string $name): object
+    {
+        self::checkInit();
+        $name = strtoupper($name);
+        if (!isset(self::$members[$name])) {
+            throw new InvalidArgumentException("No such registry member: " . self::class . "::" . $name);
+        }
+        return self::$members[$name];
+    }
+
+    /**
      * @param string $name
      * @param array $arguments
      *
@@ -58,6 +111,15 @@ trait RegistryTrait
         } catch (InvalidArgumentException $e) {
             throw new Error($e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * @return object[]
+     */
+    private static function _registryGetAll(): array
+    {
+        self::checkInit();
+        return self::$members;
     }
 
     /**
@@ -84,6 +146,7 @@ public static function %1$s() : %2$s{
      * Generates a block of @ method annotations for accessors for this registry's known members.
      *
      * @return string
+     * @throws \ReflectionException
      */
     public static function _generateMethodAnnotations(): string
     {
@@ -115,67 +178,5 @@ public static function %1$s() : %2$s{
         }
         $lines[] = " */\n";
         return implode("\n", $lines);
-    }
-
-    /**
-     * Adds the given object to the registry.
-     *
-     * @param string $name
-     * @param object $member
-     *
-     * @throws InvalidArgumentException
-     */
-    private static function _registryRegister(string $name, object $member): void
-    {
-        $name = strtoupper($name);
-        if (isset(self::$members[$name])) {
-            throw new InvalidArgumentException("\"$name\" is already reserved");
-        }
-        self::$members[strtoupper($name)] = $member;
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return object
-     * @throws InvalidArgumentException
-     */
-    private static function _registryFromString(string $name): object
-    {
-        self::checkInit();
-        $name = strtoupper($name);
-        if (!isset(self::$members[$name])) {
-            throw new InvalidArgumentException("No such registry member: " . self::class . "::" . $name);
-        }
-        return self::$members[$name];
-    }
-
-    /**
-     * @throws InvalidArgumentException
-     * @internal Lazy-inits the enum if necessary.
-     *
-     */
-    protected static function checkInit(): void
-    {
-        if (self::$members === null) {
-            self::$members = [];
-            self::setup();
-        }
-    }
-
-    /**
-     * Inserts default entries into the registry.
-     *
-     * (This ought to be private, but traits suck too much for that.)
-     */
-    abstract protected static function setup(): void;
-
-    /**
-     * @return object[]
-     */
-    private static function _registryGetAll(): array
-    {
-        self::checkInit();
-        return self::$members;
     }
 }

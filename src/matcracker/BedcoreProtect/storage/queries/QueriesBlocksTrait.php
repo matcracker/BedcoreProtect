@@ -71,7 +71,7 @@ trait QueriesBlocksTrait
         $this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
     }
 
-    protected final function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null): void
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null): void
     {
         $pos = $position ?? $newBlock->asPosition();
         $this->addRawLog($uuid, $pos, $action);
@@ -156,7 +156,6 @@ trait QueriesBlocksTrait
         }, function () {
             //NOOP
         });
-
     }
 
     /**

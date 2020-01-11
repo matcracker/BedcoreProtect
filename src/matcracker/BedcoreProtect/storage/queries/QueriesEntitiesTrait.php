@@ -37,7 +37,6 @@ use SOFe\AwaitGenerator\Await;
  */
 trait QueriesEntitiesTrait
 {
-
     public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action): void
     {
         $this->addEntity($damager);
@@ -59,7 +58,7 @@ trait QueriesEntitiesTrait
         $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
     }
 
-    protected final function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
+    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
@@ -96,7 +95,7 @@ trait QueriesEntitiesTrait
         }
     }
 
-    protected final function updateEntityId(int $logId, Entity $entity): void
+    final protected function updateEntityId(int $logId, Entity $entity): void
     {
         $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
             'log_id' => $logId,

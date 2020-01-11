@@ -27,7 +27,6 @@ use pocketmine\block\Block;
 
 final class BlockSniperListener extends BedcoreListener
 {
-
     public function trackBrushUse(BrushUseEvent $event): void
     {
         if ($this->plugin->getParsedConfig()->isEnabledWorld($event->getLevel()) && $this->plugin->getParsedConfig()->getBlockSniperHook()) {
@@ -40,5 +39,4 @@ final class BlockSniperListener extends BedcoreListener
             $this->database->getQueries()->addBlocksLogByEntity($event->getPlayer(), $oldBlocks, $newBlocks, Action::PLACE());
         }
     }
-
 }

@@ -26,7 +26,6 @@ use pocketmine\scheduler\Task;
 
 final class SQLiteTransactionTask extends Task
 {
-
     private $database;
 
     public function __construct(Database $database)
@@ -38,7 +37,7 @@ final class SQLiteTransactionTask extends Task
      * Return the ticks when task is executed
      * @return int
      */
-    public final static function getTicks(): int
+    final public static function getTicks(): int
     {
         return 5 * 60 * 60 * 20;
     }

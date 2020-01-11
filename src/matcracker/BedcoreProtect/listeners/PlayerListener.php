@@ -88,7 +88,7 @@ final class PlayerListener extends BedcoreListener
                 $face = $event->getBlockFace();
                 if ($face === Vector3::SIDE_DOWN) {
                     $liquidPos = Position::fromObject($block->add(0, 1, 0), $block->getLevel());
-                } else if ($face === Vector3::SIDE_UP) {
+                } elseif ($face === Vector3::SIDE_UP) {
                     $liquidPos = Position::fromObject($block->subtract(0, 1, 0), $block->getLevel());
                 }
 
@@ -128,7 +128,7 @@ final class PlayerListener extends BedcoreListener
                     $relativeBlock = $clickedBlock->getSide($face);
                     if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
                         $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
-                    } else if ($clickedBlock instanceof ItemFrame) {
+                    } elseif ($clickedBlock instanceof ItemFrame) {
                         $tile = BlockUtils::asTile($clickedBlock);
                         if ($tile instanceof ItemFrameTile) {
                             $framedItem = $tile->getItem();
@@ -141,13 +141,11 @@ final class PlayerListener extends BedcoreListener
                                 }
                             }
                         }
-
                     }
-
-                } else if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+                } elseif ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                     if ($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL) {
                         $this->database->getQueries()->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
-                    } else if ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
+                    } elseif ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
                             $tile = BlockUtils::asTile($clickedBlock);
                             if ($tile instanceof ItemFrameTile) {
@@ -164,7 +162,6 @@ final class PlayerListener extends BedcoreListener
                         }
                         $this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
                     }
-
                 }
             }
         }

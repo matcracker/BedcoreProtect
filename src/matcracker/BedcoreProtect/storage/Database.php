@@ -50,7 +50,7 @@ class Database
      * Attempts to connect and initialize the database. Returns true if success.
      * @return bool
      */
-    public final function connect(): bool
+    final public function connect(): bool
     {
         try {
             $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
@@ -72,7 +72,7 @@ class Database
         return false;
     }
 
-    public final function getQueries(): Queries
+    final public function getQueries(): Queries
     {
         if (!$this->isConnected() || !isset($this->queries)) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
@@ -82,17 +82,17 @@ class Database
         return $this->queries;
     }
 
-    public final function getPatchManager(): PatchManager
+    final public function getPatchManager(): PatchManager
     {
         return $this->patchManager;
     }
 
-    public final function isConnected(): bool
+    final public function isConnected(): bool
     {
         return isset($this->connector);
     }
 
-    public final function disconnect(): void
+    final public function disconnect(): void
     {
         if ($this->isConnected()) {
             $this->connector->waitAll();
@@ -121,5 +121,4 @@ class Database
         $this->connector->waitAll();
         return $version;
     }
-
 }

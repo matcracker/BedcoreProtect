@@ -23,27 +23,47 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\enums;
 
-use InvalidArgumentException;
+use function getmypid;
 use function preg_match;
 
 trait EnumTrait
 {
     use RegistryTrait;
 
-    /** @var string */
-    private $enumName;
+    /**
+     * Registers the given object as an enum member.
+     *
+     * @param self $member
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected static function register(self $member): void
+    {
+        self::_registryRegister($member->name(), $member);
+    }
 
     /**
-     * @param string $enumName
-     * @throws InvalidArgumentException
+     * Returns an array of enum members to be registered.
+     *
+     * (This ought to be private, but traits suck too much for that.)
+     *
+     * @return self[]|iterable
      */
-    private function __construct(string $enumName)
+    abstract protected static function setup(): iterable;
+
+    /**
+     * @throws \InvalidArgumentException
+     * @internal Lazy-inits the enum if necessary.
+     *
+     */
+    protected static function checkInit(): void
     {
-        static $pattern = '/^\D[A-Za-z\d_]+$/u';
-        if (preg_match($pattern, $enumName, $matches) === 0) {
-            throw new InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
+        if (self::$members === null) {
+            self::$members = [];
+            foreach (self::setup() as $item) {
+                self::register($item);
+            }
         }
-        $this->enumName = $enumName;
     }
 
     /**
@@ -64,47 +84,36 @@ trait EnumTrait
      * @param string $name
      *
      * @return self
-     * @throws InvalidArgumentException if no member matches.
+     * @throws \InvalidArgumentException if no member matches.
      */
     public static function fromString(string $name): self
     {
         return self::_registryFromString($name);
     }
 
+    /** @var int|null */
+    private static $nextId = null;
+
+    /** @var string */
+    private $enumName;
+    /** @var int */
+    private $runtimeId;
+
     /**
-     * @throws InvalidArgumentException
-     * @internal Lazy-inits the enum if necessary.
-     *
+     * @param string $enumName
+     * @throws \InvalidArgumentException
      */
-    protected static function checkInit(): void
+    private function __construct(string $enumName)
     {
-        if (self::$members === null) {
-            self::$members = [];
-            foreach (self::setup() as $item) {
-                self::register($item);
-            }
+        static $pattern = '/^\D[A-Za-z\d_]+$/u';
+        if (preg_match($pattern, $enumName, $matches) === 0) {
+            throw new \InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
         }
-    }
-
-    /**
-     * Returns an array of enum members to be registered.
-     *
-     * (This ought to be private, but traits suck too much for that.)
-     *
-     * @return self[]|iterable
-     */
-    abstract protected static function setup(): iterable;
-
-    /**
-     * Registers the given object as an enum member.
-     *
-     * @param self $member
-     *
-     * @throws InvalidArgumentException
-     */
-    protected static function register(self $member): void
-    {
-        self::_registryRegister($member->name(), $member);
+        $this->enumName = $enumName;
+        if (self::$nextId === null) {
+            self::$nextId = getmypid(); //this provides enough base entropy to prevent hardcoding
+        }
+        $this->runtimeId = self::$nextId++;
     }
 
     /**
@@ -113,6 +122,18 @@ trait EnumTrait
     public function name(): string
     {
         return $this->enumName;
+    }
+
+    /**
+     * Returns a runtime-only identifier for this enum member. This will be different with each run, so don't try to
+     * hardcode it.
+     * This can be useful for switches or array indexing.
+     *
+     * @return int
+     */
+    public function id(): int
+    {
+        return $this->runtimeId;
     }
 
     /**

@@ -85,7 +85,7 @@ class Queries
     /**
      * Can be used only with SQLite
      */
-    public final function beginTransaction(): void
+    final public function beginTransaction(): void
     {
         if ($this->configParser->isSQLite()) {
             $this->connector->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
@@ -161,7 +161,7 @@ class Queries
     /**
      * Can be used only with SQLite
      */
-    public final function endTransaction(): void
+    final public function endTransaction(): void
     {
         if ($this->configParser->isSQLite()) {
             $this->connector->executeGeneric(QueriesConst::END_TRANSACTION);
@@ -173,7 +173,7 @@ class Queries
      * @param int[] $logIds
      * @internal
      */
-    public final function updateRollbackStatus(bool $rollback, array $logIds): void
+    final public function updateRollbackStatus(bool $rollback, array $logIds): void
     {
         $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
             'rollback' => $rollback,

@@ -40,8 +40,8 @@ use pocketmine\block\WoodenButton;
 use pocketmine\block\WoodenDoor;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\tile\Tile;
-use function in_array;
 use function get_class;
+use function in_array;
 
 final class BlockUtils
 {
@@ -128,7 +128,9 @@ final class BlockUtils
      */
     public static function asTile(Block $block): ?Tile
     {
-        if ($block->getLevel() === null) return null;
+        if ($block->getLevel() === null) {
+            return null;
+        }
 
         return $block->getLevel()->getTile($block->asPosition());
     }

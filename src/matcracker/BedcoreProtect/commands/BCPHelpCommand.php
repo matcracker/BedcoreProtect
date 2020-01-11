@@ -27,7 +27,6 @@ use pocketmine\command\CommandSender;
 
 final class BCPHelpCommand
 {
-
     private function __construct()
     {
     }

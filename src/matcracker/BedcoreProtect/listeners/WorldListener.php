@@ -40,5 +40,4 @@ final class WorldListener extends BedcoreListener
             $this->database->getQueries()->addBlockLogByBlock($block, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $block->asPosition());
         }
     }
-
 }

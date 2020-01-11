@@ -119,7 +119,7 @@ final class BlockListener extends BedcoreListener
                 if ($block instanceof Bed) {
                     $meta = ($player->getDirection() - 1) & 0x03;
                     $otherHalfPos = $block->getSide(Bed::getOtherHalfSide($meta))->asPosition();
-                } else if ($block instanceof Door) {
+                } elseif ($block instanceof Door) {
                     $otherHalfPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
                 }
 
@@ -181,5 +181,4 @@ final class BlockListener extends BedcoreListener
             }
         }
     }
-
 }

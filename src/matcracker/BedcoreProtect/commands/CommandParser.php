@@ -140,7 +140,9 @@ final class CommandParser
                 case 'user':
                 case 'u':
                     $users = explode(',', $paramValues);
-                    if (count($users) < 1) return false;
+                    if (count($users) < 1) {
+                        return false;
+                    }
 
                     foreach ($users as &$user) {
                         if (mb_substr($user, 0, 1) === '#') {
@@ -150,7 +152,7 @@ final class CommandParser
 
                                 return false;
                             }
-                        } else if (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
+                        } elseif (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
                             $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
 
                             return false;
@@ -210,7 +212,8 @@ final class CommandParser
                                             return null;
                                         }
                                         return $block;
-                                    }, ItemFactory::fromString($paramValues, true)
+                                    },
+                                    ItemFactory::fromString($paramValues, true)
                                 ),
                                 static function (?Block $block): bool {
                                     return $block !== null;
@@ -231,8 +234,9 @@ final class CommandParser
             return $value !== null;
         });
 
-        if (empty($filter))
+        if (empty($filter)) {
             return false;
+        }
 
         if (count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)) {
             $this->errorMessage = $lang->translateString('parser.missing-parameters', [implode(',', $this->requiredParams)]);
@@ -280,19 +284,19 @@ final class CommandParser
                         $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '{$user}') OR ";
                     }
                     $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
-                } else if ($key === 'time') {
+                } elseif ($key === 'time') {
                     $diffTime = time() - (int)$value;
                     if ($this->configParser->isSQLite()) {
                         $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
                     } else {
                         $query .= "(time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP) AND ";
                     }
-                } else if ($key === 'radius' && $bb !== null) {
+                } elseif ($key === 'radius' && $bb !== null) {
                     $bb = MathUtils::floorBoundingBox($bb);
                     $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
                     $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
                     $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
-                } else if ($key === 'action') {
+                } elseif ($key === 'action') {
                     $actions = CommandParser::toActions($value);
                     foreach ($actions as $action) {
                         $query .= "action = {$action->getType()} OR ";
@@ -320,8 +324,9 @@ final class CommandParser
      */
     public static function toActions(string $cmdAction): array
     {
-        if (!isset(self::$ACTIONS[$cmdAction]))
+        if (!isset(self::$ACTIONS[$cmdAction])) {
             throw new ArrayOutOfBoundsException("The {$cmdAction} is not a valid action.");
+        }
 
         return self::$ACTIONS[$cmdAction];
     }

@@ -62,7 +62,9 @@ final class Inspector
      */
     public static function removeInspector(CommandSender $inspector): bool
     {
-        if (!self::isInspector($inspector)) return false;
+        if (!self::isInspector($inspector)) {
+            return false;
+        }
 
         unset(self::$inspectors[self::getSenderUUID($inspector)]);
 
@@ -171,7 +173,5 @@ final class Inspector
                 . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
         $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data') . ' /bcp l <page>:<lines>.'));
-
     }
-
 }

@@ -67,11 +67,11 @@ trait QueriesInventoriesTrait
                     $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
                     $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
                 }
-            } else if (!$sourceItem->isNull() && !$targetItem->isNull()) {
+            } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
                 $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
                 $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
                 $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
-            } else if (!$sourceItem->isNull()) {
+            } elseif (!$sourceItem->isNull()) {
                 $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
             } else {
                 $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
@@ -80,7 +80,7 @@ trait QueriesInventoriesTrait
         }
     }
 
-    protected final function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem): void
+    final protected function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
             'slot' => $slot,
@@ -93,7 +93,6 @@ trait QueriesInventoriesTrait
             'new_nbt' => Utils::serializeNBT($newItem->getNamedTag()),
             'new_amount' => $newItem->getCount()
         ]);
-
     }
 
     public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
@@ -119,5 +118,4 @@ trait QueriesInventoriesTrait
             //NOOP
         });
     }
-
 }
