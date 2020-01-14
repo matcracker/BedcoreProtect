@@ -1,4 +1,6 @@
-[![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect) [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)[![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/eAePyeb)
+[![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
+[![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
+[![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/eAePyeb)
 
 
 # BedcoreProtect
@@ -53,6 +55,13 @@ Rollback or restore multiple players at once.
 - Log entities killed by players (animals/monsters)
 
 ...and the list is still expanding!
+
+## Database Minimum Requirements
+- **SQLite** version must be >= **3.28.0**
+
+OR
+
+- **MySQL** version must be >= **5.6.4**
 
 ## Commands
 The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co** (**Main permission:** _bcp.command.bedcoreprotect_)
@@ -131,6 +140,3 @@ For example, **"/bcp l 1:10"** will return 10 lines of data, starting at the fir
 > **/bcp purge t=\<time>**<br>
 _Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>
 For example, "/co purge t:30d" will delete all data older than one month, and only keep the last 30 days of data.
-
-### Examples
-Soon
