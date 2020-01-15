@@ -27,6 +27,7 @@ use ArgumentCountError;
 use Error;
 use InvalidArgumentException;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 use function count;
 use function get_class;
@@ -146,7 +147,7 @@ public static function %1$s() : %2$s{
      * Generates a block of @ method annotations for accessors for this registry's known members.
      *
      * @return string
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public static function _generateMethodAnnotations(): string
     {
