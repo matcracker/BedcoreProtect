@@ -124,43 +124,39 @@ final class PlayerListener extends BedcoreListener
             }
 
             if (!$event->isCancelled()) {
-                if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
-                    $relativeBlock = $clickedBlock->getSide($face);
-                    if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
-                        $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
-                    } elseif ($clickedBlock instanceof ItemFrame) {
-                        $tile = BlockUtils::asTile($clickedBlock);
-                        if ($tile instanceof ItemFrameTile) {
-                            $framedItem = $tile->getItem();
-                            if ($framedItem->isNull()) {
-                                $event->setCancelled();
-                                $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
-                                if ($clickedBlock->onActivate($item, $player)) {
-                                    //I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
-                                    $this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
-                                }
-                            }
+                if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK || $action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+                    if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+                        $relativeBlock = $clickedBlock->getSide($face);
+                        if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
+                            $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
+                            return;
+                        }
+                    } elseif ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+                        if ($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL) {
+                            $this->database->getQueries()->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
+                            return;
                         }
                     }
-                } elseif ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
-                    if ($this->plugin->getParsedConfig()->getBlockPlace() && $item->getId() === ItemIds::FLINT_AND_STEEL) {
-                        $this->database->getQueries()->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
-                    } elseif ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
+
+                    if ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
                             $tile = BlockUtils::asTile($clickedBlock);
                             if ($tile instanceof ItemFrameTile) {
                                 $framedItem = $tile->getItem();
-                                if ($framedItem->isNull()) {
-                                    $event->setCancelled();
-                                    $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
-                                    if ($clickedBlock->onActivate($item, $player)) {
-                                        //I consider the ItemFrame as fake inventory holder just only to log adding/removing framed item.
-                                        $this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
-                                    }
+                                $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
+                                if ($framedItem->isNull() && !$item->isNull()) {
+                                    $this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
+                                    return;
+                                } elseif (!$framedItem->isNull() && $action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+                                    $this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
+                                    return;
                                 }
                             }
                         }
-                        $this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+
+                        if ($clickedBlock->getId() !== BlockIds::AIR) {
+                            $this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+                        }
                     }
                 }
             }
