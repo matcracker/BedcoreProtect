@@ -351,17 +351,20 @@ final class CommandParser
             'SELECT *,
             bl.old_id, bl.old_meta, bl.new_id, bl.new_meta, il.old_amount, il.new_amount,
             CASE
-                WHEN il.old_id IS NOT NULL THEN bl.old_id
+                WHEN il.old_id IS NULL THEN bl.old_id
+                WHEN bl.old_id IS NULL THEN il.old_id
             END AS old_id,
             CASE
                 WHEN il.old_meta IS NULL THEN bl.old_meta
+                WHEN bl.old_meta IS NULL THEN il.old_meta
             END AS old_meta,  
             CASE
                 WHEN il.new_id IS NULL THEN bl.new_id
-                WHEN il.new_meta IS NULL THEN bl.new_meta
-            END AS new_id,  
+                WHEN bl.new_id IS NULL THEN il.new_id
+            END AS new_id,
             CASE
                 WHEN il.new_meta IS NULL THEN bl.new_meta
+                WHEN bl.new_meta IS NULL THEN il.new_meta
             END AS new_meta,  
             e.entity_name AS entity_from FROM log_history 
             LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
