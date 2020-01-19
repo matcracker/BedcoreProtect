@@ -49,6 +49,10 @@ trait QueriesInventoriesTrait
         $inventory = $slotAction->getInventory();
         if ($inventory instanceof ContainerInventory) {
             $holder = $inventory->getHolder();
+            if ($holder === null) {
+                return;
+            }
+
             $slot = $slotAction->getSlot();
             $sourceItem = $slotAction->getSourceItem();
             $targetItem = $slotAction->getTargetItem();
