@@ -2,7 +2,6 @@
 [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/eAePyeb)
 
-
 # BedcoreProtect
 BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
@@ -37,6 +36,7 @@ Rollback or restore multiple players at once.
 - BlockSniper support.
 
 ...and much more!!
+
 ## What does it log?
 - Log blocks broken by players
 - Log blocks placed by players
@@ -56,14 +56,14 @@ Rollback or restore multiple players at once.
 
 ...and the list is still expanding!
 
-## Database Minimum Requirements
-- **SQLite** version must be >= **3.28.0**
+# Database Minimum Requirements
+- **SQLite** version must be >= **3.28.0** (not tested with older versions)
 
 OR
 
 - **MySQL** version must be >= **5.6.4**
 
-## Commands
+# Commands
 The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co** (**Main permission:** _bcp.command.bedcoreprotect_)
 
 **Quick command overview:**
@@ -140,3 +140,11 @@ For example, **"/bcp l 1:10"** will return 10 lines of data, starting at the fir
 > **/bcp purge t=\<time>**<br>
 _Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>
 For example, "/co purge t:30d" will delete all data older than one month, and only keep the last 30 days of data.
+
+# FAQ
+
+**I found a bug, where can I report it?**
+- > You can report [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Bug report**.
+
+**Where can I request a new feature?**
+- > You can ask a new feature [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Feature request**.
