@@ -27,6 +27,11 @@ use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
+use function count;
+use function is_array;
+use function mb_substr;
+use function serialize;
+use function unserialize;
 
 class AsyncBlocksQueryGenerator extends AsyncTask
 {

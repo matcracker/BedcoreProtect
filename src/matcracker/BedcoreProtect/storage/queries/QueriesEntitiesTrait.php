@@ -28,6 +28,7 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\Player;
 use SOFe\AwaitGenerator\Await;
+use function get_class;
 
 /**
  * It contains all the queries methods related to entities.

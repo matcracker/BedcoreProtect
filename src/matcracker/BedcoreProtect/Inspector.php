@@ -28,6 +28,11 @@ use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 use UnexpectedValueException;
+use function array_chunk;
+use function array_key_exists;
+use function count;
+use function is_int;
+use function strtotime;
 use function var_export;
 
 final class Inspector
@@ -114,7 +119,7 @@ final class Inspector
     public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
         $lang = Main::getInstance()->getLanguage();
-        if (empty($logs)) {
+        if (count($logs) === 0) {
             $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.no-data')));
 
             return;
@@ -129,7 +134,7 @@ final class Inspector
         $chunkLogs = array_chunk($logs, $lines);
         $maxPages = count($chunkLogs);
         $fakePage = $page + 1;
-        if (!isset($chunkLogs[$page])) {
+        if (!array_key_exists($page, $chunkLogs)) {
             $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.page-not-exist', [$fakePage])));
 
             return;

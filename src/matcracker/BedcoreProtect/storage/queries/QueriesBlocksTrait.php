@@ -46,6 +46,13 @@ use pocketmine\Server;
 use pocketmine\tile\Chest;
 use pocketmine\tile\Tile;
 use SOFe\AwaitGenerator\Await;
+use function array_map;
+use function array_search;
+use function count;
+use function is_array;
+use function microtime;
+use function round;
+use function strlen;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -124,7 +131,7 @@ trait QueriesBlocksTrait
      */
     public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, $newBlocks, Action $action): void
     {
-        if (empty($oldBlocks)) {
+        if (count($oldBlocks) === 0) {
             return;
         }
 
@@ -133,7 +140,7 @@ trait QueriesBlocksTrait
         }, $oldBlocks);
 
         if (is_array($newBlocks)) {
-            if (empty($newBlocks)) {
+            if (count($newBlocks) === 0) {
                 return;
             }
 
@@ -189,7 +196,7 @@ trait QueriesBlocksTrait
                 $historyId = (int)$row['history_id'];
                 $id = (int)$row["{$prefix}_id"];
                 $meta = (int)$row["{$prefix}_meta"];
-                if (!empty($inclusions)) {
+                if (count($inclusions) > 0) {
                     foreach ($inclusions as $inclusion) {
                         if ($inclusion->getId() !== $id && $inclusion->getDamage() !== $meta) {
                             unset($blockRows[$index]);
@@ -197,7 +204,7 @@ trait QueriesBlocksTrait
                         }
                     }
                 }
-                if (!empty($exclusions)) {
+                if (count($exclusions) > 0) {
                     foreach ($exclusions as $exclusion) {
                         if ($exclusion->getId() === $id && $exclusion->getDamage() === $meta) {
                             unset($blockRows[$index]);
@@ -210,7 +217,7 @@ trait QueriesBlocksTrait
             foreach ($blockRows as $row) {
                 $serializedNBT = (string)$row["{$prefix}_nbt"];
                 $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
-                if (!empty($serializedNBT)) {
+                if (strlen($serializedNBT) > 0) {
                     $nbt = Utils::deserializeNBT($serializedNBT);
                     $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $world, $nbt);
                     if ($tile !== null) {

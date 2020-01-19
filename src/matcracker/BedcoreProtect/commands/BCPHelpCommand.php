@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\commands;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
+use function strtolower;
 
 final class BCPHelpCommand
 {

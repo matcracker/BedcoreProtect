@@ -33,6 +33,8 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use function mkdir;
+use function version_compare;
 
 final class Main extends PluginBase
 {

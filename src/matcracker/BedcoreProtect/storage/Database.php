@@ -74,7 +74,7 @@ class Database
 
     final public function getQueries(): Queries
     {
-        if (!$this->isConnected() || !isset($this->queries)) {
+        if (!$this->isConnected() || !($this->queries instanceof Queries)) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
@@ -89,7 +89,7 @@ class Database
 
     final public function isConnected(): bool
     {
-        return isset($this->connector);
+        return ($this->connector instanceof DataConnector);
     }
 
     final public function disconnect(): void

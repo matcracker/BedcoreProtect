@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\enums;
 
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\Main;
+use function array_key_exists;
 
 /**
  * This doc-block is generated automatically, do not modify it manually.
@@ -63,7 +64,7 @@ final class Action
     public static function fromType(int $type): Action
     {
         self::checkInit();
-        if (!isset(self::$numericIdMap[$type])) {
+        if (!array_key_exists($type, self::$numericIdMap)) {
             throw new InvalidArgumentException("Unknown action type {$type}");
         }
 

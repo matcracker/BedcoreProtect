@@ -35,6 +35,8 @@ use pocketmine\Server;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
+use function preg_match;
+use function strtolower;
 
 class Queries
 {

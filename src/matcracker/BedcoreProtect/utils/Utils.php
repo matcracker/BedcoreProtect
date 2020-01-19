@@ -33,6 +33,24 @@ use pocketmine\utils\TextFormat;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
+use function array_filter;
+use function array_map;
+use function array_merge;
+use function array_slice;
+use function array_values;
+use function base64_decode;
+use function base64_encode;
+use function get_class;
+use function json_decode;
+use function key;
+use function microtime;
+use function preg_match_all;
+use function preg_replace;
+use function preg_replace_callback;
+use function str_replace;
+use function strlen;
+use function strtolower;
+use function strval;
 
 final class Utils
 {
@@ -63,12 +81,12 @@ final class Utils
      */
     public static function parseTime(string $strDate): ?int
     {
-        if (empty($strDate)) {
+        if (strlen($strDate) === 0) {
             return null;
         }
         $strDate = strtolower($strDate);
         $strDate = preg_replace('/[^0-9smhdw]/', "", $strDate);
-        if (empty($strDate)) {
+        if (strlen($strDate) === 0) {
             return null;
         }
 

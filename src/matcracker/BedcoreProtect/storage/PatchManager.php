@@ -24,6 +24,12 @@ namespace matcracker\BedcoreProtect\storage;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
+use function array_filter;
+use function count;
+use function fclose;
+use function stream_get_contents;
+use function version_compare;
+use function yaml_parse;
 
 final class PatchManager
 {
@@ -56,7 +62,7 @@ final class PatchManager
         $updated = false;
         $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], function (array $rows) use (&$updated): void {
             $versions = $this->getVersionsToPatch($rows[0]['version']);
-            if ($updated = (!empty($versions))) { //This means the database is not updated.
+            if ($updated = (count($versions) > 0)) { //This means the database is not updated.
                 /**
                  * @var string $version
                  * @var int $patchNumbers

@@ -25,6 +25,7 @@ use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
+use function mb_substr;
 
 class AsyncLogsQueryGenerator extends AsyncTask
 {

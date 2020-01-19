@@ -30,6 +30,9 @@ use matcracker\FormLib\BaseForm;
 use matcracker\FormLib\CustomForm;
 use matcracker\FormLib\Form;
 use pocketmine\Player;
+use function array_keys;
+use function count;
+use function is_array;
 
 final class Forms
 {
@@ -115,14 +118,14 @@ final class Forms
             if (is_array($data)) {
                 $time = "t={$data[1]}";
                 $radius = "r={$data[2]}";
-                $user = empty($data[4]) ? '' : "u={$data[4]}";
+                $user = count($data[4]) === 0 ? '' : "u={$data[4]}";
                 $action = '';
                 if ($data[5] !== -1) {
                     $a = array_keys(CommandParser::$ACTIONS)[$data[5]];
                     $action = "a={$a}";
                 }
-                $includeBlocks = empty($data[6]) ? '' : "b={$data[6]}";
-                $excludeBlocks = empty($data[7]) ? '' : "e={$data[7]}";
+                $includeBlocks = count($data[6]) === 0 ? '' : "b={$data[6]}";
+                $excludeBlocks = count($data[7]) === 0 ? '' : "e={$data[7]}";
                 $player->chat("/bcp {$subCmd} {$time} {$radius} {$user} {$action} {$includeBlocks} {$excludeBlocks}");
             }
         };

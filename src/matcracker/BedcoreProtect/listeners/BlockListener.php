@@ -39,6 +39,8 @@ use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\math\Vector3;
 use pocketmine\tile\Chest as TileChest;
+use function array_filter;
+use function count;
 
 final class BlockListener extends BedcoreListener
 {
@@ -74,7 +76,7 @@ final class BlockListener extends BedcoreListener
                     $tileChest = BlockUtils::asTile($block);
                     if ($tileChest instanceof TileChest) {
                         $inventory = $tileChest->getRealInventory();
-                        if (!empty($inventory->getContents())) {
+                        if (count($inventory->getContents()) > 0) {
                             $this->database->getQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                         }
                     }
@@ -91,7 +93,7 @@ final class BlockListener extends BedcoreListener
                         return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
                     });
 
-                    if (!empty($sides)) {
+                    if (count($sides) > 0) {
                         $this->database->getQueries()->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
                     }
                 }

@@ -24,6 +24,8 @@ namespace matcracker\BedcoreProtect\listeners;
 use BlockHorizons\BlockSniper\events\BrushUseEvent;
 use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\Block;
+use function array_map;
+use function iterator_to_array;
 
 final class BlockSniperListener extends BedcoreListener
 {

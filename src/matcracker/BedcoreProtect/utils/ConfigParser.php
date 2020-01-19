@@ -24,6 +24,9 @@ namespace matcracker\BedcoreProtect\utils;
 use BadMethodCallException;
 use pocketmine\level\Level;
 use pocketmine\utils\Config;
+use function count;
+use function date_default_timezone_set;
+use function in_array;
 
 /**
  * It parses the plugin configuration to be an object.
@@ -81,7 +84,7 @@ final class ConfigParser
             throw new BadMethodCallException('The configuration must be validated.');
         }
 
-        return in_array($world->getFolderName(), $this->getEnabledWorlds()) || empty($this->getEnabledWorlds());
+        return in_array($world->getFolderName(), $this->getEnabledWorlds()) || count($this->getEnabledWorlds()) === 0;
     }
 
     public function getEnabledWorlds(): array

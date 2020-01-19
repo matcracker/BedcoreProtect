@@ -35,8 +35,22 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
+use function array_filter;
+use function array_flip;
+use function array_intersect_key;
+use function array_key_exists;
 use function array_keys;
+use function array_map;
+use function array_shift;
+use function count;
+use function ctype_digit;
+use function explode;
 use function implode;
+use function in_array;
+use function is_string;
+use function mb_substr;
+use function strtolower;
+use function time;
 
 CommandParser::initActions();
 
@@ -234,7 +248,7 @@ final class CommandParser
             return $value !== null;
         });
 
-        if (empty($filter)) {
+        if (count($filter) === 0) {
             return false;
         }
 
@@ -324,7 +338,7 @@ final class CommandParser
      */
     public static function toActions(string $cmdAction): array
     {
-        if (!isset(self::$ACTIONS[$cmdAction])) {
+        if (!array_key_exists($cmdAction, self::$ACTIONS)) {
             throw new ArrayOutOfBoundsException("The {$cmdAction} is not a valid action.");
         }
 

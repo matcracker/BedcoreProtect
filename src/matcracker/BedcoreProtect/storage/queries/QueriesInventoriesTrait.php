@@ -35,6 +35,9 @@ use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
+use function array_fill;
+use function array_map;
+use function count;
 
 /**
  * It contains all the queries methods related to inventories.
