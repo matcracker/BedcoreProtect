@@ -196,7 +196,8 @@ trait QueriesBlocksTrait
                 $historyId = (int)$row['history_id'];
                 $id = (int)$row["{$prefix}_id"];
                 $meta = (int)$row["{$prefix}_meta"];
-                if (count($inclusions) > 0) {
+
+                if ($inclusions !== null && count($inclusions) > 0) {
                     foreach ($inclusions as $inclusion) {
                         if ($inclusion->getId() !== $id && $inclusion->getDamage() !== $meta) {
                             unset($blockRows[$index]);
@@ -204,7 +205,8 @@ trait QueriesBlocksTrait
                         }
                     }
                 }
-                if (count($exclusions) > 0) {
+
+                if ($exclusions !== null && count($exclusions) > 0) {
                     foreach ($exclusions as $exclusion) {
                         if ($exclusion->getId() === $id && $exclusion->getDamage() === $meta) {
                             unset($blockRows[$index]);
