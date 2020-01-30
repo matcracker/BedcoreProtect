@@ -101,7 +101,9 @@ final class EntityListener extends BedcoreListener
             $ev = $entity->getLastDamageCause();
             if ($ev instanceof EntityDamageByEntityEvent) {
                 $damager = $ev->getDamager();
-                $this->database->getQueries()->addLogEntityByEntity($damager, $entity, Action::KILL());
+                if ($damager !== null) {
+                    $this->database->getQueries()->addLogEntityByEntity($damager, $entity, Action::KILL());
+                }
             }
         }
     }
