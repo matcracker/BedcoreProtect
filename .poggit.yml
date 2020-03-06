@@ -1,8 +1,9 @@
+---
+branches:
+    - stable
+    - master
 projects:
   BedcoreProtect:
-    branches:
-        - stable
-        - master
     path: ""
     icon: resources/bedcoreprotect_logo.png
     libs:
