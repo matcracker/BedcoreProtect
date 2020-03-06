@@ -96,7 +96,7 @@ final class Main extends PluginBase
         return false;
     }
 
-    public static function getInstance(): Main
+    public static function getInstance(): ?Main
     {
         return self::$instance;
     }
