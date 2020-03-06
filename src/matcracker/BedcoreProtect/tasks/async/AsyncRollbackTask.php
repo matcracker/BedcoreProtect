@@ -91,12 +91,12 @@ class AsyncRollbackTask extends AsyncTask
 
             /**@var Main $plugin */
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-            if ($plugin === null) {
-                return;
+            if ($plugin instanceof Main) {
+                $logIds = (array)$this->fetchLocal();
+                $plugin->getDatabase()->getQueries()->rollbackEntities($this->isRollback(), $this->area, $this->commandParser, $logIds);
+                $plugin->getDatabase()->getQueries()->updateRollbackStatus($this->isRollback(), $logIds);
             }
-            $logIds = (array)$this->fetchLocal();
-            $plugin->getDatabase()->getQueries()->rollbackEntities($this->isRollback(), $this->area, $this->commandParser, $logIds);
-            $plugin->getDatabase()->getQueries()->updateRollbackStatus($this->isRollback(), $logIds);
+
         }
     }
 

@@ -103,7 +103,7 @@ class Queries
      * @param string $queryName
      * @param Player $inspector
      * @param Position $position
-     * @param int|null $near
+     * @param int $near
      */
     private function requestLog(string $queryName, Player $inspector, Position $position, int $near = 0): void
     {
