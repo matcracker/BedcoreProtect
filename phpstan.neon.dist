@@ -15,5 +15,6 @@ parameters:
         - phar:///source/vendor/UpdateNotifier.phar/src
         - phar:///source/vendor/FormLib.phar/src
         - phar:///source/vendor/await-generator.phar/src
+		- phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
         - source/vendor
