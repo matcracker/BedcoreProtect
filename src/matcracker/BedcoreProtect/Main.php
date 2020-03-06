@@ -182,7 +182,7 @@ final class Main extends PluginBase
         return $this->bsHooked;
     }
 
-    public function getLanguage(): BaseLang
+    public function getLanguage(): ?BaseLang
     {
         return $this->baseLang;
     }
