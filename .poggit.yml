@@ -2,6 +2,7 @@
 branches:
   - stable
   - master
+pulls: false
 projects:
   BedcoreProtect:
     path: ""
