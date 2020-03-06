@@ -58,9 +58,6 @@ final class Main extends PluginBase
     /**@var boolean $bsHooked */
     private $bsHooked = false;
 
-    /**
-     * @return Database
-     */
     public function getDatabase(): Database
     {
         return $this->database;
@@ -108,6 +105,7 @@ final class Main extends PluginBase
 
     public function onLoad(): void
     {
+        self::$instance = $this;
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -132,7 +130,6 @@ final class Main extends PluginBase
 
     public function onEnable(): void
     {
-        self::$instance = $this;
         $this->database = new Database($this);
 
         @mkdir($this->getDataFolder());
