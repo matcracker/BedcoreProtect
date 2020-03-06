@@ -1,12 +1,36 @@
-on: [push, pull_request]
 name: PHPStan
+
+on: [push, pull_request]
+
 jobs:
   phpstan:
-    name: PHPStan
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: PHPStan
-      uses: docker://oskarstark/phpstan-ga
       with:
-        args: analyse src/ --level=5
+        ref: ${{ github.ref }}
+    - name: Create vendor directory
+      run: |
+        echo Making directory...
+        mkdir vendor
+        echo Directory made.
+    - name: wget virions, libasynql
+      uses: wei/wget@v1
+      with:
+        args: -O vendor/libasynql.phar https://poggit.pmmp.io/r/75007/libasynql_dev-114.phar
+    - name: wget virions, UpdateNotifier
+      uses: wei/wget@v1
+      with:
+        args: -O vendor/UpdateNotifier.phar https://poggit.pmmp.io/r/47805/UpdateNotifier_dev-1.phar
+    - name: wget virions, FormLib
+      uses: wei/wget@v1
+      with:
+        args: -O vendor/FormLib.phar https://poggit.pmmp.io/r/77095/FormLib_dev-10.phar
+    - name: wget virions, await-generator
+      uses: wei/wget@v1
+      with:
+        args: -O vendor/await-generator.phar https://poggit.pmmp.io/r/75740/await-generator_dev-22.phar
+    - name: Run PHPStan
+      uses: nxtlvlsoftware/pmmp-phpstan-action@3
+      with:
+        phpstan-config: phpstan.neon.dist

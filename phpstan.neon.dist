@@ -1,0 +1,19 @@
+parameters:
+    level: 1
+
+    checkMissingIterableValueType: false
+
+    ignoreErrors: []
+
+    paths:
+        - /source/src
+    autoload_files:
+        - phar:///pocketmine/PocketMine-MP.phar/vendor/autoload.php
+    autoload_directories:
+        - /source/src
+        - phar:///source/vendor/libasynql.phar/src
+        - phar:///source/vendor/UpdateNotifier.phar/src
+        - phar:///source/vendor/FormLib.phar/src
+        - phar:///source/vendor/await-generator.phar/src
+    excludes_analyse:
+        - source/vendor
