@@ -1,0 +1,17 @@
+name: "pmmp-phpstan"
+description: "Run php stan static analysis on code in a pocketmine environment."
+inputs:
+  source:
+    description: "Path to the source directory to run analysis on."
+    required: false
+  phpstan-config:  # path to the php stan config to use
+    description: "Path to the phpstan.neon configuration file."
+    required: false
+    default: "/pocketmine/phpstan.neon" # this file is already present in the container and will work fine for plugins
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    PHPSTAN_CONFIG: ${{ inputs.phpstan-config }}
+  args:
+    - ${{ inputs.source }}
