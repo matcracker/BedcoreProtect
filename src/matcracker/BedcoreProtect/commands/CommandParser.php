@@ -35,6 +35,7 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
+use RuntimeException;
 use function array_filter;
 use function array_flip;
 use function array_intersect_key;
@@ -128,7 +129,13 @@ final class CommandParser
 
     public function parse(): bool
     {
-        $lang = Main::getInstance()->getLanguage();
+        $plugin = Main::getInstance();
+
+        if ($plugin === null) {
+            throw new RuntimeException("Invalid BedcoreProtect instance.");
+        }
+
+        $lang = $plugin->getLanguage();
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) {
             $this->errorMessage = $lang->translateString('parser.few-many-parameters', [self::MAX_PARAMETERS]);
 
