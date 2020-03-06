@@ -1,7 +1,7 @@
 ---
 branches:
-    - stable
-    - master
+  - stable
+  - master
 projects:
   BedcoreProtect:
     path: ""

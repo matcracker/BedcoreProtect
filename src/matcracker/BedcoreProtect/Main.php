@@ -33,6 +33,7 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use RuntimeException;
 use function mkdir;
 use function version_compare;
 
@@ -96,8 +97,12 @@ final class Main extends PluginBase
         return false;
     }
 
-    public static function getInstance(): ?Main
+    public static function getInstance(): Main
     {
+        if (self::$instance === null) {
+            throw new RuntimeException("Invalid plugin instance detected.");
+        }
+
         return self::$instance;
     }
 
@@ -182,8 +187,12 @@ final class Main extends PluginBase
         return $this->bsHooked;
     }
 
-    public function getLanguage(): ?BaseLang
+    public function getLanguage(): BaseLang
     {
+        if ($this->baseLang === null) {
+            throw new RuntimeException("Invalid language state detected.");
+        }
+
         return $this->baseLang;
     }
 
