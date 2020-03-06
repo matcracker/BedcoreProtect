@@ -5,7 +5,7 @@ jobs:
     name: PHPStan
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@php-stan
+    - uses: actions/checkout@master
     - name: PHPStan
       uses: docker://oskarstark/phpstan-ga
       with:
