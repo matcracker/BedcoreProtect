@@ -29,6 +29,7 @@ use pocketmine\entity\Living;
 use pocketmine\level\format\Chunk;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\nbt\tag\NamedTag;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
@@ -207,6 +208,7 @@ final class Utils
     {
         $nbtSerializer = new BigEndianNBTStream();
 
+        /** @var NamedTag $tag */
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
         if (!($tag instanceof CompoundTag)) {
