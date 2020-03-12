@@ -3,8 +3,8 @@ parameters:
 
     checkMissingIterableValueType: false
 
-    ignoreErrors: []
-
+    ignoreErrors:
+        - '#RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\BedcoreProtect\commands\CommandParser.#'
     paths:
         - /source/src
     autoload_files:
