@@ -1,10 +1,10 @@
 parameters:
-    level: 5
+    level: max
 
     checkMissingIterableValueType: false
 
-    ignoreErrors:
-        - '#RuntimeException (Invalid plugin instance detected.)#'
+    ignoreErrors: []
+	
     paths:
         - /source/src
     autoload_files:
