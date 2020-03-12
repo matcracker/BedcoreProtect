@@ -35,6 +35,7 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
+use UnexpectedValueException;
 use function array_filter;
 use function array_flip;
 use function array_intersect_key;
@@ -47,6 +48,7 @@ use function ctype_digit;
 use function explode;
 use function implode;
 use function in_array;
+use function is_array;
 use function is_string;
 use function mb_substr;
 use function strtolower;
@@ -220,6 +222,12 @@ final class CommandParser
                 case 'e':
                     $index = mb_substr($param, 0, 1) === 'b' ? 'blocks' : 'exclusions';
                     try {
+                        $items = ItemFactory::fromString($paramValues, true);
+
+                        if (!is_array($items)) {
+                            throw new UnexpectedValueException("Expected Item[] array, got null or Item.");
+                        }
+
                         $this->data[$index] =
                             array_filter(
                                 array_map(
@@ -229,7 +237,7 @@ final class CommandParser
                                         }
                                         return $block;
                                     },
-                                    ItemFactory::fromString($paramValues, true)
+                                    $items
                                 ),
                                 static function (?Block $block): bool {
                                     return $block !== null;

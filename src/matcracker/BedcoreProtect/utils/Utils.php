@@ -40,6 +40,7 @@ use function array_values;
 use function base64_decode;
 use function base64_encode;
 use function get_class;
+use function is_string;
 use function json_decode;
 use function key;
 use function microtime;
@@ -78,8 +79,16 @@ final class Utils
         preg_match_all('/([0-9]+)([smhdw])/', $strDate, $matches);
 
         foreach ($matches[0] as $match) {
-            $value = (int)preg_replace("/[^0-9]/", "", $match);
-            $dateType = (string)preg_replace("/[^smhdw]/", "", $match);
+            $value = preg_replace("/[^0-9]/", "", $match);
+            if (!is_string($value)) {
+                throw new UnexpectedValueException("Invalid time parsed, expected string.");
+            }
+            $value = (int)$value;
+
+            $dateType = preg_replace("/[^smhdw]/", "", $match);
+            if (!is_string($dateType)) {
+                throw new UnexpectedValueException("Invalid date type parsed, expected string.");
+            }
 
             switch ($dateType) {
                 case "w":
@@ -107,7 +116,12 @@ final class Utils
     {
         $date = new DateTime();
         $date->setTimestamp($timestamp);
-        $date = $date->diff(DateTime::createFromFormat('0.u00 U', microtime()));
+        $currentDate = DateTime::createFromFormat('0.u00 U', microtime());
+        if (!($currentDate instanceof DateTime)) {
+            throw new UnexpectedValueException("Unexpected date creation.");
+        }
+
+        $date = $date->diff($currentDate);
         // build array
         $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
         // remove empty date values
@@ -172,8 +186,14 @@ final class Utils
     {
         $nbtSerializer = new BigEndianNBTStream();
 
+        $compressedData = $nbtSerializer->writeCompressed($tag);
+
+        if (!is_string($compressedData)) {
+            throw new UnexpectedValueException("Invalid compression of NBT data.");
+        }
+
         //Encoding to Base64 for more safe storing.
-        return base64_encode($nbtSerializer->writeCompressed($tag));
+        return base64_encode($compressedData);
     }
 
     /**
@@ -190,8 +210,9 @@ final class Utils
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
         if (!($tag instanceof CompoundTag)) {
-            throw new UnexpectedValueException('Value must return CompoundTag, got ' . get_class($tag));
+            throw new UnexpectedValueException('Value must return CompoundTag, got ' . $tag->__toString());
         }
+
         return $tag;
     }
 

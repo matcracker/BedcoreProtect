@@ -55,7 +55,7 @@ class SerializableWorld
             }
         }
 
-        return new self($vector3->getX(), $vector3->getY(), $vector3->getZ(), $worldName);
+        return new self((int)$vector3->getX(), (int)$vector3->getY(), (int)$vector3->getZ(), $worldName);
     }
 
     /**

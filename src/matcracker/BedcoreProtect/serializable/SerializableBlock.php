@@ -54,7 +54,7 @@ final class SerializableBlock extends SerializableWorld
         if (($world = $block->getLevel()) !== null) {
             $worldName = $world->getFolderName();
         }
-        return new self($block->getId(), $block->getDamage(), $block->getX(), $block->getY(), $block->getZ(), $worldName, BlockUtils::serializeBlockTileNBT($block));
+        return new self($block->getId(), $block->getDamage(), (int)$block->getX(), (int)$block->getY(), (int)$block->getZ(), $worldName, BlockUtils::serializeBlockTileNBT($block));
     }
 
     public function toBlock(): Block
