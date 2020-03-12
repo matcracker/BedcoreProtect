@@ -14,7 +14,7 @@ parameters:
         - phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
         - source/vendor
-	ignoreErrors:
+    ignoreErrors:
 		-
 			message: "#^RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\\\\BedcoreProtect\\\\commands\\\\CommandParser\\.$#"
 			count: 1
