@@ -45,10 +45,8 @@ final class Main extends PluginBase
 
     /**@var Main */
     private static $instance;
-
     /**@var Database */
     private $database;
-
     /**@var ConfigParser */
     private $configParser;
     /**@var ConfigParser */

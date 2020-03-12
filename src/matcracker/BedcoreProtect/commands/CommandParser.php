@@ -61,17 +61,17 @@ final class CommandParser
     /**@var Action[][] */
     public static $ACTIONS;
 
-    /**@var string $senderName */
+    /**@var string */
     private $senderName;
-    /**@var ConfigParser $configParser */
+    /**@var ConfigParser */
     private $configParser;
-    /**@var string[] $arguments */
+    /**@var string[] */
     private $arguments;
-    /**@var string[] $requiredParams */
+    /**@var string[] */
     private $requiredParams;
-    /**@var bool $parsed */
+    /**@var bool */
     private $parsed = false;
-    /**@var string $errorMessage */
+    /**@var string */
     private $errorMessage;
 
     //Default data values

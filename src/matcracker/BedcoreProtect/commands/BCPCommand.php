@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\math\MathUtils;
+use matcracker\BedcoreProtect\storage\queries\Queries;
 use matcracker\BedcoreProtect\ui\Forms;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
@@ -42,7 +43,9 @@ use function strtolower;
 
 final class BCPCommand extends Command
 {
+    /** @var Main */
     private $plugin;
+    /** @var Queries */
     private $queries;
 
     public function __construct(Main $plugin)
