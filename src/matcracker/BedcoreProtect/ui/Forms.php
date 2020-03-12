@@ -25,11 +25,11 @@ use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\ConfigParser;
-use matcracker\BedcoreProtect\utils\Utils;
 use matcracker\FormLib\BaseForm;
 use matcracker\FormLib\CustomForm;
 use matcracker\FormLib\Form;
 use pocketmine\Player;
+use pocketmine\utils\TextFormat;
 use function array_keys;
 use function is_array;
 use function strlen;
@@ -85,7 +85,7 @@ final class Forms
             ->addClassicButton($lang->translateString('form.menu.purge'))
             ->addClassicButton($lang->translateString('form.menu.reload'))
             ->addClassicButton($lang->translateString('form.menu.status'))
-            ->setTitle(Utils::translateColors('&3&l' . Main::PLUGIN_NAME . " " . $lang->translateString('form.menu.title')));
+            ->setTitle(TextFormat::colorize('&3&l' . Main::PLUGIN_NAME . " " . $lang->translateString('form.menu.title')));
     }
 
     private function getPurgeMenu(): BaseForm
@@ -101,7 +101,7 @@ final class Forms
                 $player->sendForm($this->getMainMenu());
             }
         ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
-            ->setTitle(Utils::translateColors('&3&l' . $lang->translateString('form.menu.purge')));
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
     }
 
     private function getNearMenu(): BaseForm
@@ -117,7 +117,7 @@ final class Forms
                 $player->sendForm($this->getMainMenu());
             }
         ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
-            ->setTitle(Utils::translateColors('&3&l' . $lang->translateString('form.menu.near')));
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.near')));
     }
 
     private function getInputMenu(string $type): BaseForm
@@ -136,7 +136,7 @@ final class Forms
             ->addDropdown($lang->translateString('general.action'), array_keys(CommandParser::$ACTIONS), -1)
             ->addInput($lang->translateString('form.input-menu.restrict-blocks'), 'stone,dirt,2:0')
             ->addInput($lang->translateString('form.input-menu.exclude-blocks'), 'stone,dirt,2:0')
-            ->setTitle(Utils::translateColors('&3&l' . $lang->translateString("general.{$type}")));
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString("general.{$type}")));
     }
 
     private function parseForm(string $subCmd): Closure

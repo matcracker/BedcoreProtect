@@ -45,6 +45,7 @@ use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\tile\Chest;
 use pocketmine\tile\Tile;
+use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function array_search;
@@ -269,20 +270,20 @@ trait QueriesBlocksTrait
             $date = Utils::timeAgo(time() - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
-            $sender->sendMessage(Utils::translateColors('&f------'));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.blocks', [$blocks])));
+            $sender->sendMessage(TextFormat::colorize('&f------'));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.blocks', [$blocks])));
             if ($items > 0) {
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.items', [$items])));
+                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.items', [$items])));
             }
             if ($entities > 0) {
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.entities', [$entities])));
+                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.entities', [$entities])));
             }
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.modified-chunks', [$chunks])));
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
-            $sender->sendMessage(Utils::translateColors('&f------'));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.modified-chunks', [$chunks])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
+            $sender->sendMessage(TextFormat::colorize('&f------'));
         }
     }
 }

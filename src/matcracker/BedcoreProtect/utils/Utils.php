@@ -29,7 +29,6 @@ use pocketmine\entity\Living;
 use pocketmine\level\format\Chunk;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\utils\TextFormat;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
@@ -46,8 +45,6 @@ use function key;
 use function microtime;
 use function preg_match_all;
 use function preg_replace;
-use function preg_replace_callback;
-use function str_replace;
 use function strlen;
 use function strtolower;
 use function strval;
@@ -56,20 +53,6 @@ final class Utils
 {
     private function __construct()
     {
-    }
-
-    /**
-     * It translates chat colors from format "§" to "&"
-     *
-     * @param string $message
-     *
-     * @return string
-     */
-    public static function translateColors(string $message): string
-    {
-        return preg_replace_callback('/(\\\&|\&)[0-9a-fk-or]/', static function (array $matches): string {
-            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace('\\' . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
-        }, $message);
     }
 
     /**

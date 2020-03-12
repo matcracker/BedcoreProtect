@@ -24,9 +24,11 @@ namespace matcracker\BedcoreProtect\storage;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
+use UnexpectedValueException;
 use function array_filter;
 use function count;
 use function fclose;
+use function is_string;
 use function stream_get_contents;
 use function version_compare;
 use function yaml_parse;
@@ -46,7 +48,13 @@ final class PatchManager
 
     private function getVersionsToPatch(string $db_version): array
     {
-        $patchConfig = yaml_parse(stream_get_contents(($res = $this->plugin->getResource('patches/.patches')))) ?? [];
+        $patchContent = stream_get_contents(($res = $this->plugin->getResource('patches/.patches')));
+
+        if (!is_string($patchContent)) {
+            throw new UnexpectedValueException("Could not get patch data.");
+        }
+
+        $patchConfig = yaml_parse($patchContent) ?? [];
         fclose($res);
         return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
             return version_compare($version, $db_version) > 0;
