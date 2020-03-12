@@ -29,13 +29,13 @@ use function mb_substr;
 
 class AsyncLogsQueryGenerator extends AsyncTask
 {
-    /**@var string */
+    /** @var string */
     private $uuid;
-    /**@var SerializableWorld[] */
+    /** @var SerializableWorld[] */
     private $positions;
-    /**@var Action */
+    /** @var Action */
     private $action;
-    /**@var AsyncTask */
+    /** @var AsyncTask */
     private $nextTask;
 
     /**
@@ -73,12 +73,12 @@ class AsyncLogsQueryGenerator extends AsyncTask
 
     public function onCompletion(Server $server): void
     {
-        /**@var Main $plugin */
+        /** @var Main $plugin */
         $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
         if ($plugin === null) {
             return;
         }
-        /**@var DataConnector $connector */
+        /** @var DataConnector $connector */
         $connector = $this->fetchLocal();
         $connector->executeInsertRaw((string)$this->getResult(), [], function (): void {
             Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);

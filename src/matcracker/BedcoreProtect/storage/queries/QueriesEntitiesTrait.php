@@ -84,7 +84,7 @@ trait QueriesEntitiesTrait
                         }
                     } else {
                         $logId = (int)$row['log_id'];
-                        /**@var Entity $entityClass */
+                        /** @var Entity $entityClass */
                         $entityClass = (string)$row['entity_classpath'];
                         $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
                         $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);

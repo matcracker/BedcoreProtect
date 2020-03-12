@@ -27,9 +27,9 @@ use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
 {
-    /**@var Main */
+    /** @var Main */
     protected $plugin;
-    /**@var Database */
+    /** @var Database */
     protected $database;
 
     public function __construct(Main $plugin)

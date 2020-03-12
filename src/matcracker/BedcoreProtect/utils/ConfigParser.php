@@ -36,13 +36,13 @@ use function in_array;
  */
 final class ConfigParser
 {
-    /**@var Config */
+    /** @var Config */
     private $config;
 
-    /**@var array */
+    /** @var array */
     private $data = [];
 
-    /**@var bool */
+    /** @var bool */
     private $isValid = false;
 
     public function __construct(Config $config)

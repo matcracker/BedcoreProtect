@@ -36,7 +36,7 @@ use function strlen;
 
 final class Forms
 {
-    /**@var ConfigParser */
+    /** @var ConfigParser */
     private $configParser;
 
     public function __construct(ConfigParser $configParser)

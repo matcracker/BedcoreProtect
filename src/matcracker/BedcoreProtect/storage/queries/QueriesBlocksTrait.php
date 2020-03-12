@@ -180,7 +180,7 @@ trait QueriesBlocksTrait
             $query = $commandParser->buildLogsSelectionQuery(!$rollback, $area->getBoundingBox());
             $logRows = yield $this->connector->executeSelectRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
 
-            /**@var int[] $logIds */
+            /** @var int[] $logIds */
             $logIds = [];
             foreach ($logRows as $logRow) {
                 $logIds[] = (int)$logRow['log_id'];
@@ -190,7 +190,7 @@ trait QueriesBlocksTrait
 
             $inclusions = $commandParser->getBlocks();
             $exclusions = $commandParser->getExclusions();
-            /**@var SerializableBlock[] $blocks */
+            /** @var SerializableBlock[] $blocks */
             $blocks = [];
             foreach ($blockRows as $index => $row) {
                 $historyId = (int)$row['history_id'];

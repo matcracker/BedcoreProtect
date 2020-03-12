@@ -33,9 +33,9 @@ use function yaml_parse;
 
 final class PatchManager
 {
-    /**@var DataConnector */
+    /** @var DataConnector */
     private $connector;
-    /**@var Main */
+    /** @var Main */
     private $plugin;
 
     public function __construct(Main $plugin, DataConnector $connector)

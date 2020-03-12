@@ -29,11 +29,11 @@ use pocketmine\Server;
 
 final class SerializableBlock extends SerializableWorld
 {
-    /**@var int */
+    /** @var int */
     private $id;
-    /**@var int */
+    /** @var int */
     private $meta;
-    /**@var string|null */
+    /** @var string|null */
     private $serializedNbt;
 
     public function __construct(int $id, int $meta, ?int $x, ?int $y, ?int $z, ?string $worldName, ?string $serializedNbt = null)

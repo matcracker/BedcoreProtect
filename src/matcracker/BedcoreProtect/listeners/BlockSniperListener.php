@@ -32,9 +32,9 @@ final class BlockSniperListener extends BedcoreListener
     public function trackBrushUse(BrushUseEvent $event): void
     {
         if ($this->plugin->getParsedConfig()->isEnabledWorld($event->getLevel()) && $this->plugin->getParsedConfig()->getBlockSniperHook()) {
-            /**@var Block[] $newBlocks */
+            /** @var Block[] $newBlocks */
             $newBlocks = iterator_to_array($event->getShape()->getBlocksInside());
-            /**@var Block[] $oldBlocks */
+            /** @var Block[] $oldBlocks */
             $oldBlocks = array_map(static function (Block $block): Block {
                 return $block->getLevel()->getBlock($block->asVector3());
             }, $newBlocks);

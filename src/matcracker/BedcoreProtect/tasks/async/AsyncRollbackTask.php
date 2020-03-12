@@ -33,15 +33,15 @@ use pocketmine\Server;
 
 class AsyncRollbackTask extends AsyncTask
 {
-    /**@var Area */
+    /** @var Area */
     private $area;
-    /**@var SerializableBlock[] */
+    /** @var SerializableBlock[] */
     private $blocks;
-    /**@var CommandParser */
+    /** @var CommandParser */
     private $commandParser;
-    /**@var string[] */
+    /** @var string[] */
     private $serializedChunks;
-    /**@var float */
+    /** @var float */
     private $startTime;
 
     /**
@@ -69,7 +69,7 @@ class AsyncRollbackTask extends AsyncTask
         foreach ($chunks as $hash => $chunkData) {
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
-        /**@var Chunk[] $chunks */
+        /** @var Chunk[] $chunks */
         foreach ($this->blocks as $vector) {
             $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
             if (isset($chunks[$index])) {
@@ -83,13 +83,13 @@ class AsyncRollbackTask extends AsyncTask
     {
         $world = $this->area->getWorld();
         if ($world !== null) {
-            /**@var Chunk[] $chunks */
+            /** @var Chunk[] $chunks */
             $chunks = $this->getResult();
             foreach ($chunks as $chunk) {
                 $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
             }
 
-            /**@var Main $plugin */
+            /** @var Main $plugin */
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
             if ($plugin instanceof Main) {
                 $logIds = (array)$this->fetchLocal();

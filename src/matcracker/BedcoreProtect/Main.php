@@ -43,17 +43,17 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /**@var Main */
+    /** @var Main */
     private static $instance;
-    /**@var Database */
+    /** @var Database */
     private $database;
-    /**@var ConfigParser */
+    /** @var ConfigParser */
     private $configParser;
-    /**@var ConfigParser */
+    /** @var ConfigParser */
     private $oldConfigParser;
-    /**@var BaseLang */
+    /** @var BaseLang */
     private $baseLang;
-    /**@var boolean */
+    /** @var boolean */
     private $bsHooked = false;
 
     public function getDatabase(): Database

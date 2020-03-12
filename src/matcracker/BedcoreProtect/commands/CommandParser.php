@@ -58,20 +58,20 @@ final class CommandParser
 {
     public const MAX_PARAMETERS = 6;
 
-    /**@var Action[][] */
+    /** @var Action[][] */
     public static $ACTIONS;
 
-    /**@var string */
+    /** @var string */
     private $senderName;
-    /**@var ConfigParser */
+    /** @var ConfigParser */
     private $configParser;
-    /**@var string[] */
+    /** @var string[] */
     private $arguments;
-    /**@var string[] */
+    /** @var string[] */
     private $requiredParams;
-    /**@var bool */
+    /** @var bool */
     private $parsed = false;
-    /**@var string */
+    /** @var string */
     private $errorMessage;
 
     //Default data values
@@ -264,11 +264,6 @@ final class CommandParser
         return true;
     }
 
-    /**
-     * @param bool $restore
-     * @param AxisAlignedBB $bb
-     * @return string
-     */
     public function buildLogsSelectionQuery(bool $restore, AxisAlignedBB $bb): string
     {
         if (!$this->parsed) {
@@ -319,7 +314,7 @@ final class CommandParser
                     $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
                 }/* else if ($key === 'blocks' || $key === 'exclusions') {
                     $operator = $key === 'exclusions' ? '<>' : '=';
-                    /**@var Block $block *
+                    /** @var Block $block *
                     foreach ($value as $block) {
                         $id = $block->getId();
                         $meta = $block->getDamage();

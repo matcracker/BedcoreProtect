@@ -32,9 +32,9 @@ use pocketmine\Server;
 final class Area
 {
 
-    /**@var string */
+    /** @var string */
     private $worldName;
-    /**@var AxisAlignedBB */
+    /** @var AxisAlignedBB */
     private $bb;
 
     public function __construct(Level $world, AxisAlignedBB $bb)
