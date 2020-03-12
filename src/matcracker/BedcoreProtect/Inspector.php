@@ -37,6 +37,9 @@ use function var_export;
 
 final class Inspector
 {
+    /**
+     * @var mixed[][]
+     */
     private static $inspectors = [];
 
     private function __construct()
