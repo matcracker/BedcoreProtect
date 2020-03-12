@@ -75,6 +75,7 @@ final class CommandParser
     private $errorMessage;
 
     //Default data values
+    /** @var mixed[] */
     private $data = [
         'user' => null,
         'time' => null,

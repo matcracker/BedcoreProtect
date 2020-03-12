@@ -34,11 +34,11 @@ class Database
 {
     /** @var Main */
     private $plugin;
-    /** @var DataConnector */
+    /** @var DataConnector|null */
     private $connector;
     /** @var PatchManager */
     private $patchManager;
-    /** @var Queries */
+    /** @var Queries|null */
     private $queries;
 
     public function __construct(Main $plugin)

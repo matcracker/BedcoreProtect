@@ -64,11 +64,11 @@ class AsyncInventoriesQueryGenerator extends AsyncTask
 
     public function onCompletion(Server $server): void
     {
-        /** @var Main $plugin */
         $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
         if ($plugin === null) {
             return;
         }
+
         /** @var DataConnector $connector */
         $connector = $this->fetchLocal();
         $connector->executeInsertRaw((string)$this->getResult());

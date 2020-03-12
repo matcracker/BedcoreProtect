@@ -69,7 +69,7 @@ class AsyncRollbackTask extends AsyncTask
         foreach ($chunks as $hash => $chunkData) {
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
-        /** @var Chunk[] $chunks */
+
         foreach ($this->blocks as $vector) {
             $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
             if (isset($chunks[$index])) {
