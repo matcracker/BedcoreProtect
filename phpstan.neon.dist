@@ -2,9 +2,9 @@ parameters:
     level: 7
 
     checkMissingIterableValueType: false
-	ignoreErrors:
+    ignoreErrors:
 		-
-			message: '#^RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\\\\BedcoreProtect\\\\commands\\\\CommandParser\\.$#'
+		    message: '#^RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\\\\BedcoreProtect\\\\commands\\\\CommandParser\\.$#'
 			count: 1
 			path: src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
 
