@@ -1,18 +1,6 @@
 parameters:
     level: 7
-
     checkMissingIterableValueType: false
-    ignoreErrors:
-		-
-		    message: '#^RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\\\\BedcoreProtect\\\\commands\\\\CommandParser\\.$#'
-			count: 1
-			path: src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
-
-		-
-			message: '#^Parameter #1 $data of static method pocketmine\\\\level\\\\format\\\\Chunk::fastDeserialize() expects string, pocketmine\\\\level\\\\format\\\\Chunk|string given\\.$#'
-			count: 1
-			path: src/matcracker/BedcoreProtect/tasks/async/AsyncRollbackTask.php
-
     paths:
         - /source/src
     autoload_files:
@@ -26,3 +14,13 @@ parameters:
         - phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
         - source/vendor
+	ignoreErrors:
+		-
+			message: "#^RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\\\\BedcoreProtect\\\\commands\\\\CommandParser\\.$#"
+			count: 1
+			path: src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
+
+		-
+			message: "#^Parameter #1 $data of static method pocketmine\\\\level\\\\format\\\\Chunk::fastDeserialize() expects string, pocketmine\\\\level\\\\format\\\\Chunk|string given\\.$#"
+			count: 1
+			path: src/matcracker/BedcoreProtect/tasks/async/AsyncRollbackTask.php
