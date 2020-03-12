@@ -18,7 +18,7 @@ parameters:
         -
             message: "#^RuntimeException (Invalid plugin instance detected.) thrown while autoloading class matcracker\\\\BedcoreProtect\\\\commands\\\\CommandParser.$#"
             count: 1
-            path: /source/src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
+            path: /source/src/matcracker/BedcoreProtect/commands/CommandParser.php
 
         -
             message: "#^Parameter \\#1 $data of static method pocketmine\\\\level\\\\format\\\\Chunk::fastDeserialize() expects string, pocketmine\\\\level\\\\format\\\\Chunk|string given.$#"
