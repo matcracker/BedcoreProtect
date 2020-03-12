@@ -30,7 +30,9 @@ use function mb_substr;
 
 class AsyncInventoriesQueryGenerator extends AsyncTask
 {
+    /** @var int */
     private $lastLogId;
+    /** @var array|SerializableItem[] */
     private $items;
 
     /**

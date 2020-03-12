@@ -33,15 +33,15 @@ use pocketmine\Server;
 
 class AsyncRollbackTask extends AsyncTask
 {
-    /**@var Area $area */
+    /**@var Area */
     private $area;
-    /**@var SerializableBlock[] $blocks */
+    /**@var SerializableBlock[] */
     private $blocks;
-    /**@var CommandParser $commandParser */
+    /**@var CommandParser */
     private $commandParser;
-    /**@var string[] $serializedChunks */
+    /**@var string[] */
     private $serializedChunks;
-    /**@var float $startTime */
+    /**@var float */
     private $startTime;
 
     /**

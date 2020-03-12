@@ -42,9 +42,9 @@ class Queries
 {
     use QueriesBlocksTrait, QueriesInventoriesTrait, QueriesEntitiesTrait;
 
-    /**@var DataConnector $connector */
+    /**@var DataConnector */
     protected $connector;
-    /**@var ConfigParser $configParser */
+    /**@var ConfigParser */
     protected $configParser;
 
     public function __construct(DataConnector $connector, ConfigParser $configParser)

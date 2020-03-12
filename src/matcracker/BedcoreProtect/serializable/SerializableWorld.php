@@ -25,13 +25,13 @@ use pocketmine\math\Vector3;
 
 class SerializableWorld
 {
-    /**@var int|null $x */
+    /**@var int|null */
     protected $x;
-    /**@var int|null $y */
+    /**@var int|null */
     protected $y;
-    /**@var int|null $z */
+    /**@var int|null */
     protected $z;
-    /**@var string|null $worldName */
+    /**@var string|null */
     protected $worldName;
 
     public function __construct(?int $x, ?int $y, ?int $z, ?string $worldName)

@@ -32,13 +32,13 @@ use SOFe\AwaitGenerator\Await;
 
 class Database
 {
-    /**@var Main $plugin */
+    /**@var Main */
     private $plugin;
-    /**@var DataConnector $connector */
+    /**@var DataConnector */
     private $connector;
-    /**@var PatchManager $patchManager */
+    /**@var PatchManager */
     private $patchManager;
-    /**@var Queries $queries */
+    /**@var Queries */
     private $queries;
 
     public function __construct(Main $plugin)

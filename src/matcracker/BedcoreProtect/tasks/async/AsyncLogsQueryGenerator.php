@@ -29,13 +29,13 @@ use function mb_substr;
 
 class AsyncLogsQueryGenerator extends AsyncTask
 {
-    /**@var string $uuid */
+    /**@var string */
     private $uuid;
-    /**@var SerializableWorld[] $positions */
+    /**@var SerializableWorld[] */
     private $positions;
-    /**@var Action $action */
+    /**@var Action */
     private $action;
-    /**@var AsyncTask $nextTask */
+    /**@var AsyncTask */
     private $nextTask;
 
     /**

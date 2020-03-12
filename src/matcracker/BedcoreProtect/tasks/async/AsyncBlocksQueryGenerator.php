@@ -35,11 +35,11 @@ use function unserialize;
 
 class AsyncBlocksQueryGenerator extends AsyncTask
 {
-    /**@var int $lastLogId */
+    /**@var int */
     private $lastLogId;
-    /**@var string $oldBlocks */
+    /**@var string */
     private $oldBlocks;
-    /**@var string $newBlocks */
+    /**@var string */
     private $newBlocks;
 
     /**
