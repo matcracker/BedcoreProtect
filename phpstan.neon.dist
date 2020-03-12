@@ -17,4 +17,4 @@ parameters:
         - phar:///source/vendor/await-generator.phar/src
         - phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
-        - source/vendor
+        - vendor
