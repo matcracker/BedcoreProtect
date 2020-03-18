@@ -35,6 +35,7 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
+use UnexpectedValueException;
 use function array_filter;
 use function array_flip;
 use function array_intersect_key;
@@ -47,6 +48,7 @@ use function ctype_digit;
 use function explode;
 use function implode;
 use function in_array;
+use function is_array;
 use function is_string;
 use function mb_substr;
 use function strtolower;
@@ -58,23 +60,24 @@ final class CommandParser
 {
     public const MAX_PARAMETERS = 6;
 
-    /**@var Action[][] */
+    /** @var Action[][] */
     public static $ACTIONS;
 
-    /**@var string $senderName */
+    /** @var string */
     private $senderName;
-    /**@var ConfigParser $configParser */
+    /** @var ConfigParser */
     private $configParser;
-    /**@var string[] $arguments */
+    /** @var string[] */
     private $arguments;
-    /**@var string[] $requiredParams */
+    /** @var string[] */
     private $requiredParams;
-    /**@var bool $parsed */
+    /** @var bool */
     private $parsed = false;
-    /**@var string $errorMessage */
+    /** @var string */
     private $errorMessage;
 
     //Default data values
+    /** @var mixed[] */
     private $data = [
         'user' => null,
         'time' => null,
@@ -129,6 +132,7 @@ final class CommandParser
     public function parse(): bool
     {
         $lang = Main::getInstance()->getLanguage();
+
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) {
             $this->errorMessage = $lang->translateString('parser.few-many-parameters', [self::MAX_PARAMETERS]);
 
@@ -218,6 +222,12 @@ final class CommandParser
                 case 'e':
                     $index = mb_substr($param, 0, 1) === 'b' ? 'blocks' : 'exclusions';
                     try {
+                        $items = ItemFactory::fromString($paramValues, true);
+
+                        if (!is_array($items)) {
+                            throw new UnexpectedValueException("Expected Item[] array, got null or Item.");
+                        }
+
                         $this->data[$index] =
                             array_filter(
                                 array_map(
@@ -227,7 +237,7 @@ final class CommandParser
                                         }
                                         return $block;
                                     },
-                                    ItemFactory::fromString($paramValues, true)
+                                    $items
                                 ),
                                 static function (?Block $block): bool {
                                     return $block !== null;
@@ -263,11 +273,6 @@ final class CommandParser
         return true;
     }
 
-    /**
-     * @param bool $restore
-     * @param AxisAlignedBB $bb
-     * @return string
-     */
     public function buildLogsSelectionQuery(bool $restore, AxisAlignedBB $bb): string
     {
         if (!$this->parsed) {
@@ -318,7 +323,7 @@ final class CommandParser
                     $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
                 }/* else if ($key === 'blocks' || $key === 'exclusions') {
                     $operator = $key === 'exclusions' ? '<>' : '=';
-                    /**@var Block $block *
+                    /** @var Block $block *
                     foreach ($value as $block) {
                         $id = $block->getId();
                         $meta = $block->getDamage();

@@ -26,6 +26,7 @@ use pocketmine\scheduler\Task;
 
 final class SQLiteTransactionTask extends Task
 {
+    /** @var Database */
     private $database;
 
     public function __construct(Database $database)

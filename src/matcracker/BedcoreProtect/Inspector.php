@@ -27,6 +27,7 @@ use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
+use pocketmine\utils\TextFormat;
 use UnexpectedValueException;
 use function array_chunk;
 use function array_key_exists;
@@ -37,6 +38,9 @@ use function var_export;
 
 final class Inspector
 {
+    /**
+     * @var mixed[][]
+     */
     private static $inspectors = [];
 
     private function __construct()
@@ -120,13 +124,13 @@ final class Inspector
     {
         $lang = Main::getInstance()->getLanguage();
         if (count($logs) === 0) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.no-data')));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.no-data')));
 
             return;
         }
 
         if ($lines < 1) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.more-lines')));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.more-lines')));
 
             return;
         }
@@ -135,12 +139,12 @@ final class Inspector
         $maxPages = count($chunkLogs);
         $fakePage = $page + 1;
         if (!array_key_exists($page, $chunkLogs)) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.page-not-exist', [$fakePage])));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.page-not-exist', [$fakePage])));
 
             return;
         }
 
-        $inspector->sendMessage(Utils::translateColors('&f-----&3 ' . Main::PLUGIN_NAME . ' &7(' . $lang->translateString('inspector.page', [$fakePage, $maxPages]) . ') &f-----'));
+        $inspector->sendMessage(TextFormat::colorize('&f-----&3 ' . Main::PLUGIN_NAME . ' &7(' . $lang->translateString('inspector.page', [$fakePage, $maxPages]) . ') &f-----'));
         foreach ($chunkLogs[$page] as $log) {
             //Default
             $from = (string)$log['entity_from'];
@@ -174,9 +178,9 @@ final class Inspector
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
-            $inspector->sendMessage(Utils::translateColors(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
+            $inspector->sendMessage(TextFormat::colorize(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
                 . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
-        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data') . ' /bcp l <page>:<lines>.'));
+        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data') . ' /bcp l <page>:<lines>.'));
     }
 }

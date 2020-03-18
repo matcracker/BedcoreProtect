@@ -33,6 +33,7 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use RuntimeException;
 use function mkdir;
 use function version_compare;
 
@@ -42,24 +43,19 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /**@var Main $instance */
+    /** @var Main|null */
     private static $instance;
-
-    /**@var Database $database */
+    /** @var Database */
     private $database;
-
-    /**@var ConfigParser $configParser */
+    /** @var ConfigParser */
     private $configParser;
-    /**@var ConfigParser $oldConfigParser */
+    /** @var ConfigParser */
     private $oldConfigParser;
-    /**@var BaseLang $baseLang */
+    /** @var BaseLang */
     private $baseLang;
-    /**@var boolean $bsHooked */
+    /** @var bool */
     private $bsHooked = false;
 
-    /**
-     * @return Database
-     */
     public function getDatabase(): Database
     {
         return $this->database;
@@ -98,11 +94,16 @@ final class Main extends PluginBase
 
     public static function getInstance(): Main
     {
+        if (self::$instance === null) {
+            throw new RuntimeException("Invalid plugin instance detected.");
+        }
+
         return self::$instance;
     }
 
     public function onLoad(): void
     {
+        self::$instance = $this;
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -127,7 +128,6 @@ final class Main extends PluginBase
 
     public function onEnable(): void
     {
-        self::$instance = $this;
         $this->database = new Database($this);
 
         @mkdir($this->getDataFolder());
@@ -184,6 +184,10 @@ final class Main extends PluginBase
 
     public function getLanguage(): BaseLang
     {
+        if ($this->baseLang === null) {
+            throw new RuntimeException("Invalid language state detected.");
+        }
+
         return $this->baseLang;
     }
 

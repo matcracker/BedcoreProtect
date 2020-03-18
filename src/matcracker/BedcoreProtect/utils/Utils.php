@@ -29,7 +29,7 @@ use pocketmine\entity\Living;
 use pocketmine\level\format\Chunk;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\utils\TextFormat;
+use pocketmine\nbt\tag\NamedTag;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
@@ -40,14 +40,12 @@ use function array_slice;
 use function array_values;
 use function base64_decode;
 use function base64_encode;
-use function get_class;
+use function is_string;
 use function json_decode;
 use function key;
 use function microtime;
 use function preg_match_all;
 use function preg_replace;
-use function preg_replace_callback;
-use function str_replace;
 use function strlen;
 use function strtolower;
 use function strval;
@@ -56,20 +54,6 @@ final class Utils
 {
     private function __construct()
     {
-    }
-
-    /**
-     * It translates chat colors from format "§" to "&"
-     *
-     * @param string $message
-     *
-     * @return string
-     */
-    public static function translateColors(string $message): string
-    {
-        return preg_replace_callback('/(\\\&|\&)[0-9a-fk-or]/', static function (array $matches): string {
-            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace('\\' . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
-        }, $message);
     }
 
     /**
@@ -95,8 +79,16 @@ final class Utils
         preg_match_all('/([0-9]+)([smhdw])/', $strDate, $matches);
 
         foreach ($matches[0] as $match) {
-            $value = (int)preg_replace("/[^0-9]/", "", $match);
-            $dateType = (string)preg_replace("/[^smhdw]/", "", $match);
+            $value = preg_replace("/[^0-9]/", "", $match);
+            if (!is_string($value)) {
+                throw new UnexpectedValueException("Invalid time parsed, expected string.");
+            }
+            $value = (int)$value;
+
+            $dateType = preg_replace("/[^smhdw]/", "", $match);
+            if (!is_string($dateType)) {
+                throw new UnexpectedValueException("Invalid date type parsed, expected string.");
+            }
 
             switch ($dateType) {
                 case "w":
@@ -124,7 +116,12 @@ final class Utils
     {
         $date = new DateTime();
         $date->setTimestamp($timestamp);
-        $date = $date->diff(DateTime::createFromFormat('0.u00 U', microtime()));
+        $currentDate = DateTime::createFromFormat('0.u00 U', microtime());
+        if (!($currentDate instanceof DateTime)) {
+            throw new UnexpectedValueException("Unexpected date creation.");
+        }
+
+        $date = $date->diff($currentDate);
         // build array
         $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
         // remove empty date values
@@ -189,8 +186,14 @@ final class Utils
     {
         $nbtSerializer = new BigEndianNBTStream();
 
+        $compressedData = $nbtSerializer->writeCompressed($tag);
+
+        if (!is_string($compressedData)) {
+            throw new UnexpectedValueException("Invalid compression of NBT data.");
+        }
+
         //Encoding to Base64 for more safe storing.
-        return base64_encode($nbtSerializer->writeCompressed($tag));
+        return base64_encode($compressedData);
     }
 
     /**
@@ -204,11 +207,13 @@ final class Utils
     {
         $nbtSerializer = new BigEndianNBTStream();
 
+        /** @var NamedTag $tag */
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
         if (!($tag instanceof CompoundTag)) {
-            throw new UnexpectedValueException('Value must return CompoundTag, got ' . get_class($tag));
+            throw new UnexpectedValueException('Value must return CompoundTag, got ' . $tag->__toString());
         }
+
         return $tag;
     }
 

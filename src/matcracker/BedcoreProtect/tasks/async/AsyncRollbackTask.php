@@ -33,15 +33,15 @@ use pocketmine\Server;
 
 class AsyncRollbackTask extends AsyncTask
 {
-    /**@var Area $area */
+    /** @var Area */
     private $area;
-    /**@var SerializableBlock[] $blocks */
+    /** @var SerializableBlock[] */
     private $blocks;
-    /**@var CommandParser $commandParser */
+    /** @var CommandParser */
     private $commandParser;
-    /**@var string[] $serializedChunks */
+    /** @var string[] */
     private $serializedChunks;
-    /**@var float $startTime */
+    /** @var float */
     private $startTime;
 
     /**
@@ -64,14 +64,16 @@ class AsyncRollbackTask extends AsyncTask
 
     public function onRun(): void
     {
+        /** @var string[] $chunks */
         $chunks = (array)$this->serializedChunks;
 
         foreach ($chunks as $hash => $chunkData) {
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
-        /**@var Chunk[] $chunks */
+
         foreach ($this->blocks as $vector) {
             $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
+            /** @var Chunk[] $chunks */
             if (isset($chunks[$index])) {
                 $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, $vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
             }
@@ -83,20 +85,20 @@ class AsyncRollbackTask extends AsyncTask
     {
         $world = $this->area->getWorld();
         if ($world !== null) {
-            /**@var Chunk[] $chunks */
+            /** @var Chunk[] $chunks */
             $chunks = $this->getResult();
             foreach ($chunks as $chunk) {
                 $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
             }
 
-            /**@var Main $plugin */
+            /** @var Main $plugin */
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-            if ($plugin === null) {
-                return;
+            if ($plugin instanceof Main) {
+                $logIds = (array)$this->fetchLocal();
+                $plugin->getDatabase()->getQueries()->rollbackEntities($this->isRollback(), $this->area, $logIds);
+                $plugin->getDatabase()->getQueries()->updateRollbackStatus($this->isRollback(), $logIds);
             }
-            $logIds = (array)$this->fetchLocal();
-            $plugin->getDatabase()->getQueries()->rollbackEntities($this->isRollback(), $this->area, $this->commandParser, $logIds);
-            $plugin->getDatabase()->getQueries()->updateRollbackStatus($this->isRollback(), $logIds);
+
         }
     }
 

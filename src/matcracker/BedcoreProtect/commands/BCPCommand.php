@@ -26,12 +26,13 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\math\MathUtils;
+use matcracker\BedcoreProtect\storage\queries\Queries;
 use matcracker\BedcoreProtect\ui\Forms;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Player;
+use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
 use function array_key_exists;
 use function count;
@@ -42,7 +43,9 @@ use function strtolower;
 
 final class BCPCommand extends Command
 {
+    /** @var Main */
     private $plugin;
+    /** @var Queries */
     private $queries;
 
     public function __construct(Main $plugin)
@@ -60,14 +63,14 @@ final class BCPCommand extends Command
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
     {
         if (count($args) === 0) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
 
             return false;
         }
 
         $subCmd = $this->removeAbbreviation(strtolower($args[0]));
         if (!$sender->hasPermission('bcp.command.bedcoreprotect') || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.no-permission')));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.no-permission')));
 
             return false;
         }
@@ -80,10 +83,10 @@ final class BCPCommand extends Command
                 return true;
             case 'reload':
                 if ($this->plugin->reloadPlugin()) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.reload.success')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.reload.success')));
                 } else {
                     $this->plugin->restoreParsedConfig();
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.reload.no-success')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.reload.no-success')));
                 }
 
                 return true;
@@ -92,13 +95,13 @@ final class BCPCommand extends Command
                     $description = $this->plugin->getDescription();
                     $lang = $this->plugin->getLanguage();
                     $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
-                    $sender->sendMessage(Utils::translateColors('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
-                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
-                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
-                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
-                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
-                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
-                    $sender->sendMessage(Utils::translateColors('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
+                    $sender->sendMessage(TextFormat::colorize('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
+                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
+                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
+                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
+                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
+                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
+                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
                 }, function () {
                     //NOOP
                 });
@@ -123,18 +126,18 @@ final class BCPCommand extends Command
                                 }
 
                                 if (!$ctype) {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-numeric-value')));
+                                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-numeric-value')));
 
                                     return true;
                                 }
                             }
                             Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
                         } else {
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                         }
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
@@ -142,26 +145,26 @@ final class BCPCommand extends Command
                 if (array_key_exists(1, $args)) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.started')));
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.no-restart')));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.started')));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.no-restart')));
                         $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender): void {
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.success')));
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.deleted-rows', [$affectedRows])));
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.success')));
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });
 
                         return true;
                     } else {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
         }
 
         if (!($sender instanceof Player)) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-console')));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-console')));
 
             return false;
         }
@@ -175,10 +178,10 @@ final class BCPCommand extends Command
             case 'inspect':
                 if (Inspector::isInspector($sender)) {
                     Inspector::removeInspector($sender);
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.inspect.disabled')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.inspect.disabled')));
                 } else {
                     Inspector::addInspector($sender);
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.inspect.enabled')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.inspect.enabled')));
                 }
                 return true;
             case 'near':
@@ -186,14 +189,14 @@ final class BCPCommand extends Command
 
                 if (array_key_exists(1, $args)) {
                     if (!ctype_digit($args[1])) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-numeric-value')));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.no-numeric-value')));
 
                         return true;
                     }
                     $near = (int)$args[1];
                     $maxRadius = $this->plugin->getParsedConfig()->getMaxRadius();
                     if ($near < 1 || $near > $maxRadius) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.near.range-value')));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.near.range-value')));
 
                         return true;
                     }
@@ -206,15 +209,15 @@ final class BCPCommand extends Command
                 if (array_key_exists(1, $args)) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
                         $this->queries->rollback(new Area($sender->getLevel(), $bb), $parser);
                     } else {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
@@ -222,20 +225,20 @@ final class BCPCommand extends Command
                 if (array_key_exists(1, $args)) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.restore.started', [$sender->getLevel()->getName()])));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.restore.started', [$sender->getLevel()->getName()])));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
                         $this->queries->restore(new Area($sender->getLevel(), $bb), $parser);
                     } else {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $this->plugin->getLanguage()->translateString('command.error.one-parameter')));
                 }
 
                 return true;
             default:
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
+                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
                 return false;
         }
     }

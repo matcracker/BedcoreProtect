@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -69,10 +68,11 @@ trait QueriesEntitiesTrait
         ]);
     }
 
-    public function rollbackEntities(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): void
+    public function rollbackEntities(bool $rollback, Area $area, array $logIds): void
     {
         if ($this->configParser->getRollbackEntities()) {
-            Await::f2c(function () use ($rollback, $area, $commandParser, $logIds) {
+            Await::f2c(function () use ($rollback, $area, $logIds) {
+                //TODO: Exclude entities from CommandParser.
                 $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
                 foreach ($entityRows as $row) {
                     $action = Action::fromType((int)$row['action']);
@@ -84,7 +84,7 @@ trait QueriesEntitiesTrait
                         }
                     } else {
                         $logId = (int)$row['log_id'];
-                        /**@var Entity $entityClass */
+                        /** @var Entity $entityClass */
                         $entityClass = (string)$row['entity_classpath'];
                         $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
                         $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);

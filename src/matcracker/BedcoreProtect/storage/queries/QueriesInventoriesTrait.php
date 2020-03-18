@@ -104,7 +104,7 @@ trait QueriesInventoriesTrait
 
     public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
     {
-        /**@var SerializableItem[] $contents */
+        /** @var SerializableItem[] $contents */
         $contents = array_map(static function (Item $item): SerializableItem {
             return SerializableItem::toSerializableItem($item);
         }, $inventory->getContents());

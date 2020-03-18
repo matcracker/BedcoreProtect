@@ -27,13 +27,13 @@ use pocketmine\item\ItemFactory;
 
 final class SerializableItem
 {
-    /**@var int $id */
+    /** @var int */
     private $id;
-    /**@var int $meta */
+    /** @var int */
     private $meta;
-    /**@var int $count */
+    /** @var int */
     private $count;
-    /**@var string $serializedNbt */
+    /** @var string */
     private $serializedNbt;
 
     public function __construct(int $id, int $meta, int $count, string $serializedNbt)

@@ -49,9 +49,9 @@ final class Action
 
     /** @var Action[] */
     private static $numericIdMap = [];
-    /**@var int */
+    /** @var int */
     private $type;
-    /**@var string */
+    /** @var string */
     private $message;
 
     public function __construct(string $enumName, int $type, string $message)

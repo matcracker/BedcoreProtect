@@ -42,9 +42,9 @@ class Queries
 {
     use QueriesBlocksTrait, QueriesInventoriesTrait, QueriesEntitiesTrait;
 
-    /**@var DataConnector $connector */
+    /** @var DataConnector */
     protected $connector;
-    /**@var ConfigParser $configParser */
+    /** @var ConfigParser */
     protected $configParser;
 
     public function __construct(DataConnector $connector, ConfigParser $configParser)
@@ -103,7 +103,7 @@ class Queries
      * @param string $queryName
      * @param Player $inspector
      * @param Position $position
-     * @param int|null $near
+     * @param int $near
      */
     private function requestLog(string $queryName, Player $inspector, Position $position, int $near = 0): void
     {

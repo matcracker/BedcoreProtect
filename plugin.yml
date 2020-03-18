@@ -1,3 +1,4 @@
+---
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
 version: 0.5.7
@@ -36,3 +37,4 @@ permissions:
         description: "Allows the user to run the sub-command /bedcoreprotect purge"
       bcp.subcommand.menu:
         description: "Allows the user to run the sub-command /bedcoreprotect menu"
+...
