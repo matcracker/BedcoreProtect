@@ -14,11 +14,10 @@ parameters:
         - phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
         - source/vendor
+        - source/src/matcracker/BedcoreProtect/storage/queries/QueriesBlocksTrait.php
+        - source/src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
+        - source/src/matcracker/BedcoreProtect/storage/queries/QueriesInventoriesTrait.php
     ignoreErrors:
-        -
-            message: '#RuntimeException \(Invalid plugin instance detected\.\) [a-zA-Z0-9\\_]+#'
-            count: 1
-            path: /source/src/matcracker/BedcoreProtect/*
         -
             message: "#^Parameter \\#1 $data of static method pocketmine\\\\level\\\\format\\\\Chunk::fastDeserialize() expects string, pocketmine\\\\level\\\\format\\\\Chunk|string given.$#"
             count: 1
