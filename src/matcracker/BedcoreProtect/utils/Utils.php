@@ -40,7 +40,6 @@ use function array_slice;
 use function array_values;
 use function base64_decode;
 use function base64_encode;
-use function get_class;
 use function is_string;
 use function json_decode;
 use function key;
