@@ -13,11 +13,11 @@ parameters:
         - phar:///source/vendor/await-generator.phar/src
         - phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
-        - source/vendor
-        - source/src/matcracker/BedcoreProtect/commands/CommandParser.php
-        - source/src/matcracker/BedcoreProtect/storage/queries/QueriesBlocksTrait.php
-        - source/src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
-        - source/src/matcracker/BedcoreProtect/storage/queries/QueriesInventoriesTrait.php
+        - /source/vendor
+        - /source/src/matcracker/BedcoreProtect/commands/CommandParser.php
+        - /source/src/matcracker/BedcoreProtect/storage/queries/QueriesBlocksTrait.php
+        - /source/src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
+        - /source/src/matcracker/BedcoreProtect/storage/queries/QueriesInventoriesTrait.php
     ignoreErrors:
         -
             message: "#^Parameter \\#1 $data of static method pocketmine\\\\level\\\\format\\\\Chunk::fastDeserialize() expects string, pocketmine\\\\level\\\\format\\\\Chunk|string given.$#"
