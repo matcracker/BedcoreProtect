@@ -14,7 +14,6 @@ parameters:
         - phar:///source/vendor/BlockSniper.phar/src
     excludes_analyse:
         - /source/vendor
-        - /source/src/matcracker/BedcoreProtect/commands/CommandParser.php
         - /source/src/matcracker/BedcoreProtect/storage/queries/QueriesBlocksTrait.php
         - /source/src/matcracker/BedcoreProtect/storage/queries/QueriesEntitiesTrait.php
         - /source/src/matcracker/BedcoreProtect/storage/queries/QueriesInventoriesTrait.php
