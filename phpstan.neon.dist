@@ -16,7 +16,7 @@ parameters:
         - source/vendor
     ignoreErrors:
         -
-            message: '#RuntimeException (Invalid plugin instance detected.) [a-zA-Z0-9\\_]+#'
+            message: '#RuntimeException \(Invalid plugin instance detected\.\) [a-zA-Z0-9\\_]+#'
             count: 1
             path: /source/src/matcracker/BedcoreProtect/*
         -
