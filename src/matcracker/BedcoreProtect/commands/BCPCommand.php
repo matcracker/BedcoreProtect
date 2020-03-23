@@ -30,8 +30,10 @@ use matcracker\BedcoreProtect\storage\queries\Queries;
 use matcracker\BedcoreProtect\ui\Forms;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
+use pocketmine\command\PluginIdentifiableCommand;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Player;
+use pocketmine\plugin\Plugin;
 use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
 use function array_key_exists;
@@ -41,7 +43,7 @@ use function explode;
 use function implode;
 use function strtolower;
 
-final class BCPCommand extends Command
+final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
     /** @var Main */
     private $plugin;
@@ -273,5 +275,10 @@ final class BCPCommand extends Command
         }
 
         return null;
+    }
+
+    public function getPlugin(): Plugin
+    {
+        return $this->plugin;
     }
 }
