@@ -51,6 +51,11 @@ trait QueriesInventoriesTrait
     {
         $inventory = $slotAction->getInventory();
         if ($inventory instanceof ContainerInventory) {
+            /**
+             * Note for double chest holder
+             * It always logs the position of the left chest.
+             * @see DoubleChestInventory::getHolder()
+             */
             $holder = $inventory->getHolder();
             if ($holder === null) {
                 return;

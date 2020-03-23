@@ -38,6 +38,7 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\ItemIds;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\tile\Chest;
 use pocketmine\tile\ItemFrame as ItemFrameTile;
 
 final class PlayerListener extends BedcoreListener
@@ -115,7 +116,15 @@ final class PlayerListener extends BedcoreListener
             if (Inspector::isInspector($player)) {
                 $event->setCancelled();
                 if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $this->database->getQueries()->requestTransactionLog($player, $clickedBlock);
+                    $position = $clickedBlock->asPosition();
+                    $tileChest = BlockUtils::asTile($clickedBlock);
+                    if ($tileChest instanceof Chest) { //This is needed for double chest to get the position of its holder (the left chest).
+                        $holder = $tileChest->getInventory()->getHolder();
+                        if ($holder !== null) {
+                            $position = $holder->asPosition();
+                        }
+                    }
+                    $this->database->getQueries()->requestTransactionLog($player, $position);
                 } else {
                     $this->database->getQueries()->requestBlockLog($player, $clickedBlock);
                 }
