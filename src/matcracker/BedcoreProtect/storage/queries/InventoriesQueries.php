@@ -21,14 +21,16 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
 use matcracker\BedcoreProtect\serializable\SerializableWorld;
-use matcracker\BedcoreProtect\tasks\async\AsyncInventoriesQueryGenerator;
-use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
+use matcracker\BedcoreProtect\tasks\async\InventoriesQueryGenTask;
+use matcracker\BedcoreProtect\tasks\async\LogsQueryGenTask;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\Inventory;
@@ -128,24 +130,26 @@ final class InventoriesQueries extends Query
             $inventoryPosition->getLevel()->getName()
         ));
 
-        Await::f2c(function () use ($contents, $player, $positions) {
-            $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
-            $inventoriesTask = new AsyncInventoriesQueryGenerator($this->connector, $lastLogId, $contents);
-            $logsTask = new AsyncLogsQueryGenerator($this->connector, Utils::getEntityUniqueId($player), $positions, Action::REMOVE(), $inventoriesTask);
-            Server::getInstance()->getAsyncPool()->submitTask($logsTask);
-        }, function () {
-            //NOOP
-        });
+        Await::f2c(
+            function () use ($contents, $player, $positions) : Generator {
+                $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
+                $inventoriesTask = new InventoriesQueryGenTask($this->connector, $lastLogId, $contents);
+                $logsTask = new LogsQueryGenTask($this->connector, Utils::getEntityUniqueId($player), $positions, Action::REMOVE(), $inventoriesTask);
+                Server::getInstance()->getAsyncPool()->submitTask($logsTask);
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $prefix = $rollback ? 'old' : 'new';
 
         $inventoryRows = [];
 
         if ($this->configParser->getRollbackItems()) {
-
             if ($rollback) {
                 $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
             } else {
@@ -167,11 +171,13 @@ final class InventoriesQueries extends Query
             }
         }
 
-        return count($inventoryRows);
+        $onComplete(count($inventoryRows));
     }
 
-    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
+    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
     {
-        // TODO: Implement onRollbackComplete() method.
+        if ($changes[0] > 0) {
+            $player->sendMessage(Main::formatMessage('rollback.items', [$changes[0]]));
+        }
     }
 }

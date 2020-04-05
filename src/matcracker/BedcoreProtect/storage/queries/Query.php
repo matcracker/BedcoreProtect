@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
@@ -52,105 +53,6 @@ abstract class Query
         $this->configParser = $configParser;
     }
 
-    public function rollback(Area $area, CommandParser $commandParser, ?callable $onComplete = null): void
-    {
-        $this->rawRollback(true, $area, $commandParser, $onComplete);
-    }
-
-    protected function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?callable $onComplete = null): void
-    {
-        Await::f2c(
-            function () use ($rollback, $area, $commandParser) {
-                $startTime = microtime(true);
-
-                /** @var int[][] $logRows */
-                $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
-
-                /** @var int[] $logIds */
-                $logIds = [];
-                foreach ($logRows as $logRow) {
-                    $logIds[] = (int)$logRow['log_id'];
-                }
-
-                $changes = yield $this->onRollback($rollback, $area, $commandParser, $logIds);
-
-                yield $this->updateRollbackStatus($rollback, $logIds);
-
-                $this->sendRollbackReport($rollback, $area, $commandParser, $startTime, $changes);
-            },
-            $onComplete
-        );
-    }
-
-    final protected function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
-    {
-        return $this->executeRawSelect($commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox()));
-    }
-
-    final protected function executeRawSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelectRaw($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    /**
-     * @param bool $rollback
-     * @param Area $area
-     * @param CommandParser $commandParser
-     * @param int[] $logIds
-     * @return Generator
-     */
-    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator;
-
-    /**
-     * @param bool $rollback
-     * @param int[] $logIds
-     * @return Generator
-     */
-    private function updateRollbackStatus(bool $rollback, array $logIds): Generator
-    {
-        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            'rollback' => $rollback,
-            'log_ids' => $logIds
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
-    }
-
-    private function sendRollbackReport(bool $rollback, Area $area, CommandParser $commandParser, float $startTime, int $changes): void
-    {
-        $duration = round(microtime(true) - $startTime, 2);
-        if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
-            $date = Utils::timeAgo(time() - $commandParser->getTime());
-            $lang = Main::getInstance()->getLanguage();
-
-            $sender->sendMessage(TextFormat::colorize('&f------'));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
-
-            $this->onRollbackComplete($sender, $area, $commandParser, $changes);
-            /*
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.blocks', [$blocks])));
-            if ($items > 0) {
-                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.items', [$items])));
-            }
-            if ($entities > 0) {
-                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.entities', [$entities])));
-            }
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.modified-chunks', [$chunks])));*/
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
-            $sender->sendMessage(TextFormat::colorize('&f------'));
-        }
-    }
-
-    abstract protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void;
-
-    public function restore(Area $area, CommandParser $commandParser, ?callable $onComplete = null): void
-    {
-        $this->rawRollback(false, $area, $commandParser, $onComplete);
-    }
-
     final protected function addRawLog(string $uuid, Position $position, Action $action): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
@@ -163,9 +65,10 @@ abstract class Query
         ]);
     }
 
-    final protected function getLastLogId(): Generator
+    final protected function executeRawSelect(string $query, array $args = []): Generator
     {
-        return $this->executeSelect(QueriesConst::GET_LAST_LOG_ID);
+        $this->connector->executeSelectRaw($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 
     final protected function executeSelect(string $query, array $args = []): Generator
@@ -173,4 +76,109 @@ abstract class Query
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
     }
+
+    final protected function getLastLogId(): Generator
+    {
+        return $this->executeSelect(QueriesConst::GET_LAST_LOG_ID);
+    }
+
+    /**
+     * @param bool $rollback
+     * @param int[] $logIds
+     */
+    final protected function updateRollbackStatus(bool $rollback, array $logIds): void
+    {
+        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+            'rollback' => $rollback,
+            'log_ids' => $logIds
+        ]);
+    }
+
+    /**
+     * @param bool $rollback
+     * @param Area $area
+     * @param CommandParser $commandParser
+     * @param int[] $logIds
+     * @param Closure|null $onComplete
+     * @return Generator
+     */
+    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator;
+
+    final protected function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
+    {
+        return $this->executeRawSelect($commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox()));
+    }
+
+    protected function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null): void
+    {
+        Await::f2c(
+            function () use ($rollback, $area, $commandParser, $onPreComplete) : Generator {
+                $startTime = microtime(true);
+
+                /** @var int[][] $logRows */
+                $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
+
+                /** @var int[] $logIds */
+                $logIds = [];
+                foreach ($logRows as $logRow) {
+                    $logIds[] = (int)$logRow['log_id'];
+                }
+
+                yield $this->onRollback(
+                    $rollback,
+                    $area,
+                    $commandParser,
+                    $logIds,
+                    function (int...$changes) use ($rollback, $area, $commandParser, $onPreComplete, $logIds, $startTime): void {
+                        if ($onPreComplete) {
+                            $onPreComplete();
+                        }
+
+                        $this->updateRollbackStatus($rollback, $logIds);
+                        $this->sendRollbackReport($rollback, $area, $commandParser, $startTime, $changes);
+                    }
+                );
+            },
+            static function (): void {
+
+            }
+        );
+    }
+
+    public function rollback(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null): void
+    {
+        $this->rawRollback(true, $area, $commandParser, $onPreComplete);
+    }
+
+    public function restore(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null): void
+    {
+        $this->rawRollback(false, $area, $commandParser, $onPreComplete);
+    }
+
+    public function sendRollbackReport(bool $rollback, Area $area, CommandParser $commandParser, float $startTime, array $changes): void
+    {
+        $duration = round(microtime(true) - $startTime, 2);
+        if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
+            $date = Utils::timeAgo(time() - $commandParser->getTime());
+            $lang = Main::getInstance()->getLanguage();
+
+            $sender->sendMessage(TextFormat::colorize('&f------'));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
+
+            $this->additionalReport($sender, $area, $commandParser, $changes);
+
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
+            $sender->sendMessage(TextFormat::colorize('&f------'));
+        }
+    }
+
+    /**
+     * @param Player $player
+     * @param Area $area
+     * @param CommandParser $commandParser
+     * @param int[] $changes
+     */
+    abstract protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void;
 }

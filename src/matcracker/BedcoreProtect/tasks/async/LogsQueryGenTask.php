@@ -17,45 +17,54 @@
  *
 */
 
-declare(strict_types=1);
-
 namespace matcracker\BedcoreProtect\tasks\async;
 
+use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\serializable\SerializableItem;
+use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use poggit\libasynql\DataConnector;
 use function mb_substr;
 
-final class AsyncInventoriesQueryGenerator extends AsyncTask
+final class LogsQueryGenTask extends AsyncTask
 {
-    /** @var int */
-    private $lastLogId;
-    /** @var array|SerializableItem[] */
-    private $items;
+    /** @var string */
+    private $uuid;
+    /** @var SerializableWorld[] */
+    private $positions;
+    /** @var Action */
+    private $action;
+    /** @var AsyncTask */
+    private $nextTask;
 
     /**
-     * AsyncInventoriesQueryGenerator constructor.
+     * AsyncLogsQueryGenerator constructor.
      * @param DataConnector $connector
-     * @param int $lastLogId
-     * @param SerializableItem[] $items
+     * @param string $uuid
+     * @param SerializableWorld[] $positions
+     * @param Action $action
+     * @param AsyncTask $nextTask
      */
-    public function __construct(DataConnector $connector, int $lastLogId, array $items)
+    public function __construct(DataConnector $connector, string $uuid, array $positions, Action $action, AsyncTask $nextTask)
     {
         $this->storeLocal($connector);
-        $this->lastLogId = ($lastLogId + 1);
-        $this->items = $items;
+        $this->uuid = $uuid;
+        $this->positions = $positions;
+        $this->action = $action;
+        $this->nextTask = $nextTask;
     }
 
     public function onRun(): void
     {
         $query = /**@lang text */
-            'INSERT INTO inventories_log(history_id, slot, old_id, old_meta, old_nbt, old_amount) VALUES';
+            'INSERT INTO log_history(who, x, y, z, world_name, action) VALUES';
 
-        foreach ($this->items as $slot => $item) {
-            $query .= "('{$this->lastLogId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$item->getSerializedNbt()}', '{$item->getCount()}'),";
-            $this->lastLogId++;
+        foreach ($this->positions as $position) {
+            $x = $position->getX();
+            $y = $position->getY();
+            $z = $position->getZ();
+            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$this->uuid}'), '{$x}', '{$y}', '{$z}', '{$position->getWorldName()}', '{$this->action->getType()}'),";
         }
 
         $query = mb_substr($query, 0, -1) . ';';
@@ -71,6 +80,8 @@ final class AsyncInventoriesQueryGenerator extends AsyncTask
 
         /** @var DataConnector $connector */
         $connector = $this->fetchLocal();
-        $connector->executeInsertRaw((string)$this->getResult());
+        $connector->executeInsertRaw((string)$this->getResult(), [], function (): void {
+            Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
+        });
     }
 }

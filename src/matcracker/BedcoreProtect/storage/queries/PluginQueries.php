@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
@@ -113,13 +114,13 @@ class PluginQueries extends Query
         }
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
-        yield;
+        yield from [];
     }
 
-    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
+    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
     {
-        // TODO: Implement onRollbackComplete() method.
+
     }
 }

@@ -21,15 +21,16 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\tasks\async\AsyncBlocksQueryGenerator;
-use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
-use matcracker\BedcoreProtect\tasks\async\AsyncRestoreTask;
-use matcracker\BedcoreProtect\tasks\async\AsyncRollbackTask;
+use matcracker\BedcoreProtect\tasks\async\BlocksQueryGenTask;
+use matcracker\BedcoreProtect\tasks\async\LogsQueryGenTask;
+use matcracker\BedcoreProtect\tasks\async\RollbackTask;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -162,15 +163,15 @@ final class BlocksQueries extends Query
 
         Await::f2c(function () use ($entity, $oldBlocks, $newBlocks, $action) {
             $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
-            $blocksTask = new AsyncBlocksQueryGenerator($this->connector, $lastLogId, $oldBlocks, $newBlocks);
-            $logsTask = new AsyncLogsQueryGenerator($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+            $blocksTask = new BlocksQueryGenTask($this->connector, $lastLogId, $oldBlocks, $newBlocks);
+            $logsTask = new LogsQueryGenTask($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
             Server::getInstance()->getAsyncPool()->submitTask($logsTask);
         }, function () {
             //NOOP
         });
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $prefix = $rollback ? 'old' : 'new';
         $inclusions = $commandParser->getBlocks();
@@ -225,14 +226,12 @@ final class BlocksQueries extends Query
             }
         }
 
-        $task = $rollback ? new AsyncRollbackTask($area, $blocks, $commandParser, $logIds) : new AsyncRestoreTask($area, $blocks, $commandParser, $logIds);
-        Server::getInstance()->getAsyncPool()->submitTask($task);
-
-        return count($blocks);
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $commandParser, $blocks, $onComplete));
     }
 
-    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
+    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
     {
-        // TODO: Implement onRollbackComplete() method.
+        $player->sendMessage(Main::formatMessage('rollback.blocks', [$changes[0]]));
+        $player->sendMessage(Main::formatMessage('rollback.modified-chunks', [$changes[1]]));
     }
 }

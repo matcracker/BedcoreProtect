@@ -21,9 +21,11 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
@@ -114,7 +116,7 @@ final class EntitiesQueries extends Query
         }
     }*/
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $entityRows = [];
 
@@ -143,7 +145,8 @@ final class EntitiesQueries extends Query
                 }
             }
         }
-        return count($entityRows);
+
+        $onComplete(count($entityRows));
     }
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator
@@ -156,8 +159,10 @@ final class EntitiesQueries extends Query
         return yield Await::ONCE;
     }
 
-    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
+    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
     {
-        // TODO: Implement onRollbackComplete() method.
+        if ($changes[0] > 0) {
+            $player->sendMessage(Main::formatMessage('rollback.items', [$changes[0]]));
+        }
     }
 }

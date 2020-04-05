@@ -66,9 +66,9 @@ final class Main extends PluginBase
         return self::$instance;
     }
 
-    public static function formatMessage(string $message, bool $includePrefix = true): string
+    public static function formatMessage(string $message, array $params = [], bool $includePrefix = true): string
     {
-        return TextFormat::colorize($message);
+        return self::formatRawMessage(self::$instance->getLanguage()->translateString($message, $params), $includePrefix);
     }
 
     public static function formatRawMessage(string $message, bool $includePrefix = true): string

@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\tasks\async;
 
+use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
@@ -30,32 +31,38 @@ use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+use function count;
 
-class AsyncRollbackTask extends AsyncTask
+final class RollbackTask extends AsyncTask
 {
+    /** @var bool */
+    protected $rollback;
     /** @var Area */
-    private $area;
+    protected $area;
     /** @var SerializableBlock[] */
-    private $blocks;
+    protected $blocks;
     /** @var CommandParser */
-    private $commandParser;
+    protected $commandParser;
     /** @var string[] */
     private $serializedChunks;
 
     /**
-     * AsyncRollbackTask constructor.
+     * RollbackTask constructor.
+     * @param bool $rollback
      * @param Area $area
-     * @param SerializableBlock[] $blocks
      * @param CommandParser $parser
-     * @param int[] $logIds
+     * @param SerializableBlock[] $blocks
+     * @param Closure|null $onComplete
      */
-    public function __construct(Area $area, array $blocks, CommandParser $parser, array $logIds)
+    public function __construct(bool $rollback, Area $area, CommandParser $parser, array $blocks, Closure $onComplete)
     {
+        $this->rollback = $rollback;
         $this->area = $area;
-        $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
-        $this->blocks = $blocks;
         $this->commandParser = $parser;
-        $this->storeLocal($logIds);
+        $this->blocks = $blocks;
+
+        $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
+        $this->storeLocal($onComplete);
     }
 
     public function onRun(): void
@@ -90,14 +97,13 @@ class AsyncRollbackTask extends AsyncTask
             /** @var Main $plugin */
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
             if ($plugin instanceof Main) {
-                $logIds = (array)$this->fetchLocal();
-                //$plugin->getDatabase()->getQueryManager()->getEntitiesQueries()->rollbackEntities($this->isRollback(), $this->area, $logIds);
+                /**@var Closure|null $onComplete */
+                $onComplete = $this->fetchLocal();
+
+                $onComplete(count($this->blocks), count($chunks));
+                //$plugin->getDatabase()->getQueryManager()->getBlocksQueries()->sendRollbackReport($this->isRollback(), $this->area, $this->commandParser, count($this->blocks), count($chunks));
             }
         }
     }
 
-    protected function isRollback(): bool
-    {
-        return true;
-    }
 }

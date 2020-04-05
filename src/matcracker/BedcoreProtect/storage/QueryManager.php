@@ -82,9 +82,14 @@ final class QueryManager
 
     public function rollback(Area $area, CommandParser $commandParser): void
     {
-        $this->getBlocksQueries()->rollback($area, $commandParser);
-        //$this->getInventoriesQueries()->rollback($area, $commandParser);
-        //$this->getEntitiesQueries()->rollback($area, $commandParser);
+        $this->getBlocksQueries()->rollback(
+            $area,
+            $commandParser,
+            function () use ($area, $commandParser) : void {
+                $this->getInventoriesQueries()->rollback($area, $commandParser);
+                $this->getEntitiesQueries()->rollback($area, $commandParser);
+            }
+        );
     }
 
     /**
@@ -97,9 +102,14 @@ final class QueryManager
 
     public function restore(Area $area, CommandParser $commandParser): void
     {
-        /*$this->getBlocksQueries()->restore($area, $commandParser);
-        $this->getInventoriesQueries()->restore($area, $commandParser);
-        $this->getEntitiesQueries()->restore($area, $commandParser);*/
+        $this->getBlocksQueries()->restore(
+            $area,
+            $commandParser,
+            function () use ($area, $commandParser) : void {
+                $this->getInventoriesQueries()->restore($area, $commandParser);
+                $this->getEntitiesQueries()->restore($area, $commandParser);
+            }
+        );
     }
 
     /**
@@ -134,7 +144,6 @@ final class QueryManager
         /*$touchedChunks = $area->getTouchedChunks($blocks);
 
         $this->onRollbackComplete($rollback, $area, $commandParser, $startTime, count($touchedChunks), $blocks, $inventories, $entities);*/
-
     }
 
     /**
@@ -152,6 +161,4 @@ final class QueryManager
     {
         return $this->entitiesQueries;
     }
-
-
 }
