@@ -21,22 +21,48 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Generator;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\Player;
+use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function get_class;
+use function var_dump;
 
 /**
  * It contains all the queries methods related to entities.
  *
- * Trait QueriesEntitiesTrait
+ * Class EntitiesQueries
  * @package matcracker\BedcoreProtect\storage\queries
  */
-trait QueriesEntitiesTrait
+final class EntitiesQueries extends Query
 {
+    public function addDefaultEntities(): void
+    {
+        $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
+        $this->addRawEntity($serverUuid, '#console');
+        $this->addRawEntity('flow-uuid', '#flow');
+        $this->addRawEntity('water-uuid', '#water');
+        $this->addRawEntity('still water-uuid', '#water');
+        $this->addRawEntity('lava-uuid', '#lava');
+        $this->addRawEntity('fire block-uuid', '#fire');
+        $this->addRawEntity('leaves-uuid', '#decay');
+    }
+
+    final private function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
+    {
+        $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
+            'uuid' => $uuid,
+            'name' => $name,
+            'path' => $classPath,
+            'address' => $address
+        ]);
+    }
+
     public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action): void
     {
         $this->addEntity($damager);
@@ -58,17 +84,7 @@ trait QueriesEntitiesTrait
         $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
     }
 
-    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
-    {
-        $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
-            'uuid' => $uuid,
-            'name' => $name,
-            'path' => $classPath,
-            'address' => $address
-        ]);
-    }
-
-    public function rollbackEntities(bool $rollback, Area $area, array $logIds): void
+    /*public function rollbackEntities(bool $rollback, Area $area, array $logIds): void
     {
         if ($this->configParser->getRollbackEntities()) {
             Await::f2c(function () use ($rollback, $area, $logIds) {
@@ -84,7 +100,7 @@ trait QueriesEntitiesTrait
                         }
                     } else {
                         $logId = (int)$row['log_id'];
-                        /** @var Entity $entityClass */
+                        /** @var Entity $entityClass *
                         $entityClass = (string)$row['entity_classpath'];
                         $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
                         $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
@@ -92,15 +108,56 @@ trait QueriesEntitiesTrait
                         $entity->spawnToAll();
                     }
                 }
+            }, function () use ($rollback, $logIds) {
+                $this->updateRollbackStatus($rollback, $logIds);
             });
         }
+    }*/
+
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
+    {
+        $entityRows = [];
+
+        if ($this->configParser->getRollbackEntities()) {
+            if ($this->configParser->getRollbackEntities()) {
+                $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
+            }
+
+            foreach ($entityRows as $row) {
+                $action = Action::fromType((int)$row['action']);
+                if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
+                    $entityId = (int)$row['entityfrom_id'];
+                    $entity = $area->getWorld()->getEntity($entityId);
+                    if ($entity !== null) {
+                        $entity->close();
+                    }
+                } else {
+                    var_dump($row);
+                    $logId = (int)$row['log_id'];
+                    /** @var Entity $entityClass */
+                    $entityClass = (string)$row['entity_classpath'];
+                    $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
+                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
+                    yield $this->updateEntityId($logId, $entity);
+                    $entity->spawnToAll();
+                }
+            }
+        }
+        return count($entityRows);
     }
 
-    final protected function updateEntityId(int $logId, Entity $entity): void
+    final protected function updateEntityId(int $logId, Entity $entity): Generator
     {
         $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
             'log_id' => $logId,
             'entity_id' => $entity->getId()
-        ]);
+        ], yield, yield Await::REJECT);
+
+        return yield Await::ONCE;
+    }
+
+    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
+    {
+        // TODO: Implement onRollbackComplete() method.
     }
 }

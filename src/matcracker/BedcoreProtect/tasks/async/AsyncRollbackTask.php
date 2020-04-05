@@ -41,24 +41,20 @@ class AsyncRollbackTask extends AsyncTask
     private $commandParser;
     /** @var string[] */
     private $serializedChunks;
-    /** @var float */
-    private $startTime;
 
     /**
      * AsyncRollbackTask constructor.
      * @param Area $area
      * @param SerializableBlock[] $blocks
      * @param CommandParser $parser
-     * @param float $startTime
      * @param int[] $logIds
      */
-    public function __construct(Area $area, array $blocks, CommandParser $parser, float $startTime, array $logIds)
+    public function __construct(Area $area, array $blocks, CommandParser $parser, array $logIds)
     {
         $this->area = $area;
         $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
         $this->blocks = $blocks;
         $this->commandParser = $parser;
-        $this->startTime = $startTime;
         $this->storeLocal($logIds);
     }
 
@@ -95,10 +91,8 @@ class AsyncRollbackTask extends AsyncTask
             $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
             if ($plugin instanceof Main) {
                 $logIds = (array)$this->fetchLocal();
-                $plugin->getDatabase()->getQueries()->rollbackEntities($this->isRollback(), $this->area, $logIds);
-                $plugin->getDatabase()->getQueries()->updateRollbackStatus($this->isRollback(), $logIds);
+                //$plugin->getDatabase()->getQueryManager()->getEntitiesQueries()->rollbackEntities($this->isRollback(), $this->area, $logIds);
             }
-
         }
     }
 

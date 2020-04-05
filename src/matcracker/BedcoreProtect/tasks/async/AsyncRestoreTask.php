@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\tasks\async;
 
-class AsyncRestoreTask extends AsyncRollbackTask
+final class AsyncRestoreTask extends AsyncRollbackTask
 {
     protected function isRollback(): bool
     {

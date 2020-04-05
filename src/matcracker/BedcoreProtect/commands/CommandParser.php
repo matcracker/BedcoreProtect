@@ -48,6 +48,7 @@ use function ctype_digit;
 use function explode;
 use function implode;
 use function in_array;
+use function intval;
 use function is_array;
 use function is_string;
 use function mb_substr;
@@ -273,15 +274,14 @@ final class CommandParser
         return true;
     }
 
-    public function buildLogsSelectionQuery(bool $restore, AxisAlignedBB $bb): string
+    public function buildLogsSelectionQuery(bool $rollback, AxisAlignedBB $bb): string
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
         }
 
-        $restore = intval($restore);
         $query = /**@lang text */
-            "SELECT log_id FROM log_history WHERE rollback = '{$restore}' AND ";
+            "SELECT log_id FROM log_history WHERE rollback = '" . intval(!$rollback) . "' AND ";
 
         $this->buildConditionalQuery($query, $bb);
 

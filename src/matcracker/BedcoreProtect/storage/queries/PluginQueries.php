@@ -23,66 +23,19 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
-use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
 use pocketmine\Player;
-use pocketmine\Server;
-use poggit\libasynql\DataConnector;
-use SOFe\AwaitGenerator\Await;
-use UnexpectedValueException;
-use function preg_match;
-use function strtolower;
 
-class Queries
+/**
+ * Class PluginQueries
+ * @package matcracker\BedcoreProtect\storage\queries
+ */
+class PluginQueries extends Query
 {
-    use QueriesBlocksTrait, QueriesInventoriesTrait, QueriesEntitiesTrait;
-
-    /** @var DataConnector */
-    protected $connector;
-    /** @var ConfigParser */
-    protected $configParser;
-
-    public function __construct(DataConnector $connector, ConfigParser $configParser)
-    {
-        $this->connector = $connector;
-        $this->configParser = $configParser;
-    }
-
-    public function init(string $pluginVersion): void
-    {
-        if (!preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $pluginVersion)) {
-            throw new UnexpectedValueException("The field {$pluginVersion} must be a version.");
-        }
-
-        foreach (QueriesConst::INIT_TABLES as $queryTable) {
-            $this->connector->executeGeneric($queryTable);
-        }
-
-        $this->connector->executeInsert(QueriesConst::ADD_DATABASE_VERSION, [
-            'version' => $pluginVersion
-        ]);
-
-        $this->connector->waitAll();
-
-        $this->addDefaultEntities();
-    }
-
-    private function addDefaultEntities(): void
-    {
-        $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-        $this->addRawEntity($serverUuid, '#console');
-        $this->addRawEntity('flow-uuid', '#flow');
-        $this->addRawEntity('water-uuid', '#water');
-        $this->addRawEntity('still water-uuid', '#water');
-        $this->addRawEntity('lava-uuid', '#lava');
-        $this->addRawEntity('fire block-uuid', '#fire');
-        $this->addRawEntity('leaves-uuid', '#decay');
-    }
 
     /**
      * Can be used only with SQLite
@@ -133,16 +86,6 @@ class Queries
         });
     }
 
-    public function rollback(Area $area, CommandParser $commandParser): void
-    {
-        $this->startRollback(true, $area, $commandParser);
-    }
-
-    public function restore(Area $area, CommandParser $commandParser): void
-    {
-        $this->startRollback(false, $area, $commandParser);
-    }
-
     public function requestTransactionLog(Player $inspector, Position $position): void
     {
         $this->requestLog(QueriesConst::GET_TRANSACTION_LOG, $inspector, $position);
@@ -170,34 +113,13 @@ class Queries
         }
     }
 
-    /**
-     * @param bool $rollback
-     * @param int[] $logIds
-     * @internal
-     */
-    final public function updateRollbackStatus(bool $rollback, array $logIds): void
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
     {
-        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            'rollback' => $rollback,
-            'log_ids' => $logIds
-        ]);
+        yield;
     }
 
-    private function addRawLog(string $uuid, Position $position, Action $action): void
+    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
     {
-        $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => strtolower($uuid),
-            'x' => $position->getFloorX(),
-            'y' => $position->getFloorY(),
-            'z' => $position->getFloorZ(),
-            'world_name' => $position->getLevel()->getName(),
-            'action' => $action->getType()
-        ]);
-    }
-
-    private function getLastLogId(): Generator
-    {
-        $this->connector->executeSelect(QueriesConst::GET_LAST_LOG_ID, [], yield, yield Await::REJECT);
-        return yield Await::ONCE;
+        // TODO: Implement onRollbackComplete() method.
     }
 }

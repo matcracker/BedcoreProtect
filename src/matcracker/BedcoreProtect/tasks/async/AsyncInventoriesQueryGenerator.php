@@ -28,7 +28,7 @@ use pocketmine\Server;
 use poggit\libasynql\DataConnector;
 use function mb_substr;
 
-class AsyncInventoriesQueryGenerator extends AsyncTask
+final class AsyncInventoriesQueryGenerator extends AsyncTask
 {
     /** @var int */
     private $lastLogId;

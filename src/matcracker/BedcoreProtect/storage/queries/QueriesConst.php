@@ -60,6 +60,7 @@ final class QueriesConst
 
     private function __construct()
     {
+        //NOOP
     }
 
     public static function VERSION_PATCH(string $version, int $patchNumber): string

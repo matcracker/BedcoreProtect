@@ -33,6 +33,7 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\TextFormat;
 use RuntimeException;
 use function mkdir;
 use function version_compare;
@@ -55,6 +56,25 @@ final class Main extends PluginBase
     private $baseLang;
     /** @var bool */
     private $bsHooked = false;
+
+    public static function getInstance(): Main
+    {
+        if (self::$instance === null) {
+            throw new RuntimeException("Invalid plugin instance detected.");
+        }
+
+        return self::$instance;
+    }
+
+    public static function formatMessage(string $message, bool $includePrefix = true): string
+    {
+        return TextFormat::colorize($message);
+    }
+
+    public static function formatRawMessage(string $message, bool $includePrefix = true): string
+    {
+        return TextFormat::colorize(($includePrefix ? self::MESSAGE_PREFIX : "") . $message);
+    }
 
     public function getDatabase(): Database
     {
@@ -90,15 +110,6 @@ final class Main extends PluginBase
         }
 
         return false;
-    }
-
-    public static function getInstance(): Main
-    {
-        if (self::$instance === null) {
-            throw new RuntimeException("Invalid plugin instance detected.");
-        }
-
-        return self::$instance;
     }
 
     public function onLoad(): void
@@ -140,7 +151,7 @@ final class Main extends PluginBase
             return;
         }
         $version = $this->getVersion();
-        $this->database->getQueries()->init($version);
+        $this->database->getQueryManager()->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
             $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
@@ -154,7 +165,7 @@ final class Main extends PluginBase
         }
 
         if ($this->configParser->isSQLite()) {
-            $this->database->getQueries()->beginTransaction();
+            $this->database->getQueryManager()->getPluginQueries()->beginTransaction();
             $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
 
@@ -177,6 +188,15 @@ final class Main extends PluginBase
         }
     }
 
+    /**
+     * Returns the plugin version.
+     * @return string
+     */
+    public function getVersion(): string
+    {
+        return $this->getDescription()->getVersion();
+    }
+
     public function isBlockSniperHooked(): bool
     {
         return $this->bsHooked;
@@ -189,15 +209,6 @@ final class Main extends PluginBase
         }
 
         return $this->baseLang;
-    }
-
-    /**
-     * Returns the plugin version.
-     * @return string
-     */
-    public function getVersion(): string
-    {
-        return $this->getDescription()->getVersion();
     }
 
     public function onDisable(): void

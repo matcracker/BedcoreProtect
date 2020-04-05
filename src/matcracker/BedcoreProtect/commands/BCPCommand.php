@@ -26,7 +26,7 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\math\MathUtils;
-use matcracker\BedcoreProtect\storage\queries\Queries;
+use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\ui\Forms;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
@@ -47,8 +47,8 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
     /** @var Main */
     private $plugin;
-    /** @var Queries */
-    private $queries;
+    /** @var QueryManager */
+    private $queryManager;
 
     public function __construct(Main $plugin)
     {
@@ -59,7 +59,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
             ['core', 'co', 'bcp']
         );
         $this->plugin = $plugin;
-        $this->queries = $plugin->getDatabase()->getQueries();
+        $this->queryManager = $plugin->getDatabase()->getQueryManager();
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
@@ -112,7 +112,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (array_key_exists(1, $args)) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
-                        $this->queries->requestLookup($sender, $parser);
+                        $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
                     } else {
                         if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
                             $page = 0;
@@ -149,7 +149,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.started')));
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.no-restart')));
-                        $this->queries->purge($parser->getTime(), function (int $affectedRows) use ($sender): void {
+                        $this->queryManager->getPluginQueries()->purge($parser->getTime(), function (int $affectedRows) use ($sender): void {
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.success')));
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });
@@ -204,7 +204,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     }
                 }
 
-                $this->queries->requestNearLog($sender, $sender, $near);
+                $this->queryManager->getPluginQueries()->requestNearLog($sender, $sender, $near);
 
                 return true;
             case 'rollback':
@@ -214,7 +214,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
-                        $this->queries->rollback(new Area($sender->getLevel(), $bb), $parser);
+                        $this->queryManager->rollback(new Area($sender->getLevel(), $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
@@ -230,7 +230,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->plugin->getLanguage()->translateString('command.restore.started', [$sender->getLevel()->getName()])));
 
                         $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
-                        $this->queries->restore(new Area($sender->getLevel(), $bb), $parser);
+                        $this->queryManager->restore(new Area($sender->getLevel(), $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }

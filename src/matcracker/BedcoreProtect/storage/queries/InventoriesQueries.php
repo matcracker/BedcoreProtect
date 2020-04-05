@@ -21,7 +21,10 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use Generator;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
 use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use matcracker\BedcoreProtect\tasks\async\AsyncInventoriesQueryGenerator;
@@ -29,11 +32,15 @@ use matcracker\BedcoreProtect\tasks\async\AsyncLogsQueryGenerator;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\Inventory;
+use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
+use pocketmine\item\ItemFactory;
 use pocketmine\level\Position;
+use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\Server;
+use pocketmine\tile\Chest;
 use SOFe\AwaitGenerator\Await;
 use function array_fill;
 use function array_map;
@@ -42,10 +49,10 @@ use function count;
 /**
  * It contains all the queries methods related to inventories.
  *
- * Trait QueriesInventoriesTrait
+ * Class InventoriesQueries
  * @package matcracker\BedcoreProtect\storage\queries
  */
-trait QueriesInventoriesTrait
+final class InventoriesQueries extends Query
 {
     public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction): void
     {
@@ -129,5 +136,42 @@ trait QueriesInventoriesTrait
         }, function () {
             //NOOP
         });
+    }
+
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds): Generator
+    {
+        $prefix = $rollback ? 'old' : 'new';
+
+        $inventoryRows = [];
+
+        if ($this->configParser->getRollbackItems()) {
+
+            if ($rollback) {
+                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
+            } else {
+                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds]);
+            }
+
+            foreach ($inventoryRows as $row) {
+                $amount = (int)$row["{$prefix}_amount"];
+                $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
+                $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
+                $vector = new Vector3((int)$row['x'], (int)$row['y'], (int)$row['z']);
+                $tile = $area->getWorld()->getTile($vector);
+
+                if ($tile instanceof InventoryHolder) {
+                    $slot = (int)$row['slot'];
+                    $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
+                    $inv->setItem($slot, $item);
+                }
+            }
+        }
+
+        return count($inventoryRows);
+    }
+
+    protected function onRollbackComplete(Player $player, Area $area, CommandParser $commandParser, int $changes): void
+    {
+        // TODO: Implement onRollbackComplete() method.
     }
 }

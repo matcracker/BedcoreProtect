@@ -38,7 +38,7 @@ final class BlockSniperListener extends BedcoreListener
             $oldBlocks = array_map(static function (Block $block): Block {
                 return $block->getLevel()->getBlock($block->asVector3());
             }, $newBlocks);
-            $this->database->getQueries()->addBlocksLogByEntity($event->getPlayer(), $oldBlocks, $newBlocks, Action::PLACE());
+            $this->database->getQueryManager()->getBlocksQueries()->addBlocksLogByEntity($event->getPlayer(), $oldBlocks, $newBlocks, Action::PLACE());
         }
     }
 }

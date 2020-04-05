@@ -50,7 +50,7 @@ final class PlayerListener extends BedcoreListener
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {
-        $this->database->getQueries()->addEntity($event->getPlayer());
+        $this->database->getQueryManager()->getEntitiesQueries()->addEntity($event->getPlayer());
     }
 
     /**
@@ -83,7 +83,7 @@ final class PlayerListener extends BedcoreListener
             }
 
             if ($fireEmptyEvent) {
-                $this->database->getQueries()->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
+                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
             } else {
                 $liquidPos = null;
                 $face = $event->getBlockFace();
@@ -93,7 +93,7 @@ final class PlayerListener extends BedcoreListener
                     $liquidPos = Position::fromObject($block->subtract(0, 1, 0), $block->getLevel());
                 }
 
-                $this->database->getQueries()->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), $liquidPos);
+                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), $liquidPos);
             }
         }
     }
@@ -124,9 +124,9 @@ final class PlayerListener extends BedcoreListener
                             $position = $holder->asPosition();
                         }
                     }
-                    $this->database->getQueries()->requestTransactionLog($player, $position);
+                    $this->database->getQueryManager()->getPluginQueries()->requestTransactionLog($player, $position);
                 } else {
-                    $this->database->getQueries()->requestBlockLog($player, $clickedBlock);
+                    $this->database->getQueryManager()->getPluginQueries()->requestBlockLog($player, $clickedBlock);
                 }
 
                 return;
@@ -137,12 +137,12 @@ final class PlayerListener extends BedcoreListener
                     if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                         $relativeBlock = $clickedBlock->getSide($face);
                         if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
-                            $this->database->getQueries()->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
+                            $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
                             return;
                         }
                     } elseif ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                         if ($this->plugin->getParsedConfig()->getBlockPlace() && $itemInHand->getId() === ItemIds::FLINT_AND_STEEL) {
-                            $this->database->getQueries()->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
+                            $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
                             return;
                         }
                     }
@@ -154,17 +154,17 @@ final class PlayerListener extends BedcoreListener
                                 $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
                                 //I consider the ItemFrame as a fake inventory holder to only log "adding/removing" item.
                                 if (!$tile->hasItem() && !$itemInHand->isNull()) {
-                                    $this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
+                                    $this->database->getQueryManager()->getBlocksQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
                                     return;
                                 } elseif ($tile->hasItem() && $action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
-                                    $this->database->getQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
+                                    $this->database->getQueryManager()->getBlocksQueries()->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
                                     return;
                                 }
                             }
                         }
 
                         if ($clickedBlock->getId() !== BlockIds::AIR) {
-                            $this->database->getQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+                            $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
                         }
                     }
                 }
@@ -187,7 +187,7 @@ final class PlayerListener extends BedcoreListener
 
             foreach ($actions as $action) {
                 if ($action instanceof SlotChangeAction && $action->getInventory() instanceof ContainerInventory) {
-                    $this->database->getQueries()->addInventorySlotLogByPlayer($player, $action);
+                    $this->database->getQueryManager()->getInventoriesQueries()->addInventorySlotLogByPlayer($player, $action);
                     break;
                 }
             }

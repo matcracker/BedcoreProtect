@@ -88,22 +88,6 @@ final class Forms
             ->setTitle(TextFormat::colorize('&3&l' . Main::PLUGIN_NAME . " " . $lang->translateString('form.menu.title')));
     }
 
-    private function getPurgeMenu(): BaseForm
-    {
-        $lang = Main::getInstance()->getLanguage();
-        return (new CustomForm(
-            function (Player $player, $data) {
-                if (is_array($data)) {
-                    $player->chat("/bcp purge t={$data[0]}");
-                }
-            },
-            function (Player $player) {
-                $player->sendForm($this->getMainMenu());
-            }
-        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
-    }
-
     private function getNearMenu(): BaseForm
     {
         $lang = Main::getInstance()->getLanguage();
@@ -156,5 +140,21 @@ final class Forms
                 $player->chat("/bcp {$subCmd} {$time} {$radius} {$user} {$action} {$includeBlocks} {$excludeBlocks}");
             }
         };
+    }
+
+    private function getPurgeMenu(): BaseForm
+    {
+        $lang = Main::getInstance()->getLanguage();
+        return (new CustomForm(
+            function (Player $player, $data) {
+                if (is_array($data)) {
+                    $player->chat("/bcp purge t={$data[0]}");
+                }
+            },
+            function (Player $player) {
+                $player->sendForm($this->getMainMenu());
+            }
+        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
     }
 }

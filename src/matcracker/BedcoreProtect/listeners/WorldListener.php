@@ -37,7 +37,7 @@ final class WorldListener extends BedcoreListener
     {
         $block = $event->getBlock();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel()) && $this->plugin->getParsedConfig()->getLeavesDecay()) {
-            $this->database->getQueries()->addBlockLogByBlock($block, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $block->asPosition());
+            $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByBlock($block, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $block->asPosition());
         }
     }
 }

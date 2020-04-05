@@ -45,12 +45,12 @@ final class SQLiteTransactionTask extends Task
 
     public function onRun(int $currentTick): void
     {
-        $this->database->getQueries()->endTransaction();
-        $this->database->getQueries()->beginTransaction();
+        $this->database->getQueryManager()->getPluginQueries()->endTransaction();
+        $this->database->getQueryManager()->getPluginQueries()->beginTransaction();
     }
 
     public function onCancel(): void
     {
-        $this->database->getQueries()->endTransaction();
+        $this->database->getQueryManager()->getPluginQueries()->endTransaction();
     }
 }

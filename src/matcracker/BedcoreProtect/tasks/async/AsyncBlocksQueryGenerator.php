@@ -33,7 +33,7 @@ use function mb_substr;
 use function serialize;
 use function unserialize;
 
-class AsyncBlocksQueryGenerator extends AsyncTask
+final class AsyncBlocksQueryGenerator extends AsyncTask
 {
     /** @var int */
     private $lastLogId;

@@ -45,7 +45,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getExplosions()) {
-            $this->database->getQueries()->addBlocksLogByEntity($entity, $event->getBlockList(), BlockFactory::get(BlockIds::AIR), Action::BREAK());
+            $this->database->getQueryManager()->getBlocksQueries()->addBlocksLogByEntity($entity, $event->getBlockList(), BlockFactory::get(BlockIds::AIR), Action::BREAK());
         }
     }
 
@@ -61,12 +61,12 @@ final class EntityListener extends BedcoreListener
             if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockPlace()) {
                 $player = $entity->getLevel()->getNearestEntity($entity, 5, Player::class);
                 if ($player !== null) {
-                    $this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
+                    $this->database->getQueryManager()->getEntitiesQueries()->addLogEntityByEntity($player, $entity, Action::SPAWN());
                 }
             } elseif ($entity instanceof FallingBlock && $this->plugin->getParsedConfig()->getBlockMovement()) {
                 $block = BlockFactory::get($entity->getBlock());
 
-                $this->database->getQueries()->addBlockLogByEntity($entity, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $entity->asPosition());
+                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($entity, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $entity->asPosition());
             }
         }
     }
@@ -83,7 +83,7 @@ final class EntityListener extends BedcoreListener
             if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockBreak()) {
                 $player = $entity->getLevel()->getNearestEntity($entity, 5, Player::class);
                 if ($player !== null) {
-                    $this->database->getQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
+                    $this->database->getQueryManager()->getEntitiesQueries()->addLogEntityByEntity($player, $entity, Action::DESPAWN());
                 }
             }
         }
@@ -102,7 +102,7 @@ final class EntityListener extends BedcoreListener
             if ($ev instanceof EntityDamageByEntityEvent) {
                 $damager = $ev->getDamager();
                 if ($damager !== null) {
-                    $this->database->getQueries()->addLogEntityByEntity($damager, $entity, Action::KILL());
+                    $this->database->getQueryManager()->getEntitiesQueries()->addLogEntityByEntity($damager, $entity, Action::KILL());
                 }
             }
         }
@@ -117,7 +117,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getBlockMovement()) {
-            $this->database->getQueries()->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->asPosition());
+            $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->asPosition());
         }
     }
 }

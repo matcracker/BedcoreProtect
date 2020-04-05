@@ -46,21 +46,6 @@ final class PatchManager
         $this->connector = $connector;
     }
 
-    private function getVersionsToPatch(string $db_version): array
-    {
-        $patchContent = stream_get_contents(($res = $this->plugin->getResource('patches/.patches')));
-
-        if (!is_string($patchContent)) {
-            throw new UnexpectedValueException("Could not get patch data.");
-        }
-
-        $patchConfig = yaml_parse($patchContent) ?? [];
-        fclose($res);
-        return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
-            return version_compare($version, $db_version) > 0;
-        }, ARRAY_FILTER_USE_KEY);
-    }
-
     /**
      * Return true if patch updated the database.
      * @return bool
@@ -89,5 +74,20 @@ final class PatchManager
             ]);
         }
         return $updated;
+    }
+
+    private function getVersionsToPatch(string $db_version): array
+    {
+        $patchContent = stream_get_contents(($res = $this->plugin->getResource('patches/.patches')));
+
+        if (!is_string($patchContent)) {
+            throw new UnexpectedValueException("Could not get patch data.");
+        }
+
+        $patchConfig = yaml_parse($patchContent) ?? [];
+        fclose($res);
+        return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
+            return version_compare($version, $db_version) > 0;
+        }, ARRAY_FILTER_USE_KEY);
     }
 }

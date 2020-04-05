@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\queries\Queries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
@@ -38,8 +37,8 @@ class Database
     private $connector;
     /** @var PatchManager */
     private $patchManager;
-    /** @var Queries|null */
-    private $queries;
+    /** @var QueryManager|null */
+    private $queryManager;
 
     public function __construct(Main $plugin)
     {
@@ -62,7 +61,7 @@ class Database
                 $this->connector->loadQueryFile($patchResource);
             }
             $this->patchManager = new PatchManager($this->plugin, $this->connector);
-            $this->queries = new Queries($this->connector, $this->plugin->getParsedConfig());
+            $this->queryManager = new QueryManager($this->connector, $this->plugin->getParsedConfig());
 
             return true;
         } catch (SqlError $error) {
@@ -72,24 +71,24 @@ class Database
         return false;
     }
 
-    final public function getQueries(): Queries
+    final public function getQueryManager(): ?QueryManager
     {
-        if (!$this->isConnected() || !($this->queries instanceof Queries)) {
+        if (!$this->isConnected() || !($this->queryManager instanceof QueryManager)) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
         }
 
-        return $this->queries;
-    }
-
-    final public function getPatchManager(): PatchManager
-    {
-        return $this->patchManager;
+        return $this->queryManager;
     }
 
     final public function isConnected(): bool
     {
         return ($this->connector instanceof DataConnector);
+    }
+
+    final public function getPatchManager(): PatchManager
+    {
+        return $this->patchManager;
     }
 
     final public function disconnect(): void
@@ -98,7 +97,7 @@ class Database
             $this->connector->waitAll();
             $this->connector->close();
             $this->connector = null;
-            $this->queries = null;
+            $this->queryManager = null;
         }
     }
 
