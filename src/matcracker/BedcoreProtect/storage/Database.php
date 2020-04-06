@@ -101,7 +101,7 @@ class Database
         }
     }
 
-    public function getStatus(): Generator
+    final public function getStatus(): Generator
     {
         $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
         return yield Await::ONCE;

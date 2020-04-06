@@ -57,10 +57,10 @@ use function strlen;
  * Class BlocksQueries
  * @package matcracker\BedcoreProtect\storage\queries
  */
-final class BlocksQueries extends Query
+class BlocksQueries extends Query
 {
     /** @var EntitiesQueries */
-    private $entitiesQueries;
+    protected $entitiesQueries;
 
     public function __construct(DataConnector $connector, ConfigParser $configParser, EntitiesQueries $entitiesQueries)
     {

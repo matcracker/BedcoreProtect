@@ -38,7 +38,7 @@ final class SQLiteTransactionTask extends Task
      * Return the ticks when task is executed
      * @return int
      */
-    final public static function getTicks(): int
+    public static function getTicks(): int
     {
         //Default auto-save world ticks (5 minutes)
         return 6000;

@@ -56,6 +56,7 @@ final class RollbackTask extends AsyncTask
      * @param Area $area
      * @param CommandParser $parser
      * @param SerializableBlock[] $blocks
+     * @param float $startTime
      * @param Closure|null $onComplete
      */
     public function __construct(bool $rollback, Area $area, CommandParser $parser, array $blocks, float $startTime, Closure $onComplete)

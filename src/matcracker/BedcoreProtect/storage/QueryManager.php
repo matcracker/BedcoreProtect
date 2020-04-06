@@ -93,7 +93,7 @@ final class QueryManager
         self::$additionalReports = [];
     }
 
-    final public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
+    public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
     {
         $lang = Main::getInstance()->getLanguage();
 

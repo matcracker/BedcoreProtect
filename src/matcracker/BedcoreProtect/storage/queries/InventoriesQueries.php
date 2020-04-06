@@ -55,7 +55,7 @@ use function microtime;
  * Class InventoriesQueries
  * @package matcracker\BedcoreProtect\storage\queries
  */
-final class InventoriesQueries extends Query
+class InventoriesQueries extends Query
 {
     public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction): void
     {

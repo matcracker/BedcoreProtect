@@ -46,7 +46,7 @@ class SerializableWorld
      * @param Vector3 $vector3
      * @return SerializableWorld
      */
-    public static function toSerializableWorld(Vector3 $vector3): self
+    final public static function toSerializableWorld(Vector3 $vector3): self
     {
         $worldName = null;
         if ($vector3 instanceof Position) {
@@ -61,7 +61,7 @@ class SerializableWorld
     /**
      * @return int|null
      */
-    public function getX(): ?int
+    final public function getX(): ?int
     {
         return $this->x;
     }
@@ -69,7 +69,7 @@ class SerializableWorld
     /**
      * @return int|null
      */
-    public function getY(): ?int
+    final public function getY(): ?int
     {
         return $this->y;
     }
@@ -77,7 +77,7 @@ class SerializableWorld
     /**
      * @return int|null
      */
-    public function getZ(): ?int
+    final public function getZ(): ?int
     {
         return $this->z;
     }
@@ -85,7 +85,7 @@ class SerializableWorld
     /**
      * @return string|null
      */
-    public function getWorldName(): ?string
+    final public function getWorldName(): ?string
     {
         return $this->worldName;
     }

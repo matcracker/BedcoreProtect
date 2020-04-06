@@ -43,7 +43,7 @@ use function microtime;
  * Class EntitiesQueries
  * @package matcracker\BedcoreProtect\storage\queries
  */
-final class EntitiesQueries extends Query
+class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
@@ -57,7 +57,7 @@ final class EntitiesQueries extends Query
         $this->addRawEntity('leaves-uuid', '#decay');
     }
 
-    private function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
+    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
@@ -86,7 +86,7 @@ final class EntitiesQueries extends Query
         ]);
     }
 
-    public function addEntity(Entity $entity): void
+    final public function addEntity(Entity $entity): void
     {
         $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
     }
