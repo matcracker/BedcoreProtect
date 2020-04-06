@@ -21,13 +21,12 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\tasks;
 
-use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use pocketmine\scheduler\Task;
 
 final class SQLiteTransactionTask extends Task
 {
-    /** @var Database */
+    /** @var PluginQueries */
     private $pluginQueries;
 
     public function __construct(PluginQueries $pluginQueries)
