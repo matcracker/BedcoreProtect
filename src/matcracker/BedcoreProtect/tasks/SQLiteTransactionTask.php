@@ -22,16 +22,17 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks;
 
 use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use pocketmine\scheduler\Task;
 
 final class SQLiteTransactionTask extends Task
 {
     /** @var Database */
-    private $database;
+    private $pluginQueries;
 
-    public function __construct(Database $database)
+    public function __construct(PluginQueries $pluginQueries)
     {
-        $this->database = $database;
+        $this->pluginQueries = $pluginQueries;
     }
 
     /**
@@ -40,17 +41,17 @@ final class SQLiteTransactionTask extends Task
      */
     final public static function getTicks(): int
     {
-        return 5 * 60 * 60 * 20;
+        //Default auto-save world ticks (5 minutes)
+        return 6000;
     }
 
     public function onRun(int $currentTick): void
     {
-        $this->database->getQueryManager()->getPluginQueries()->endTransaction();
-        $this->database->getQueryManager()->getPluginQueries()->beginTransaction();
+        $this->pluginQueries->storeTransaction();
     }
 
     public function onCancel(): void
     {
-        $this->database->getQueryManager()->getPluginQueries()->endTransaction();
+        $this->pluginQueries->endTransaction();
     }
 }

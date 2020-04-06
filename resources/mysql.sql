@@ -233,7 +233,8 @@ WHERE log_id IN :log_ids;
 -- #            }
 -- #            {entities
 -- #                :log_ids list:int
-SELECT e.entity_classpath,
+SELECT log_id,
+       e.entity_classpath,
        el.entityfrom_id,
        el.entityfrom_nbt,
        x,

@@ -53,20 +53,24 @@ final class PatchManager
     public function patch(): bool
     {
         $updated = false;
-        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], function (array $rows) use (&$updated): void {
-            $versions = $this->getVersionsToPatch($rows[0]['version']);
-            if ($updated = (count($versions) > 0)) { //This means the database is not updated.
-                /**
-                 * @var string $version
-                 * @var int $patchNumbers
-                 */
-                foreach ($versions as $version => $patchNumbers) {
-                    for ($i = 1; $i <= $patchNumbers; $i++) {
-                        $this->connector->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
+        $this->connector->executeSelect(
+            QueriesConst::GET_DATABASE_STATUS,
+            [],
+            function (array $rows) use (&$updated): void {
+                $versions = $this->getVersionsToPatch($rows[0]['version']);
+                if ($updated = (count($versions) > 0)) { //This means the database is not updated.
+                    /**
+                     * @var string $version
+                     * @var int $patchNumbers
+                     */
+                    foreach ($versions as $version => $patchNumbers) {
+                        for ($i = 1; $i <= $patchNumbers; $i++) {
+                            $this->connector->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
+                        }
                     }
                 }
             }
-        });
+        );
         $this->connector->waitAll();
         if ($updated) {
             $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, [

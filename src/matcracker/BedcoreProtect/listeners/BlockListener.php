@@ -90,7 +90,7 @@ final class BlockListener extends BedcoreListener
                      * @var Block[] $sides
                      * Getting all blocks around the broken block that are consequently destroyed.
                      */
-                    $sides = array_filter($block->getAllSides(), static function (Block $side) {
+                    $sides = array_filter($block->getAllSides(), static function (Block $side): bool {
                         return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
                     });
 

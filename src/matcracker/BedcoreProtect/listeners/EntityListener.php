@@ -24,6 +24,8 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\BlockIds;
+use pocketmine\entity\Human;
+use pocketmine\entity\Living;
 use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
@@ -57,16 +59,28 @@ final class EntityListener extends BedcoreListener
     public function trackEntitySpawn(EntitySpawnEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
-            if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockPlace()) {
-                $player = $entity->getLevel()->getNearestEntity($entity, 5, Player::class);
-                if ($player !== null) {
-                    $this->entitiesQueries->addLogEntityByEntity($player, $entity, Action::SPAWN());
-                }
-            } elseif ($entity instanceof FallingBlock && $this->plugin->getParsedConfig()->getBlockMovement()) {
-                $block = BlockFactory::get($entity->getBlock());
 
-                $this->blocksQueries->addBlockLogByEntity($entity, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $entity->asPosition());
+        if ($entity instanceof Human) {
+            return;
+        }
+
+        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
+            if ($entity instanceof FallingBlock && $this->plugin->getParsedConfig()->getBlockMovement()) {
+                $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock()), BlockFactory::get(BlockIds::AIR), Action::BREAK(), $entity->asPosition());
+
+            } else {
+                if (!($entity instanceof Living || $entity instanceof Painting)) {
+                    return;
+                }
+
+                if ($entity instanceof Painting && !$this->plugin->getParsedConfig()->getBlockPlace()) {
+                    return;
+                }
+
+                $player = $entity->getLevel()->getNearestEntity($entity, 6, Player::class);
+                if ($player !== null) {
+                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
+                }
             }
         }
     }
@@ -81,9 +95,9 @@ final class EntityListener extends BedcoreListener
         $entity = $event->getEntity();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
             if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockBreak()) {
-                $player = $entity->getLevel()->getNearestEntity($entity, 5, Player::class);
+                $player = $entity->getLevel()->getNearestEntity($entity, 6, Player::class);
                 if ($player !== null) {
-                    $this->entitiesQueries->addLogEntityByEntity($player, $entity, Action::DESPAWN());
+                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::DESPAWN());
                 }
             }
         }
@@ -102,7 +116,7 @@ final class EntityListener extends BedcoreListener
             if ($ev instanceof EntityDamageByEntityEvent) {
                 $damager = $ev->getDamager();
                 if ($damager !== null) {
-                    $this->entitiesQueries->addLogEntityByEntity($damager, $entity, Action::KILL());
+                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::KILL());
                 }
             }
         }

@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands;
 
 use BlockHorizons\BlockSniper\sessions\SessionManager;
+use Generator;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
@@ -93,20 +94,23 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
 
                 return true;
             case 'status':
-                Await::f2c(function () use ($sender) {
-                    $description = $this->plugin->getDescription();
-                    $lang = $this->plugin->getLanguage();
-                    $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
-                    $sender->sendMessage(TextFormat::colorize('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
-                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
-                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
-                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
-                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
-                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
-                    $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
-                }, function () {
-                    //NOOP
-                });
+                Await::f2c(
+                    function () use ($sender) : Generator {
+                        $description = $this->plugin->getDescription();
+                        $lang = $this->plugin->getLanguage();
+                        $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
+                        $sender->sendMessage(TextFormat::colorize('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
+                    },
+                    static function (): void {
+                        //NOOP
+                    }
+                );
                 return true;
             case 'lookup':
                 if (array_key_exists(1, $args)) {

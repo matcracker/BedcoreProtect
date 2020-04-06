@@ -73,10 +73,10 @@ final class QueryManager
             $date = Utils::timeAgo(time() - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
-            $sender->sendMessage(TextFormat::colorize('&f------'));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
+            $sender->sendMessage(TextFormat::colorize('&f--- &3' . Main::PLUGIN_NAME . '&7 ' . $lang->translateString('rollback.report') . ' &f---'));
+            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
+            $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
 
             $duration = 0;
             foreach (self::$additionalReports as $additionalReport) {
@@ -86,7 +86,7 @@ final class QueryManager
 
             $duration = round($duration, 2);
 
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
+            $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.time-taken', [$duration])));
             $sender->sendMessage(TextFormat::colorize('&f------'));
         }
 
@@ -95,8 +95,10 @@ final class QueryManager
 
     final public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
     {
+        $lang = Main::getInstance()->getLanguage();
+
         self::$additionalReports[] = [
-            'message' => Main::formatMessage($reportMessage, $params),
+            'message' => TextFormat::colorize('&f- ' . $lang->translateString($reportMessage, $params)),
             'time' => $executionTime
         ];
     }

@@ -29,6 +29,7 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
+use pocketmine\entity\Living;
 use pocketmine\Player;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
@@ -56,7 +57,7 @@ final class EntitiesQueries extends Query
         $this->addRawEntity('leaves-uuid', '#decay');
     }
 
-    final private function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
+    private function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
@@ -66,14 +67,17 @@ final class EntitiesQueries extends Query
         ]);
     }
 
-    public function addLogEntityByEntity(Entity $damager, Entity $entity, Action $action): void
+    public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
         $this->addEntity($damager);
         $this->addEntity($entity);
 
         $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
         $entity->saveNBT();
-        $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
+
+        if ($entity instanceof Living) {
+            $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
+        }
 
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
             'uuid' => Utils::getEntityUniqueId($entity),

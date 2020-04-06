@@ -127,6 +127,12 @@ abstract class Query
         $this->rawRollback(false, $area, $commandParser, $onPreComplete, $isLastRollback);
     }
 
+    final protected function executeGeneric(string $query, array $args = []): Generator
+    {
+        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
     final protected function addRawLog(string $uuid, Position $position, Action $action): void
     {
         $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [

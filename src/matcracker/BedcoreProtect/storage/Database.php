@@ -114,9 +114,13 @@ class Database
      */
     public function getVersion(): string
     {
-        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], static function (array $rows) use (&$version) {
-            $version = (string)$rows[0]['version'];
-        });
+        $this->connector->executeSelect(
+            QueriesConst::GET_DATABASE_STATUS,
+            [],
+            static function (array $rows) use (&$version) : void {
+                $version = (string)$rows[0]['version'];
+            }
+        );
         $this->connector->waitAll();
         return $version;
     }

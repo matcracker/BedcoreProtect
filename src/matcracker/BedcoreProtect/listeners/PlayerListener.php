@@ -110,7 +110,8 @@ final class PlayerListener extends BedcoreListener
         if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel())) {
             $clickedBlock = $event->getBlock();
             $itemInHand = $event->getItem();
-            $action = $event->getAction();
+            $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
+            $rightClickBlock = $event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK;
             $face = $event->getFace();
 
             if (Inspector::isInspector($player)) {
@@ -125,20 +126,25 @@ final class PlayerListener extends BedcoreListener
                         }
                     }
                     $this->pluginQueries->requestTransactionLog($player, $position);
+
+                //This check must be done due to allow BlockPlaceEvent to be fired (second "OR" condition)
+                } elseif ($leftClickBlock || ($rightClickBlock && !$itemInHand->canBePlaced())) {
+                    $event->setCancelled();
+                    $this->pluginQueries->requestBlockLog($player, $clickedBlock);
                 }
 
                 return;
             }
 
             if (!$event->isCancelled()) {
-                if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK || $action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
-                    if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+                if ($leftClickBlock || $rightClickBlock) {
+                    if ($leftClickBlock) {
                         $relativeBlock = $clickedBlock->getSide($face);
                         if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
                             $this->blocksQueries->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
                             return;
                         }
-                    } elseif ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+                    } else { //Right click
                         if ($this->plugin->getParsedConfig()->getBlockPlace() && $itemInHand->getId() === ItemIds::FLINT_AND_STEEL) {
                             $this->blocksQueries->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
                             return;
@@ -154,7 +160,7 @@ final class PlayerListener extends BedcoreListener
                                 if (!$tile->hasItem() && !$itemInHand->isNull()) {
                                     $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
                                     return;
-                                } elseif ($tile->hasItem() && $action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+                                } elseif ($tile->hasItem() && $leftClickBlock) {
                                     $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
                                     return;
                                 }

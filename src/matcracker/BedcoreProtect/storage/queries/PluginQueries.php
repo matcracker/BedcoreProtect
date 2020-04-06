@@ -30,6 +30,7 @@ use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
 use pocketmine\Player;
+use SOFe\AwaitGenerator\Await;
 
 /**
  * Class PluginQueries
@@ -39,7 +40,7 @@ class PluginQueries extends Query
 {
 
     /**
-     * Can be used only with SQLite
+     * Can be used only with SQLite.
      */
     final public function beginTransaction(): void
     {
@@ -105,13 +106,32 @@ class PluginQueries extends Query
     }
 
     /**
-     * Can be used only with SQLite
+     * Can be used only with SQLite.
      */
     final public function endTransaction(): void
     {
         if ($this->configParser->isSQLite()) {
             $this->connector->executeGeneric(QueriesConst::END_TRANSACTION);
         }
+    }
+
+    /**
+     * Can be used only with SQLite.
+     * It ends the current transaction and starts a new one.
+     */
+    final public function storeTransaction(): void
+    {
+        Await::f2c(
+            function (): Generator {
+                if ($this->configParser->isSQLite()) {
+                    yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+                    yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+                }
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
     }
 
     protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator

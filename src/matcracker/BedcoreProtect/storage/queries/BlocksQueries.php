@@ -160,14 +160,17 @@ final class BlocksQueries extends Query
 
         $this->entitiesQueries->addEntity($entity);
 
-        Await::f2c(function () use ($entity, $oldBlocks, $newBlocks, $action) {
-            $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
-            $blocksTask = new BlocksQueryGenTask($this->connector, $lastLogId, $oldBlocks, $newBlocks);
-            $logsTask = new LogsQueryGenTask($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
-            Server::getInstance()->getAsyncPool()->submitTask($logsTask);
-        }, function () {
-            //NOOP
-        });
+        Await::f2c(
+            function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
+                $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
+                $blocksTask = new BlocksQueryGenTask($this->connector, $lastLogId, $oldBlocks, $newBlocks);
+                $logsTask = new LogsQueryGenTask($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+                Server::getInstance()->getAsyncPool()->submitTask($logsTask);
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
     }
 
     protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator

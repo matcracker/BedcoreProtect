@@ -33,7 +33,6 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
-use pocketmine\utils\TextFormat;
 use RuntimeException;
 use function mkdir;
 use function version_compare;
@@ -64,16 +63,6 @@ final class Main extends PluginBase
         }
 
         return self::$instance;
-    }
-
-    public static function formatMessage(string $message, array $params = [], bool $includePrefix = true): string
-    {
-        return self::formatRawMessage(self::$instance->getLanguage()->translateString($message, $params), $includePrefix);
-    }
-
-    public static function formatRawMessage(string $message, bool $includePrefix = true): string
-    {
-        return TextFormat::colorize(($includePrefix ? self::MESSAGE_PREFIX : "") . $message);
     }
 
     public function getLanguage(): BaseLang
@@ -174,8 +163,9 @@ final class Main extends PluginBase
         }
 
         if ($this->configParser->isSQLite()) {
-            $this->database->getQueryManager()->getPluginQueries()->beginTransaction();
-            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+            $pluginQueries = $this->database->getQueryManager()->getPluginQueries();
+            $pluginQueries->beginTransaction();
+            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($pluginQueries), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
 
         $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
