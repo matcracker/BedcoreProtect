@@ -25,7 +25,6 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\tasks\async\BlocksQueryGenTask;
@@ -171,7 +170,7 @@ final class BlocksQueries extends Query
         });
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         $prefix = $rollback ? 'old' : 'new';
         $inclusions = $commandParser->getBlocks();
@@ -218,7 +217,7 @@ final class BlocksQueries extends Query
                 $nbt = Utils::deserializeNBT($serializedNBT);
                 $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
                 if ($tile !== null) {
-                    if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
+                    if ($tile instanceof InventoryHolder /*&& !$this->configParser->getRollbackItems()*/) {
                         $tile->getInventory()->clearAll();
                     }
                     $area->getWorld()->addTile($tile);
@@ -226,12 +225,6 @@ final class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $commandParser, $blocks, $onComplete));
-    }
-
-    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
-    {
-        $player->sendMessage(Main::formatMessage('rollback.blocks', [$changes[0]]));
-        $player->sendMessage(Main::formatMessage('rollback.modified-chunks', [$changes[1]]));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $commandParser, $blocks, $startTime, $onComplete));
     }
 }

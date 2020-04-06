@@ -114,13 +114,8 @@ class PluginQueries extends Query
         }
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         yield from [];
-    }
-
-    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
-    {
-
     }
 }

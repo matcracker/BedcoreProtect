@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
@@ -29,18 +30,23 @@ use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\Server;
+use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
 use UnexpectedValueException;
-use function microtime;
 use function preg_match;
+use function round;
+use function time;
 
 final class QueryManager
 {
+    /** @var mixed[][] */
+    private static $additionalReports = [];
     /** @var DataConnector */
     private $connector;
     /** @var ConfigParser */
     private $configParser;
-
     /** @var PluginQueries */
     private $pluginQueries;
     /** @var BlocksQueries */
@@ -59,6 +65,40 @@ final class QueryManager
         $this->entitiesQueries = new EntitiesQueries($connector, $configParser);
         $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries);
         $this->inventoriesQueries = new InventoriesQueries($connector, $configParser);
+    }
+
+    public static function sendRollbackReport(bool $rollback, Area $area, CommandParser $commandParser): void
+    {
+        if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
+            $date = Utils::timeAgo(time() - $commandParser->getTime());
+            $lang = Main::getInstance()->getLanguage();
+
+            $sender->sendMessage(TextFormat::colorize('&f------'));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
+
+            $duration = 0;
+            foreach (self::$additionalReports as $additionalReport) {
+                $sender->sendMessage($additionalReport['message']);
+                $duration += $additionalReport['time'];
+            }
+
+            $duration = round($duration, 2);
+
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
+            $sender->sendMessage(TextFormat::colorize('&f------'));
+        }
+
+        self::$additionalReports = [];
+    }
+
+    final public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
+    {
+        self::$additionalReports[] = [
+            'message' => Main::formatMessage($reportMessage, $params),
+            'time' => $executionTime
+        ];
     }
 
     public function init(string $pluginVersion): void
@@ -85,10 +125,11 @@ final class QueryManager
         $this->getBlocksQueries()->rollback(
             $area,
             $commandParser,
-            function () use ($area, $commandParser) : void {
-                $this->getInventoriesQueries()->rollback($area, $commandParser);
+            function () use ($area, $commandParser): void {
+                $this->getInventoriesQueries()->rollback($area, $commandParser, null, false);
                 $this->getEntitiesQueries()->rollback($area, $commandParser);
-            }
+            },
+            false
         );
     }
 
@@ -98,52 +139,6 @@ final class QueryManager
     public function getBlocksQueries(): BlocksQueries
     {
         return $this->blocksQueries;
-    }
-
-    public function restore(Area $area, CommandParser $commandParser): void
-    {
-        $this->getBlocksQueries()->restore(
-            $area,
-            $commandParser,
-            function () use ($area, $commandParser) : void {
-                $this->getInventoriesQueries()->restore($area, $commandParser);
-                $this->getEntitiesQueries()->restore($area, $commandParser);
-            }
-        );
-    }
-
-    /**
-     * @return PluginQueries
-     */
-    public function getPluginQueries(): PluginQueries
-    {
-        return $this->pluginQueries;
-    }
-
-    /**
-     * @param Area $area
-     * @param CommandParser $commandParser
-     */
-    private function rollbackOld(Area $area, CommandParser $commandParser): void
-    {
-        $startTime = microtime(true);
-
-        $this->getBlocksQueries()->rollback($area, $commandParser);
-        $this->getInventoriesQueries()->rollback($area, $commandParser);
-        $this->getEntitiesQueries()->rollback($area, $commandParser);
-
-        /*$query = $commandParser->buildLogsSelectionQuery(!$rollback, $area->getBoundingBox());
-        $logRows = yield $this->connector->executeSelectRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
-
-        /** @var int[] $logIds *
-        $logIds = [];
-        foreach ($logRows as $logRow) {
-            $logIds[] = (int)$logRow['log_id'];
-        }*/
-
-        /*$touchedChunks = $area->getTouchedChunks($blocks);
-
-        $this->onRollbackComplete($rollback, $area, $commandParser, $startTime, count($touchedChunks), $blocks, $inventories, $entities);*/
     }
 
     /**
@@ -160,5 +155,26 @@ final class QueryManager
     public function getEntitiesQueries(): EntitiesQueries
     {
         return $this->entitiesQueries;
+    }
+
+    public function restore(Area $area, CommandParser $commandParser): void
+    {
+        $this->getBlocksQueries()->restore(
+            $area,
+            $commandParser,
+            function () use ($area, $commandParser): void {
+                $this->getInventoriesQueries()->restore($area, $commandParser, null, false);
+                $this->getEntitiesQueries()->restore($area, $commandParser);
+            },
+            false
+        );
+    }
+
+    /**
+     * @return PluginQueries
+     */
+    public function getPluginQueries(): PluginQueries
+    {
+        return $this->pluginQueries;
     }
 }

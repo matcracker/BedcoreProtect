@@ -222,7 +222,8 @@ final class Utils
      * @return array
      */
     public static function getEntitySaveNames(): array
-    { //HACK ^-^
+    {
+        //HACK ^-^
         try {
             $r = new ReflectionClass(Entity::class);
             $property = $r->getProperty('saveNames');

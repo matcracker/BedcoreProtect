@@ -25,10 +25,10 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
 use matcracker\BedcoreProtect\serializable\SerializableWorld;
+use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\tasks\async\InventoriesQueryGenTask;
 use matcracker\BedcoreProtect\tasks\async\LogsQueryGenTask;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -47,6 +47,7 @@ use SOFe\AwaitGenerator\Await;
 use function array_fill;
 use function array_map;
 use function count;
+use function microtime;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -143,7 +144,7 @@ final class InventoriesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         $prefix = $rollback ? 'old' : 'new';
 
@@ -171,13 +172,10 @@ final class InventoriesQueries extends Query
             }
         }
 
-        $onComplete(count($inventoryRows));
-    }
-
-    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
-    {
-        if ($changes[0] > 0) {
-            $player->sendMessage(Main::formatMessage('rollback.items', [$changes[0]]));
+        if (($items = count($inventoryRows)) > 0) {
+            QueryManager::addReportMessage(microtime(true) - $startTime, 'rollback.items', [$items]);
         }
+
+        $onComplete();
     }
 }

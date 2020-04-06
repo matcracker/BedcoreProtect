@@ -26,12 +26,14 @@ use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
+use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use function count;
+use function microtime;
 
 final class RollbackTask extends AsyncTask
 {
@@ -39,10 +41,12 @@ final class RollbackTask extends AsyncTask
     protected $rollback;
     /** @var Area */
     protected $area;
-    /** @var SerializableBlock[] */
-    protected $blocks;
     /** @var CommandParser */
     protected $commandParser;
+    /** @var SerializableBlock[] */
+    protected $blocks;
+    /** @var float */
+    private $startTime;
     /** @var string[] */
     private $serializedChunks;
 
@@ -54,12 +58,13 @@ final class RollbackTask extends AsyncTask
      * @param SerializableBlock[] $blocks
      * @param Closure|null $onComplete
      */
-    public function __construct(bool $rollback, Area $area, CommandParser $parser, array $blocks, Closure $onComplete)
+    public function __construct(bool $rollback, Area $area, CommandParser $parser, array $blocks, float $startTime, Closure $onComplete)
     {
         $this->rollback = $rollback;
         $this->area = $area;
         $this->commandParser = $parser;
         $this->blocks = $blocks;
+        $this->startTime = $startTime;
 
         $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
         $this->storeLocal($onComplete);
@@ -100,8 +105,11 @@ final class RollbackTask extends AsyncTask
                 /**@var Closure|null $onComplete */
                 $onComplete = $this->fetchLocal();
 
-                $onComplete(count($this->blocks), count($chunks));
-                //$plugin->getDatabase()->getQueryManager()->getBlocksQueries()->sendRollbackReport($this->isRollback(), $this->area, $this->commandParser, count($this->blocks), count($chunks));
+                QueryManager::addReportMessage(microtime(true) - $this->startTime, 'rollback.blocks', [count($this->blocks)]);
+                //Set the execution time to 0 to avoid duplication of time in the same operation.
+                QueryManager::addReportMessage(0, 'rollback.modified-chunks', [count($chunks)]);
+
+                $onComplete();
             }
         }
     }

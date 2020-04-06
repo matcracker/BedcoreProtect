@@ -37,6 +37,7 @@ use pocketmine\event\block\BlockBurnEvent;
 use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
+use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\tile\Chest as TileChest;
 use function array_filter;
@@ -56,7 +57,7 @@ final class BlockListener extends BedcoreListener
             $block = $event->getBlock();
 
             if (Inspector::isInspector($player)) { //It checks the block clicked
-                $this->database->getQueryManager()->getPluginQueries()->requestBlockLog($player, $block);
+                $this->pluginQueries->requestBlockLog($player, $block);
                 $event->setCancelled();
             } else {
                 $air = BlockFactory::get(BlockIds::AIR);
@@ -65,24 +66,24 @@ final class BlockListener extends BedcoreListener
                     $top = $block->getDamage() & 0x08;
                     $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
                     if ($other instanceof Door and $other->getId() === $block->getId()) {
-                        $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
+                        $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
                     }
                 } elseif ($block instanceof Bed) {
                     $other = $block->getOtherHalf();
                     if ($other instanceof Bed) {
-                        $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
+                        $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
                     }
                 } elseif ($block instanceof Chest) {
                     $tileChest = BlockUtils::asTile($block);
                     if ($tileChest instanceof TileChest) {
                         $inventory = $tileChest->getRealInventory();
                         if (count($inventory->getContents()) > 0) {
-                            $this->database->getQueryManager()->getInventoriesQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
+                            $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                         }
                     }
                 }
 
-                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
+                $this->blocksQueries->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
 
                 if ($this->plugin->getParsedConfig()->getNaturalBreak()) {
                     /**
@@ -94,7 +95,7 @@ final class BlockListener extends BedcoreListener
                     });
 
                     if (count($sides) > 0) {
-                        $this->database->getQueryManager()->getBlocksQueries()->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
+                        $this->blocksQueries->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
                     }
                 }
             }
@@ -114,9 +115,10 @@ final class BlockListener extends BedcoreListener
             $replacedBlock = $event->getBlockReplaced();
 
             if (Inspector::isInspector($player)) { //It checks the block where the player places.
-                $this->database->getQueryManager()->getPluginQueries()->requestBlockLog($player, $replacedBlock);
+                $this->pluginQueries->requestBlockLog($player, $replacedBlock);
                 $event->setCancelled();
             } else {
+                /** @var Position|null $otherHalfPos */
                 $otherHalfPos = null;
                 if ($block instanceof Bed) {
                     $meta = ($player->getDirection() - 1) & 0x03;
@@ -125,10 +127,10 @@ final class BlockListener extends BedcoreListener
                     $otherHalfPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
                 }
 
-                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
 
                 if ($otherHalfPos !== null) {
-                    $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $otherHalfPos);
+                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $otherHalfPos);
                 }
             }
         }
@@ -146,7 +148,7 @@ final class BlockListener extends BedcoreListener
 
         if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
             if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
-                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
+                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
             }
         }
     }
@@ -162,7 +164,7 @@ final class BlockListener extends BedcoreListener
         if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel()) && $this->plugin->getParsedConfig()->getBlockBurn()) {
             $cause = $event->getCausingBlock();
 
-            $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
+            $this->blocksQueries->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
         }
     }
 
@@ -179,7 +181,7 @@ final class BlockListener extends BedcoreListener
         if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
             if ($block instanceof Liquid && $this->plugin->getParsedConfig()->getLiquidTracking()) {
                 $liquid = $block instanceof Water ? BlockFactory::get(BlockIds::FLOWING_LAVA) : BlockFactory::get(BlockIds::FLOWING_WATER);
-                $this->database->getQueryManager()->getBlocksQueries()->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
+                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
             }
         }
     }

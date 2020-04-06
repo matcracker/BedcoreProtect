@@ -25,20 +25,14 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\ConfigParser;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\Position;
-use pocketmine\Player;
-use pocketmine\Server;
-use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function microtime;
-use function round;
 use function strtolower;
-use function time;
 
 abstract class Query
 {
@@ -53,68 +47,15 @@ abstract class Query
         $this->configParser = $configParser;
     }
 
-    final protected function addRawLog(string $uuid, Position $position, Action $action): void
+    public function rollback(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
-        $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => strtolower($uuid),
-            'x' => $position->getFloorX(),
-            'y' => $position->getFloorY(),
-            'z' => $position->getFloorZ(),
-            'world_name' => $position->getLevel()->getName(),
-            'action' => $action->getType()
-        ]);
+        $this->rawRollback(true, $area, $commandParser, $onPreComplete, $isLastRollback);
     }
 
-    final protected function executeRawSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelectRaw($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    final protected function executeSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    final protected function getLastLogId(): Generator
-    {
-        return $this->executeSelect(QueriesConst::GET_LAST_LOG_ID);
-    }
-
-    /**
-     * @param bool $rollback
-     * @param int[] $logIds
-     */
-    final protected function updateRollbackStatus(bool $rollback, array $logIds): void
-    {
-        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            'rollback' => $rollback,
-            'log_ids' => $logIds
-        ]);
-    }
-
-    /**
-     * @param bool $rollback
-     * @param Area $area
-     * @param CommandParser $commandParser
-     * @param int[] $logIds
-     * @param Closure|null $onComplete
-     * @return Generator
-     */
-    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator;
-
-    final protected function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
-    {
-        return $this->executeRawSelect($commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox()));
-    }
-
-    protected function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null): void
+    protected function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $onPreComplete) : Generator {
-                $startTime = microtime(true);
-
+            function () use ($rollback, $area, $commandParser, $onPreComplete, $isLastRollback) : Generator {
                 /** @var int[][] $logRows */
                 $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
 
@@ -129,56 +70,83 @@ abstract class Query
                     $area,
                     $commandParser,
                     $logIds,
-                    function (int...$changes) use ($rollback, $area, $commandParser, $onPreComplete, $logIds, $startTime): void {
+                    microtime(true),
+                    function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
                         if ($onPreComplete) {
                             $onPreComplete();
                         }
 
-                        $this->updateRollbackStatus($rollback, $logIds);
-                        $this->sendRollbackReport($rollback, $area, $commandParser, $startTime, $changes);
+                        if ($isLastRollback) {
+                            $this->updateRollbackStatus($rollback, $logIds);
+                            QueryManager::sendRollbackReport($rollback, $area, $commandParser);
+                        }
                     }
                 );
             },
             static function (): void {
-
             }
         );
     }
 
-    public function rollback(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null): void
+    final protected function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
     {
-        $this->rawRollback(true, $area, $commandParser, $onPreComplete);
+        return $this->executeRawSelect($commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox()));
     }
 
-    public function restore(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null): void
+    final protected function executeRawSelect(string $query, array $args = []): Generator
     {
-        $this->rawRollback(false, $area, $commandParser, $onPreComplete);
-    }
-
-    public function sendRollbackReport(bool $rollback, Area $area, CommandParser $commandParser, float $startTime, array $changes): void
-    {
-        $duration = round(microtime(true) - $startTime, 2);
-        if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
-            $date = Utils::timeAgo(time() - $commandParser->getTime());
-            $lang = Main::getInstance()->getLanguage();
-
-            $sender->sendMessage(TextFormat::colorize('&f------'));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.radius', [$commandParser->getRadius()])));
-
-            $this->additionalReport($sender, $area, $commandParser, $changes);
-
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('rollback.time-taken', [$duration])));
-            $sender->sendMessage(TextFormat::colorize('&f------'));
-        }
+        $this->connector->executeSelectRaw($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 
     /**
-     * @param Player $player
+     * @param bool $rollback
      * @param Area $area
      * @param CommandParser $commandParser
-     * @param int[] $changes
+     * @param int[] $logIds
+     * @param float $startTime
+     * @param Closure|null $onComplete
+     * @return Generator
      */
-    abstract protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void;
+    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator;
+
+    /**
+     * @param bool $rollback
+     * @param int[] $logIds
+     */
+    final protected function updateRollbackStatus(bool $rollback, array $logIds): void
+    {
+        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+            'rollback' => $rollback,
+            'log_ids' => $logIds
+        ]);
+    }
+
+    public function restore(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    {
+        $this->rawRollback(false, $area, $commandParser, $onPreComplete, $isLastRollback);
+    }
+
+    final protected function addRawLog(string $uuid, Position $position, Action $action): void
+    {
+        $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
+            'uuid' => strtolower($uuid),
+            'x' => $position->getFloorX(),
+            'y' => $position->getFloorY(),
+            'z' => $position->getFloorZ(),
+            'world_name' => $position->getLevel()->getName(),
+            'action' => $action->getType()
+        ]);
+    }
+
+    final protected function getLastLogId(): Generator
+    {
+        return $this->executeSelect(QueriesConst::GET_LAST_LOG_ID);
+    }
+
+    final protected function executeSelect(string $query, array $args = []): Generator
+    {
+        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
 }

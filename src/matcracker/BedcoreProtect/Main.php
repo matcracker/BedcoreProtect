@@ -76,6 +76,15 @@ final class Main extends PluginBase
         return TextFormat::colorize(($includePrefix ? self::MESSAGE_PREFIX : "") . $message);
     }
 
+    public function getLanguage(): BaseLang
+    {
+        if ($this->baseLang === null) {
+            throw new RuntimeException("Invalid language state detected.");
+        }
+
+        return $this->baseLang;
+    }
+
     public function getDatabase(): Database
     {
         return $this->database;
@@ -200,15 +209,6 @@ final class Main extends PluginBase
     public function isBlockSniperHooked(): bool
     {
         return $this->bsHooked;
-    }
-
-    public function getLanguage(): BaseLang
-    {
-        if ($this->baseLang === null) {
-            throw new RuntimeException("Invalid language state detected.");
-        }
-
-        return $this->baseLang;
     }
 
     public function onDisable(): void

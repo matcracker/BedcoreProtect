@@ -25,15 +25,16 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\Player;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
+use function count;
 use function get_class;
-use function var_dump;
+use function microtime;
 
 /**
  * It contains all the queries methods related to entities.
@@ -86,44 +87,13 @@ final class EntitiesQueries extends Query
         $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
     }
 
-    /*public function rollbackEntities(bool $rollback, Area $area, array $logIds): void
-    {
-        if ($this->configParser->getRollbackEntities()) {
-            Await::f2c(function () use ($rollback, $area, $logIds) {
-                //TODO: Exclude entities from CommandParser.
-                $entityRows = yield $this->connector->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds], yield, yield Await::REJECT) => Await::ONCE;
-                foreach ($entityRows as $row) {
-                    $action = Action::fromType((int)$row['action']);
-                    if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
-                        $id = (int)$row['entityfrom_id'];
-                        $entity = $area->getWorld()->getEntity($id);
-                        if ($entity !== null) {
-                            $entity->close();
-                        }
-                    } else {
-                        $logId = (int)$row['log_id'];
-                        /** @var Entity $entityClass *
-                        $entityClass = (string)$row['entity_classpath'];
-                        $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
-                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
-                        $this->updateEntityId($logId, $entity);
-                        $entity->spawnToAll();
-                    }
-                }
-            }, function () use ($rollback, $logIds) {
-                $this->updateRollbackStatus($rollback, $logIds);
-            });
-        }
-    }*/
-
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         $entityRows = [];
 
         if ($this->configParser->getRollbackEntities()) {
-            if ($this->configParser->getRollbackEntities()) {
-                $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
-            }
+            //TODO: Exclude entities from CommandParser.
+            $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
 
             foreach ($entityRows as $row) {
                 $action = Action::fromType((int)$row['action']);
@@ -134,7 +104,6 @@ final class EntitiesQueries extends Query
                         $entity->close();
                     }
                 } else {
-                    var_dump($row);
                     $logId = (int)$row['log_id'];
                     /** @var Entity $entityClass */
                     $entityClass = (string)$row['entity_classpath'];
@@ -146,7 +115,11 @@ final class EntitiesQueries extends Query
             }
         }
 
-        $onComplete(count($entityRows));
+        if (($entities = count($entityRows)) > 0) {
+            QueryManager::addReportMessage(microtime(true) - $startTime, 'rollback.entities', [$entities]);
+        }
+
+        $onComplete();
     }
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator
@@ -157,12 +130,5 @@ final class EntitiesQueries extends Query
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;
-    }
-
-    protected function additionalReport(Player $player, Area $area, CommandParser $commandParser, array $changes): void
-    {
-        if ($changes[0] > 0) {
-            $player->sendMessage(Main::formatMessage('rollback.items', [$changes[0]]));
-        }
     }
 }
