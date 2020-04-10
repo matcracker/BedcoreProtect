@@ -113,6 +113,7 @@ INSERT INTO "log_history"(who, x, y, z, world_name,
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
 -- #            }
 -- #            {block
+-- #                :log_id int
 -- #                :old_id int
 -- #                :old_meta int
 -- #                :old_nbt ?string
@@ -121,17 +122,19 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #                :new_nbt ?string
 INSERT INTO "blocks_log"(history_id, old_id, old_meta, old_nbt, new_id, new_meta,
                          new_nbt)
-VALUES (LAST_INSERT_ROWID(), :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
+VALUES (:log_id, :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
         :new_nbt);
 -- #            }
 -- #            {entity
+-- #                :log_id int
 -- #                :uuid string
 -- #                :id int
 -- #                :nbt ?string
 INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
-VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
+VALUES (:log_id, (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
 -- #            {inventory
+-- #                :log_id int
 -- #                :slot int
 -- #                :old_id int 0
 -- #                :old_meta int 0
@@ -143,7 +146,7 @@ VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id
 -- #                :new_amount int 0
 INSERT INTO "inventories_log"(history_id, slot, old_id, old_meta, old_nbt, old_amount, new_id,
                               new_meta, new_nbt, new_amount)
-VALUES (LAST_INSERT_ROWID(), :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id,
+VALUES (:log_id, :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id,
         :new_meta, :new_nbt, :new_amount);
 -- #            }
 -- #        }
