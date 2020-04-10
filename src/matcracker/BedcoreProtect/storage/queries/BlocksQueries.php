@@ -257,7 +257,7 @@ class BlocksQueries extends Query
                 $nbt = Utils::deserializeNBT($serializedNBT);
                 $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
                 if ($tile !== null) {
-                    if ($tile instanceof InventoryHolder /*&& !$this->configParser->getRollbackItems()*/) {
+                    if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                         $tile->getInventory()->clearAll();
                     }
                     $area->getWorld()->addTile($tile);

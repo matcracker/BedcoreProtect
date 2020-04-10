@@ -62,11 +62,14 @@ final class PatchManager
 
                 $versions = $this->getVersionsToPatch($rows[0]['version']);
                 if ($updated = (count($versions) > 0)) { //This means the database is not updated.
+                    $dbType = $this->plugin->getParsedConfig()->getDatabaseType();
+
                     /**
                      * @var string $version
-                     * @var int $patchNumbers
+                     * @var int[] $dbTypes
                      */
-                    foreach ($versions as $version => $patchNumbers) {
+                    foreach ($versions as $version => $dbTypes) {
+                        $patchNumbers = $dbTypes[$dbType];
                         for ($i = 1; $i <= $patchNumbers; $i++) {
                             yield $this->connector->executeGeneric(QueriesConst::VERSION_PATCH($version, $i), [], yield, yield Await::REJECT) => Await::ONCE;
                         }

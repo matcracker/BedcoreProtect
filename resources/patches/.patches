@@ -1,6 +1,11 @@
 ---
 # !!! DON'T EDIT THIS FILE !!!
-# FORMAT
-# [NEW_VERSION]: [PATCHES_NUMBER]
-0.6.0: 4
+# --- YAML Patch format ---
+# [VERSION]:
+#   sqlite: [NUMBER_OF_PATCHES] (For SQLite)
+#   mysql: [NUMBER_OF_PATCHES] (For MySQL)
+# -------------------------
+0.6.0:
+  sqlite: 16
+  mysql: 4
 ...
