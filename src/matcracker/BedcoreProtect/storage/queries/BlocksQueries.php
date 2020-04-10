@@ -79,12 +79,15 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
+        $oldTag = BlockUtils::getCompoundTag($oldBlock);
+        $newTag = BlockUtils::getCompoundTag($newBlock);
+
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->entitiesQueries->addEntityGenerator($entity);
             },
-            function () use ($entity, $oldBlock, $newBlock, $action, $position): void {
-                $this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
+            function () use ($entity, $oldBlock, $oldTag, $newBlock, $newTag, $action, $position): void {
+                $this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, $oldTag, $newBlock, $newTag, $action, $position);
             }
         );
     }

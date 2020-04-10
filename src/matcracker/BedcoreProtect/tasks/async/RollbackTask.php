@@ -99,19 +99,14 @@ final class RollbackTask extends AsyncTask
             foreach ($chunks as $chunk) {
                 $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
             }
+            /**@var Closure|null $onComplete */
+            $onComplete = $this->fetchLocal();
 
-            /** @var Main $plugin */
-            $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-            if ($plugin instanceof Main) {
-                /**@var Closure|null $onComplete */
-                $onComplete = $this->fetchLocal();
+            QueryManager::addReportMessage(microtime(true) - $this->startTime, 'rollback.blocks', [count($this->blocks)]);
+            //Set the execution time to 0 to avoid duplication of time in the same operation.
+            QueryManager::addReportMessage(0, 'rollback.modified-chunks', [count($chunks)]);
 
-                QueryManager::addReportMessage(microtime(true) - $this->startTime, 'rollback.blocks', [count($this->blocks)]);
-                //Set the execution time to 0 to avoid duplication of time in the same operation.
-                QueryManager::addReportMessage(0, 'rollback.modified-chunks', [count($chunks)]);
-
-                $onComplete();
-            }
+            $onComplete();
         }
     }
 
