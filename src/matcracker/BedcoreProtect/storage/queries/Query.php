@@ -47,24 +47,23 @@ abstract class Query
         $this->configParser = $configParser;
     }
 
-    public function rollback(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    public function rollback(Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
-        $this->rawRollback(true, $area, $commandParser, $onPreComplete, $isLastRollback);
+        $this->rawRollback(true, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
-    protected function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    /**
+     * @param bool $rollback
+     * @param Area $area
+     * @param CommandParser $commandParser
+     * @param int[] $logIds
+     * @param Closure|null $onPreComplete
+     * @param bool $isLastRollback
+     */
+    public function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $onPreComplete, $isLastRollback) : Generator {
-                /** @var int[][] $logRows */
-                $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
-
-                /** @var int[] $logIds */
-                $logIds = [];
-                foreach ($logRows as $logRow) {
-                    $logIds[] = (int)$logRow['log_id'];
-                }
-
+            function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback) : Generator {
                 yield $this->onRollback(
                     $rollback,
                     $area,
@@ -84,19 +83,9 @@ abstract class Query
                 );
             },
             static function (): void {
+                //NOOP
             }
         );
-    }
-
-    final protected function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
-    {
-        return $this->executeRawSelect($commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox()));
-    }
-
-    final protected function executeRawSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelectRaw($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 
     /**
@@ -122,9 +111,9 @@ abstract class Query
         ]);
     }
 
-    public function restore(Area $area, CommandParser $commandParser, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    public function restore(Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
-        $this->rawRollback(false, $area, $commandParser, $onPreComplete, $isLastRollback);
+        $this->rawRollback(false, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
     final protected function executeGeneric(string $query, array $args = []): Generator
@@ -133,7 +122,7 @@ abstract class Query
         return yield Await::ONCE;
     }
 
-    final protected function addRawLog(string $uuid, Position $position, Action $action): void
+    final protected function addRawLog(string $uuid, Position $position, Action $action): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
             'uuid' => strtolower($uuid),
@@ -142,7 +131,9 @@ abstract class Query
             'z' => $position->getFloorZ(),
             'world_name' => $position->getLevel()->getName(),
             'action' => $action->getType()
-        ]);
+        ], yield, yield Await::REJECT);
+
+        return yield Await::ONCE;
     }
 
     final protected function getLastLogId(): Generator

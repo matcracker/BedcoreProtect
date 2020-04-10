@@ -47,48 +47,91 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
-        $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-        $this->addRawEntity($serverUuid, '#console');
-        $this->addRawEntity('flow-uuid', '#flow');
-        $this->addRawEntity('water-uuid', '#water');
-        $this->addRawEntity('still water-uuid', '#water');
-        $this->addRawEntity('lava-uuid', '#lava');
-        $this->addRawEntity('fire block-uuid', '#fire');
-        $this->addRawEntity('leaves-uuid', '#decay');
+        Await::f2c(
+            function (): Generator {
+                $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
+                yield $this->addRawEntity($serverUuid, '#console');
+                yield $this->addRawEntity('flow-uuid', '#flow');
+                yield $this->addRawEntity('water-uuid', '#water');
+                yield $this->addRawEntity('still water-uuid', '#water');
+                yield $this->addRawEntity('lava-uuid', '#lava');
+                yield $this->addRawEntity('fire block-uuid', '#fire');
+                yield $this->addRawEntity('leaves-uuid', '#decay');
+
+                yield Await::ALL;
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
     }
 
-    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): void
+    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
             'name' => $name,
             'path' => $classPath,
             'address' => $address
-        ]);
+        ], yield, yield Await::REJECT);
+
+        return yield Await::ONCE;
     }
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
-        $this->addEntity($damager);
-        $this->addEntity($entity);
+        Await::f2c(
+            function () use ($damager, $entity, $action): Generator {
+                yield $this->addEntityGenerator($damager);
+                yield $this->addEntityGenerator($entity);
 
-        $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
-        $entity->saveNBT();
+                /** @var int $lastId */
+                $lastId = yield $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
 
-        if ($entity instanceof Living) {
-            $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
-        }
+                $entity->saveNBT();
 
-        $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
-            'uuid' => Utils::getEntityUniqueId($entity),
-            'id' => $entity->getId(),
-            'nbt' => Utils::serializeNBT($entity->namedtag)
-        ]);
+                if ($entity instanceof Living) {
+                    $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
+                }
+
+                yield $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+                    'log_id' => $lastId,
+                    'uuid' => Utils::getEntityUniqueId($entity),
+                    'id' => $entity->getId(),
+                    'nbt' => Utils::serializeNBT($entity->namedtag)
+                ], yield, yield Await::REJECT) => Await::ONCE;
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
+    }
+
+    /**
+     * @param Entity $entity
+     * @return Generator
+     * @internal
+     */
+    final public function addEntityGenerator(Entity $entity): Generator
+    {
+        return $this->addRawEntity(
+            Utils::getEntityUniqueId($entity),
+            Utils::getEntityName($entity),
+            get_class($entity),
+            ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1"
+        );
     }
 
     final public function addEntity(Entity $entity): void
     {
-        $this->addRawEntity(Utils::getEntityUniqueId($entity), Utils::getEntityName($entity), get_class($entity), ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1");
+        Await::f2c(
+            function () use ($entity): Generator {
+                yield $this->addEntityGenerator($entity);
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
     }
 
     protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator

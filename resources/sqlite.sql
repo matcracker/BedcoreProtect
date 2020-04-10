@@ -13,13 +13,13 @@ CREATE TABLE IF NOT EXISTS "entities"
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS "log_history"
 (
-    log_id     INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    who        VARCHAR(36)                       NOT NULL,
-    x          BIGINT                            NOT NULL,
-    y          TINYINT UNSIGNED                  NOT NULL,
-    z          BIGINT                            NOT NULL,
-    world_name VARCHAR(255)                      NOT NULL,
-    action     TINYINT UNSIGNED                  NOT NULL,
+    log_id     INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
+    who        VARCHAR(36)                              NOT NULL,
+    x          BIGINT                                   NOT NULL,
+    y          TINYINT UNSIGNED                         NOT NULL,
+    z          BIGINT                                   NOT NULL,
+    world_name VARCHAR(255)                             NOT NULL,
+    action     TINYINT UNSIGNED                         NOT NULL,
     time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS "log_history"
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
-    history_id UNSIGNED BIG INT    NOT NULL,
-    old_id     UNSIGNED INTEGER    NOT NULL,
-    old_meta   UNSIGNED TINYINT(2) NOT NULL,
+    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
+    old_id     UNSIGNED INTEGER        NOT NULL,
+    old_meta   UNSIGNED TINYINT(2)     NOT NULL,
     old_nbt    BLOB DEFAULT NULL,
-    new_id     UNSIGNED INTEGER    NOT NULL,
-    new_meta   UNSIGNED TINYINT(2) NOT NULL,
+    new_id     UNSIGNED INTEGER        NOT NULL,
+    new_meta   UNSIGNED TINYINT(2)     NOT NULL,
     new_nbt    BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS "entities_log"
 (
-    history_id      UNSIGNED BIG INT NOT NULL,
-    entityfrom_uuid VARCHAR(36)      NOT NULL,
-    entityfrom_id   UNSIGNED INTEGER NOT NULL,
+    history_id      UNSIGNED BIG INT UNIQUE NOT NULL,
+    entityfrom_uuid VARCHAR(36)             NOT NULL,
+    entityfrom_id   UNSIGNED INTEGER        NOT NULL,
     entityfrom_nbt  BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS "entities_log"
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
-    history_id UNSIGNED BIG INT NOT NULL,
-    slot       UNSIGNED TINYINT NOT NULL,
+    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
+    slot       UNSIGNED TINYINT        NOT NULL,
     old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
     old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
     old_nbt    BLOB                DEFAULT NULL,

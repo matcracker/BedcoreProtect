@@ -29,6 +29,7 @@ final class QueriesConst
     public const INIT_ENTITIES_LOG = 'bcp.table.entities_log';
     public const INIT_INVENTORIES_LOG = 'bcp.table.inventories_log';
     public const INIT_DATABASE_STATUS = 'bcp.table.db_status';
+    //The tables queries must be in this order due to relations between them.
     public const INIT_TABLES = [
         self::INIT_ENTITY, self::INIT_LOG_HISTORY,
         self::INIT_BLOCKS_LOG, self::INIT_ENTITIES_LOG,

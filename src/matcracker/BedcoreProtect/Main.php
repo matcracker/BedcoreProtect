@@ -148,8 +148,9 @@ final class Main extends PluginBase
 
             return;
         }
+        $queryManager = $this->database->getQueryManager();
         $version = $this->getVersion();
-        $this->database->getQueryManager()->init($version);
+        $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
             $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
@@ -162,8 +163,10 @@ final class Main extends PluginBase
             $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
         }
 
+        $queryManager->setupDefaultData();
+
         if ($this->configParser->isSQLite()) {
-            $pluginQueries = $this->database->getQueryManager()->getPluginQueries();
+            $pluginQueries = $queryManager->getPluginQueries();
             $pluginQueries->beginTransaction();
             $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($pluginQueries), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }

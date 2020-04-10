@@ -1,3 +1,4 @@
+---
 # Plugin language
 language: eng
 
@@ -117,3 +118,4 @@ player-interactions: true
 
 # Logs changes made via the plugin "BlockSniper" if it's in use on your server.
 blocksniper-hook: false
+...

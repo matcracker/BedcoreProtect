@@ -43,6 +43,7 @@ use function ctype_digit;
 use function explode;
 use function implode;
 use function strtolower;
+use function version_compare;
 
 final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
@@ -98,9 +99,14 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     function () use ($sender) : Generator {
                         $description = $this->plugin->getDescription();
                         $lang = $this->plugin->getLanguage();
+                        $pluginVersion = $this->plugin->getVersion();
                         $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
+                        if (version_compare($pluginVersion, $dbVersion) > 0) {
+                            //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)
+                            $dbVersion .= '-BC';
+                        }
                         $sender->sendMessage(TextFormat::colorize('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
-                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$this->plugin->getVersion()])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$pluginVersion])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
@@ -281,6 +287,9 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
         return null;
     }
 
+    /**
+     * @return Main
+     */
     public function getPlugin(): Plugin
     {
         return $this->plugin;

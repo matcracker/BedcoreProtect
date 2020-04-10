@@ -32,10 +32,10 @@ use SOFe\AwaitGenerator\Await;
 class Database
 {
     /** @var Main */
-    private $plugin;
+    protected $plugin;
     /** @var DataConnector|null */
     private $connector;
-    /** @var PatchManager */
+    /** @var PatchManager|null */
     private $patchManager;
     /** @var QueryManager|null */
     private $queryManager;
@@ -73,9 +73,8 @@ class Database
 
     final public function getQueryManager(): ?QueryManager
     {
-        if (!$this->isConnected() || !($this->queryManager instanceof QueryManager)) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
-            $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+        if (!$this->isConnected()) {
+            throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
         }
 
         return $this->queryManager;
@@ -86,8 +85,12 @@ class Database
         return ($this->connector instanceof DataConnector);
     }
 
-    final public function getPatchManager(): PatchManager
+    final public function getPatchManager(): ?PatchManager
     {
+        if (!$this->isConnected()) {
+            throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
+        }
+
         return $this->patchManager;
     }
 

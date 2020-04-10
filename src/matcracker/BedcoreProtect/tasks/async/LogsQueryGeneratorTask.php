@@ -17,17 +17,15 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableWorld;
-use pocketmine\scheduler\AsyncTask;
-use pocketmine\Server;
-use poggit\libasynql\DataConnector;
 use function mb_substr;
 
-final class LogsQueryGenTask extends AsyncTask
+final class LogsQueryGeneratorTask extends QueryGeneratorTask
 {
     /** @var string */
     private $uuid;
@@ -35,24 +33,20 @@ final class LogsQueryGenTask extends AsyncTask
     private $positions;
     /** @var Action */
     private $action;
-    /** @var AsyncTask */
-    private $nextTask;
 
     /**
-     * AsyncLogsQueryGenerator constructor.
-     * @param DataConnector $connector
+     * LogsQueryGen constructor.
      * @param string $uuid
      * @param SerializableWorld[] $positions
      * @param Action $action
-     * @param AsyncTask $nextTask
+     * @param callable|null $onComplete
      */
-    public function __construct(DataConnector $connector, string $uuid, array $positions, Action $action, AsyncTask $nextTask)
+    public function __construct(string $uuid, array $positions, Action $action, ?callable $onComplete)
     {
-        $this->storeLocal($connector);
+        parent::__construct(-1, $onComplete);
         $this->uuid = $uuid;
         $this->positions = $positions;
         $this->action = $action;
-        $this->nextTask = $nextTask;
     }
 
     public function onRun(): void
@@ -69,19 +63,5 @@ final class LogsQueryGenTask extends AsyncTask
 
         $query = mb_substr($query, 0, -1) . ';';
         $this->setResult($query);
-    }
-
-    public function onCompletion(Server $server): void
-    {
-        $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-        if ($plugin === null) {
-            return;
-        }
-
-        /** @var DataConnector $connector */
-        $connector = $this->fetchLocal();
-        $connector->executeInsertRaw((string)$this->getResult(), [], function (): void {
-            Server::getInstance()->getAsyncPool()->submitTask($this->nextTask);
-        });
     }
 }

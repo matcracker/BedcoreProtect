@@ -21,30 +21,23 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\tasks\async;
 
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
-use pocketmine\scheduler\AsyncTask;
-use pocketmine\Server;
-use poggit\libasynql\DataConnector;
 use function mb_substr;
 
-final class InventoriesQueryGenTask extends AsyncTask
+final class InventoriesQueryGeneratorTask extends QueryGeneratorTask
 {
-    /** @var int */
-    private $lastLogId;
-    /** @var array|SerializableItem[] */
+    /** @var SerializableItem[] */
     private $items;
 
     /**
-     * AsyncInventoriesQueryGenerator constructor.
-     * @param DataConnector $connector
-     * @param int $lastLogId
+     * InventoriesQueryGen constructor.
+     * @param int $firstInsertedId
      * @param SerializableItem[] $items
+     * @param callable|null $onComplete
      */
-    public function __construct(DataConnector $connector, int $lastLogId, array $items)
+    public function __construct(int $firstInsertedId, array $items, ?callable $onComplete)
     {
-        $this->storeLocal($connector);
-        $this->lastLogId = ($lastLogId + 1);
+        parent::__construct($firstInsertedId, $onComplete);
         $this->items = $items;
     }
 
@@ -54,23 +47,11 @@ final class InventoriesQueryGenTask extends AsyncTask
             'INSERT INTO inventories_log(history_id, slot, old_id, old_meta, old_nbt, old_amount) VALUES';
 
         foreach ($this->items as $slot => $item) {
-            $query .= "('{$this->lastLogId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$item->getSerializedNbt()}', '{$item->getCount()}'),";
-            $this->lastLogId++;
+            $query .= "('{$this->logId}', '{$slot}', '{$item->getId()}', '{$item->getMeta()}', '{$item->getSerializedNbt()}', '{$item->getCount()}'),";
+            $this->logId++;
         }
 
         $query = mb_substr($query, 0, -1) . ';';
         $this->setResult($query);
-    }
-
-    public function onCompletion(Server $server): void
-    {
-        $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-        if ($plugin === null) {
-            return;
-        }
-
-        /** @var DataConnector $connector */
-        $connector = $this->fetchLocal();
-        $connector->executeInsertRaw((string)$this->getResult());
     }
 }

@@ -59,46 +59,48 @@ final class BlockListener extends BedcoreListener
             if (Inspector::isInspector($player)) { //It checks the block clicked
                 $this->pluginQueries->requestBlockLog($player, $block);
                 $event->setCancelled();
-            } else {
-                $air = BlockFactory::get(BlockIds::AIR);
+                return;
+            }
 
-                if ($block instanceof Door) {
-                    $top = $block->getDamage() & 0x08;
-                    $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
-                    if ($other instanceof Door and $other->getId() === $block->getId()) {
-                        $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
-                    }
-                } elseif ($block instanceof Bed) {
-                    $other = $block->getOtherHalf();
-                    if ($other instanceof Bed) {
-                        $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
-                    }
-                } elseif ($block instanceof Chest) {
-                    $tileChest = BlockUtils::asTile($block);
-                    if ($tileChest instanceof TileChest) {
-                        $inventory = $tileChest->getRealInventory();
-                        if (count($inventory->getContents()) > 0) {
-                            $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
-                        }
-                    }
+            $air = BlockFactory::get(BlockIds::AIR);
+
+            if ($block instanceof Door) {
+                $top = $block->getDamage() & 0x08;
+                $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
+                if ($other instanceof Door and $other->getId() === $block->getId()) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
                 }
-
-                $this->blocksQueries->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
-
-                if ($this->plugin->getParsedConfig()->getNaturalBreak()) {
-                    /**
-                     * @var Block[] $sides
-                     * Getting all blocks around the broken block that are consequently destroyed.
-                     */
-                    $sides = array_filter($block->getAllSides(), static function (Block $side): bool {
-                        return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
-                    });
-
-                    if (count($sides) > 0) {
-                        $this->blocksQueries->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
+            } elseif ($block instanceof Bed) {
+                $other = $block->getOtherHalf();
+                if ($other instanceof Bed) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
+                }
+            } elseif ($block instanceof Chest) {
+                $tileChest = BlockUtils::asTile($block);
+                if ($tileChest instanceof TileChest) {
+                    $inventory = $tileChest->getRealInventory();
+                    if (count($inventory->getContents()) > 0) {
+                        $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                     }
                 }
             }
+
+            $this->blocksQueries->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
+
+            if ($this->plugin->getParsedConfig()->getNaturalBreak()) {
+                /**
+                 * @var Block[] $sides
+                 * Getting all blocks around the broken block that are consequently destroyed.
+                 */
+                $sides = array_filter($block->getAllSides(), static function (Block $side): bool {
+                    return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
+                });
+
+                if (count($sides) > 0) {
+                    $this->blocksQueries->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
+                }
+            }
+
         }
     }
 

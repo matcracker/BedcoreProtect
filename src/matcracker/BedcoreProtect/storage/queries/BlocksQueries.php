@@ -27,8 +27,8 @@ use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\tasks\async\BlocksQueryGenTask;
-use matcracker\BedcoreProtect\tasks\async\LogsQueryGenTask;
+use matcracker\BedcoreProtect\tasks\async\BlocksQueryGeneratorTask;
+use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
@@ -79,22 +79,39 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $this->entitiesQueries->addEntity($entity);
-        $this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
+        Await::f2c(
+            function () use ($entity): Generator {
+                yield $this->entitiesQueries->addEntityGenerator($entity);
+            },
+            function () use ($entity, $oldBlock, $newBlock, $action, $position): void {
+                $this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
+            }
+        );
     }
 
     final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null): void
     {
-        $pos = $position ?? $newBlock->asPosition();
-        $this->addRawLog($uuid, $pos, $action);
-        $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            'old_id' => $oldBlock->getId(),
-            'old_meta' => $oldBlock->getDamage(),
-            'old_nbt' => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
-            'new_id' => $newBlock->getId(),
-            'new_meta' => $newBlock->getDamage(),
-            'new_nbt' => $newTag !== null ? Utils::serializeNBT($newTag) : null
-        ]);
+        Await::f2c(
+            function () use ($uuid, $oldBlock, $oldTag, $newBlock, $newTag, $action, $position): Generator {
+                $pos = $position ?? $newBlock->asPosition();
+
+                /** @var int $lastId */
+                $lastId = yield $this->addRawLog($uuid, $pos, $action);
+
+                yield $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
+                    'log_id' => $lastId,
+                    'old_id' => $oldBlock->getId(),
+                    'old_meta' => $oldBlock->getDamage(),
+                    'old_nbt' => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
+                    'new_id' => $newBlock->getId(),
+                    'new_meta' => $newBlock->getDamage(),
+                    'new_nbt' => $newTag !== null ? Utils::serializeNBT($newTag) : null
+                ], yield, yield Await::REJECT) => Await::ONCE;
+            },
+            static function (): void {
+                //NOOP
+            }
+        );
     }
 
     /**
@@ -158,13 +175,30 @@ class BlocksQueries extends Query
             $newBlocks = SerializableBlock::toSerializableBlock($newBlocks);
         }
 
-        $this->entitiesQueries->addEntity($entity);
-
         Await::f2c(
             function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
-                $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
-                $blocksTask = new BlocksQueryGenTask($this->connector, $lastLogId, $oldBlocks, $newBlocks);
-                $logsTask = new LogsQueryGenTask($this->connector, Utils::getEntityUniqueId($entity), $oldBlocks, $action, $blocksTask);
+                yield $this->entitiesQueries->addEntityGenerator($entity);
+
+                $logsTask = new LogsQueryGeneratorTask(
+                    Utils::getEntityUniqueId($entity),
+                    $oldBlocks,
+                    $action,
+                    function (string $query) use ($oldBlocks, $newBlocks) : Generator {
+                        $firstInsertedId = yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+
+                        $blocksTask = new BlocksQueryGeneratorTask(
+                            $firstInsertedId,
+                            $oldBlocks,
+                            $newBlocks,
+                            function (string $query): Generator {
+                                yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+                            }
+                        );
+
+                        Server::getInstance()->getAsyncPool()->submitTask($blocksTask);
+                    }
+                );
+
                 Server::getInstance()->getAsyncPool()->submitTask($logsTask);
             },
             static function (): void {

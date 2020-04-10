@@ -1,3 +1,6 @@
 ---
 # !!! DON'T EDIT THIS FILE !!!
+# FORMAT
+# [NEW_VERSION]: [PATCHES_NUMBER]
+0.6.0: 4
 ...

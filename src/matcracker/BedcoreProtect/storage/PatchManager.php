@@ -21,9 +21,11 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage;
 
+use Generator;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
+use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 use function array_filter;
 use function count;
@@ -53,10 +55,11 @@ final class PatchManager
     public function patch(): bool
     {
         $updated = false;
-        $this->connector->executeSelect(
-            QueriesConst::GET_DATABASE_STATUS,
-            [],
-            function (array $rows) use (&$updated): void {
+        Await::f2c(
+            function () use (&$updated) : Generator {
+                /** @var array $rows */
+                $rows = yield $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT) => Await::ONCE;
+
                 $versions = $this->getVersionsToPatch($rows[0]['version']);
                 if ($updated = (count($versions) > 0)) { //This means the database is not updated.
                     /**
@@ -65,21 +68,26 @@ final class PatchManager
                      */
                     foreach ($versions as $version => $patchNumbers) {
                         for ($i = 1; $i <= $patchNumbers; $i++) {
-                            $this->connector->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
+                            yield $this->connector->executeGeneric(QueriesConst::VERSION_PATCH($version, $i), [], yield, yield Await::REJECT) => Await::ONCE;
                         }
                     }
+
+                    yield $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $this->plugin->getVersion()], yield, yield Await::REJECT) => Await::ONCE;
                 }
+            },
+            static function (): void {
+                //NOOP
             }
         );
+        //Pause the main thread until all the patches are applied.
         $this->connector->waitAll();
-        if ($updated) {
-            $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, [
-                'version' => $this->plugin->getVersion()
-            ]);
-        }
         return $updated;
     }
 
+    /**
+     * @param string $db_version
+     * @return string[]
+     */
     private function getVersionsToPatch(string $db_version): array
     {
         $patchContent = stream_get_contents(($res = $this->plugin->getResource('patches/.patches')));

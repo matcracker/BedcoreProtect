@@ -29,8 +29,8 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
 use matcracker\BedcoreProtect\serializable\SerializableWorld;
 use matcracker\BedcoreProtect\storage\QueryManager;
-use matcracker\BedcoreProtect\tasks\async\InventoriesQueryGenTask;
-use matcracker\BedcoreProtect\tasks\async\LogsQueryGenTask;
+use matcracker\BedcoreProtect\tasks\async\InventoriesQueryGeneratorTask;
+use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\Inventory;
@@ -59,52 +59,63 @@ class InventoriesQueries extends Query
 {
     public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction): void
     {
-        $inventory = $slotAction->getInventory();
-        if ($inventory instanceof ContainerInventory) {
-            /**
-             * Note for double chest holder
-             * It always logs the position of the left chest.
-             * @see DoubleChestInventory::getHolder()
-             */
-            $holder = $inventory->getHolder();
-            if ($holder === null) {
-                return;
-            }
+        Await::f2c(
+            function () use ($player, $slotAction): Generator {
+                $inventory = $slotAction->getInventory();
 
-            $slot = $slotAction->getSlot();
-            $sourceItem = $slotAction->getSourceItem();
-            $targetItem = $slotAction->getTargetItem();
+                if ($inventory instanceof ContainerInventory) {
+                    /**
+                     * Note for double chest holder
+                     * It always logs the position of the left chest.
+                     * @see DoubleChestInventory::getHolder()
+                     */
+                    $holder = $inventory->getHolder();
+                    if ($holder === null) {
+                        return;
+                    }
 
-            $position = Position::fromObject($holder, $player->getLevel());
+                    $slot = $slotAction->getSlot();
+                    $sourceItem = $slotAction->getSourceItem();
+                    $targetItem = $slotAction->getTargetItem();
 
-            if ($sourceItem->getId() === $targetItem->getId()) {
-                $sourceCount = $sourceItem->getCount();
-                $targetCount = $targetItem->getCount(); //Final count
-                if ($targetCount > $sourceCount) {
-                    $diffAmount = $targetCount - $sourceCount; //Effective number of blocks added/removed
-                    $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
-                    $targetItem->setCount($diffAmount);
-                } else {
-                    $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
-                    $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
-                    $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
+                    $playerUuid = Utils::getEntityUniqueId($player);
+                    $position = Position::fromObject($holder, $player->getLevel());
+
+                    if ($sourceItem->getId() === $targetItem->getId()) {
+                        $sourceCount = $sourceItem->getCount();
+                        $targetCount = $targetItem->getCount(); //Final count
+                        if ($targetCount > $sourceCount) {
+                            $diffAmount = $targetCount - $sourceCount; //Effective number of blocks added/removed
+                            $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                            $targetItem->setCount($diffAmount);
+                        } else {
+                            $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                            yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
+                            $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                        }
+                    } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
+                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                        yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
+                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                    } elseif (!$sourceItem->isNull()) {
+                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                    } else {
+                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                    }
+
+                    yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
                 }
-            } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
-                $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
-                $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
-                $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
-            } elseif (!$sourceItem->isNull()) {
-                $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::REMOVE());
-            } else {
-                $this->addRawLog(Utils::getEntityUniqueId($player), $position, Action::ADD());
+            },
+            static function (): void {
+                //NOOP
             }
-            $this->addInventorySlotLog($slot, $sourceItem, $targetItem);
-        }
+        );
     }
 
-    final protected function addInventorySlotLog(int $slot, Item $oldItem, Item $newItem): void
+    final protected function addInventorySlotLog(int $logId, int $slot, Item $oldItem, Item $newItem): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
+            'log_id' => $logId,
             'slot' => $slot,
             'old_id' => $oldItem->getId(),
             'old_meta' => $oldItem->getDamage(),
@@ -114,7 +125,9 @@ class InventoriesQueries extends Query
             'new_meta' => $newItem->getDamage(),
             'new_nbt' => Utils::serializeNBT($newItem->getNamedTag()),
             'new_amount' => $newItem->getCount()
-        ]);
+        ], yield, yield Await::REJECT);
+
+        return yield Await::ONCE;
     }
 
     public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
@@ -131,17 +144,26 @@ class InventoriesQueries extends Query
             $inventoryPosition->getLevel()->getName()
         ));
 
-        Await::f2c(
-            function () use ($contents, $player, $positions) : Generator {
-                $lastLogId = (int)(yield $this->getLastLogId())[0]['lastId'];
-                $inventoriesTask = new InventoriesQueryGenTask($this->connector, $lastLogId, $contents);
-                $logsTask = new LogsQueryGenTask($this->connector, Utils::getEntityUniqueId($player), $positions, Action::REMOVE(), $inventoriesTask);
-                Server::getInstance()->getAsyncPool()->submitTask($logsTask);
-            },
-            static function (): void {
-                //NOOP
+        $logsTask = new LogsQueryGeneratorTask(
+            Utils::getEntityUniqueId($player),
+            $positions,
+            Action::REMOVE(),
+            function (string $query) use ($contents): Generator {
+                $firstInsertedId = yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+
+                $inventoriesTask = new InventoriesQueryGeneratorTask(
+                    $firstInsertedId,
+                    $contents,
+                    function (string $query): Generator {
+                        yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+                    }
+                );
+
+                Server::getInstance()->getAsyncPool()->submitTask($inventoriesTask);
             }
         );
+
+        Server::getInstance()->getAsyncPool()->submitTask($logsTask);
     }
 
     protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
