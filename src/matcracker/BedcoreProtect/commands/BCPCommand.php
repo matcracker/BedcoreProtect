@@ -127,7 +127,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'lookup':
                 if (array_key_exists(1, $args)) {
-                    $parser = new CommandParser($lang, $sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
                         $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
                     } else {
@@ -162,7 +162,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'purge':
                 if (array_key_exists(1, $args)) {
-                    $parser = new CommandParser($lang, $sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.started')));
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.no-restart')));
@@ -226,7 +226,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'rollback':
                 if (array_key_exists(1, $args)) {
-                    $parser = new CommandParser($lang, $sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
 
@@ -242,7 +242,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'restore':
                 if (array_key_exists(1, $args)) {
-                    $parser = new CommandParser($lang, $sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
+                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.restore.started', [$sender->getLevel()->getName()])));
 
