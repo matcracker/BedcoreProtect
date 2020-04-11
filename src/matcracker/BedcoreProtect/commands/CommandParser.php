@@ -25,7 +25,6 @@ use ArrayOutOfBoundsException;
 use BadMethodCallException;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -65,6 +64,8 @@ final class CommandParser
     /** @var Action[][] */
     public static $ACTIONS;
 
+    /** @var BaseLang */
+    private $lang;
     /** @var string */
     private $senderName;
     /** @var ConfigParser */
@@ -76,8 +77,6 @@ final class CommandParser
     /** @var bool */
     private $parsed = false;
 
-    /** @var BaseLang */
-    private $lang;
     /** @var string */
     private $errorMessage;
 
@@ -94,14 +93,16 @@ final class CommandParser
 
     /**
      * CommandParser constructor.
+     * @param BaseLang $lang
      * @param string $senderName
      * @param ConfigParser $configParser
      * @param string[] $arguments
      * @param string[] $requiredParams
      * @param bool $shift It shift the first element of array used internally for command arguments. Default false.
      */
-    public function __construct(string $senderName, ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
+    public function __construct(BaseLang $lang, string $senderName, ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
     {
+        $this->lang = $lang;
         $this->senderName = $senderName;
         $this->configParser = $configParser;
         $this->arguments = $arguments;
@@ -113,8 +114,6 @@ final class CommandParser
         if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
             $this->data['radius'] = $dr;
         }
-
-        $this->lang = Main::getInstance()->getLanguage();
     }
 
     /**
