@@ -8,6 +8,6 @@ parameters:
     autoload_directories:
         - /source/src
         - /source/src/matcracker/BedcoreProtect/libs
-        - phar:///deps/BlockSniper.phar/src
+        - /deps
     excludes_analyse:
         - /source/src/matcracker/BedcoreProtect/libs
