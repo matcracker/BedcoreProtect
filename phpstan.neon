@@ -1,5 +1,6 @@
 parameters:
     level: 5
+    checkMissingIterableValueType: false
     paths:
         - /source/src
     autoload_files:
@@ -7,5 +8,5 @@ parameters:
     autoload_directories:
         - /source/src
         - /deps
-	excludes_analyse:
+    excludes_analyse:
         - source/src/matcracker/BedcoreProtect/libs
