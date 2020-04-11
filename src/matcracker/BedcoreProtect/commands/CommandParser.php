@@ -33,6 +33,7 @@ use pocketmine\block\Block;
 use pocketmine\block\BlockIds;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
+use pocketmine\lang\BaseLang;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
 use UnexpectedValueException;
@@ -74,6 +75,9 @@ final class CommandParser
     private $requiredParams;
     /** @var bool */
     private $parsed = false;
+
+    /** @var BaseLang */
+    private $lang;
     /** @var string */
     private $errorMessage;
 
@@ -109,6 +113,8 @@ final class CommandParser
         if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
             $this->data['radius'] = $dr;
         }
+
+        $this->lang = Main::getInstance()->getLanguage();
     }
 
     /**
@@ -132,10 +138,8 @@ final class CommandParser
 
     public function parse(): bool
     {
-        $lang = Main::getInstance()->getLanguage();
-
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) {
-            $this->errorMessage = $lang->translateString('parser.few-many-parameters', [self::MAX_PARAMETERS]);
+            $this->errorMessage = $this->lang->translateString('parser.few-many-parameters', [self::MAX_PARAMETERS]);
 
             return false;
         }
@@ -143,7 +147,7 @@ final class CommandParser
         foreach ($this->arguments as $argument) {
             $arrayData = explode("=", $argument);
             if (count($arrayData) !== 2) {
-                $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
+                $this->errorMessage = $this->lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
 
                 return false;
             }
@@ -167,12 +171,12 @@ final class CommandParser
                         if (mb_substr($user, 0, 1) === '#') {
                             $user = mb_substr($user, 1);
                             if (!in_array($user, Utils::getEntitySaveNames())) {
-                                $this->errorMessage = $lang->translateString('parser.no-entity', [$user]);
+                                $this->errorMessage = $this->lang->translateString('parser.no-entity', [$user]);
 
                                 return false;
                             }
                         } elseif (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
-                            $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
+                            $this->errorMessage = $this->lang->translateString('parser.no-player', [$user]);
 
                             return false;
                         }
@@ -183,7 +187,7 @@ final class CommandParser
                 case 't':
                     $time = Utils::parseTime($paramValues);
                     if ($time === null) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-amount-time');
+                        $this->errorMessage = $this->lang->translateString('parser.invalid-amount-time');
 
                         return false;
                     }
@@ -192,14 +196,14 @@ final class CommandParser
                 case 'radius':
                 case 'r':
                     if (!ctype_digit($paramValues)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-amount-radius');
+                        $this->errorMessage = $this->lang->translateString('parser.invalid-amount-radius');
 
                         return false;
                     }
                     $paramValues = (int)$paramValues;
                     $maxRadius = $this->configParser->getMaxRadius();
                     if ($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-radius');
+                        $this->errorMessage = $this->lang->translateString('parser.invalid-radius');
 
                         return false;
                     }
@@ -210,7 +214,7 @@ final class CommandParser
                 case 'a':
                     $paramValues = strtolower($paramValues);
                     if (!array_key_exists($paramValues, self::$ACTIONS)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-action');
+                        $this->errorMessage = $this->lang->translateString('parser.invalid-action');
 
                         return false;
                     }
@@ -245,13 +249,13 @@ final class CommandParser
                                 }
                             );
                     } catch (InvalidArgumentException $exception) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'blocks' ? 'include' : 'exclude'));
+                        $this->errorMessage = $this->lang->translateString('parser.invalid-block-' . ($index === 'blocks' ? 'include' : 'exclude'));
 
                         return false;
                     }
                     break;
                 default:
-                    $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
+                    $this->errorMessage = $this->lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
                     return false;
             }
         }
@@ -264,7 +268,7 @@ final class CommandParser
         }
 
         if (count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)) {
-            $this->errorMessage = $lang->translateString('parser.missing-parameters', [implode(',', $this->requiredParams)]);
+            $this->errorMessage = $this->lang->translateString('parser.missing-parameters', [implode(',', $this->requiredParams)]);
 
             return false;
         }
