@@ -86,6 +86,17 @@ final class RollbackTask extends AsyncTask
                 $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, $vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
             }
         }
+
+        /** @var Chunk $chunk */
+        foreach ($chunks as $chunk) {
+            /*
+             * TODO: Find a better method that works.
+             * When a chunk contains some blocks with light source (e.g. Fire) and is removing them (e.g. Fire placed -> rollback -> air),
+             * it should also remove the light around it. This feature doesn't remove the whole light but it's better than nothing.
+             */
+            $chunk->populateSkyLight();
+        }
+
         $this->setResult($chunks);
     }
 
@@ -98,6 +109,7 @@ final class RollbackTask extends AsyncTask
             foreach ($chunks as $chunk) {
                 $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
             }
+
             /**@var Closure|null $onComplete */
             $onComplete = $this->fetchLocal();
 
