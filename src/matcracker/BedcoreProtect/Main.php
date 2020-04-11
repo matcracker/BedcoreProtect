@@ -33,10 +33,6 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
-use pocketmine\plugin\PluginDescription;
-use pocketmine\plugin\PluginLoader;
-use pocketmine\Server;
-use RuntimeException;
 use function mkdir;
 use function version_compare;
 
@@ -47,7 +43,7 @@ final class Main extends PluginBase
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
     /** @var Main */
-    private static $instance;
+    private static $instance = null;
     /** @var BaseLang */
     private $baseLang;
     /** @var Database */
@@ -58,12 +54,6 @@ final class Main extends PluginBase
     private $oldConfigParser;
     /** @var bool */
     private $bsHooked = false;
-
-    public function __construct(PluginLoader $loader, Server $server, PluginDescription $description, string $dataFolder, string $file)
-    {
-        parent::__construct($loader, $server, $description, $dataFolder, $file);
-        self::$instance = $this;
-    }
 
     public static function getInstance(): Main
     {
@@ -113,6 +103,7 @@ final class Main extends PluginBase
 
     public function onLoad(): void
     {
+        self::$instance = $this;
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
