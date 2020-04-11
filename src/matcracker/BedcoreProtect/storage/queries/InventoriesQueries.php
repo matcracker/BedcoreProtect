@@ -149,12 +149,7 @@ class InventoriesQueries extends Query
             $positions,
             Action::REMOVE(),
             function (string $query) use ($contents): Generator {
-                $onInserted = yield;
-                $wrappedOnInserted = static function (int $insertId, int $affectedRows) use ($onInserted) : void {
-                    $onInserted([$insertId, $affectedRows]);
-                };
-
-                [$firstInsertedId, $affectedRows] = yield $this->connector->executeInsertRaw($query, [], $wrappedOnInserted, yield Await::REJECT) => Await::ONCE;
+                [$firstInsertedId, $affectedRows] = yield $this->executeInsertRaw($query, [], true);
 
                 if ($this->configParser->isSQLite()) {
                     $firstInsertedId -= $affectedRows - 1;

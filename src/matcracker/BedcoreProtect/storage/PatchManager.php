@@ -90,18 +90,6 @@ final class PatchManager
         return $updated;
     }
 
-    private function executeChange(string $query, array $args = []): Generator
-    {
-        $this->connector->executeChange($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    private function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
     private function executeSelect(string $query, array $args = []): Generator
     {
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
@@ -125,5 +113,17 @@ final class PatchManager
         return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
             return version_compare($version, $db_version) > 0;
         }, ARRAY_FILTER_USE_KEY);
+    }
+
+    private function executeGeneric(string $query, array $args = []): Generator
+    {
+        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    private function executeChange(string $query, array $args = []): Generator
+    {
+        $this->connector->executeChange($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 }
