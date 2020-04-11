@@ -94,7 +94,7 @@ abstract class Query
      * @param CommandParser $commandParser
      * @param int[] $logIds
      * @param float $startTime
-     * @param Closure|null $onComplete
+     * @param Closure $onComplete
      * @return Generator
      */
     abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator;
