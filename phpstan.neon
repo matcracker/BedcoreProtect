@@ -7,6 +7,10 @@ parameters:
         - phar:///pocketmine/PocketMine-MP.phar/vendor/autoload.php
     autoload_directories:
         - /source/src
-        - /deps
+        - phar:///source/vendor/libasynql.phar/src/
+        - phar:///source/vendor/UpdateNotifier.phar/src/
+        - phar:///source/vendor/FormLib.phar/src/
+        - phar:///source/vendor/await-generator.phar/src/
+        - phar:///source/vendor/BlockSniper.phar/src/
     excludes_analyse:
-        - /source/src/matcracker/BedcoreProtect/libs
+        - source/vendor
