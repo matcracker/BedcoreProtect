@@ -33,6 +33,8 @@ use pocketmine\Player;
 use SOFe\AwaitGenerator\Await;
 
 /**
+ * It contains all the queries methods related to the plugin and logs.
+ *
  * Class PluginQueries
  * @package matcracker\BedcoreProtect\storage\queries
  */
