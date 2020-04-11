@@ -9,4 +9,4 @@ parameters:
         - /source/src
         - /deps
     excludes_analyse:
-        - source/src/matcracker/BedcoreProtect/libs
+        - /source/src/matcracker/BedcoreProtect/libs
