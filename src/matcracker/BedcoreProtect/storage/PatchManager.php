@@ -58,7 +58,7 @@ final class PatchManager
         Await::f2c(
             function () use (&$updated) : Generator {
                 /** @var array $rows */
-                $rows = yield $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT) => Await::ONCE;
+                $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
 
                 $versions = $this->getVersionsToPatch($rows[0]['version']);
                 if ($updated = (count($versions) > 0)) { //This means the database is not updated.
@@ -74,11 +74,11 @@ final class PatchManager
                     foreach ($versions as $version => $dbTypes) {
                         $patchNumbers = $dbTypes[$dbType];
                         for ($i = 1; $i <= $patchNumbers; $i++) {
-                            yield $this->connector->executeGeneric(QueriesConst::VERSION_PATCH($version, $i), [], yield, yield Await::REJECT) => Await::ONCE;
+                            yield $this->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
                         }
                     }
 
-                    yield $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $pluginVersion], yield, yield Await::REJECT) => Await::ONCE;
+                    yield $this->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $pluginVersion]);
                 }
             },
             static function (): void {
@@ -88,6 +88,24 @@ final class PatchManager
         //Pause the main thread until all the patches are applied.
         $this->connector->waitAll();
         return $updated;
+    }
+
+    private function executeChange(string $query, array $args = []): Generator
+    {
+        $this->connector->executeChange($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    private function executeGeneric(string $query, array $args = []): Generator
+    {
+        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    private function executeSelect(string $query, array $args = []): Generator
+    {
+        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 
     /**

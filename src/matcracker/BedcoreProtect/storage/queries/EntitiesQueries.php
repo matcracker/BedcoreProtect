@@ -94,12 +94,12 @@ class EntitiesQueries extends Query
                     $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
                 }
 
-                yield $this->connector->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+                yield $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
                     'log_id' => $lastId,
                     'uuid' => Utils::getEntityUniqueId($entity),
                     'id' => $entity->getId(),
                     'nbt' => Utils::serializeNBT($entity->namedtag)
-                ], yield, yield Await::REJECT) => Await::ONCE;
+                ]);
             },
             static function (): void {
                 //NOOP

@@ -122,6 +122,18 @@ abstract class Query
         return yield Await::ONCE;
     }
 
+    final protected function executeInsertRaw(string $query, array $args = []): Generator
+    {
+        $this->connector->executeInsertRaw($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    final protected function executeInsert(string $query, array $args = []): Generator
+    {
+        $this->connector->executeInsertRaw($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
     final protected function addRawLog(string $uuid, Position $position, Action $action): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [

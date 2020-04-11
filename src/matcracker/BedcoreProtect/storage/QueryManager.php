@@ -89,10 +89,10 @@ final class QueryManager
         Await::f2c(
             function () use ($pluginVersion): Generator {
                 foreach (QueriesConst::INIT_TABLES as $queryTable) {
-                    yield $this->connector->executeGeneric($queryTable, [], yield, yield Await::REJECT) => Await::ONCE;
+                    yield $this->executeGeneric($queryTable);
                 }
 
-                yield $this->connector->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ['version' => $pluginVersion], yield, yield Await::REJECT) => Await::ONCE;
+                yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ['version' => $pluginVersion]);
             },
             static function (): void {
                 //NOOP
@@ -100,6 +100,18 @@ final class QueryManager
         );
 
         $this->connector->waitAll();
+    }
+
+    private function executeGeneric(string $query, array $args = []): Generator
+    {
+        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    private function executeInsert(string $query, array $args = []): Generator
+    {
+        $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
     }
 
     public function setupDefaultData(): void

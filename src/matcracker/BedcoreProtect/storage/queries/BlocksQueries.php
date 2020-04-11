@@ -101,7 +101,7 @@ class BlocksQueries extends Query
                 /** @var int $lastId */
                 $lastId = yield $this->addRawLog($uuid, $pos, $action);
 
-                yield $this->connector->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
+                yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
                     'log_id' => $lastId,
                     'old_id' => $oldBlock->getId(),
                     'old_meta' => $oldBlock->getDamage(),
@@ -109,7 +109,7 @@ class BlocksQueries extends Query
                     'new_id' => $newBlock->getId(),
                     'new_meta' => $newBlock->getDamage(),
                     'new_nbt' => $newTag !== null ? Utils::serializeNBT($newTag) : null
-                ], yield, yield Await::REJECT) => Await::ONCE;
+                ]);
             },
             static function (): void {
                 //NOOP
@@ -203,7 +203,7 @@ class BlocksQueries extends Query
                             $oldBlocks,
                             $newBlocks,
                             function (string $query): Generator {
-                                yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+                                yield $this->executeInsertRaw($query);
                             }
                         );
 

@@ -164,7 +164,7 @@ class InventoriesQueries extends Query
                     $firstInsertedId,
                     $contents,
                     function (string $query): Generator {
-                        yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+                        yield $this->executeInsertRaw($query);
                     }
                 );
 
