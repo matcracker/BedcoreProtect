@@ -43,7 +43,7 @@ final class Main extends PluginBase
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
     /** @var Main */
-    private static $instance = null;
+    private static $instance;
     /** @var BaseLang */
     private $baseLang;
     /** @var Database */
@@ -201,7 +201,6 @@ final class Main extends PluginBase
         $this->database->disconnect();
 
         Inspector::clearCache();
-        self::$instance = null;
         $this->bsHooked = false;
         unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
     }
