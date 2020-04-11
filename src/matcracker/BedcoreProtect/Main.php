@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect;
 
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
@@ -136,17 +137,17 @@ final class Main extends PluginBase
         //Database connection
         if (!$this->database->connect()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
-
             return;
         }
+
         $queryManager = $this->database->getQueryManager();
+
         $version = $this->getVersion();
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
             $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
             $this->getServer()->getPluginManager()->disablePlugin($this);
-
             return;
         }
 
@@ -161,6 +162,8 @@ final class Main extends PluginBase
             $pluginQueries->beginTransaction();
             $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($pluginQueries), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
+
+        CommandParser::initActions();
 
         $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
 

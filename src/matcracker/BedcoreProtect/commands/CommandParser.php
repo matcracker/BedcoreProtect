@@ -55,8 +55,6 @@ use function mb_substr;
 use function strtolower;
 use function time;
 
-CommandParser::initActions();
-
 final class CommandParser
 {
     public const MAX_PARAMETERS = 6;
@@ -119,7 +117,7 @@ final class CommandParser
     /**
      * @internal
      */
-    public static function initActions(): void
+    final public static function initActions(): void
     {
         if (self::$ACTIONS === null) {
             self::$ACTIONS = [
