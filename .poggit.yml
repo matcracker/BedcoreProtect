@@ -1,6 +1,7 @@
 ---
 branches:
   - stable
+  - experimental
   - master
 pulls: false
 projects:
