@@ -1,0 +1,12 @@
+parameters:
+    level: 5
+    checkMissingIterableValueType: false
+    paths:
+        - /source/src
+    autoload_files:
+        - phar:///pocketmine/PocketMine-MP.phar/vendor/autoload.php
+    autoload_directories:
+        - /source/src
+        - src/matcracker/BedcoreProtect/libs
+    excludes_analyse:
+        - src/matcracker/BedcoreProtect/libs
