@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;

@@ -62,7 +62,10 @@ final class PatchManager
 
                 $versions = $this->getVersionsToPatch($rows[0]['version']);
                 if ($updated = (count($versions) > 0)) { //This means the database is not updated.
+                    $pluginVersion = $this->plugin->getVersion();
                     $dbType = $this->plugin->getParsedConfig()->getDatabaseType();
+
+                    $this->plugin->getLogger()->info($this->plugin->getLanguage()->translateString("database.version.upgrading", [$pluginVersion]));
 
                     /**
                      * @var string $version
@@ -75,7 +78,7 @@ final class PatchManager
                         }
                     }
 
-                    yield $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $this->plugin->getVersion()], yield, yield Await::REJECT) => Await::ONCE;
+                    yield $this->connector->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $pluginVersion], yield, yield Await::REJECT) => Await::ONCE;
                 }
             },
             static function (): void {

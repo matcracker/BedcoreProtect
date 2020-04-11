@@ -72,7 +72,7 @@ final class QueryManager
 
     public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
     {
-        $lang = Main::getInstance()->getLanguage();
+        $lang = Main::getLanguage();
 
         self::$additionalReports[] = [
             'message' => TextFormat::colorize('&f- ' . $lang->translateString($reportMessage, $params)),
@@ -160,7 +160,7 @@ final class QueryManager
     {
         if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
             $date = Utils::timeAgo(time() - $commandParser->getTime());
-            $lang = Main::getInstance()->getLanguage();
+            $lang = Main::getLanguage();
 
             $sender->sendMessage(TextFormat::colorize('&f--- &3' . Main::PLUGIN_NAME . '&7 ' . $lang->translateString('rollback.report') . ' &f---'));
             $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));

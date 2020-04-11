@@ -187,7 +187,16 @@ class BlocksQueries extends Query
                     $oldBlocks,
                     $action,
                     function (string $query) use ($oldBlocks, $newBlocks) : Generator {
-                        $firstInsertedId = yield $this->connector->executeInsertRaw($query, [], yield, yield Await::REJECT) => Await::ONCE;
+                        $onInserted = yield;
+                        $wrappedOnInserted = static function (int $insertId, int $affectedRows) use ($onInserted) : void {
+                            $onInserted([$insertId, $affectedRows]);
+                        };
+
+                        [$firstInsertedId, $affectedRows] = yield $this->connector->executeInsertRaw($query, [], $wrappedOnInserted, yield Await::REJECT) => Await::ONCE;
+
+                        if ($this->configParser->isSQLite()) {
+                            $firstInsertedId -= $affectedRows - 1;
+                        }
 
                         $blocksTask = new BlocksQueryGeneratorTask(
                             $firstInsertedId,

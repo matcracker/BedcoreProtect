@@ -122,7 +122,7 @@ final class Inspector
      */
     public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
-        $lang = Main::getInstance()->getLanguage();
+        $lang = Main::getLanguage();
         if (count($logs) === 0) {
             $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.no-data')));
 

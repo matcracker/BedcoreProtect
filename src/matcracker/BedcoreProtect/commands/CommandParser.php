@@ -132,7 +132,7 @@ final class CommandParser
 
     public function parse(): bool
     {
-        $lang = Main::getInstance()->getLanguage();
+        $lang = Main::getLanguage();
 
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) {
             $this->errorMessage = $lang->translateString('parser.few-many-parameters', [self::MAX_PARAMETERS]);

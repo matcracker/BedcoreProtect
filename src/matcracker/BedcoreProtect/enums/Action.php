@@ -73,7 +73,7 @@ final class Action
 
     protected static function setup(): array
     {
-        $lang = Main::getInstance()->getLanguage();
+        $lang = Main::getLanguage();
         return [
             //Blocks actions
             new self('place', 0, $lang->translateString('action.place')),

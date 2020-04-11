@@ -45,14 +45,14 @@ final class Main extends PluginBase
 
     /** @var Main|null */
     private static $instance;
+    /** @var BaseLang */
+    private static $baseLang;
     /** @var Database */
     private $database;
     /** @var ConfigParser */
     private $configParser;
     /** @var ConfigParser */
     private $oldConfigParser;
-    /** @var BaseLang */
-    private $baseLang;
     /** @var bool */
     private $bsHooked = false;
 
@@ -65,13 +65,9 @@ final class Main extends PluginBase
         return self::$instance;
     }
 
-    public function getLanguage(): BaseLang
+    public static function getLanguage(): BaseLang
     {
-        if ($this->baseLang === null) {
-            throw new RuntimeException("Invalid language state detected.");
-        }
-
-        return $this->baseLang;
+        return self::$baseLang;
     }
 
     public function getDatabase(): Database
@@ -103,7 +99,7 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
         if ($this->configParser->isValidConfig()) {
-            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+            self::$baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
             return true;
         }
 
@@ -120,13 +116,13 @@ final class Main extends PluginBase
             return;
         }
 
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+        self::$baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
         if ($this->configParser->getBlockSniperHook()) {
             $bsPlugin = $this->getServer()->getPluginManager()->getPlugin('BlockSniper');
             $this->bsHooked = $bsPlugin !== null;
             if (!$this->bsHooked) {
-                $this->getLogger()->warning($this->baseLang->translateString('blocksniper.hook.no-hook'));
+                $this->getLogger()->warning(self::$baseLang->translateString('blocksniper.hook.no-hook'));
             }
         }
 
@@ -153,14 +149,14 @@ final class Main extends PluginBase
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
+            $this->getLogger()->warning(self::$baseLang->translateString('database.version.higher'));
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
         }
 
         if ($this->database->getPatchManager()->patch()) {
-            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
+            $this->getLogger()->info(self::$baseLang->translateString('database.version.updated', [$dbVersion, $version]));
         }
 
         $queryManager->setupDefaultData();
@@ -211,7 +207,8 @@ final class Main extends PluginBase
 
         Inspector::clearCache();
         self::$instance = null;
+        self::$baseLang = null;
         $this->bsHooked = false;
-        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
+        unset($this->database, $this->configParser, $this->oldConfigParser);
     }
 }
