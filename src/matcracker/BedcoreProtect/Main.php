@@ -33,6 +33,9 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use pocketmine\plugin\PluginDescription;
+use pocketmine\plugin\PluginLoader;
+use pocketmine\Server;
 use RuntimeException;
 use function mkdir;
 use function version_compare;
@@ -43,10 +46,10 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /** @var Main|null */
+    /** @var Main */
     private static $instance;
     /** @var BaseLang */
-    private static $baseLang;
+    private $baseLang;
     /** @var Database */
     private $database;
     /** @var ConfigParser */
@@ -56,18 +59,20 @@ final class Main extends PluginBase
     /** @var bool */
     private $bsHooked = false;
 
+    public function __construct(PluginLoader $loader, Server $server, PluginDescription $description, string $dataFolder, string $file)
+    {
+        parent::__construct($loader, $server, $description, $dataFolder, $file);
+        self::$instance = $this;
+    }
+
     public static function getInstance(): Main
     {
-        if (self::$instance === null) {
-            throw new RuntimeException("Invalid plugin instance detected.");
-        }
-
         return self::$instance;
     }
 
-    public static function getLanguage(): BaseLang
+    public function getLanguage(): BaseLang
     {
-        return self::$baseLang;
+        return $this->baseLang;
     }
 
     public function getDatabase(): Database
@@ -99,7 +104,7 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
         if ($this->configParser->isValidConfig()) {
-            self::$baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
             return true;
         }
 
@@ -108,7 +113,6 @@ final class Main extends PluginBase
 
     public function onLoad(): void
     {
-        self::$instance = $this;
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -116,13 +120,13 @@ final class Main extends PluginBase
             return;
         }
 
-        self::$baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
         if ($this->configParser->getBlockSniperHook()) {
             $bsPlugin = $this->getServer()->getPluginManager()->getPlugin('BlockSniper');
             $this->bsHooked = $bsPlugin !== null;
             if (!$this->bsHooked) {
-                $this->getLogger()->warning(self::$baseLang->translateString('blocksniper.hook.no-hook'));
+                $this->getLogger()->warning($this->baseLang->translateString('blocksniper.hook.no-hook'));
             }
         }
 
@@ -149,14 +153,14 @@ final class Main extends PluginBase
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning(self::$baseLang->translateString('database.version.higher'));
+            $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
         }
 
         if ($this->database->getPatchManager()->patch()) {
-            $this->getLogger()->info(self::$baseLang->translateString('database.version.updated', [$dbVersion, $version]));
+            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
         }
 
         $queryManager->setupDefaultData();
@@ -207,8 +211,7 @@ final class Main extends PluginBase
 
         Inspector::clearCache();
         self::$instance = null;
-        self::$baseLang = null;
         $this->bsHooked = false;
-        unset($this->database, $this->configParser, $this->oldConfigParser);
+        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
     }
 }

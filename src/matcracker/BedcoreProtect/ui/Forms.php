@@ -46,7 +46,7 @@ final class Forms
 
     public function getMainMenu(): BaseForm
     {
-        $lang = Main::getLanguage();
+        $lang = Main::getInstance()->getLanguage();
         return (new Form(
             function (Player $player, $data) {
                 switch ((int)$data) { //Clicked button
@@ -90,7 +90,7 @@ final class Forms
 
     private function getNearMenu(): BaseForm
     {
-        $lang = Main::getLanguage();
+        $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
             function (Player $player, $data) {
                 if (is_array($data)) {
@@ -106,7 +106,7 @@ final class Forms
 
     private function getInputMenu(string $type): BaseForm
     {
-        $lang = Main::getLanguage();
+        $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
             $this->parseForm($type),
             function (Player $player) {
@@ -144,7 +144,7 @@ final class Forms
 
     private function getPurgeMenu(): BaseForm
     {
-        $lang = Main::getLanguage();
+        $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
             function (Player $player, $data) {
                 if (is_array($data)) {
