@@ -29,6 +29,7 @@ use pocketmine\entity\Living;
 use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
+use pocketmine\event\entity\EntityDamageByBlockEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\entity\EntityDespawnEvent;
@@ -112,12 +113,14 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getEntityKills()) {
-            $ev = $entity->getLastDamageCause();
-            if ($ev instanceof EntityDamageByEntityEvent) {
-                $damager = $ev->getDamager();
+            $damageEvent = $entity->getLastDamageCause();
+            if ($damageEvent instanceof EntityDamageByEntityEvent) {
+                $damager = $damageEvent->getDamager();
                 if ($damager !== null) {
                     $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::KILL());
                 }
+            } elseif ($damageEvent instanceof EntityDamageByBlockEvent) {
+                $this->entitiesQueries->addEntityLogByBlock($entity, $damageEvent->getDamager(), Action::KILL());
             }
         }
     }

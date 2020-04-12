@@ -28,6 +28,7 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\block\Block;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
 use pocketmine\Player;
@@ -87,19 +88,7 @@ class EntitiesQueries extends Query
 
                 /** @var int $lastId */
                 $lastId = yield $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
-
-                $entity->saveNBT();
-
-                if ($entity instanceof Living) {
-                    $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
-                }
-
-                yield $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
-                    'log_id' => $lastId,
-                    'uuid' => Utils::getEntityUniqueId($entity),
-                    'id' => $entity->getId(),
-                    'nbt' => Utils::serializeNBT($entity->namedtag)
-                ]);
+                yield $this->addEntityLog($lastId, $entity);
             },
             static function (): void {
                 //NOOP
@@ -119,6 +108,40 @@ class EntitiesQueries extends Query
             Utils::getEntityName($entity),
             get_class($entity),
             ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1"
+        );
+    }
+
+    final protected function addEntityLog(int $logId, Entity $entity): Generator
+    {
+        $entity->saveNBT();
+
+        if ($entity instanceof Living) {
+            $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
+        }
+
+        return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+            'log_id' => $logId,
+            'uuid' => Utils::getEntityUniqueId($entity),
+            'id' => $entity->getId(),
+            'nbt' => Utils::serializeNBT($entity->namedtag)
+        ]);
+    }
+
+    public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
+    {
+        Await::f2c(
+            function () use ($entity, $block, $action): Generator {
+                yield $this->addEntityGenerator($entity);
+
+                $name = $block->getName();
+                /** @var int $lastId */
+                $lastId = yield $this->addRawLog("{$name}-uuid", $block->asPosition(), $action);
+
+                yield $this->addEntityLog($lastId, $entity);
+            },
+            static function (): void {
+                //NOOP
+            }
         );
     }
 
