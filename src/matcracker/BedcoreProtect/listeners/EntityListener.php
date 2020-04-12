@@ -94,6 +94,11 @@ final class EntityListener extends BedcoreListener
     public function trackEntityDespawn(EntityDespawnEvent $event): void
     {
         $entity = $event->getEntity();
+
+        if ($entity instanceof Human) {
+            return;
+        }
+
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
             if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockBreak()) {
                 $player = $entity->getLevel()->getNearestEntity($entity, 6, Player::class);
@@ -112,6 +117,11 @@ final class EntityListener extends BedcoreListener
     public function trackEntityDeath(EntityDeathEvent $event): void
     {
         $entity = $event->getEntity();
+
+        if ($entity instanceof Human) {
+            return;
+        }
+
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getEntityKills()) {
             $damageEvent = $entity->getLastDamageCause();
             if ($damageEvent instanceof EntityDamageByEntityEvent) {
