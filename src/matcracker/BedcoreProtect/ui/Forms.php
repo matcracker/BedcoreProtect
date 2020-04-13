@@ -48,7 +48,7 @@ final class Forms
     {
         $lang = Main::getInstance()->getLanguage();
         return (new Form(
-            function (Player $player, $data) {
+            function (Player $player, $data): void {
                 switch ((int)$data) { //Clicked button
                     case 0: //Inspector
                         $player->chat('/bcp inspect');
@@ -92,12 +92,12 @@ final class Forms
     {
         $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
-            function (Player $player, $data) {
+            static function (Player $player, $data): void {
                 if (is_array($data)) {
                     $player->chat("/bcp near {$data[0]}");
                 }
             },
-            function (Player $player) {
+            function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
         ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
@@ -109,7 +109,7 @@ final class Forms
         $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
             $this->parseForm($type),
-            function (Player $player) {
+            function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
         ))->addLabel($lang->translateString('form.input-menu.required-fields'))
@@ -125,7 +125,7 @@ final class Forms
 
     private function parseForm(string $subCmd): Closure
     {
-        return function (Player $player, $data) use ($subCmd) {
+        return static function (Player $player, $data) use ($subCmd) : void {
             if (is_array($data)) {
                 $time = "t={$data[1]}";
                 $radius = $data[2] === 0 ? '' : "r={$data[2]}";
@@ -146,12 +146,12 @@ final class Forms
     {
         $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
-            function (Player $player, $data) {
+            static function (Player $player, $data): void {
                 if (is_array($data)) {
                     $player->chat("/bcp purge t={$data[0]}");
                 }
             },
-            function (Player $player) {
+            function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
         ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
