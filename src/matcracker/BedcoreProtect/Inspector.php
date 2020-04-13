@@ -28,13 +28,11 @@ use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
-use UnexpectedValueException;
 use function array_chunk;
 use function array_key_exists;
 use function count;
 use function is_int;
 use function strtotime;
-use function var_export;
 
 final class Inspector
 {
@@ -174,7 +172,8 @@ final class Inspector
             } elseif (isset($log['entity_to'])) {
                 $to = "#{$log['entity_to']}";
             } else {
-                throw new UnexpectedValueException('Unexpected log parsed. Is your database up to date?' . var_export($log, true));
+                $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString('inspector.corrupted-data')));
+                return;
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
