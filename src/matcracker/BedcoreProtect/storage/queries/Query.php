@@ -125,22 +125,12 @@ abstract class Query
     /**
      * @param string $query
      * @param array $args
-     * @param bool $bothParams if true, returns both parameters of callable 'onInserted(int $insertId, int $affectedRows)' instead of only $insertId.
+     * @param bool $multiParams if true, returns all parameters of callable 'onInserted(int $insertId, int $affectedRows)' instead of only $insertId.
      * @return Generator
      */
-    final protected function executeInsertRaw(string $query, array $args = [], bool $bothParams = false): Generator
+    final protected function executeInsertRaw(string $query, array $args = [], bool $multiParams = false): Generator
     {
-        if ($bothParams) {
-            $onInserted = yield;
-            $wrappedOnInserted = static function (int $insertId, int $affectedRows) use ($onInserted) : void {
-                $onInserted([$insertId, $affectedRows]);
-            };
-
-            $this->connector->executeInsertRaw($query, $args, $wrappedOnInserted, yield Await::REJECT);
-        } else {
-            $this->connector->executeInsertRaw($query, $args, yield, yield Await::REJECT);
-        }
-
+        $this->connector->executeInsertRaw($query, $args, yield ($multiParams ? Await::RESOLVE_MULTI : Await::RESOLVE), yield Await::REJECT);
         return yield Await::ONCE;
     }
 
