@@ -154,11 +154,6 @@ abstract class Query
         return yield Await::ONCE;
     }
 
-    final protected function getLastLogId(): Generator
-    {
-        return $this->executeSelect(QueriesConst::GET_LAST_LOG_ID);
-    }
-
     final protected function executeSelect(string $query, array $args = []): Generator
     {
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);

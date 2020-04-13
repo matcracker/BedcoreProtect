@@ -180,10 +180,6 @@ FROM status
 LIMIT 1;
 -- #        }
 -- #        {log
--- #            {last_id
-SELECT MAX(log_id) AS lastId
-FROM "log_history";
--- #            }
 -- #            {old_blocks
 -- #                :log_ids list:int
 SELECT history_id,

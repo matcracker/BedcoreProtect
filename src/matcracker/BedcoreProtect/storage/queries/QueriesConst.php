@@ -52,7 +52,6 @@ final class QueriesConst
     public const GET_ROLLBACK_OLD_INVENTORIES = 'bcp.get.log.old_inventories';
     public const GET_ROLLBACK_NEW_INVENTORIES = 'bcp.get.log.new_inventories';
     public const GET_ROLLBACK_ENTITIES = 'bcp.get.log.entities';
-    public const GET_LAST_LOG_ID = 'bcp.get.log.last_id';
     public const GET_BLOCK_LOG = 'bcp.get.log.block';
     public const GET_ENTITY_LOG = 'bcp.get.log.entity';
     public const GET_NEAR_LOG = 'bcp.get.log.near';
