@@ -3,9 +3,6 @@ name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
 version: 0.6.0
 api: [3.4.0]
-mcpe-protcol:
-  - 354
-  - 361
 
 softdepend: BlockSniper
 load: POSTWORLD
