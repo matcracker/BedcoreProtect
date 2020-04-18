@@ -50,7 +50,6 @@ use function implode;
 use function in_array;
 use function intval;
 use function is_array;
-use function is_string;
 use function mb_substr;
 use function strtolower;
 use function time;
@@ -143,15 +142,11 @@ final class CommandParser
             $arrayData = explode("=", $argument);
             if (count($arrayData) !== 2) {
                 $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
-
                 return false;
             }
+
             $param = strtolower($arrayData[0]);
-            $paramValues = $arrayData[1];
-
-            if (!is_string($paramValues)) {
-                return false;
-            }
+            $paramValues = (string)$arrayData[1];
 
             switch ($param) {
                 case 'users':
