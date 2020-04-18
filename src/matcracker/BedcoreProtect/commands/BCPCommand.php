@@ -254,6 +254,12 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 }
 
                 return true;
+            case 'undo':
+                if (!$this->queryManager->undoRollback($sender)) {
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.undo.not-found')));
+                }
+
+                return true;
             default:
                 $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
                 return false;

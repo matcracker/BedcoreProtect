@@ -31,7 +31,9 @@ use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\UndoRollbackData;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
@@ -58,6 +60,8 @@ final class QueryManager
     private $entitiesQueries;
     /** @var InventoriesQueries */
     private $inventoriesQueries;
+    /** @var UndoRollbackData[] */
+    private $undoData = [];
 
     public function __construct(DataConnector $connector, ConfigParser $configParser)
     {
@@ -126,6 +130,7 @@ final class QueryManager
 
     private function rawRollback(bool $rollback, Area $area, CommandParser $commandParser): void
     {
+        $this->undoData[$commandParser->getSenderName()] = new UndoRollbackData($rollback, $area, $commandParser);
         Await::f2c(
             function () use ($rollback, $area, $commandParser) : Generator {
                 /** @var int[][] $logRows */
@@ -221,6 +226,18 @@ final class QueryManager
     public function getEntitiesQueries(): EntitiesQueries
     {
         return $this->entitiesQueries;
+    }
+
+    public function undoRollback(Player $player): bool
+    {
+        if (!isset($this->undoData[$player->getName()])) {
+            return false;
+        }
+
+        $data = $this->undoData[$player->getName()];
+
+        $this->rawRollback($data->isRollback(), $data->getArea(), $data->getCommandParser());
+        return true;
     }
 
     public function restore(Area $area, CommandParser $commandParser): void
