@@ -37,7 +37,6 @@ use pocketmine\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
-use function array_key_exists;
 use function count;
 use function ctype_digit;
 use function explode;
@@ -126,7 +125,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 );
                 return true;
             case 'lookup':
-                if (array_key_exists(1, $args)) {
+                if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
                         $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
@@ -134,22 +133,21 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
                             $page = 0;
                             $lines = 4;
-                            if (array_key_exists(1, $args)) {
-                                $split = explode(":", $args[1]);
-                                if ($ctype = ctype_digit($split[0])) {
-                                    $page = (int)$split[0];
-                                }
-
-                                if (array_key_exists(1, $split) && $ctype = ctype_digit($split[1])) {
-                                    $lines = (int)$split[1];
-                                }
-
-                                if (!$ctype) {
-                                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.no-numeric-value')));
-
-                                    return true;
-                                }
+                            $split = explode(":", $args[1]);
+                            if ($ctype = ctype_digit($split[0])) {
+                                $page = (int)$split[0];
                             }
+
+                            if (isset($split[1]) && $ctype = ctype_digit($split[1])) {
+                                $lines = (int)$split[1];
+                            }
+
+                            if (!$ctype) {
+                                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.no-numeric-value')));
+
+                                return true;
+                            }
+
                             Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
                         } else {
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
@@ -161,7 +159,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
 
                 return true;
             case 'purge':
-                if (array_key_exists(1, $args)) {
+                if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.started')));
@@ -206,7 +204,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
             case 'near':
                 $near = 5;
 
-                if (array_key_exists(1, $args)) {
+                if (isset($args[1])) {
                     if (!ctype_digit($args[1])) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.no-numeric-value')));
 
@@ -225,7 +223,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
 
                 return true;
             case 'rollback':
-                if (array_key_exists(1, $args)) {
+                if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
@@ -241,7 +239,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
 
                 return true;
             case 'restore':
-                if (array_key_exists(1, $args)) {
+                if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.restore.started', [$sender->getLevel()->getName()])));
