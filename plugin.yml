@@ -16,22 +16,24 @@ permissions:
     children:
       bcp.subcommand.help:
         description: "Allows the user to run the sub-command /bedcoreprotect help"
-      bcp.subcommand.reload:
-        description: "Allows the user to run the sub-command /bedcoreprotect reload"
-      bcp.subcommand.status:
-        description: "Allows the user to run the sub-command /bedcoreprotect status"
       bcp.subcommand.inspect:
         description: "Allows the user to run the sub-command /bedcoreprotect inspect"
-      bcp.subcommand.near:
-        description: "Allows the user to run the sub-command /bedcoreprotect near"
       bcp.subcommand.lookup:
         description: "Allows the user to run the sub-command /bedcoreprotect lookup"
-      bcp.subcommand.rollback:
-        description: "Allows the user to run the sub-command /bedcoreprotect rollback"
-      bcp.subcommand.restore:
-        description: "Allows the user to run the sub-command /bedcoreprotect restore"
-      bcp.subcommand.purge:
-        description: "Allows the user to run the sub-command /bedcoreprotect purge"
       bcp.subcommand.menu:
         description: "Allows the user to run the sub-command /bedcoreprotect menu"
+      bcp.subcommand.near:
+        description: "Allows the user to run the sub-command /bedcoreprotect near"
+      bcp.subcommand.purge:
+        description: "Allows the user to run the sub-command /bedcoreprotect purge"
+      bcp.subcommand.rollback:
+        description: "Allows the user to run the sub-command /bedcoreprotect rollback"
+      bcp.subcommand.reload:
+        description: "Allows the user to run the sub-command /bedcoreprotect reload"
+      bcp.subcommand.restore:
+        description: "Allows the user to run the sub-command /bedcoreprotect restore"
+      bcp.subcommand.status:
+        description: "Allows the user to run the sub-command /bedcoreprotect status"
+      bcp.subcommand.undo:
+        description: "Allows the user to run the sub-command /bedcoreprotect undo"
 ...

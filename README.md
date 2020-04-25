@@ -79,6 +79,7 @@ The main command is **/bedcoreprotect** but it accepts the folllowing aliases: *
 
 **Shortcut commands:**
 - **/bcp near \[value]**: _Performs a lookup with radius (default 5)_ (**Permission:** _bcp.subcommand.near_)
+- **/bcp undo**: _Revert a rollback/restore via the opposite action_ (**Permission:** _bcp.subcommand.undo_)
 ---
 **Advanced command overview:**
 > **/bcp help**<br>
