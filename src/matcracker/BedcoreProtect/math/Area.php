@@ -62,12 +62,14 @@ final class Area
     {
         $areaChunks = [];
         for ($x = $this->bb->minX; $x <= $this->bb->maxX; $x += 16) {
+            $x = $x >> 4;
             for ($z = $this->bb->minZ; $z <= $this->bb->maxZ; $z += 16) {
-                $chunk = $this->getWorld()->getChunk($x >> 4, $z >> 4, true);
+                $z = $z >> 4;
+                $chunk = $this->getWorld()->getChunk($x, $z, true);
                 if ($chunk === null) {
                     continue;
                 }
-                $areaChunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk;
+                $areaChunks[Level::chunkHash($x, $z)] = $chunk;
             }
         }
         return $areaChunks;

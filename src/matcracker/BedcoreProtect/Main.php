@@ -134,9 +134,10 @@ final class Main extends PluginBase
         @mkdir($this->getDataFolder());
         $this->saveResource('bedcore_database.db');
 
+        $pluginManager = $this->getServer()->getPluginManager();
         //Database connection
         if (!$this->database->connect()) {
-            $this->getServer()->getPluginManager()->disablePlugin($this);
+            $pluginManager->disablePlugin($this);
             return;
         }
 
@@ -147,7 +148,7 @@ final class Main extends PluginBase
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
             $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
-            $this->getServer()->getPluginManager()->disablePlugin($this);
+            $pluginManager->disablePlugin($this);
             return;
         }
 
@@ -180,7 +181,7 @@ final class Main extends PluginBase
         }
 
         foreach ($events as $event) {
-            $this->getServer()->getPluginManager()->registerEvents($event, $this);
+            $pluginManager->registerEvents($event, $this);
         }
     }
 

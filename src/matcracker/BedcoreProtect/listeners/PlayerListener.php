@@ -46,7 +46,7 @@ final class PlayerListener extends BedcoreListener
     /**
      * @param PlayerJoinEvent $event
      *
-     * @priority LOWEST
+     * @priority HIGHEST
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {

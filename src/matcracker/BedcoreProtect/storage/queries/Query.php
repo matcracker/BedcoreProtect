@@ -142,16 +142,14 @@ abstract class Query
 
     final protected function addRawLog(string $uuid, Position $position, Action $action): Generator
     {
-        $this->connector->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
+        return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
             'uuid' => strtolower($uuid),
             'x' => $position->getFloorX(),
             'y' => $position->getFloorY(),
             'z' => $position->getFloorZ(),
             'world_name' => $position->getLevel()->getName(),
             'action' => $action->getType()
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 
     final protected function executeSelect(string $query, array $args = []): Generator
