@@ -74,7 +74,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
         }
 
         $subCmd = $this->removeAbbreviation(strtolower($args[0]));
-        if (!$sender->hasPermission('bcp.command.bedcoreprotect') || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
+        if (!$sender->hasPermission("bcp.subcommand.{$subCmd}") || !$sender->hasPermission('bcp.command.bedcoreprotect')) {
             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.no-permission')));
 
             return false;
