@@ -158,7 +158,7 @@ final class CommandParser
                     }
 
                     foreach ($users as &$user) {
-                        if (mb_substr($user, 0, 1) === '#') {
+                        if (mb_substr($user, 0, 1) === '#') { //Entity
                             $user = mb_substr($user, 1);
                             if (!in_array($user, Utils::getEntitySaveNames())) {
                                 $this->errorMessage = $lang->translateString('parser.no-entity', [$user]);
@@ -220,22 +220,19 @@ final class CommandParser
                         $items = ItemFactory::fromString($paramValues, true);
 
                         if (!is_array($items)) {
-                            throw new UnexpectedValueException("Expected Item[] array, got null or Item.");
+                            throw new UnexpectedValueException("Expected Item[], got Item.");
                         }
 
                         $this->data[$index] =
                             array_filter(
                                 array_map(
-                                    static function (Item $item): ?Block {
-                                        if (($block = $item->getBlock())->getId() === BlockIds::AIR) {
-                                            return null;
-                                        }
-                                        return $block;
+                                    static function (Item $item): Block {
+                                        return $item->getBlock();
                                     },
                                     $items
                                 ),
-                                static function (?Block $block): bool {
-                                    return $block !== null;
+                                static function (Block $block): bool {
+                                    return $block->getId() !== BlockIds::AIR;
                                 }
                             );
                     } catch (InvalidArgumentException $exception) {
@@ -274,8 +271,14 @@ final class CommandParser
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
         }
 
+        $innerJoin = "";
+
+        if ($this->getBlocks() !== null || $this->getExclusions() !== null) {
+            $innerJoin = "INNER JOIN blocks_log ON log_history.log_id = history_id";
+        }
+
         $query = /**@lang text */
-            "SELECT log_id FROM log_history WHERE rollback = '" . intval(!$rollback) . "' AND ";
+            "SELECT log_id FROM log_history {$innerJoin} WHERE rollback = '" . intval(!$rollback) . "' AND ";
 
         $this->buildConditionalQuery($query, $bb);
 
@@ -291,39 +294,61 @@ final class CommandParser
         }
 
         foreach ($this->data as $key => $value) {
-            if ($value !== null) {
-                if ($key === 'user') {
+            if ($value === null) {
+                continue;
+            }
+
+            switch ($key) {
+                case 'user':
                     foreach ($value as $user) {
                         $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '{$user}') OR ";
                     }
                     $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
-                } elseif ($key === 'time') {
+                    break;
+                case 'time':
                     $diffTime = time() - (int)$value;
                     if ($this->configParser->isSQLite()) {
                         $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
                     } else {
                         $query .= "(time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP) AND ";
                     }
-                } elseif ($key === 'radius' && $bb !== null) {
+                    break;
+                case 'radius':
+                    if ($bb === null) {
+                        throw new UnexpectedValueException("Radius requires AxisAlignedBB, got null.");
+                    }
                     $bb = MathUtils::floorBoundingBox($bb);
                     $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
                     $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
                     $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
-                } elseif ($key === 'action') {
+                    break;
+                case 'action':
                     $actions = CommandParser::toActions($value);
                     foreach ($actions as $action) {
                         $query .= "action = {$action->getType()} OR ";
                     }
                     $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
-                }/* else if ($key === 'blocks' || $key === 'exclusions') {
-                    $operator = $key === 'exclusions' ? '<>' : '=';
-                    /** @var Block $block *
+                    break;
+                case 'exclusions':
+                case 'blocks':
+                    if ($key === 'exclusions') {
+                        $operator = '<>';
+                        $condition = 'OR';
+                    } else {
+                        $operator = '=';
+                        $condition = 'AND';
+                    }
+
+                    /** @var Block $block */
                     foreach ($value as $block) {
                         $id = $block->getId();
                         $meta = $block->getDamage();
-                        $query .= "(old_id {$operator} '{$id}' AND old_meta {$operator} '{$meta}') AND ";
+                        $query .= "(old_id {$operator} '{$id}' {$condition} old_meta {$operator} '{$meta}') AND ";
                     }
-                }*/
+                    break;
+                default:
+                    throw new UnexpectedValueException("\"{$key}\" is not a expected data key.");
+                    break;
             }
         }
 
