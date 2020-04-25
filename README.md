@@ -1,3 +1,4 @@
+[![](https://poggit.pmmp.io/shield.dl.total/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/eAePyeb)
