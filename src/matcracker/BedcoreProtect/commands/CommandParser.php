@@ -348,7 +348,6 @@ final class CommandParser
                     break;
                 default:
                     throw new UnexpectedValueException("\"{$key}\" is not a expected data key.");
-                    break;
             }
         }
 
