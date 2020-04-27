@@ -82,7 +82,6 @@ final class PlayerListener extends BedcoreListener
             if ($fireEmptyEvent) {
                 $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
             } else {
-                $liquidPos = null;
                 $face = $event->getBlockFace();
                 switch ($face) {
                     case Vector3::SIDE_DOWN:
