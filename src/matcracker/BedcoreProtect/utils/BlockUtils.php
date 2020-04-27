@@ -141,7 +141,7 @@ final class BlockUtils
      */
     public static function getTileName(int $blockId): string //Remove on 4.0
     {
-        $array = [
+        static $array = [
             BlockIds::STANDING_BANNER => Tile::BANNER,
             BlockIds::WALL_BANNER => Tile::BANNER,
             BlockIds::BED_BLOCK => Tile::BED,
