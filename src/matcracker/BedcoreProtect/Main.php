@@ -105,6 +105,10 @@ final class Main extends PluginBase
     public function onLoad(): void
     {
         self::$instance = $this;
+
+        @mkdir($this->getDataFolder());
+        $this->saveResource('bedcore_database.db');
+
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -130,9 +134,6 @@ final class Main extends PluginBase
     public function onEnable(): void
     {
         $this->database = new Database($this);
-
-        @mkdir($this->getDataFolder());
-        $this->saveResource('bedcore_database.db');
 
         $pluginManager = $this->getServer()->getPluginManager();
         //Database connection
