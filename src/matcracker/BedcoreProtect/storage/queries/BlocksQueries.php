@@ -266,6 +266,11 @@ class BlocksQueries extends Query
                     }
                     $area->getWorld()->addTile($tile);
                 }
+            } else {
+                $tile = BlockUtils::asTile($block->toBlock());
+                if ($tile !== null) {
+                    $area->getWorld()->removeTile($tile);
+                }
             }
         }
 
