@@ -40,6 +40,7 @@ use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\tile\Chest;
 use pocketmine\tile\ItemFrame as ItemFrameTile;
+use UnexpectedValueException;
 
 final class PlayerListener extends BedcoreListener
 {
@@ -76,24 +77,37 @@ final class PlayerListener extends BedcoreListener
             $fireEmptyEvent = ($event instanceof PlayerBucketEmptyEvent);
 
             $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getDamage() : $event->getItem()->getDamage();
-
-            $liquid = BlockFactory::get(BlockIds::FLOWING_WATER);
-            if ($bucketMeta === BlockIds::FLOWING_LAVA) {
-                $liquid = BlockFactory::get(BlockIds::FLOWING_LAVA);
-            }
+            $liquid = BlockFactory::get($bucketMeta);
 
             if ($fireEmptyEvent) {
                 $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
             } else {
                 $liquidPos = null;
                 $face = $event->getBlockFace();
-                if ($face === Vector3::SIDE_DOWN) {
-                    $liquidPos = Position::fromObject($block->add(0, 1, 0), $block->getLevel());
-                } elseif ($face === Vector3::SIDE_UP) {
-                    $liquidPos = Position::fromObject($block->subtract(0, 1, 0), $block->getLevel());
+                switch ($face) {
+                    case Vector3::SIDE_DOWN:
+                        $liquidPos = $block->add(0, 1, 0);
+                        break;
+                    case Vector3::SIDE_UP:
+                        $liquidPos = $block->add(0, -1, 0);
+                        break;
+                    case Vector3::SIDE_NORTH:
+                        $liquidPos = $block->add(0, 0, 1);
+                        break;
+                    case Vector3::SIDE_SOUTH:
+                        $liquidPos = $block->add(0, 0, -1);
+                        break;
+                    case Vector3::SIDE_WEST:
+                        $liquidPos = $block->add(1, 0, 0);
+                        break;
+                    case Vector3::SIDE_EAST:
+                        $liquidPos = $block->add(-1, 0, 0);
+                        break;
+                    default:
+                        throw new UnexpectedValueException("Unrecognized block face (Value: {$face}).");
                 }
 
-                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), $liquidPos);
+                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $block->getLevel()));
             }
         }
     }
