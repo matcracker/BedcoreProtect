@@ -37,8 +37,8 @@ use pocketmine\event\block\BlockBurnEvent;
 use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
-use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
 use function array_filter;
 use function count;
@@ -113,27 +113,40 @@ final class BlockListener extends BedcoreListener
     {
         $player = $event->getPlayer();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel()) && $this->plugin->getParsedConfig()->getBlockPlace()) {
-            $block = $event->getBlock();
+
             $replacedBlock = $event->getBlockReplaced();
 
             if (Inspector::isInspector($player)) { //It checks the block where the player places.
                 $this->pluginQueries->requestBlockLog($player, $replacedBlock);
                 $event->setCancelled();
             } else {
-                /** @var Position|null $otherHalfPos */
-                $otherHalfPos = null;
-                if ($block instanceof Bed) {
-                    $meta = ($player->getDirection() - 1) & 0x03;
-                    $otherHalfPos = $block->getSide(Bed::getOtherHalfSide($meta))->asPosition();
-                } elseif ($block instanceof Door) {
-                    $otherHalfPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
-                }
+                $block = $event->getBlock();
+                //HACK: Remove when issue PMMP#1760 is fixed (never).
+                $this->plugin->getScheduler()->scheduleDelayedTask(
+                    new ClosureTask(
+                        function (int $currentTick) use ($replacedBlock, $block, $player) : void {
+                            //Update the block instance to get the real placed block data.
+                            $updBlock = $block->getLevel()->getBlock($block->asVector3());
 
-                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+                            /** @var Block|null $otherHalfBlock */
+                            $otherHalfBlock = null;
+                            if ($updBlock instanceof Bed) {
+                                $otherHalfBlock = $updBlock->getOtherHalf();
+                            } elseif ($updBlock instanceof Door) {
+                                $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
+                            }
 
-                if ($otherHalfPos !== null) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $otherHalfPos);
-                }
+                            if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
+                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
+
+                                if ($otherHalfBlock !== null) {
+                                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
+                                }
+                            }
+                        }
+                    ),
+                    1
+                );
             }
         }
     }
