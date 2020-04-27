@@ -126,11 +126,9 @@ final class PlayerListener extends BedcoreListener
             $itemInHand = $event->getItem();
             $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
             $rightClickBlock = $event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK;
-            $face = $event->getFace();
 
             if (Inspector::isInspector($player)) {
                 if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $event->setCancelled();
                     $position = $clickedBlock->asPosition();
                     $tileChest = BlockUtils::asTile($clickedBlock);
                     if ($tileChest instanceof Chest) { //This is needed for double chest to get the position of its holder (the left chest).
@@ -140,11 +138,12 @@ final class PlayerListener extends BedcoreListener
                         }
                     }
                     $this->pluginQueries->requestTransactionLog($player, $position);
+                    $event->setCancelled();
 
                 //This check must be done due to allow BlockPlaceEvent to be fired (second "OR" condition)
                 } elseif ($leftClickBlock || ($rightClickBlock && !$itemInHand->canBePlaced())) {
-                    $event->setCancelled();
                     $this->pluginQueries->requestBlockLog($player, $clickedBlock);
+                    $event->setCancelled();
                 }
 
                 return;
@@ -152,6 +151,7 @@ final class PlayerListener extends BedcoreListener
 
             if (!$event->isCancelled()) {
                 if ($leftClickBlock || $rightClickBlock) {
+                    $face = $event->getFace();
                     if ($leftClickBlock) {
                         $relativeBlock = $clickedBlock->getSide($face);
                         if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
