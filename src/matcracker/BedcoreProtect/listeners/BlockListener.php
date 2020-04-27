@@ -67,7 +67,7 @@ final class BlockListener extends BedcoreListener
             if ($block instanceof Door) {
                 $top = $block->getDamage() & 0x08;
                 $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
-                if ($other instanceof Door and $other->getId() === $block->getId()) {
+                if ($other instanceof Door) {
                     $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
                 }
             } elseif ($block instanceof Bed) {
@@ -83,23 +83,24 @@ final class BlockListener extends BedcoreListener
                         $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                     }
                 }
-            }
-
-            $this->blocksQueries->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
-
-            if ($this->plugin->getParsedConfig()->getNaturalBreak()) {
+            } elseif ($this->plugin->getParsedConfig()->getNaturalBreak()) {
                 /**
                  * @var Block[] $sides
                  * Getting all blocks around the broken block that are consequently destroyed.
                  */
-                $sides = array_filter($block->getAllSides(), static function (Block $side): bool {
-                    return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
-                });
+                $sides = array_filter(
+                    $block->getAllSides(),
+                    function (Block $side): bool {
+                        return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
+                    }
+                );
 
                 if (count($sides) > 0) {
                     $this->blocksQueries->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
                 }
             }
+
+            $this->blocksQueries->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
 
         }
     }
