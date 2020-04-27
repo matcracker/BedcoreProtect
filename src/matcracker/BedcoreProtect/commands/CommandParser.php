@@ -314,13 +314,13 @@ final class CommandParser
                     }
                     break;
                 case 'radius':
-                    if ($bb === null) {
-                        throw new UnexpectedValueException("Radius requires AxisAlignedBB, got null.");
+                    if ($bb !== null) {
+                        $bb = MathUtils::floorBoundingBox($bb);
+                        $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
+                        $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
+                        $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
                     }
-                    $bb = MathUtils::floorBoundingBox($bb);
-                    $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
-                    $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
-                    $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
+
                     break;
                 case 'action':
                     $actions = CommandParser::toActions($value);
