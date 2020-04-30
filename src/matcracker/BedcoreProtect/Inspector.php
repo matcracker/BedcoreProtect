@@ -163,7 +163,7 @@ final class Inspector
                 if (isset($log["{$typeColumn}_amount"])) {
                     $amount = (int)$log["{$typeColumn}_amount"];
 
-                    $itemName = ItemFactory::get($id, $meta)->getName();
+                    $itemName = ItemFactory::get($id, $meta)->getVanillaName();
                     $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
                 } else {
                     $blockName = BlockFactory::get($id, $meta)->getName();
