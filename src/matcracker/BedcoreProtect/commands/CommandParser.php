@@ -176,7 +176,7 @@ final class CommandParser
                 case 'time':
                 case 't':
                     $time = Utils::parseTime($paramValues);
-                    if ($time === null) {
+                    if ($time === 0) {
                         $this->errorMessage = $lang->translateString('parser.invalid-amount-time');
 
                         return false;

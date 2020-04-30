@@ -44,11 +44,11 @@ use function is_string;
 use function json_decode;
 use function key;
 use function microtime;
-use function preg_match_all;
+use function preg_match;
 use function preg_replace;
-use function strlen;
-use function strtolower;
 use function strval;
+use const PHP_INT_MAX;
+use const PREG_OFFSET_CAPTURE;
 
 final class Utils
 {
@@ -61,23 +61,12 @@ final class Utils
      *
      * @param string $strDate the date to parse.
      *
-     * @return int|null how many seconds are in the string. Return null if string can't be parsed.
+     * @return int
      */
-    public static function parseTime(string $strDate): ?int
+    public static function parseTime(string $strDate): int
     {
-        if (strlen($strDate) === 0) {
-            return null;
-        }
-        $strDate = strtolower($strDate);
-        $strDate = preg_replace('/[^0-9smhdw]/', "", $strDate);
-        if (strlen($strDate) === 0) {
-            return null;
-        }
-
-        $time = null;
-        $matches = [];
-        preg_match_all('/([0-9]+)([smhdw])/', $strDate, $matches);
-
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE, 0);
+        $time = 0;
         foreach ($matches[0] as $match) {
             $value = preg_replace("/[^0-9]/", "", $match);
             if (!is_string($value)) {
@@ -109,7 +98,7 @@ final class Utils
             }
         }
 
-        return $time;
+        return (int)($time > PHP_INT_MAX ? PHP_INT_MAX : $time);
     }
 
     public static function timeAgo(int $timestamp, int $level = 6): string
