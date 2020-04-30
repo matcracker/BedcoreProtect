@@ -92,6 +92,10 @@ final class QueryManager
 
         Await::f2c(
             function () use ($pluginVersion): Generator {
+                if ($this->configParser->isSQLite()) {
+                    yield $this->executeGeneric(QueriesConst::ENABLE_FOREIGN_KEYS);
+                }
+
                 foreach (QueriesConst::INIT_TABLES as $queryTable) {
                     yield $this->executeGeneric($queryTable);
                 }

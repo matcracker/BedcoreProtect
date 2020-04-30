@@ -83,6 +83,11 @@ BEGIN TRANSACTION;
 END TRANSACTION;
 -- #        }
 -- #    }
+-- #    {pragma
+-- #        {foreign-keys-on
+PRAGMA foreign_keys = ON;
+-- #        }
+-- #    }
 -- #    {add
 -- #        {entity
 -- #            :uuid string
