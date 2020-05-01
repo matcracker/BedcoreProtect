@@ -127,7 +127,7 @@ final class Main extends PluginBase
         }
 
         if ($this->configParser->getCheckUpdates()) {
-            UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
+            UpdateNotifier::checkUpdate($this->getName(), $this->getDescription()->getVersion());
         }
     }
 
