@@ -81,7 +81,7 @@ class InventoriesQueries extends Query
                     $playerUuid = Utils::getEntityUniqueId($player);
                     $position = Position::fromObject($holder, $player->getLevel());
 
-                    if ($sourceItem instanceof $targetItem) {
+                    if ($sourceItem->equals($targetItem)) {
                         $sourceCount = $sourceItem->getCount();
                         $targetCount = $targetItem->getCount(); //Final count
                         if ($targetCount > $sourceCount) {
