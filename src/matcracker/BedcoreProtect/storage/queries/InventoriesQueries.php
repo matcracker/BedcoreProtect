@@ -85,14 +85,13 @@ class InventoriesQueries extends Query
                         $sourceCount = $sourceItem->getCount();
                         $targetCount = $targetItem->getCount(); //Final count
                         if ($targetCount > $sourceCount) {
-                            $diffAmount = $targetCount - $sourceCount; //Effective number of blocks added/removed
-                            $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
-                            $targetItem->setCount($diffAmount);
+                            $action = Action::ADD();
+                            $targetItem->setCount($targetCount - $sourceCount); //Effective number of blocks added
                         } else {
-                            $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
-                            yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
-                            $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                            $action = Action::REMOVE();
+                            $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
                         }
+                        $lastId = yield $this->addRawLog($playerUuid, $position, $action);
                     } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
                         $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
                         yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
