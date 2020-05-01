@@ -24,8 +24,9 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
+use pocketmine\block\Fire;
 use pocketmine\block\ItemFrame;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
@@ -35,7 +36,7 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
-use pocketmine\item\ItemIds;
+use pocketmine\item\FlintSteel;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\tile\Chest;
@@ -153,13 +154,13 @@ final class PlayerListener extends BedcoreListener
                     $face = $event->getFace();
                     if ($leftClickBlock) {
                         $relativeBlock = $clickedBlock->getSide($face);
-                        if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock->getId() === BlockIds::FIRE) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $relativeBlock, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $relativeBlock->asPosition());
+                        if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock instanceof Fire) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $relativeBlock, $this->air, Action::BREAK(), $relativeBlock->asPosition());
                             return;
                         }
                     } else { //Right click
-                        if ($this->plugin->getParsedConfig()->getBlockPlace() && $itemInHand->getId() === ItemIds::FLINT_AND_STEEL) {
-                            $this->blocksQueries->addBlockLogByEntity($player, BlockFactory::get(BlockIds::AIR), BlockFactory::get(BlockIds::FIRE), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
+                        if ($this->plugin->getParsedConfig()->getBlockPlace() && $itemInHand instanceof FlintSteel) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
                             return;
                         }
                     }
@@ -180,7 +181,7 @@ final class PlayerListener extends BedcoreListener
                             }
                         }
 
-                        if ($clickedBlock->getId() !== BlockIds::AIR) {
+                        if (!$clickedBlock instanceof Air) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
                         }
                     }

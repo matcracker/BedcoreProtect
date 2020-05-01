@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
 use pocketmine\entity\object\FallingBlock;
@@ -48,7 +47,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getExplosions()) {
-            $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), BlockFactory::get(BlockIds::AIR), Action::BREAK());
+            $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), $this->air, Action::BREAK());
         }
     }
 
@@ -67,7 +66,7 @@ final class EntityListener extends BedcoreListener
 
         if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
             if ($entity instanceof FallingBlock && $this->plugin->getParsedConfig()->getBlockMovement()) {
-                $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock()), BlockFactory::get(BlockIds::AIR), Action::BREAK(), $entity->asPosition());
+                $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getDamage()), $this->air, Action::BREAK(), $entity->asPosition());
 
             } else {
                 if (!($entity instanceof Living || $entity instanceof Painting)) {

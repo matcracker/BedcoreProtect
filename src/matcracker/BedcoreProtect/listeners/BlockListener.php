@@ -26,10 +26,9 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
+use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
 use pocketmine\block\Water;
 use pocketmine\event\block\BlockBreakEvent;
@@ -62,18 +61,16 @@ final class BlockListener extends BedcoreListener
                 return;
             }
 
-            $air = BlockFactory::get(BlockIds::AIR);
-
             if ($block instanceof Door) {
                 $top = $block->getDamage() & 0x08;
                 $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
                 if ($other instanceof Door) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
+                    $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
                 }
             } elseif ($block instanceof Bed) {
                 $other = $block->getOtherHalf();
                 if ($other instanceof Bed) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
+                    $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
                 }
             } elseif ($block instanceof Chest) {
                 $tileChest = BlockUtils::asTile($block);
@@ -96,11 +93,11 @@ final class BlockListener extends BedcoreListener
                 );
 
                 if (count($sides) > 0) {
-                    $this->blocksQueries->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
+                    $this->blocksQueries->addBlocksLogByEntity($player, $sides, $this->air, Action::BREAK());
                 }
             }
 
-            $this->blocksQueries->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
+            $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
 
         }
     }
@@ -192,11 +189,12 @@ final class BlockListener extends BedcoreListener
     public function trackBlockForm(BlockFormEvent $event): void
     {
         $block = $event->getBlock();
-        $result = $event->getNewState();
 
         if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
             if ($block instanceof Liquid && $this->plugin->getParsedConfig()->getLiquidTracking()) {
-                $liquid = $block instanceof Water ? BlockFactory::get(BlockIds::FLOWING_LAVA) : BlockFactory::get(BlockIds::FLOWING_WATER);
+                $result = $event->getNewState();
+
+                $liquid = $block instanceof Water ? new Lava() : new Water();
                 $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
             }
         }

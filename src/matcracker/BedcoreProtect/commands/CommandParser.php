@@ -29,8 +29,8 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\block\Air;
 use pocketmine\block\Block;
-use pocketmine\block\BlockIds;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
@@ -232,7 +232,7 @@ final class CommandParser
                                     $items
                                 ),
                                 static function (Block $block): bool {
-                                    return $block->getId() !== BlockIds::AIR;
+                                    return !$block instanceof Air;
                                 }
                             );
                     } catch (InvalidArgumentException $exception) {
