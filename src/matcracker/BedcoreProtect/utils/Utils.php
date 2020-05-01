@@ -40,6 +40,7 @@ use function array_slice;
 use function array_values;
 use function base64_decode;
 use function base64_encode;
+use function count;
 use function is_string;
 use function json_decode;
 use function key;
@@ -66,6 +67,11 @@ final class Utils
     public static function parseTime(string $strDate): int
     {
         preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE, 0);
+
+        if (count($matches) === 0) {
+            return 0;
+        }
+
         $time = 0;
         foreach ($matches[0] as $match) {
             $value = preg_replace("/[^0-9]/", "", $match);
