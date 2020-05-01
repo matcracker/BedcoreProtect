@@ -52,7 +52,8 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel()) && $this->plugin->getParsedConfig()->getBlockBreak()) {
+        $config = $this->plugin->getParsedConfig();
+        if ($config->isEnabledWorld($player->getLevel()) && $config->getBlockBreak()) {
             $block = $event->getBlock();
 
             if (Inspector::isInspector($player)) { //It checks the block clicked
@@ -80,14 +81,14 @@ final class BlockListener extends BedcoreListener
                         $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                     }
                 }
-            } elseif ($this->plugin->getParsedConfig()->getNaturalBreak()) {
+            } elseif ($config->getNaturalBreak()) {
                 /**
                  * @var Block[] $sides
                  * Getting all blocks around the broken block that are consequently destroyed.
                  */
                 $sides = array_filter(
                     $block->getAllSides(),
-                    function (Block $side): bool {
+                    static function (Block $side): bool {
                         return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
                     }
                 );

@@ -120,8 +120,9 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
         $player = $event->getPlayer();
+        $config = $this->plugin->getParsedConfig();
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel())) {
+        if ($config->isEnabledWorld($player->getLevel())) {
             $clickedBlock = $event->getBlock();
             $itemInHand = $event->getItem();
             $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
@@ -151,21 +152,20 @@ final class PlayerListener extends BedcoreListener
 
             if (!$event->isCancelled()) {
                 if ($leftClickBlock || $rightClickBlock) {
-                    $face = $event->getFace();
+                    $replacedBlock = $clickedBlock->getSide($event->getFace());
                     if ($leftClickBlock) {
-                        $relativeBlock = $clickedBlock->getSide($face);
-                        if ($this->plugin->getParsedConfig()->getBlockBreak() && $relativeBlock instanceof Fire) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $relativeBlock, $this->air, Action::BREAK(), $relativeBlock->asPosition());
+                        if ($config->getBlockBreak() && $replacedBlock instanceof Fire) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
                             return;
                         }
                     } else { //Right click
-                        if ($this->plugin->getParsedConfig()->getBlockPlace() && $itemInHand instanceof FlintSteel) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $clickedBlock->getSide($face)->asPosition());
+                        if ($config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
                             return;
                         }
                     }
 
-                    if ($this->plugin->getParsedConfig()->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
+                    if ($config->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
                             $tile = BlockUtils::asTile($clickedBlock);
                             if ($tile instanceof ItemFrameTile) {
