@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
@@ -169,7 +168,7 @@ class InventoriesQueries extends Query
         Server::getInstance()->getAsyncPool()->submitTask($logsTask);
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         $prefix = $rollback ? 'old' : 'new';
 

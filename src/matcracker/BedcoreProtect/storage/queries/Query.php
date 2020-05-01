@@ -67,7 +67,6 @@ abstract class Query
                 yield $this->onRollback(
                     $rollback,
                     $area,
-                    $commandParser,
                     $logIds,
                     microtime(true),
                     function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
@@ -91,13 +90,12 @@ abstract class Query
     /**
      * @param bool $rollback
      * @param Area $area
-     * @param CommandParser $commandParser
      * @param int[] $logIds
      * @param float $startTime
      * @param Closure $onComplete
      * @return Generator
      */
-    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator;
+    abstract protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator;
 
     /**
      * @param bool $rollback

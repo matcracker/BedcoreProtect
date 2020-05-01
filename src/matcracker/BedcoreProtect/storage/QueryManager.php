@@ -132,24 +132,34 @@ final class QueryManager
         $this->rawRollback(true, $area, $commandParser);
     }
 
-    private function rawRollback(bool $rollback, Area $area, CommandParser $commandParser): void
+    /**
+     * @param bool $rollback
+     * @param Area $area
+     * @param CommandParser $commandParser
+     * @param int[]|null $logs
+     */
+    private function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?array $logs = null): void
     {
-        $this->undoData[$commandParser->getSenderName()] = new UndoRollbackData($rollback, $area, $commandParser);
         Await::f2c(
-            function () use ($rollback, $area, $commandParser) : Generator {
-                /** @var int[][] $logRows */
-                $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
-
-                if (count($logRows) === 0) { //No changes.
-                    self::sendRollbackReport($rollback, $area, $commandParser);
-                    return;
-                }
-
+            function () use ($rollback, $area, $commandParser, $logs) : Generator {
                 /** @var int[] $logIds */
-                $logIds = [];
-                foreach ($logRows as $logRow) {
-                    $logIds[] = (int)$logRow['log_id'];
+                $logIds = $logs ?? [];
+
+                if ($logs === null) {
+                    /** @var int[][] $logRows */
+                    $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
+
+                    if (count($logRows) === 0) { //No changes.
+                        self::sendRollbackReport($rollback, $area, $commandParser);
+                        return;
+                    }
+
+                    foreach ($logRows as $logRow) {
+                        $logIds[] = (int)$logRow['log_id'];
+                    }
                 }
+
+                $this->undoData[$commandParser->getSenderName()] = new UndoRollbackData($rollback, $area, $commandParser, $logIds);
 
                 $this->getBlocksQueries()->rawRollback(
                     $rollback,
@@ -240,7 +250,7 @@ final class QueryManager
 
         $data = $this->undoData[$player->getName()];
 
-        $this->rawRollback($data->isRollback(), $data->getArea(), $data->getCommandParser());
+        $this->rawRollback($data->isRollback(), $data->getArea(), $data->getCommandParser(), $data->getLogs());
         return true;
     }
 

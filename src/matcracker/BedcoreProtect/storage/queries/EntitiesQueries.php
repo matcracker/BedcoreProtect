@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
@@ -157,12 +156,11 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         $entityRows = [];
 
         if ($this->configParser->getRollbackEntities()) {
-            //TODO: Exclude entities from CommandParser.
             $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
 
             foreach ($entityRows as $row) {

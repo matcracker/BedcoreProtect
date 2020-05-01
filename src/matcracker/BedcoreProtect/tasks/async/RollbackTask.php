@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
@@ -40,8 +39,6 @@ final class RollbackTask extends AsyncTask
     protected $rollback;
     /** @var Area */
     protected $area;
-    /** @var CommandParser */
-    protected $commandParser;
     /** @var SerializableBlock[] */
     protected $blocks;
     /** @var float */
@@ -53,16 +50,14 @@ final class RollbackTask extends AsyncTask
      * RollbackTask constructor.
      * @param bool $rollback
      * @param Area $area
-     * @param CommandParser $parser
      * @param SerializableBlock[] $blocks
      * @param float $startTime
      * @param Closure $onComplete
      */
-    public function __construct(bool $rollback, Area $area, CommandParser $parser, array $blocks, float $startTime, Closure $onComplete)
+    public function __construct(bool $rollback, Area $area, array $blocks, float $startTime, Closure $onComplete)
     {
         $this->rollback = $rollback;
         $this->area = $area;
-        $this->commandParser = $parser;
         $this->blocks = $blocks;
         $this->startTime = $startTime;
 

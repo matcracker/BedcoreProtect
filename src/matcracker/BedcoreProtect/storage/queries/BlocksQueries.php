@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
@@ -46,7 +45,6 @@ use pocketmine\tile\Tile;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
-use function array_search;
 use function count;
 use function is_array;
 use function strlen;
@@ -214,12 +212,9 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         $prefix = $rollback ? 'old' : 'new';
-        $inclusions = $commandParser->getBlocks();
-        $exclusions = $commandParser->getExclusions();
-
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
 
@@ -227,30 +222,6 @@ class BlocksQueries extends Query
             $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ['log_ids' => $logIds]);
         } else {
             $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds]);
-        }
-
-        foreach ($blockRows as $index => $row) {
-            $historyId = (int)$row['history_id'];
-            $id = (int)$row["{$prefix}_id"];
-            $meta = (int)$row["{$prefix}_meta"];
-
-            if ($inclusions !== null && count($inclusions) > 0) {
-                foreach ($inclusions as $inclusion) {
-                    if ($inclusion->getId() !== $id && $inclusion->getDamage() !== $meta) {
-                        unset($blockRows[$index]);
-                        unset($logIds[array_search($historyId, $logIds)]);
-                    }
-                }
-            }
-
-            if ($exclusions !== null && count($exclusions) > 0) {
-                foreach ($exclusions as $exclusion) {
-                    if ($exclusion->getId() === $id && $exclusion->getDamage() === $meta) {
-                        unset($blockRows[$index]);
-                        unset($logIds[array_search($historyId, $logIds)]);
-                    }
-                }
-            }
         }
 
         foreach ($blockRows as $row) {
@@ -274,6 +245,6 @@ class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $commandParser, $blocks, $startTime, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $blocks, $startTime, $onComplete));
     }
 }

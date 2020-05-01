@@ -139,7 +139,7 @@ class PluginQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
         yield from [];
     }

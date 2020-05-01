@@ -26,15 +26,28 @@ use matcracker\BedcoreProtect\math\Area;
 
 final class UndoRollbackData
 {
+    /** @var bool */
     private $rollback;
+    /** @var Area */
     private $area;
+    /** @var CommandParser */
     private $commandParser;
+    /** @var int[] */
+    private $logs;
 
-    public function __construct(bool $rollback, Area $area, CommandParser $commandParser)
+    /**
+     * UndoRollbackData constructor.
+     * @param bool $rollback
+     * @param Area $area
+     * @param CommandParser $commandParser
+     * @param int[] $logs
+     */
+    public function __construct(bool $rollback, Area $area, CommandParser $commandParser, array $logs)
     {
         $this->rollback = !$rollback;
         $this->area = $area;
         $this->commandParser = $commandParser;
+        $this->logs = $logs;
     }
 
     public function isRollback(): bool
@@ -50,5 +63,13 @@ final class UndoRollbackData
     public function getCommandParser(): CommandParser
     {
         return $this->commandParser;
+    }
+
+    /**
+     * @return int[]
+     */
+    public function getLogs(): array
+    {
+        return $this->logs;
     }
 }
