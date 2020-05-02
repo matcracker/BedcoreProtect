@@ -79,12 +79,12 @@ final class ConfigParser
     }
 
     /**
-     * Return the database file name for SQLite
+     * Return the database file name for SQLite.
      * @return string
      */
-    public function getDatabaseName(): string
+    public function getDatabaseFileName(): string
     {
-        return (string)$this->data['database']['sqlite']['name'];
+        return (string)$this->data['database']['sqlite']['file'];
     }
 
     public function isEnabledWorld(Level $world): bool

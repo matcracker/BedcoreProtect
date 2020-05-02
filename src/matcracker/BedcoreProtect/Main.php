@@ -115,7 +115,7 @@ final class Main extends PluginBase
             return;
         }
 
-        $this->saveResource($this->configParser->getDatabaseName());
+        $this->saveResource($this->configParser->getDatabaseFileName());
 
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
