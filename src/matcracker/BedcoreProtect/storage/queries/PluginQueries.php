@@ -76,7 +76,7 @@ class PluginQueries extends Query
             'max_z' => $maxV->getZ(),
             'world_name' => $position->getLevel()->getName()
         ], static function (array $rows) use ($inspector): void {
-            Inspector::cacheLogs($inspector, $rows);
+            Inspector::saveLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
         });
     }
@@ -87,7 +87,7 @@ class PluginQueries extends Query
             $parser->buildLookupQuery(),
             [],
             static function (array $rows) use ($sender): void {
-                Inspector::cacheLogs($sender, $rows);
+                Inspector::saveLogs($sender, $rows);
                 Inspector::parseLogs($sender, $rows);
             }
         );

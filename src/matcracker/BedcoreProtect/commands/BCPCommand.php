@@ -104,9 +104,9 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 Await::f2c(
                     function () use ($sender, $lang) : Generator {
                         $description = $this->plugin->getDescription();
-
-                        $pluginVersion = $this->plugin->getVersion();
+                        $pluginVersion = $description->getVersion();
                         $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
+
                         if (version_compare($pluginVersion, $dbVersion) > 0) {
                             //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)
                             $dbVersion .= ' (' . $lang->translateString("command.status.bc") . ')';
@@ -130,7 +130,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     if ($parser->parse()) {
                         $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
                     } else {
-                        if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
+                        if (count($logs = Inspector::getSavedLogs($sender)) > 0) {
                             $page = 0;
                             $lines = 4;
                             $split = explode(":", $args[1]);
@@ -169,7 +169,6 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });
 
-                        return true;
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }

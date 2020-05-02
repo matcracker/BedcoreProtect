@@ -206,7 +206,7 @@ final class Main extends PluginBase
         $this->getScheduler()->cancelAllTasks();
         $this->database->disconnect();
 
-        Inspector::clearCache();
+        Inspector::removeAll();
         $this->bsHooked = false;
         unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
     }

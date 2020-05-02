@@ -90,7 +90,7 @@ final class Inspector
         return self::$inspectors[self::getSenderUUID($inspector)]['enabled'] ?? false;
     }
 
-    public static function cacheLogs(CommandSender $inspector, array $logs = []): void
+    public static function saveLogs(CommandSender $inspector, array $logs = []): void
     {
         self::$inspectors[self::getSenderUUID($inspector)]['logs'] = $logs;
     }
@@ -100,12 +100,12 @@ final class Inspector
      *
      * @return array
      */
-    public static function getCachedLogs(CommandSender $inspector): array
+    public static function getSavedLogs(CommandSender $inspector): array
     {
         return self::$inspectors[self::getSenderUUID($inspector)]['logs'] ?? [];
     }
 
-    public static function clearCache(): void
+    public static function removeAll(): void
     {
         self::$inspectors = [];
     }
