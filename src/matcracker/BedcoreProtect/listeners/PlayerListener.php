@@ -28,6 +28,7 @@ use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\Fire;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\TNT;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
@@ -160,7 +161,11 @@ final class PlayerListener extends BedcoreListener
                         }
                     } else { //Right click
                         if ($config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                            if ($clickedBlock instanceof TNT) {
+                                $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                            } else {
+                                $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                            }
                             return;
                         }
                     }
