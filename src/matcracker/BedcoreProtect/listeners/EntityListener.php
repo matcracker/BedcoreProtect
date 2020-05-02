@@ -31,7 +31,6 @@ use pocketmine\event\entity\EntityBlockChangeEvent;
 use pocketmine\event\entity\EntityDamageByBlockEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
-use pocketmine\event\entity\EntityDespawnEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
 use pocketmine\event\entity\EntitySpawnEvent;
 use pocketmine\Player;
@@ -86,11 +85,11 @@ final class EntityListener extends BedcoreListener
     }
 
     /**
-     * @param EntityDespawnEvent $event
+     * @param EntityDamageByEntityEvent $event
      *
      * @priority MONITOR
      */
-    public function trackEntityDespawn(EntityDespawnEvent $event): void
+    public function trackEntityDamageByEntity(EntityDamageByEntityEvent $event): void
     {
         $entity = $event->getEntity();
 
@@ -98,11 +97,11 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
-            if ($entity instanceof Painting && $this->plugin->getParsedConfig()->getBlockBreak()) {
-                $player = $entity->getLevel()->getNearestEntity($entity, 6, Player::class);
-                if ($player !== null) {
-                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::DESPAWN());
+        if ($this->config->isEnabledWorld($entity->getLevel())) {
+            if ($entity instanceof Painting && $this->config->getBlockBreak()) {
+                $damager = $event->getDamager();
+                if ($damager !== null) {
+                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::BREAK());
                 }
             }
         }
