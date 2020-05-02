@@ -323,7 +323,7 @@ final class CommandParser
 
                     break;
                 case 'action':
-                    $actions = CommandParser::toActions($value);
+                    $actions = self::toActions($value);
                     foreach ($actions as $action) {
                         $query .= "action = {$action->getType()} OR ";
                     }
