@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
+use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Air;
 use pocketmine\event\Listener;
 
@@ -33,6 +34,10 @@ abstract class BedcoreListener implements Listener
 {
     /** @var Main */
     protected $plugin;
+    /** @var ConfigParser */
+    protected $config;
+    /** @var Air */
+    protected $air;
     /** @var PluginQueries */
     protected $pluginQueries;
     /** @var BlocksQueries */
@@ -42,17 +47,21 @@ abstract class BedcoreListener implements Listener
     /** @var InventoriesQueries */
     protected $inventoriesQueries;
 
-    /** @var Air */
-    protected $air;
-
     public function __construct(Main $plugin)
     {
         $this->plugin = $plugin;
+        $this->setParsedConfig($plugin->getParsedConfig());
+
         $this->air = new Air();
 
         $this->pluginQueries = $plugin->getDatabase()->getQueryManager()->getPluginQueries();
         $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();
         $this->entitiesQueries = $plugin->getDatabase()->getQueryManager()->getEntitiesQueries();
         $this->inventoriesQueries = $plugin->getDatabase()->getQueryManager()->getInventoriesQueries();
+    }
+
+    final public function setParsedConfig(ConfigParser $config): void
+    {
+        $this->config = $config;
     }
 }

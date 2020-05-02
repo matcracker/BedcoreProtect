@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect;
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\listeners\BedcoreListener;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
@@ -55,6 +56,8 @@ final class Main extends PluginBase
     private $oldConfigParser;
     /** @var bool */
     private $bsHooked = false;
+    /** @var BedcoreListener[] */
+    private $events;
 
     public static function getInstance(): Main
     {
@@ -95,6 +98,9 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
         if ($this->configParser->isValidConfig()) {
+            foreach ($this->events as $event) {
+                $event->setParsedConfig($this->configParser);
+            }
             $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
             return true;
         }
@@ -171,7 +177,7 @@ final class Main extends PluginBase
         $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
 
         //Registering events
-        $events = [
+        $this->events = [
             new BlockListener($this),
             new EntityListener($this),
             new PlayerListener($this),
@@ -179,10 +185,10 @@ final class Main extends PluginBase
         ];
 
         if ($this->bsHooked) {
-            $events[] = new BlockSniperListener($this);
+            $this->events[] = new BlockSniperListener($this);
         }
 
-        foreach ($events as $event) {
+        foreach ($this->events as $event) {
             $pluginManager->registerEvents($event, $this);
         }
     }

@@ -46,7 +46,7 @@ final class EntityListener extends BedcoreListener
     public function trackEntityExplode(EntityExplodeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getExplosions()) {
+        if ($this->config->isEnabledWorld($entity->getLevel()) && $this->config->getExplosions()) {
             $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), $this->air, Action::BREAK());
         }
     }
@@ -64,8 +64,8 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel())) {
-            if ($entity instanceof FallingBlock && $this->plugin->getParsedConfig()->getBlockMovement()) {
+        if ($this->config->isEnabledWorld($entity->getLevel())) {
+            if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
                 $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getDamage()), $this->air, Action::BREAK(), $entity->asPosition());
 
             } else {
@@ -73,7 +73,7 @@ final class EntityListener extends BedcoreListener
                     return;
                 }
 
-                if ($entity instanceof Painting && !$this->plugin->getParsedConfig()->getBlockPlace()) {
+                if ($entity instanceof Painting && !$this->config->getBlockPlace()) {
                     return;
                 }
 
@@ -116,12 +116,11 @@ final class EntityListener extends BedcoreListener
     public function trackEntityDeath(EntityDeathEvent $event): void
     {
         $entity = $event->getEntity();
-
         if ($entity instanceof Human) {
             return;
         }
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getEntityKills()) {
+        if ($this->config->isEnabledWorld($entity->getLevel()) && $this->config->getEntityKills()) {
             $damageEvent = $entity->getLastDamageCause();
             if ($damageEvent instanceof EntityDamageByEntityEvent) {
                 $damager = $damageEvent->getDamager();
@@ -142,7 +141,7 @@ final class EntityListener extends BedcoreListener
     public function trackEntityBlockChange(EntityBlockChangeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($entity->getLevel()) && $this->plugin->getParsedConfig()->getBlockMovement()) {
+        if ($this->config->isEnabledWorld($entity->getLevel()) && $this->config->getBlockMovement()) {
             $this->blocksQueries->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->asPosition());
         }
     }

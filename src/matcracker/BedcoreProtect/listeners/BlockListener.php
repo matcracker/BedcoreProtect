@@ -52,8 +52,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        $config = $this->plugin->getParsedConfig();
-        if ($config->isEnabledWorld($player->getLevel()) && $config->getBlockBreak()) {
+        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
             if (Inspector::isInspector($player)) { //It checks the block clicked
@@ -111,7 +110,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel()) && $this->plugin->getParsedConfig()->getBlockPlace()) {
+        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockPlace()) {
 
             $replacedBlock = $event->getBlockReplaced();
 
@@ -160,7 +159,7 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
+        if ($this->config->isEnabledWorld($block->getLevel())) {
             if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
             }
@@ -175,7 +174,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel()) && $this->plugin->getParsedConfig()->getBlockBurn()) {
+        if ($this->config->isEnabledWorld($block->getLevel()) && $this->config->getBlockBurn()) {
             $cause = $event->getCausingBlock();
 
             $this->blocksQueries->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
@@ -191,8 +190,8 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
-            if ($block instanceof Liquid && $this->plugin->getParsedConfig()->getLiquidTracking()) {
+        if ($this->config->isEnabledWorld($block->getLevel())) {
+            if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
                 $result = $event->getNewState();
 
                 $liquid = $block instanceof Water ? new Lava() : new Water();
