@@ -80,7 +80,7 @@ final class BlockListener extends BedcoreListener
                         $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                     }
                 }
-            } elseif ($config->getNaturalBreak()) {
+            } elseif ($this->config->getNaturalBreak()) {
                 /**
                  * @var Block[] $sides
                  * Getting all blocks around the broken block that are consequently destroyed.
