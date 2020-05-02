@@ -214,6 +214,6 @@ final class Main extends PluginBase
 
         Inspector::removeAll();
         $this->bsHooked = false;
-        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
+        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser, $this->events);
     }
 }
