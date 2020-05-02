@@ -149,14 +149,14 @@ final class QueryManager
                     /** @var int[][] $logRows */
                     $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
 
-                    if (count($logRows) === 0) { //No changes.
-                        self::sendRollbackReport($rollback, $area, $commandParser);
-                        return;
-                    }
-
                     foreach ($logRows as $logRow) {
                         $logIds[] = (int)$logRow['log_id'];
                     }
+                }
+
+                if (count($logIds) === 0) { //No changes.
+                    self::sendRollbackReport($rollback, $area, $commandParser);
+                    return;
                 }
 
                 $this->undoData[$commandParser->getSenderName()] = new UndoRollbackData($rollback, $area, $commandParser, $logIds);
