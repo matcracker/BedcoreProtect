@@ -107,7 +107,6 @@ final class Main extends PluginBase
         self::$instance = $this;
 
         @mkdir($this->getDataFolder());
-        $this->saveResource('bedcore_database.db');
 
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
@@ -115,6 +114,8 @@ final class Main extends PluginBase
 
             return;
         }
+
+        $this->saveResource($this->configParser->getDatabaseName());
 
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
