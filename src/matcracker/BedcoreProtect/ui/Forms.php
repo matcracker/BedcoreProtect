@@ -65,13 +65,16 @@ final class Forms
                     case 4: //Restore
                         $player->sendForm($this->getInputMenu('restore'));
                         break;
-                    case 5: //Purge
+                    case 5: //Undo
+                        $player->chat('/bcp undo');
+                        break;
+                    case 6: //Purge
                         $player->sendForm($this->getPurgeMenu());
                         break;
-                    case 6: //Reload
+                    case 7: //Reload
                         $player->chat('/bcp reload');
                         break;
-                    case 7: //Status
+                    case 8: //Status
                         $player->chat('/bcp status');
                         break;
                 }
@@ -82,6 +85,7 @@ final class Forms
             ->addClassicButton($lang->translateString('form.menu.lookup'))
             ->addClassicButton($lang->translateString('general.rollback'))
             ->addClassicButton($lang->translateString('general.restore'))
+            ->addClassicButton($lang->translateString('general.undo'))
             ->addClassicButton($lang->translateString('form.menu.purge'))
             ->addClassicButton($lang->translateString('form.menu.reload'))
             ->addClassicButton($lang->translateString('form.menu.status'))
