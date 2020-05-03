@@ -29,6 +29,13 @@ use function iterator_to_array;
 
 final class BlockSniperListener extends BedcoreListener
 {
+    /**
+     * @param BrushUseEvent $event
+     *
+     * @softDepend BlockSniper
+     * @priority MONITOR
+     * @ignoreCancelled
+     */
     public function trackBrushUse(BrushUseEvent $event): void
     {
         if ($this->config->isEnabledWorld($event->getLevel()) && $this->config->getBlockSniperHook()) {

@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
@@ -34,13 +33,11 @@ use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
-use pocketmine\tile\Chest;
 use pocketmine\tile\ItemFrame as ItemFrameTile;
 use UnexpectedValueException;
 
@@ -49,7 +46,7 @@ final class PlayerListener extends BedcoreListener
     /**
      * @param PlayerJoinEvent $event
      *
-     * @priority HIGHEST
+     * @priority LOWEST
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {
@@ -57,19 +54,10 @@ final class PlayerListener extends BedcoreListener
     }
 
     /**
-     * @param PlayerQuitEvent $event
-     *
-     * @priority LOWEST
-     */
-    public function onPlayerQuit(PlayerQuitEvent $event): void
-    {
-        Inspector::removeInspector($event->getPlayer());
-    }
-
-    /**
      * @param PlayerBucketEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
@@ -117,6 +105,7 @@ final class PlayerListener extends BedcoreListener
      * @param PlayerInteractEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
@@ -128,67 +117,43 @@ final class PlayerListener extends BedcoreListener
             $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
             $rightClickBlock = $event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK;
 
-            if (Inspector::isInspector($player)) {
-                if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $position = $clickedBlock->asPosition();
-                    $tileChest = BlockUtils::asTile($clickedBlock);
-                    if ($tileChest instanceof Chest) { //This is needed for double chest to get the position of its holder (the left chest).
-                        $holder = $tileChest->getInventory()->getHolder();
-                        if ($holder !== null) {
-                            $position = $holder->asPosition();
-                        }
+            if ($leftClickBlock || $rightClickBlock) {
+                $face = $event->getFace();
+                $replacedBlock = $clickedBlock->getSide($face);
+                if ($leftClickBlock) {
+                    if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
+                        $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
+                        return;
                     }
-                    $this->pluginQueries->requestTransactionLog($player, $position);
-                    $event->setCancelled();
-
-                //This check must be done due to allow BlockPlaceEvent to be fired (second "OR" condition)
-                } elseif ($leftClickBlock || ($rightClickBlock && !$itemInHand->canBePlaced())) {
-                    $this->pluginQueries->requestBlockLog($player, $clickedBlock);
-                    $event->setCancelled();
+                } else { //Right click
+                    if ($this->config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
+                        if ($clickedBlock instanceof TNT) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                        } else {
+                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                        }
+                        return;
+                    }
                 }
 
-                return;
-            }
-
-            if (!$event->isCancelled()) {
-                if ($leftClickBlock || $rightClickBlock) {
-                    $face = $event->getFace();
-                    $replacedBlock = $clickedBlock->getSide($face);
-                    if ($leftClickBlock) {
-                        if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
-                            return;
-                        }
-                    } else { //Right click
-                        if ($this->config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
-                            if ($clickedBlock instanceof TNT) {
-                                $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
-                            } else {
-                                $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                if ($this->config->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
+                    if ($clickedBlock instanceof ItemFrame) {
+                        $tile = BlockUtils::asTile($clickedBlock);
+                        if ($tile instanceof ItemFrameTile) {
+                            $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
+                            //I consider the ItemFrame as a fake inventory holder to only log "adding/removing" item.
+                            if (!$tile->hasItem() && !$itemInHand->isNull()) {
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
+                                return;
+                            } elseif ($tile->hasItem() && $leftClickBlock) {
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
+                                return;
                             }
-                            return;
                         }
                     }
 
-                    if ($this->config->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
-                        if ($clickedBlock instanceof ItemFrame) {
-                            $tile = BlockUtils::asTile($clickedBlock);
-                            if ($tile instanceof ItemFrameTile) {
-                                $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
-                                //I consider the ItemFrame as a fake inventory holder to only log "adding/removing" item.
-                                if (!$tile->hasItem() && !$itemInHand->isNull()) {
-                                    $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::ADD());
-                                    return;
-                                } elseif ($tile->hasItem() && $leftClickBlock) {
-                                    $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $oldNbt, Action::REMOVE());
-                                    return;
-                                }
-                            }
-                        }
-
-                        if (!$clickedBlock instanceof Air) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
-                        }
+                    if (!$clickedBlock instanceof Air) {
+                        $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
                     }
                 }
             }
@@ -199,6 +164,7 @@ final class PlayerListener extends BedcoreListener
      * @param InventoryTransactionEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled true
      */
     public function trackInventoryTransaction(InventoryTransactionEvent $event): void
     {

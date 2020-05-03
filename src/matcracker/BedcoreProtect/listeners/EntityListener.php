@@ -41,6 +41,7 @@ final class EntityListener extends BedcoreListener
      * @param EntityExplodeEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackEntityExplode(EntityExplodeEvent $event): void
     {
@@ -54,6 +55,7 @@ final class EntityListener extends BedcoreListener
      * @param EntitySpawnEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackEntitySpawn(EntitySpawnEvent $event): void
     {
@@ -88,6 +90,7 @@ final class EntityListener extends BedcoreListener
      * @param EntityDamageByEntityEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackEntityDamageByEntity(EntityDamageByEntityEvent $event): void
     {
@@ -111,6 +114,7 @@ final class EntityListener extends BedcoreListener
      * @param EntityDeathEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackEntityDeath(EntityDeathEvent $event): void
     {
@@ -136,6 +140,7 @@ final class EntityListener extends BedcoreListener
      * @param EntityBlockChangeEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackEntityBlockChange(EntityBlockChangeEvent $event): void
     {

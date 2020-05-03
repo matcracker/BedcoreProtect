@@ -28,6 +28,7 @@ use matcracker\BedcoreProtect\listeners\BedcoreListener;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
+use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
@@ -181,12 +182,10 @@ final class Main extends PluginBase
             new BlockListener($this),
             new EntityListener($this),
             new PlayerListener($this),
-            new WorldListener($this)
+            new WorldListener($this),
+            new InspectorListener($this),
+            new BlockSniperListener($this)
         ];
-
-        if ($this->bsHooked) {
-            $this->events[] = new BlockSniperListener($this);
-        }
 
         foreach ($this->events as $event) {
             $pluginManager->registerEvents($event, $this);

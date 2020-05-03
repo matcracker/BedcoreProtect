@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
@@ -48,18 +47,13 @@ final class BlockListener extends BedcoreListener
      * @param BlockBreakEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
         if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
-
-            if (Inspector::isInspector($player)) { //It checks the block clicked
-                $this->pluginQueries->requestBlockLog($player, $block);
-                $event->setCancelled();
-                return;
-            }
 
             if ($block instanceof Door) {
                 $top = $block->getDamage() & 0x08;
@@ -106,46 +100,41 @@ final class BlockListener extends BedcoreListener
      * @param BlockPlaceEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
         if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockPlace()) {
-
             $replacedBlock = $event->getBlockReplaced();
+            $block = $event->getBlock();
 
-            if (Inspector::isInspector($player)) { //It checks the block where the player places.
-                $this->pluginQueries->requestBlockLog($player, $replacedBlock);
-                $event->setCancelled();
-            } else {
-                $block = $event->getBlock();
-                //HACK: Remove when issue PMMP#1760 is fixed (never).
-                $this->plugin->getScheduler()->scheduleDelayedTask(
-                    new ClosureTask(
-                        function (int $currentTick) use ($replacedBlock, $block, $player) : void {
-                            //Update the block instance to get the real placed block data.
-                            $updBlock = $block->getLevel()->getBlock($block->asVector3());
+            //HACK: Remove when issue PMMP#1760 is fixed (never).
+            $this->plugin->getScheduler()->scheduleDelayedTask(
+                new ClosureTask(
+                    function (int $currentTick) use ($replacedBlock, $block, $player) : void {
+                        //Update the block instance to get the real placed block data.
+                        $updBlock = $block->getLevel()->getBlock($block->asVector3());
 
-                            /** @var Block|null $otherHalfBlock */
-                            $otherHalfBlock = null;
-                            if ($updBlock instanceof Bed) {
-                                $otherHalfBlock = $updBlock->getOtherHalf();
-                            } elseif ($updBlock instanceof Door) {
-                                $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
-                            }
+                        /** @var Block|null $otherHalfBlock */
+                        $otherHalfBlock = null;
+                        if ($updBlock instanceof Bed) {
+                            $otherHalfBlock = $updBlock->getOtherHalf();
+                        } elseif ($updBlock instanceof Door) {
+                            $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
+                        }
 
-                            if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
-                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
+                        if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
+                            $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
 
-                                if ($otherHalfBlock !== null) {
-                                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
-                                }
+                            if ($otherHalfBlock !== null) {
+                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
                             }
                         }
-                    ),
-                    1
-                );
-            }
+                    }
+                ),
+                1
+            );
         }
     }
 
@@ -153,6 +142,7 @@ final class BlockListener extends BedcoreListener
      * @param BlockSpreadEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockSpread(BlockSpreadEvent $event): void
     {
@@ -170,6 +160,7 @@ final class BlockListener extends BedcoreListener
      * @param BlockBurnEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled true
      */
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
@@ -185,6 +176,7 @@ final class BlockListener extends BedcoreListener
      * @param BlockFormEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockForm(BlockFormEvent $event): void
     {
