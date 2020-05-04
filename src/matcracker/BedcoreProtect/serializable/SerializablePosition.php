@@ -19,7 +19,7 @@
 
 namespace matcracker\BedcoreProtect\serializable;
 
-use http\Exception\InvalidArgumentException;
+use InvalidArgumentException;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Server;

@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\serializable;
 
-use http\Exception\InvalidArgumentException;
+use InvalidArgumentException;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;

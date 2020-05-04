@@ -25,7 +25,7 @@ abstract class AbstractSerializable
 {
     /**
      * Returns an instance of AbstractSerializable from $object.
-     * @param $object
+     * @param mixed $object
      * @return static
      */
     abstract public static function fromPrimitive($object): self;

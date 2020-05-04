@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\serializable;
 
-use http\Exception\InvalidArgumentException;
+use InvalidArgumentException;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
