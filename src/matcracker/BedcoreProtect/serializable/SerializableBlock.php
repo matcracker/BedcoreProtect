@@ -21,14 +21,16 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\serializable;
 
+use http\Exception\InvalidArgumentException;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
-use pocketmine\level\Position;
-use pocketmine\Server;
+use function get_class;
 
-final class SerializableBlock extends SerializableWorld
+final class SerializableBlock extends SerializablePosition
 {
+    /** @var string */
+    private $name;
     /** @var int */
     private $id;
     /** @var int */
@@ -36,9 +38,10 @@ final class SerializableBlock extends SerializableWorld
     /** @var string|null */
     private $serializedNbt;
 
-    public function __construct(int $id, int $meta, ?int $x, ?int $y, ?int $z, ?string $worldName, ?string $serializedNbt = null)
+    public function __construct(string $name, int $id, int $meta, ?int $x, ?int $y, ?int $z, ?string $worldName, ?string $serializedNbt = null)
     {
-        parent::__construct($x, $y, $z, $worldName);
+        parent::__construct((float)$x, (float)$y, (float)$z, $worldName);
+        $this->name = $name;
         $this->id = $id;
         $this->meta = $meta;
         $this->serializedNbt = $serializedNbt;
@@ -48,40 +51,47 @@ final class SerializableBlock extends SerializableWorld
      * @param Block $block
      * @return SerializableBlock
      */
-    public static function toSerializableBlock(Block $block): self
+    public static function fromPrimitive($block): AbstractSerializable
     {
-        $worldName = null;
-        if (($world = $block->getLevel()) !== null) {
-            $worldName = $world->getFolderName();
+        if (!$block instanceof Block) {
+            throw new InvalidArgumentException("Expected Block instance, got " . get_class($block));
         }
-        return new self($block->getId(), $block->getDamage(), (int)$block->getX(), (int)$block->getY(), (int)$block->getZ(), $worldName, BlockUtils::serializeBlockTileNBT($block));
-    }
 
-    public function toBlock(): Block
-    {
-        $world = Server::getInstance()->getLevelByName($this->worldName);
-        return BlockFactory::get($this->id, $this->meta, new Position($this->x, $this->y, $this->z, $world));
+        return new self(
+            $block->getName(),
+            $block->getId(),
+            $block->getDamage(),
+            (int)$block->getX(),
+            (int)$block->getY(),
+            (int)$block->getZ(),
+            parent::fromPrimitive($block)->worldName,
+            BlockUtils::serializeBlockTileNBT($block)
+        );
     }
 
     /**
-     * @return int
+     * @return Block
      */
+    public function toPrimitive()
+    {
+        return BlockFactory::get($this->id, $this->meta, parent::toPrimitive());
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
     public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * @return int
-     */
     public function getMeta(): int
     {
         return $this->meta;
     }
 
-    /**
-     * @return string|null
-     */
     public function getSerializedNbt(): ?string
     {
         return $this->serializedNbt;

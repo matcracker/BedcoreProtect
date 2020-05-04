@@ -22,14 +22,14 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\serializable\SerializableWorld;
+use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use function mb_substr;
 
 final class LogsQueryGeneratorTask extends QueryGeneratorTask
 {
     /** @var string */
     private $uuid;
-    /** @var SerializableWorld[] */
+    /** @var SerializablePosition[] */
     private $positions;
     /** @var Action */
     private $action;
@@ -37,7 +37,7 @@ final class LogsQueryGeneratorTask extends QueryGeneratorTask
     /**
      * LogsQueryGen constructor.
      * @param string $uuid
-     * @param SerializableWorld[] $positions
+     * @param SerializablePosition[] $positions
      * @param Action $action
      * @param callable|null $onComplete
      */

@@ -26,7 +26,7 @@ use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
-use matcracker\BedcoreProtect\serializable\SerializableWorld;
+use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\tasks\async\InventoriesQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
@@ -76,9 +76,8 @@ class InventoriesQueries extends Query
                     $slot = $slotAction->getSlot();
                     $sourceItem = $slotAction->getSourceItem();
                     $targetItem = $slotAction->getTargetItem();
-
+                    $position = SerializablePosition::fromPrimitive(Position::fromObject($holder, $player->getLevel()));
                     $playerUuid = Utils::getEntityUniqueId($player);
-                    $position = Position::fromObject($holder, $player->getLevel());
 
                     if ($sourceItem->equals($targetItem)) {
                         $sourceCount = $sourceItem->getCount();
@@ -132,10 +131,10 @@ class InventoriesQueries extends Query
     {
         /** @var SerializableItem[] $contents */
         $contents = array_map(static function (Item $item): SerializableItem {
-            return SerializableItem::toSerializableItem($item);
+            return SerializableItem::fromPrimitive($item);
         }, $inventory->getContents());
 
-        $positions = array_fill(0, count($contents), new SerializableWorld(
+        $positions = array_fill(0, count($contents), new SerializablePosition(
             $inventoryPosition->getFloorX(),
             $inventoryPosition->getFloorY(),
             $inventoryPosition->getFloorZ(),

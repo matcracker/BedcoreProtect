@@ -21,11 +21,13 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\serializable;
 
+use http\Exception\InvalidArgumentException;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
+use function get_class;
 
-final class SerializableItem
+final class SerializableItem extends AbstractSerializable
 {
     /** @var int */
     private $id;
@@ -48,44 +50,31 @@ final class SerializableItem
      * @param Item $item
      * @return SerializableItem
      */
-    public static function toSerializableItem(Item $item): self
+    public static function fromPrimitive($item): AbstractSerializable
     {
+        if (!$item instanceof Item) {
+            throw new InvalidArgumentException("Expected Item instance, got " . get_class($item));
+        }
+
         return new self($item->getId(), $item->getDamage(), $item->getCount(), Utils::serializeNBT($item->getNamedTag()));
     }
 
-    public function toItem(): Item
-    {
-        return ItemFactory::get($this->id, $this->meta, $this->count, Utils::deserializeNBT($this->serializedNbt));
-    }
-
-    /**
-     * @return int
-     */
     public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * @return int
-     */
     public function getMeta(): int
     {
         return $this->meta;
     }
 
-    /**
-     * @return int
-     */
     public function getCount(): int
     {
         return $this->count;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getSerializedNbt(): ?string
+    public function getSerializedNbt(): string
     {
         return $this->serializedNbt;
     }
@@ -93,5 +82,13 @@ final class SerializableItem
     public function __toString(): string
     {
         return "SerializableItem({$this->id}:{$this->meta})[{$this->count}]";
+    }
+
+    /**
+     * @return Item
+     */
+    public function toPrimitive()
+    {
+        return ItemFactory::get($this->id, $this->meta, $this->count, Utils::deserializeNBT($this->serializedNbt));
     }
 }

@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\math;
 
-use matcracker\BedcoreProtect\serializable\SerializableWorld;
+use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -81,7 +81,7 @@ final class Area
     }
 
     /**
-     * @param SerializableWorld[]|Vector3[] $positions
+     * @param SerializablePosition[]|Vector3[] $positions
      * @return Chunk[]
      */
     public function getTouchedChunks(array $positions): array

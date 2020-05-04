@@ -26,11 +26,12 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\ConfigParser;
-use pocketmine\level\Position;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
+use function floor;
 use function microtime;
 use function strtolower;
 
@@ -132,22 +133,22 @@ abstract class Query
         return yield Await::ONCE;
     }
 
+    final protected function addRawLog(string $uuid, SerializablePosition $position, Action $action): Generator
+    {
+        return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
+            'uuid' => strtolower($uuid),
+            'x' => (int)floor($position->getX()),
+            'y' => (int)floor($position->getY()),
+            'z' => (int)floor($position->getZ()),
+            'world_name' => $position->getWorldName(),
+            'action' => $action->getType()
+        ]);
+    }
+
     final protected function executeInsert(string $query, array $args = []): Generator
     {
         $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
-    }
-
-    final protected function addRawLog(string $uuid, Position $position, Action $action): Generator
-    {
-        return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => strtolower($uuid),
-            'x' => $position->getFloorX(),
-            'y' => $position->getFloorY(),
-            'z' => $position->getFloorZ(),
-            'world_name' => $position->getLevel()->getName(),
-            'action' => $action->getType()
-        ]);
     }
 
     final protected function executeSelect(string $query, array $args = []): Generator

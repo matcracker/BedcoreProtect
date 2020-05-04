@@ -26,6 +26,8 @@ use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
+use matcracker\BedcoreProtect\serializable\SerializableEntity;
+use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use matcracker\BedcoreProtect\tasks\async\BlocksQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
@@ -38,7 +40,6 @@ use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\level\Position;
-use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\tile\Tile;
@@ -77,36 +78,37 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $oldTag = BlockUtils::getCompoundTag($oldBlock);
-        $newTag = BlockUtils::getCompoundTag($newBlock);
+        $entity = SerializableEntity::fromPrimitive($entity);
+        $oldBlock = SerializableBlock::fromPrimitive($oldBlock);
+        $newBlock = SerializableBlock::fromPrimitive($newBlock);
 
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->entitiesQueries->addEntityGenerator($entity);
             },
-            function () use ($entity, $oldBlock, $oldTag, $newBlock, $newTag, $action, $position): void {
-                $this->addRawBlockLog(Utils::getEntityUniqueId($entity), $oldBlock, $oldTag, $newBlock, $newTag, $action, $position);
+            function () use ($entity, $oldBlock, $newBlock, $action, $position): void {
+                $this->addRawBlockLog($entity->getUuid(), $oldBlock, $newBlock, $action, $position);
             }
         );
     }
 
-    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldTag, Block $newBlock, ?CompoundTag $newTag, Action $action, ?Position $position = null): void
+    final protected function addRawBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Action $action, ?Position $position = null): void
     {
-        Await::f2c(
-            function () use ($uuid, $oldBlock, $oldTag, $newBlock, $newTag, $action, $position): Generator {
-                $pos = $position ?? $newBlock->asPosition();
+        $position = $position !== null ? SerializablePosition::fromPrimitive($position) : $newBlock;
 
+        Await::f2c(
+            function () use ($uuid, $oldBlock, $newBlock, $action, $position): Generator {
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($uuid, $pos, $action);
+                $lastId = yield $this->addRawLog($uuid, $position, $action);
 
                 yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
                     'log_id' => $lastId,
                     'old_id' => $oldBlock->getId(),
-                    'old_meta' => $oldBlock->getDamage(),
-                    'old_nbt' => $oldTag !== null ? Utils::serializeNBT($oldTag) : null,
+                    'old_meta' => $oldBlock->getMeta(),
+                    'old_nbt' => $oldBlock->getSerializedNbt(),
                     'new_id' => $newBlock->getId(),
-                    'new_meta' => $newBlock->getDamage(),
-                    'new_nbt' => $newTag !== null ? Utils::serializeNBT($newTag) : null
+                    'new_meta' => $newBlock->getMeta(),
+                    'new_nbt' => $newBlock->getSerializedNbt()
                 ]);
             },
             static function (): void {
@@ -132,18 +134,24 @@ class BlocksQueries extends Query
             $name = 'leaves';
         }
 
-        $this->addRawBlockLog("{$name}-uuid", $oldBlock, BlockUtils::getCompoundTag($oldBlock), $newBlock, BlockUtils::getCompoundTag($newBlock), $action, $position);
+        $this->addRawBlockLog(
+            "{$name}-uuid",
+            SerializableBlock::fromPrimitive($oldBlock),
+            SerializableBlock::fromPrimitive($newBlock),
+            $action,
+            $position
+        );
     }
 
     /**
      * @param Player $player
      * @param ItemFrame $itemFrame
-     * @param CompoundTag|null $oldItemFrameNbt
      * @param Action $action
      */
-    public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, ?CompoundTag $oldItemFrameNbt, Action $action): void
+    public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Action $action): void
     {
-        $this->addRawBlockLog(Utils::getEntityUniqueId($player), $itemFrame, $oldItemFrameNbt, $itemFrame, BlockUtils::getCompoundTag($itemFrame), $action);
+        $itemFrame = SerializableBlock::fromPrimitive($itemFrame);
+        $this->addRawBlockLog(Utils::getEntityUniqueId($player), $itemFrame, $itemFrame, $action);
     }
 
     /**
@@ -159,7 +167,7 @@ class BlocksQueries extends Query
         }
 
         $oldBlocks = array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::toSerializableBlock($block);
+            return SerializableBlock::fromPrimitive($block);
         }, $oldBlocks);
 
         if (is_array($newBlocks)) {
@@ -170,18 +178,19 @@ class BlocksQueries extends Query
             (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
             $newBlocks = array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::toSerializableBlock($block);
+                return SerializableBlock::fromPrimitive($block);
             }, $newBlocks);
         } else {
-            $newBlocks = SerializableBlock::toSerializableBlock($newBlocks);
+            $newBlocks = SerializableBlock::fromPrimitive($newBlocks);
         }
 
+        $entity = SerializableEntity::fromPrimitive($entity);
         Await::f2c(
             function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
                 yield $this->entitiesQueries->addEntityGenerator($entity);
 
                 $logsTask = new LogsQueryGeneratorTask(
-                    Utils::getEntityUniqueId($entity),
+                    $entity->getUuid(),
                     $oldBlocks,
                     $action,
                     function (string $query) use ($oldBlocks, $newBlocks) : Generator {
@@ -226,7 +235,7 @@ class BlocksQueries extends Query
 
         foreach ($blockRows as $row) {
             $serializedNBT = (string)$row["{$prefix}_nbt"];
-            $blocks[] = $block = new SerializableBlock((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
+            $blocks[] = $block = new SerializableBlock("", (int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
 
             if (strlen($serializedNBT) > 0) {
                 $nbt = Utils::deserializeNBT($serializedNBT);
@@ -238,7 +247,7 @@ class BlocksQueries extends Query
                     $area->getWorld()->addTile($tile);
                 }
             } else {
-                $tile = BlockUtils::asTile($block->toBlock());
+                $tile = BlockUtils::asTile($block->toPrimitive());
                 if ($tile !== null) {
                     $area->getWorld()->removeTile($tile);
                 }

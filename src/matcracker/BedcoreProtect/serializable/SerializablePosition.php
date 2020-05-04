@@ -17,24 +17,26 @@
  *
 */
 
-
 namespace matcracker\BedcoreProtect\serializable;
 
+use http\Exception\InvalidArgumentException;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\Server;
+use function get_class;
 
-class SerializableWorld
+class SerializablePosition extends AbstractSerializable
 {
-    /** @var int|null */
+    /** @var float */
     protected $x;
-    /** @var int|null */
+    /** @var float */
     protected $y;
-    /** @var int|null */
+    /** @var float */
     protected $z;
     /** @var string|null */
     protected $worldName;
 
-    public function __construct(?int $x, ?int $y, ?int $z, ?string $worldName)
+    public function __construct(float $x, float $y, float $z, ?string $worldName)
     {
         $this->x = $x;
         $this->y = $y;
@@ -44,49 +46,50 @@ class SerializableWorld
 
     /**
      * @param Vector3 $vector3
-     * @return SerializableWorld
+     * @return SerializablePosition
      */
-    final public static function toSerializableWorld(Vector3 $vector3): self
+    public static function fromPrimitive($vector3): AbstractSerializable
     {
+        if (!$vector3 instanceof Vector3) {
+            throw new InvalidArgumentException("Expected Vector3 instance, got " . get_class($vector3));
+        }
+
         $worldName = null;
         if ($vector3 instanceof Position) {
             if (($world = $vector3->getLevel()) !== null) {
-                $worldName = $world->getFolderName();
+                $worldName = $world->getName();
             }
         }
 
-        return new self((int)$vector3->getX(), (int)$vector3->getY(), (int)$vector3->getZ(), $worldName);
+        return new self((float)$vector3->getX(), (float)$vector3->getY(), (float)$vector3->getZ(), $worldName);
     }
 
-    /**
-     * @return int|null
-     */
-    final public function getX(): ?int
+    final public function getX(): float
     {
         return $this->x;
     }
 
-    /**
-     * @return int|null
-     */
-    final public function getY(): ?int
+    final public function getY(): float
     {
         return $this->y;
     }
 
-    /**
-     * @return int|null
-     */
-    final public function getZ(): ?int
+    final public function getZ(): float
     {
         return $this->z;
     }
 
-    /**
-     * @return string|null
-     */
     final public function getWorldName(): ?string
     {
         return $this->worldName;
+    }
+
+    /**
+     * @return Position
+     */
+    public function toPrimitive()
+    {
+        $world = $this->worldName !== null ? Server::getInstance()->getLevelByName($this->worldName) : null;
+        return new Position($this->x, $this->y, $this->z, $world);
     }
 }

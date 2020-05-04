@@ -78,7 +78,7 @@ final class RollbackTask extends AsyncTask
             $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
             /** @var Chunk[] $chunks */
             if (isset($chunks[$index])) {
-                $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, $vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
+                $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, (int)$vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
             }
         }
 

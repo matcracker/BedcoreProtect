@@ -25,16 +25,15 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
+use matcracker\BedcoreProtect\serializable\SerializableEntity;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\entity\Entity;
-use pocketmine\entity\Living;
-use pocketmine\Player;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
-use function get_class;
 use function microtime;
 
 /**
@@ -80,13 +79,16 @@ class EntitiesQueries extends Query
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
+        $damager = SerializableEntity::fromPrimitive($damager);
+        $entity = SerializableEntity::fromPrimitive($entity);
+
         Await::f2c(
             function () use ($damager, $entity, $action): Generator {
                 yield $this->addEntityGenerator($damager);
                 yield $this->addEntityGenerator($entity);
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog(Utils::getEntityUniqueId($damager), $entity, $action);
+                $lastId = yield $this->addRawLog($damager->getUuid(), $entity, $action);
                 yield $this->addEntityLog($lastId, $entity);
             },
             static function (): void {
@@ -96,45 +98,36 @@ class EntitiesQueries extends Query
     }
 
     /**
-     * @param Entity $entity
+     * @param SerializableEntity $entity
      * @return Generator
      * @internal
      */
-    final public function addEntityGenerator(Entity $entity): Generator
+    final public function addEntityGenerator(SerializableEntity $entity): Generator
     {
-        return $this->addRawEntity(
-            Utils::getEntityUniqueId($entity),
-            Utils::getEntityName($entity),
-            get_class($entity),
-            ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1"
-        );
+        return $this->addRawEntity($entity->getUuid(), $entity->getName(), $entity->getClassPath(), $entity->getAddress());
     }
 
-    final protected function addEntityLog(int $logId, Entity $entity): Generator
+    final protected function addEntityLog(int $logId, SerializableEntity $entity): Generator
     {
-        $entity->saveNBT();
-
-        if ($entity instanceof Living) {
-            $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
-        }
-
         return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
             'log_id' => $logId,
-            'uuid' => Utils::getEntityUniqueId($entity),
+            'uuid' => $entity->getUuid(),
             'id' => $entity->getId(),
-            'nbt' => Utils::serializeNBT($entity->namedtag)
+            'nbt' => $entity->getSerializedNbt()
         ]);
     }
 
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
+        $entity = SerializableEntity::fromPrimitive($entity);
+        $block = SerializableBlock::fromPrimitive($block);
         Await::f2c(
             function () use ($entity, $block, $action): Generator {
                 yield $this->addEntityGenerator($entity);
 
                 $name = $block->getName();
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog("{$name}-uuid", $block->asPosition(), $action);
+                $lastId = yield $this->addRawLog("{$name}-uuid", $block, $action);
 
                 yield $this->addEntityLog($lastId, $entity);
             },
@@ -146,6 +139,7 @@ class EntitiesQueries extends Query
 
     final public function addEntity(Entity $entity): void
     {
+        $entity = SerializableEntity::fromPrimitive($entity);
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->addEntityGenerator($entity);
