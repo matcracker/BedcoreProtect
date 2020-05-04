@@ -59,50 +59,54 @@ class InventoriesQueries extends Query
 {
     public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction): void
     {
+        $inventory = $slotAction->getInventory();
+
+        if (!$inventory instanceof ContainerInventory) {
+            return;
+        }
+
+        /**
+         * Note for double chest holder
+         * It always logs the position of the left chest.
+         * @see DoubleChestInventory::getHolder()
+         */
+        $holder = $inventory->getHolder();
+        if (!($holder instanceof Vector3)) {
+            return;
+        }
+
+        $position = SerializablePosition::fromPrimitive(Position::fromObject($holder, $player->getLevel()));
+
         Await::f2c(
-            function () use ($player, $slotAction): Generator {
-                $inventory = $slotAction->getInventory();
+            function () use ($player, $slotAction, $position): Generator {
+                $slot = $slotAction->getSlot();
+                $sourceItem = $slotAction->getSourceItem();
+                $targetItem = $slotAction->getTargetItem();
 
-                if ($inventory instanceof ContainerInventory) {
-                    /**
-                     * Note for double chest holder
-                     * It always logs the position of the left chest.
-                     * @see DoubleChestInventory::getHolder()
-                     */
-                    $holder = $inventory->getHolder();
-                    if (!($holder instanceof Vector3)) {
-                        return;
-                    }
+                $playerUuid = EntityUtils::getUniqueId($player);
 
-                    $slot = $slotAction->getSlot();
-                    $sourceItem = $slotAction->getSourceItem();
-                    $targetItem = $slotAction->getTargetItem();
-                    $position = SerializablePosition::fromPrimitive(Position::fromObject($holder, $player->getLevel()));
-                    $playerUuid = EntityUtils::getUniqueId($player);
-
-                    if ($sourceItem->equals($targetItem)) {
-                        $sourceCount = $sourceItem->getCount();
-                        $targetCount = $targetItem->getCount(); //Final count
-                        if ($targetCount > $sourceCount) {
-                            $action = Action::ADD();
-                            $targetItem->setCount($targetCount - $sourceCount); //Effective number of blocks added
-                        } else {
-                            $action = Action::REMOVE();
-                            $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
-                        }
-                        $lastId = yield $this->addRawLog($playerUuid, $position, $action);
-                    } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
-                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
-                        yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
-                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
-                    } elseif (!$sourceItem->isNull()) {
-                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                if ($sourceItem->equals($targetItem)) {
+                    $sourceCount = $sourceItem->getCount();
+                    $targetCount = $targetItem->getCount(); //Final count
+                    if ($targetCount > $sourceCount) {
+                        $action = Action::ADD();
+                        $targetItem->setCount($targetCount - $sourceCount); //Effective number of blocks added
                     } else {
-                        $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                        $action = Action::REMOVE();
+                        $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
                     }
-
+                    $lastId = yield $this->addRawLog($playerUuid, $position, $action);
+                } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
+                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
                     yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
+                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                } elseif (!$sourceItem->isNull()) {
+                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                } else {
+                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
                 }
+
+                yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
             },
             static function (): void {
                 //NOOP
