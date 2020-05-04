@@ -38,7 +38,7 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
-use pocketmine\tile\ItemFrame as ItemFrameTile;
+use pocketmine\tile\ItemFrame as TileItemFrame;
 use UnexpectedValueException;
 
 final class PlayerListener extends BedcoreListener
@@ -139,7 +139,7 @@ final class PlayerListener extends BedcoreListener
                 if ($this->config->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
                     if ($clickedBlock instanceof ItemFrame) {
                         $tile = BlockUtils::asTile($clickedBlock);
-                        if ($tile instanceof ItemFrameTile) {
+                        if ($tile instanceof TileItemFrame) {
                             $oldNbt = BlockUtils::getCompoundTag($clickedBlock);
                             //I consider the ItemFrame as a fake inventory holder to only log "adding/removing" item.
                             if (!$tile->hasItem() && !$itemInHand->isNull()) {
@@ -164,7 +164,7 @@ final class PlayerListener extends BedcoreListener
      * @param InventoryTransactionEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled true
+     * @ignoreCancelled
      */
     public function trackInventoryTransaction(InventoryTransactionEvent $event): void
     {

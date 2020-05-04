@@ -287,6 +287,36 @@ final class CommandParser
         return $query;
     }
 
+    /**
+     * @return Block[]|null
+     */
+    public function getBlocks(): ?array
+    {
+        return $this->getData('blocks');
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return mixed
+     */
+    private function getData(string $key)
+    {
+        if (!$this->parsed) {
+            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
+        }
+
+        return $this->data[$key];
+    }
+
+    /**
+     * @return Block[]|null
+     */
+    public function getExclusions(): ?array
+    {
+        return $this->getData('exclusions');
+    }
+
     protected function buildConditionalQuery(string &$query, ?AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
@@ -429,20 +459,6 @@ final class CommandParser
     }
 
     /**
-     * @param string $key
-     *
-     * @return mixed
-     */
-    private function getData(string $key)
-    {
-        if (!$this->parsed) {
-            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
-        }
-
-        return $this->data[$key];
-    }
-
-    /**
      * It returns an array with the parsed data from the command.
      *
      * @return array
@@ -465,21 +481,5 @@ final class CommandParser
     public function getAction(): ?string
     {
         return $this->getData("action");
-    }
-
-    /**
-     * @return Block[]|null
-     */
-    public function getBlocks(): ?array
-    {
-        return $this->getData('blocks');
-    }
-
-    /**
-     * @return Block[]|null
-     */
-    public function getExclusions(): ?array
-    {
-        return $this->getData('exclusions');
     }
 }

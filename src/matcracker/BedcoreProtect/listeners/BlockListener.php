@@ -160,7 +160,7 @@ final class BlockListener extends BedcoreListener
      * @param BlockBurnEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled true
+     * @ignoreCancelled
      */
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
