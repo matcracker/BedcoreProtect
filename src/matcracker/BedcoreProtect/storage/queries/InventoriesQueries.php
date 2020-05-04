@@ -30,6 +30,7 @@ use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\tasks\async\InventoriesQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\Inventory;
@@ -77,7 +78,7 @@ class InventoriesQueries extends Query
                     $sourceItem = $slotAction->getSourceItem();
                     $targetItem = $slotAction->getTargetItem();
                     $position = SerializablePosition::fromPrimitive(Position::fromObject($holder, $player->getLevel()));
-                    $playerUuid = Utils::getEntityUniqueId($player);
+                    $playerUuid = EntityUtils::getUniqueId($player);
 
                     if ($sourceItem->equals($targetItem)) {
                         $sourceCount = $sourceItem->getCount();
@@ -142,7 +143,7 @@ class InventoriesQueries extends Query
         ));
 
         $logsTask = new LogsQueryGeneratorTask(
-            Utils::getEntityUniqueId($player),
+            EntityUtils::getUniqueId($player),
             $positions,
             Action::REMOVE(),
             function (string $query) use ($contents): Generator {

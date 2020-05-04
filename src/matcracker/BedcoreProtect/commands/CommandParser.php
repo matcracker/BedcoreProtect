@@ -28,6 +28,7 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
@@ -160,7 +161,7 @@ final class CommandParser
                     foreach ($users as &$user) {
                         if (mb_substr($user, 0, 1) === '#') { //Entity
                             $user = mb_substr($user, 1);
-                            if (!in_array($user, Utils::getEntitySaveNames())) {
+                            if (!in_array($user, EntityUtils::getSaveNames())) {
                                 $this->errorMessage = $lang->translateString('parser.no-entity', [$user]);
 
                                 return false;

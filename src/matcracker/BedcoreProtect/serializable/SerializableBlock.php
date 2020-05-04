@@ -65,7 +65,7 @@ final class SerializableBlock extends SerializablePosition
             (int)$block->getY(),
             (int)$block->getZ(),
             parent::fromPrimitive($block)->worldName,
-            BlockUtils::serializeBlockTileNBT($block)
+            BlockUtils::serializeTileTag($block)
         );
     }
 

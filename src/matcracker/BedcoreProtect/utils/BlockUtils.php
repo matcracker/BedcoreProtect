@@ -87,13 +87,13 @@ final class BlockUtils
     }
 
     /**
-     * Serialize a block (tile) NBT into base64. Returns null if block doesn't contain NBT.
+     * Serializes a block (tile) compound tag into base64. Returns null if block doesn't contain NBT.
      *
      * @param Block $block
      *
      * @return string|null
      */
-    public static function serializeBlockTileNBT(Block $block): ?string
+    public static function serializeTileTag(Block $block): ?string
     {
         if (($tag = self::getCompoundTag($block)) !== null) {
             return Utils::serializeNBT($tag);

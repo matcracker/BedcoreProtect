@@ -33,6 +33,7 @@ use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;
@@ -151,7 +152,7 @@ class BlocksQueries extends Query
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Action $action): void
     {
         $itemFrame = SerializableBlock::fromPrimitive($itemFrame);
-        $this->addRawBlockLog(Utils::getEntityUniqueId($player), $itemFrame, $itemFrame, $action);
+        $this->addRawBlockLog(EntityUtils::getUniqueId($player), $itemFrame, $itemFrame, $action);
     }
 
     /**

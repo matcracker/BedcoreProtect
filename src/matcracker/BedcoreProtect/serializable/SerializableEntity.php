@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\serializable;
 
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
@@ -73,9 +74,9 @@ final class SerializableEntity extends SerializablePosition
         }
 
         return new self(
-            Utils::getEntityUniqueId($entity),
+            EntityUtils::getUniqueId($entity),
             $entity->getId(),
-            Utils::getEntityName($entity),
+            EntityUtils::getName($entity),
             $classPath,
             ($entity instanceof Player) ? $entity->getAddress() : "127.0.0.1",
             (float)$entity->getX(),
