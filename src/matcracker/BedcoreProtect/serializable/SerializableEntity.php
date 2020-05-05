@@ -101,7 +101,7 @@ final class SerializableEntity extends SerializablePosition
         return Entity::createEntity($classPath::NETWORK_ID, $level, Utils::deserializeNBT($this->serializedNbt));
     }
 
-    public function getUuid(): string
+    public function getUniqueId(): string
     {
         return $this->uuid;
     }

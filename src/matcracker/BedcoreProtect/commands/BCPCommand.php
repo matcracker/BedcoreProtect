@@ -85,7 +85,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
             case "help":
                 $helpCmd = new BCPHelpCommand($sender, $lang);
                 if (isset($args[1])) {
-                    $helpCmd->showSpecificHelp($args[1]);
+                    $helpCmd->showCommandHelp($args[1]);
                 } else {
                     $helpCmd->showGenericHelp();
                 }

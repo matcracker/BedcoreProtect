@@ -55,7 +55,7 @@ final class BCPHelpCommand
         $this->sender->sendMessage(TextFormat::colorize("&f------"));
     }
 
-    public function showSpecificHelp(string $subCmd): void
+    public function showCommandHelp(string $subCmd): void
     {
         $subCmd = strtolower($subCmd);
         $this->sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &3" . $this->lang->translateString("command.help.title") . "&f-----"));

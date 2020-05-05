@@ -75,15 +75,14 @@ class InventoriesQueries extends Query
             return;
         }
 
+        $playerUuid = EntityUtils::getUniqueId($player);
         $position = SerializablePosition::fromPrimitive(Position::fromObject($holder, $player->getLevel()));
 
         Await::f2c(
-            function () use ($player, $slotAction, $position): Generator {
+            function () use ($playerUuid, $slotAction, $position): Generator {
                 $slot = $slotAction->getSlot();
                 $sourceItem = $slotAction->getSourceItem();
                 $targetItem = $slotAction->getTargetItem();
-
-                $playerUuid = EntityUtils::getUniqueId($player);
 
                 if ($sourceItem->equals($targetItem)) {
                     $sourceCount = $sourceItem->getCount();
@@ -139,12 +138,8 @@ class InventoriesQueries extends Query
             return SerializableItem::fromPrimitive($item);
         }, $inventory->getContents());
 
-        $positions = array_fill(0, count($contents), new SerializablePosition(
-            $inventoryPosition->getFloorX(),
-            $inventoryPosition->getFloorY(),
-            $inventoryPosition->getFloorZ(),
-            $inventoryPosition->getLevel()->getName()
-        ));
+        /** @var SerializablePosition[] $positions */
+        $positions = array_fill(0, count($contents), SerializablePosition::fromPrimitive($inventoryPosition));
 
         $logsTask = new LogsQueryGeneratorTask(
             EntityUtils::getUniqueId($player),
@@ -193,9 +188,8 @@ class InventoriesQueries extends Query
                 $tile = $area->getWorld()->getTile($vector);
 
                 if ($tile instanceof InventoryHolder) {
-                    $slot = (int)$row['slot'];
                     $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
-                    $inv->setItem($slot, $item);
+                    $inv->setItem((int)$row['slot'], $item);
                 }
             }
         }

@@ -88,7 +88,7 @@ class BlocksQueries extends Query
                 yield $this->entitiesQueries->addEntityGenerator($entity);
             },
             function () use ($entity, $oldBlock, $newBlock, $action, $position): void {
-                $this->addRawBlockLog($entity->getUuid(), $oldBlock, $newBlock, $action, $position);
+                $this->addRawBlockLog($entity->getUniqueId(), $oldBlock, $newBlock, $action, $position);
             }
         );
     }
@@ -191,7 +191,7 @@ class BlocksQueries extends Query
                 yield $this->entitiesQueries->addEntityGenerator($entity);
 
                 $logsTask = new LogsQueryGeneratorTask(
-                    $entity->getUuid(),
+                    $entity->getUniqueId(),
                     $oldBlocks,
                     $action,
                     function (string $query) use ($oldBlocks, $newBlocks) : Generator {

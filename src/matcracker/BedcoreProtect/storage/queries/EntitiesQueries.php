@@ -88,7 +88,7 @@ class EntitiesQueries extends Query
                 yield $this->addEntityGenerator($entity);
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($damager->getUuid(), $entity, $action);
+                $lastId = yield $this->addRawLog($damager->getUniqueId(), $entity, $action);
                 yield $this->addEntityLog($lastId, $entity);
             },
             static function (): void {
@@ -104,14 +104,14 @@ class EntitiesQueries extends Query
      */
     final public function addEntityGenerator(SerializableEntity $entity): Generator
     {
-        return $this->addRawEntity($entity->getUuid(), $entity->getName(), $entity->getClassPath(), $entity->getAddress());
+        return $this->addRawEntity($entity->getUniqueId(), $entity->getName(), $entity->getClassPath(), $entity->getAddress());
     }
 
     final protected function addEntityLog(int $logId, SerializableEntity $entity): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
             'log_id' => $logId,
-            'uuid' => $entity->getUuid(),
+            'uuid' => $entity->getUniqueId(),
             'id' => $entity->getId(),
             'nbt' => $entity->getSerializedNbt()
         ]);
