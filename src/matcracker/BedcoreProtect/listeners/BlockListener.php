@@ -27,7 +27,6 @@ use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
-use pocketmine\block\Fire;
 use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
 use pocketmine\block\Water;
@@ -151,12 +150,8 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        var_dump($source->getName());
         if ($this->config->isEnabledWorld($block->getLevel())) {
             if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
-                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
-            } elseif ($source instanceof Fire) {
-
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
             }
         }
