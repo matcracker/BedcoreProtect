@@ -3,11 +3,11 @@ parameters:
     checkMissingIterableValueType: false
     paths:
         - /source/src
+        - /deps
     autoload_files:
         - phar:///pocketmine/PocketMine-MP.phar/vendor/autoload.php
     autoload_directories:
         - /source/src
-        - /source/src/matcracker/BedcoreProtect/libs
-        - phar:///deps/BlockSniper.phar/src
+        - /deps
     excludes_analyse:
-        - /source/src/matcracker/BedcoreProtect/libs
+        - /deps
