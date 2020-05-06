@@ -32,6 +32,7 @@ use function strlen;
 
 abstract class QueryGeneratorTask extends AsyncTask
 {
+    /** @var int */
     protected $logId;
 
     public function __construct(int $firstInsertedId, ?callable $onComplete)

@@ -67,22 +67,20 @@ final class RollbackTask extends AsyncTask
 
     public function onRun(): void
     {
-        /** @var string[] $chunks */
-        $chunks = (array)$this->serializedChunks;
+        /** @var Chunk[] $chunks */
+        $chunks = [];
 
-        foreach ($chunks as $hash => $chunkData) {
+        foreach ($this->serializedChunks as $hash => $chunkData) {
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
 
         foreach ($this->blocks as $vector) {
             $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
-            /** @var Chunk[] $chunks */
             if (isset($chunks[$index])) {
                 $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, (int)$vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
             }
         }
 
-        /** @var Chunk $chunk */
         foreach ($chunks as $chunk) {
             /*
              * TODO: Find a better method that works.

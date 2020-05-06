@@ -40,7 +40,7 @@ use function substr;
 
 trait RegistryTrait
 {
-    /** @var object[] */
+    /** @var self[] */
     private static $members = null;
 
     /**
@@ -83,10 +83,10 @@ trait RegistryTrait
     /**
      * @param string $name
      *
-     * @return object
+     * @return self
      * @throws InvalidArgumentException
      */
-    private static function _registryFromString(string $name): object
+    private static function _registryFromString(string $name): self
     {
         self::checkInit();
         $name = strtoupper($name);
