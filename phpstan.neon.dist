@@ -8,12 +8,13 @@ parameters:
     autoload_directories:
         - /source/src
         - /deps
-    ignoreErrors:
+	ignoreErrors:
 		-
-			message: '#^Method matcracker\\\\BedcoreProtect\\\\enums\\\\Action::getAll() should return array<matcracker\\\\BedcoreProtect\\\\enums\\\\Action> but returns array<object>\\.$#'
+			message: "#^Method matcracker\\\\BedcoreProtect\\\\enums\\\\Action::getAll() should return array<matcracker\\\\BedcoreProtect\\\\enums\\\\Action> but returns array<object>\\.$#"
 			count: 1
 			path: /source/src/matcracker/BedcoreProtect/enums/Action.php
+
 		-
-			message: '#^Method matcracker\\\\BedcoreProtect\\\\enums\\\\Action::fromString() should return matcracker\\\\BedcoreProtect\\\\enums\\\\Action but returns object\\.$#'
+			message: "#^Method matcracker\\\\BedcoreProtect\\\\enums\\\\Action::fromString() should return matcracker\\\\BedcoreProtect\\\\enums\\\\Action but returns object\\.$#"
 			count: 1
 			path: /source/src/matcracker/BedcoreProtect/enums/Action.php
