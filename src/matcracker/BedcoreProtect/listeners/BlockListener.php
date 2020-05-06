@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\Chest;
@@ -40,7 +41,6 @@ use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
 use function array_filter;
 use function count;
-use function var_dump;
 
 final class BlockListener extends BedcoreListener
 {
@@ -106,16 +106,18 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockPlace()) {
+        $level = Utils::getLevelNonNull($player->getLevel());
+
+        if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
             $block = $event->getBlock();
 
             //HACK: Remove when issue PMMP#1760 is fixed (never).
             $this->plugin->getScheduler()->scheduleDelayedTask(
                 new ClosureTask(
-                    function (int $currentTick) use ($replacedBlock, $block, $player) : void {
+                    function (int $currentTick) use ($replacedBlock, $block, $level, $player) : void {
                         //Update the block instance to get the real placed block data.
-                        $updBlock = $block->getLevel()->getBlock($block->asVector3());
+                        $updBlock = $level->getBlock($block->asVector3());
 
                         /** @var Block|null $otherHalfBlock */
                         $otherHalfBlock = null;
@@ -150,7 +152,7 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        if ($this->config->isEnabledWorld($block->getLevel())) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel()))) {
             if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
             }
@@ -166,10 +168,8 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->config->isEnabledWorld($block->getLevel()) && $this->config->getBlockBurn()) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel())) && $this->config->getBlockBurn()) {
             $cause = $event->getCausingBlock();
-
-            var_dump($block->asVector3());
 
             $this->blocksQueries->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
         }
@@ -185,7 +185,7 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
 
-        if ($this->config->isEnabledWorld($block->getLevel())) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel()))) {
             if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
                 $result = $event->getNewState();
 

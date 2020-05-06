@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\utils;
 use BadMethodCallException;
 use pocketmine\level\Level;
 use pocketmine\utils\Config;
-use UnexpectedValueException;
 use function count;
 use function date_default_timezone_set;
 use function in_array;
@@ -88,14 +87,10 @@ final class ConfigParser
         return (string)$this->data['database']['sqlite']['file'];
     }
 
-    public function isEnabledWorld(?Level $world): bool
+    public function isEnabledWorld(Level $world): bool
     {
         if (!$this->isValid) {
             throw new BadMethodCallException('The configuration must be validated.');
-        }
-
-        if ($world === null) {
-            throw new UnexpectedValueException('Got an invalid world.');
         }
 
         return in_array($world->getFolderName(), $this->getEnabledWorlds()) || count($this->getEnabledWorlds()) === 0;
