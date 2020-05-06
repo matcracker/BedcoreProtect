@@ -84,7 +84,8 @@ trait EnumTrait
      *
      * @param string $name
      *
-     * @return EnumTrait
+     * @return self
+     * @throws InvalidArgumentException if no member matches.
      */
     public static function fromString(string $name): self
     {

@@ -71,9 +71,6 @@ final class Action
         return self::$numericIdMap[$type];
     }
 
-    /**
-     * @return Action[]
-     */
     protected static function setup(): array
     {
         $lang = Main::getInstance()->getLanguage();
