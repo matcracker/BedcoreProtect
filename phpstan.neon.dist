@@ -8,5 +8,3 @@ parameters:
     autoload_directories:
         - /source/src
         - /deps
-    excludes_analyse:
-        - /source/src/matcracker/BedcoreProtect/enums
