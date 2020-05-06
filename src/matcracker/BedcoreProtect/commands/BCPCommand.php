@@ -37,12 +37,14 @@ use pocketmine\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
+use UnexpectedValueException;
 use function count;
 use function ctype_digit;
 use function explode;
 use function implode;
 use function strtolower;
 use function version_compare;
+use const PHP_INT_MAX;
 
 final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
@@ -164,7 +166,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.started')));
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.no-restart')));
-                        $this->queryManager->getPluginQueries()->purge($parser->getTime(), function (int $affectedRows) use ($sender, $lang): void {
+                        $this->queryManager->getPluginQueries()->purge($parser->getTime() ?? PHP_INT_MAX, function (int $affectedRows) use ($sender, $lang): void {
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.success')));
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });
@@ -225,10 +227,13 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$sender->getLevel()->getName()])));
+                        if (($level = $sender->getLevel()) === null) {
+                            throw new UnexpectedValueException($sender->getName() . " has an invalid world.");
+                        }
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$level->getName()])));
 
-                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
-                        $this->queryManager->rollback(new Area($sender->getLevel(), $bb), $parser);
+                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? 0);
+                        $this->queryManager->rollback(new Area($level, $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }

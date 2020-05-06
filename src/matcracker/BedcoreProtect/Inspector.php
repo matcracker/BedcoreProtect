@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use http\Exception\UnexpectedValueException;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
@@ -29,6 +28,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
+use UnexpectedValueException;
 use function array_chunk;
 use function array_key_exists;
 use function count;
