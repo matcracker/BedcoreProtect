@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
+use http\Exception\UnexpectedValueException;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
@@ -57,7 +58,15 @@ final class Inspector
 
     private static function getSenderUUID(CommandSender $sender): string
     {
-        return ($sender instanceof Player ? $sender->getUniqueId() : $sender->getServer()->getServerUniqueId())->toString();
+        if ($sender instanceof Player) {
+            if (($uuid = $sender->getUniqueId()) === null) {
+                throw new UnexpectedValueException($sender->getName() . " has an invalid UUID.");
+            }
+
+            return $uuid->toString();
+        } else {
+            return $sender->getServer()->getServerUniqueId()->toString();
+        }
     }
 
     /**

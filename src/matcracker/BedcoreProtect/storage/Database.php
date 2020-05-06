@@ -71,24 +71,19 @@ class Database
         return false;
     }
 
-    final public function getQueryManager(): ?QueryManager
+    final public function getQueryManager(): QueryManager
     {
-        if (!$this->isConnected()) {
-            throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
+        if ($this->queryManager === null) {
+            $this->throwDatabaseException();
         }
 
         return $this->queryManager;
     }
 
-    final public function isConnected(): bool
+    final public function getPatchManager(): PatchManager
     {
-        return ($this->connector instanceof DataConnector);
-    }
-
-    final public function getPatchManager(): ?PatchManager
-    {
-        if (!$this->isConnected()) {
-            throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
+        if ($this->patchManager === null) {
+            $this->throwDatabaseException();
         }
 
         return $this->patchManager;
@@ -96,12 +91,12 @@ class Database
 
     final public function disconnect(): void
     {
-        if ($this->isConnected()) {
-            $this->connector->waitAll();
-            $this->connector->close();
-            $this->connector = null;
-            $this->queryManager = null;
+        if ($this->connector === null) {
+            $this->throwDatabaseException();
         }
+
+        $this->connector->waitAll();
+        $this->connector->close();
     }
 
     final public function getStatus(): Generator
@@ -126,5 +121,10 @@ class Database
         );
         $this->connector->waitAll();
         return $version;
+    }
+
+    private function throwDatabaseException(): void
+    {
+        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
     }
 }
