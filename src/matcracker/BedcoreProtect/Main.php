@@ -100,7 +100,7 @@ final class Main extends PluginBase
 
         if ($this->configParser->isValidConfig()) {
             foreach ($this->events as $event) {
-                $event->setParsedConfig($this->configParser);
+                $event->config = $this->configParser;
             }
             $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
             return true;

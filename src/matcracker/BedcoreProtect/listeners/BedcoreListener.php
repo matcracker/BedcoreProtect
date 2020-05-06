@@ -32,10 +32,10 @@ use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
 {
+    /** @var ConfigParser */
+    public $config;
     /** @var Main */
     protected $plugin;
-    /** @var ConfigParser */
-    protected $config;
     /** @var Air */
     protected $air;
     /** @var PluginQueries */
@@ -50,7 +50,7 @@ abstract class BedcoreListener implements Listener
     public function __construct(Main $plugin)
     {
         $this->plugin = $plugin;
-        $this->setParsedConfig($plugin->getParsedConfig());
+        $this->config = $plugin->getParsedConfig();
 
         $this->air = new Air();
 
@@ -58,10 +58,5 @@ abstract class BedcoreListener implements Listener
         $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();
         $this->entitiesQueries = $plugin->getDatabase()->getQueryManager()->getEntitiesQueries();
         $this->inventoriesQueries = $plugin->getDatabase()->getQueryManager()->getInventoriesQueries();
-    }
-
-    final public function setParsedConfig(ConfigParser $config): void
-    {
-        $this->config = $config;
     }
 }
