@@ -106,18 +106,17 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = Utils::getLevelNonNull($player->getLevel());
 
-        if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
+        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
             $block = $event->getBlock();
 
             //HACK: Remove when issue PMMP#1760 is fixed (never).
             $this->plugin->getScheduler()->scheduleDelayedTask(
                 new ClosureTask(
-                    function (int $currentTick) use ($replacedBlock, $block, $level, $player) : void {
+                    function (int $currentTick) use ($replacedBlock, $block, $player) : void {
                         //Update the block instance to get the real placed block data.
-                        $updBlock = $level->getBlock($block->asVector3());
+                        $updBlock = $player->getLevel()->getBlock($block->asVector3());
 
                         /** @var Block|null $otherHalfBlock */
                         $otherHalfBlock = null;
