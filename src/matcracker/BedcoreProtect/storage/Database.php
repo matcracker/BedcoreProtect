@@ -120,6 +120,7 @@ class Database
             $this->throwDatabaseException();
         }
 
+        $version = "";
         $this->connector->executeSelect(
             QueriesConst::GET_DATABASE_STATUS,
             [],

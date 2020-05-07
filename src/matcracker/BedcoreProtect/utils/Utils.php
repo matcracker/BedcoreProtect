@@ -110,6 +110,7 @@ final class Utils
 
         $date = $date->diff($currentDate);
         // build array
+        /** @var array $since */
         $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
         // remove empty date values
         $since = array_filter($since);

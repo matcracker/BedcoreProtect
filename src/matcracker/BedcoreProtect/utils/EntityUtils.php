@@ -27,6 +27,7 @@ use pocketmine\entity\Human;
 use pocketmine\entity\Living;
 use ReflectionClass;
 use ReflectionException;
+use UnexpectedValueException;
 use function array_merge;
 use function array_values;
 use function strval;
@@ -47,6 +48,13 @@ final class EntityUtils
      */
     public static function getUniqueId(Entity $entity): string
     {
+        if ($entity instanceof Human) {
+            if (($uuid = $entity->getUniqueId()) === null) {
+                throw new UnexpectedValueException($entity->getName() . " has an invalid UUID.");
+            }
+
+            return $uuid->toString();
+        }
         return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
     }
 

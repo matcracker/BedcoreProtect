@@ -26,6 +26,7 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
@@ -74,7 +75,7 @@ class PluginQueries extends Query
             'max_y' => $maxV->getY(),
             'min_z' => $minV->getZ(),
             'max_z' => $maxV->getZ(),
-            'world_name' => $position->getLevel()->getName()
+            'world_name' => Utils::getLevelNonNull($position->getLevel())->getName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::saveLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);

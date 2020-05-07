@@ -171,8 +171,10 @@ class EntitiesQueries extends Query
                     $entityClass = (string)$row['entity_classpath'];
                     $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
                     $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
-                    yield $this->updateEntityId($logId, $entity);
-                    $entity->spawnToAll();
+                    if ($entity !== null) {
+                        yield $this->updateEntityId($logId, $entity);
+                        $entity->spawnToAll();
+                    }
                 }
             }
         }

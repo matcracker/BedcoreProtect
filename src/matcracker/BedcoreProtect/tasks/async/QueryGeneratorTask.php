@@ -38,13 +38,15 @@ abstract class QueryGeneratorTask extends AsyncTask
     public function __construct(int $firstInsertedId, ?callable $onComplete)
     {
         $this->logId = $firstInsertedId;
-        Utils::validateCallableSignature(
-            function (string $query): Generator {
-                yield from [];
-            },
-            $onComplete
-        );
-        $this->storeLocal($onComplete);
+        if ($onComplete !== null) {
+            Utils::validateCallableSignature(
+                function (string $query): Generator {
+                    yield from [];
+                },
+                $onComplete
+            );
+            $this->storeLocal($onComplete);
+        }
     }
 
     public function onCompletion(Server $server): void
