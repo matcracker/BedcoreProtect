@@ -55,7 +55,8 @@ final class EntityUtils
 
             return $uuid->toString();
         }
-        return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
+
+        return strval($entity::NETWORK_ID);
     }
 
     /**
