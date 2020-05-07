@@ -33,11 +33,11 @@ class Database
 {
     /** @var Main */
     protected $plugin;
-    /** @var DataConnector|null */
+    /** @var DataConnector */
     private $connector;
-    /** @var PatchManager|null */
+    /** @var PatchManager */
     private $patchManager;
-    /** @var QueryManager|null */
+    /** @var QueryManager */
     private $queryManager;
 
     public function __construct(Main $plugin)
@@ -73,7 +73,7 @@ class Database
 
     final public function getQueryManager(): QueryManager
     {
-        if ($this->queryManager === null) {
+        if (!isset($this->queryManager)) {
             $this->throwDatabaseException();
         }
 
@@ -82,7 +82,7 @@ class Database
 
     final public function getPatchManager(): PatchManager
     {
-        if ($this->patchManager === null) {
+        if (!isset($this->patchManager)) {
             $this->throwDatabaseException();
         }
 
@@ -91,7 +91,7 @@ class Database
 
     final public function disconnect(): void
     {
-        if ($this->connector === null) {
+        if (!isset($this->connector)) {
             $this->throwDatabaseException();
         }
 
@@ -101,6 +101,10 @@ class Database
 
     final public function getStatus(): Generator
     {
+        if (!isset($this->connector)) {
+            $this->throwDatabaseException();
+        }
+
         $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
         return yield Await::ONCE;
     }
@@ -112,6 +116,10 @@ class Database
      */
     public function getVersion(): string
     {
+        if (!isset($this->connector)) {
+            $this->throwDatabaseException();
+        }
+
         $this->connector->executeSelect(
             QueriesConst::GET_DATABASE_STATUS,
             [],

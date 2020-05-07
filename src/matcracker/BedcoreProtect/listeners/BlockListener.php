@@ -53,7 +53,8 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockBreak()) {
+
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
             if ($block instanceof Door) {
@@ -106,17 +107,18 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
+        $level = Utils::getLevelNonNull($player->getLevel());
 
-        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBlockPlace()) {
+        if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
             $block = $event->getBlock();
 
             //HACK: Remove when issue PMMP#1760 is fixed (never).
             $this->plugin->getScheduler()->scheduleDelayedTask(
                 new ClosureTask(
-                    function (int $currentTick) use ($replacedBlock, $block, $player) : void {
+                    function (int $currentTick) use ($replacedBlock, $block, $player, $level) : void {
                         //Update the block instance to get the real placed block data.
-                        $updBlock = $player->getLevel()->getBlock($block->asVector3());
+                        $updBlock = $level->getBlock($block->asVector3());
 
                         /** @var Block|null $otherHalfBlock */
                         $otherHalfBlock = null;

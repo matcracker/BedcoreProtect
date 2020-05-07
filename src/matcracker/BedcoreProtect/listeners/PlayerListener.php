@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\Fire;
@@ -62,7 +63,7 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getBuckets()) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getBuckets()) {
             $block = $event->getBlockClicked();
             $fireEmptyEvent = ($event instanceof PlayerBucketEmptyEvent);
 
@@ -111,7 +112,7 @@ final class PlayerListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if ($this->config->isEnabledWorld($player->getLevel())) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
             $clickedBlock = $event->getBlock();
             $itemInHand = $event->getItem();
             $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
@@ -170,7 +171,7 @@ final class PlayerListener extends BedcoreListener
         $transaction = $event->getTransaction();
         $player = $transaction->getSource();
 
-        if ($this->config->isEnabledWorld($player->getLevel()) && $this->config->getItemTransactions()) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getItemTransactions()) {
             $actions = $transaction->getActions();
 
             foreach ($actions as $action) {

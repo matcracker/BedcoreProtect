@@ -66,7 +66,8 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($entity->getLevel()))) {
+        $level = Utils::getLevelNonNull($entity->getLevel());
+        if ($this->config->isEnabledWorld($level)) {
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
                 $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getDamage()), $this->air, Action::BREAK(), $entity->asPosition());
 
@@ -79,7 +80,7 @@ final class EntityListener extends BedcoreListener
                     return;
                 }
 
-                $player = $entity->getLevel()->getNearestEntity($entity, 6, Player::class);
+                $player = $level->getNearestEntity($entity, 6, Player::class);
                 if ($player !== null) {
                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
                 }

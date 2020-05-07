@@ -47,7 +47,7 @@ final class SerializableEntity extends SerializablePosition
 
     public function __construct(string $uuid, int $id, string $name, string $classPath, string $address, ?float $x, ?float $y, ?float $z, ?string $worldName, string $serializedNbt)
     {
-        parent::__construct($x, $y, $z, $worldName);
+        parent::__construct($x ?? 0, $y ?? 0, $z ?? 0, $worldName);
         $this->uuid = $uuid;
         $this->id = $id;
         $this->name = $name;
@@ -88,7 +88,7 @@ final class SerializableEntity extends SerializablePosition
     }
 
     /**
-     * @return Entity
+     * @return Entity|null
      */
     public function toPrimitive()
     {

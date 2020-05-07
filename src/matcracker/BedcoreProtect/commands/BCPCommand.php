@@ -82,6 +82,8 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
             return false;
         }
 
+        $config = $this->plugin->getParsedConfig();
+
         //Shared commands between player and console.
         switch ($subCmd) {
             case "help":
@@ -104,7 +106,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'status':
                 Await::f2c(
-                    function () use ($sender, $lang) : Generator {
+                    function () use ($sender, $config, $lang) : Generator {
                         $description = $this->plugin->getDescription();
                         $pluginVersion = $description->getVersion();
                         $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
@@ -115,7 +117,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         }
                         $sender->sendMessage(TextFormat::colorize('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$pluginVersion])));
-                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$this->plugin->getParsedConfig()->getPrintableDatabaseType()])));
+                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$config->getPrintableDatabaseType()])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
@@ -128,7 +130,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'lookup':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ['time'], true);
                     if ($parser->parse()) {
                         $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
                     } else {
@@ -162,7 +164,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'purge':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time'], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ['time'], true);
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.started')));
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.no-restart')));
@@ -191,7 +193,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
         switch ($subCmd) {
             case 'menu':
             case 'ui':
-                $sender->sendForm((new Forms($this->plugin->getParsedConfig()))->getMainMenu());
+                $sender->sendForm((new Forms($config))->getMainMenu());
                 return true;
             case 'inspect':
                 if (Inspector::isInspector($sender)) {
@@ -212,7 +214,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         return true;
                     }
                     $near = (int)$args[1];
-                    $maxRadius = $this->plugin->getParsedConfig()->getMaxRadius();
+                    $maxRadius = $config->getMaxRadius();
                     if ($near < 1 || $near > $maxRadius) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.near.range-value')));
 
@@ -225,7 +227,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'rollback':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
                         $level = Utils::getLevelNonNull($sender->getLevel());
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$level->getName()])));
@@ -242,12 +244,12 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'restore':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $this->plugin->getParsedConfig(), $args, ['time', 'radius'], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
                         $level = Utils::getLevelNonNull($sender->getLevel());
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.restore.started', [$level->getName()])));
 
-                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
+                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius());
                         $this->queryManager->restore(new Area($level, $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));

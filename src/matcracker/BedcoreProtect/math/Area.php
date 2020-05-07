@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\math;
 
 use matcracker\BedcoreProtect\serializable\SerializablePosition;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -75,9 +76,9 @@ final class Area
         return $areaChunks;
     }
 
-    public function getWorld(): ?Level
+    public function getWorld(): Level
     {
-        return Server::getInstance()->getLevelByName($this->worldName);
+        return Utils::getLevelNonNull(Server::getInstance()->getLevelByName($this->worldName));
     }
 
     /**

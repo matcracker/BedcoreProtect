@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
+use InvalidStateException;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
@@ -30,6 +31,7 @@ use UnexpectedValueException;
 use function array_filter;
 use function count;
 use function fclose;
+use function is_resource;
 use function is_string;
 use function stream_get_contents;
 use function version_compare;
@@ -102,7 +104,12 @@ final class PatchManager
      */
     private function getVersionsToPatch(string $db_version): array
     {
-        $patchContent = stream_get_contents(($res = $this->plugin->getResource('patches/.patches')));
+        $res = $this->plugin->getResource('patches/.patches');
+        if (!is_resource($res)) {
+            throw new InvalidStateException("Could not retrieve .patches file. Be sure to use the original PHAR plugin file.");
+        }
+
+        $patchContent = stream_get_contents($res);
 
         if (!is_string($patchContent)) {
             throw new UnexpectedValueException("Could not get patch data.");
