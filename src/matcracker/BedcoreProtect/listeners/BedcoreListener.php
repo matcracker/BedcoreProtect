@@ -22,19 +22,41 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
+use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
+use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
+use matcracker\BedcoreProtect\storage\queries\PluginQueries;
+use matcracker\BedcoreProtect\utils\ConfigParser;
+use pocketmine\block\Air;
 use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
 {
+    /** @var ConfigParser */
+    public $config;
     /** @var Main */
     protected $plugin;
-    /** @var Database */
-    protected $database;
+    /** @var Air */
+    protected $air;
+    /** @var PluginQueries */
+    protected $pluginQueries;
+    /** @var BlocksQueries */
+    protected $blocksQueries;
+    /** @var EntitiesQueries */
+    protected $entitiesQueries;
+    /** @var InventoriesQueries */
+    protected $inventoriesQueries;
 
     public function __construct(Main $plugin)
     {
         $this->plugin = $plugin;
-        $this->database = $plugin->getDatabase();
+        $this->config = $plugin->getParsedConfig();
+
+        $this->air = new Air();
+
+        $this->pluginQueries = $plugin->getDatabase()->getQueryManager()->getPluginQueries();
+        $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();
+        $this->entitiesQueries = $plugin->getDatabase()->getQueryManager()->getEntitiesQueries();
+        $this->inventoriesQueries = $plugin->getDatabase()->getQueryManager()->getInventoriesQueries();
     }
 }

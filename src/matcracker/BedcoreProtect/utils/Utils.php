@@ -22,33 +22,26 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
-use InvalidArgumentException;
-use pocketmine\entity\Entity;
-use pocketmine\entity\Human;
-use pocketmine\entity\Living;
 use pocketmine\level\format\Chunk;
+use pocketmine\level\Level;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\NamedTag;
-use ReflectionClass;
-use ReflectionException;
 use UnexpectedValueException;
 use function array_filter;
 use function array_map;
-use function array_merge;
 use function array_slice;
-use function array_values;
 use function base64_decode;
 use function base64_encode;
+use function count;
 use function is_string;
 use function json_decode;
 use function key;
 use function microtime;
-use function preg_match_all;
+use function preg_match;
 use function preg_replace;
-use function strlen;
-use function strtolower;
-use function strval;
+use const PHP_INT_MAX;
+use const PREG_OFFSET_CAPTURE;
 
 final class Utils
 {
@@ -61,23 +54,17 @@ final class Utils
      *
      * @param string $strDate the date to parse.
      *
-     * @return int|null how many seconds are in the string. Return null if string can't be parsed.
+     * @return int
      */
-    public static function parseTime(string $strDate): ?int
+    public static function parseTime(string $strDate): int
     {
-        if (strlen($strDate) === 0) {
-            return null;
-        }
-        $strDate = strtolower($strDate);
-        $strDate = preg_replace('/[^0-9smhdw]/', "", $strDate);
-        if (strlen($strDate) === 0) {
-            return null;
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE, 0);
+
+        if (count($matches) === 0) {
+            return 0;
         }
 
-        $time = null;
-        $matches = [];
-        preg_match_all('/([0-9]+)([smhdw])/', $strDate, $matches);
-
+        $time = 0;
         foreach ($matches[0] as $match) {
             $value = preg_replace("/[^0-9]/", "", $match);
             if (!is_string($value)) {
@@ -109,7 +96,7 @@ final class Utils
             }
         }
 
-        return $time;
+        return (int)($time > PHP_INT_MAX ? PHP_INT_MAX : $time);
     }
 
     public static function timeAgo(int $timestamp, int $level = 6): string
@@ -123,7 +110,7 @@ final class Utils
 
         $date = $date->diff($currentDate);
         // build array
-        $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
+        $since = (array)json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
         // remove empty date values
         $since = array_filter($since);
         // output only the first x date values
@@ -145,34 +132,13 @@ final class Utils
         return $string . ' ago';
     }
 
-    /**
-     * Returns the entity UUID or the network ID.
-     *
-     * @param Entity $entity
-     *
-     * @return string
-     * @internal
-     */
-    public static function getEntityUniqueId(Entity $entity): string
+    public static function getLevelNonNull(?Level $level): Level //TODO: remove when PMMP adds it.
     {
-        return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
-    }
-
-    /**
-     * Returns the entity name if is a Living instance else the entity class name.
-     *
-     * @param Entity $entity
-     *
-     * @return string
-     * @internal
-     */
-    public static function getEntityName(Entity $entity): string
-    {
-        try {
-            return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
-        } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException('Invalid entity class.');
+        if ($level === null) {
+            throw new UnexpectedValueException("Position world is null");
         }
+
+        return $level;
     }
 
     /**
@@ -215,29 +181,6 @@ final class Utils
         }
 
         return $tag;
-    }
-
-    /**
-     * Returns an array with all registered entities save names
-     * @return array
-     */
-    public static function getEntitySaveNames(): array
-    { //HACK ^-^
-        try {
-            $r = new ReflectionClass(Entity::class);
-            $property = $r->getProperty('saveNames');
-            $property->setAccessible(true);
-            $names = [];
-
-            $values = array_values((array)$property->getValue());
-            foreach ($values as $value) {
-                $names = array_merge($names, $value);
-            }
-
-            return $names;
-        } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException('Could not get entities names.');
-        }
     }
 
     /**

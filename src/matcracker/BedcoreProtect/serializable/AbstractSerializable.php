@@ -19,12 +19,20 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\tasks\async;
+namespace matcracker\BedcoreProtect\serializable;
 
-class AsyncRestoreTask extends AsyncRollbackTask
+abstract class AbstractSerializable
 {
-    protected function isRollback(): bool
-    {
-        return false;
-    }
+    /**
+     * Returns an instance of AbstractSerializable from $object.
+     * @param mixed $object
+     * @return static
+     */
+    abstract public static function serialize($object): self;
+
+    /**
+     * Returns an instance of primitive object from AbstractSerializable.
+     * @return mixed
+     */
+    abstract public function unserialize();
 }

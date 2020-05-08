@@ -23,53 +23,59 @@ namespace matcracker\BedcoreProtect\commands;
 
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
+use pocketmine\lang\BaseLang;
 use pocketmine\utils\TextFormat;
 use function strtolower;
 
 final class BCPHelpCommand
 {
-    private function __construct()
+    /** @var CommandSender */
+    private $sender;
+    /** @var BaseLang */
+    private $lang;
+
+    public function __construct(CommandSender $sender, BaseLang $lang)
     {
+        $this->sender = $sender;
+        $this->lang = $lang;
     }
 
-    public static function showGenericHelp(CommandSender $sender): void
+    public function showGenericHelp(): void
     {
-        $lang = Main::getInstance()->getLanguage();
-        $sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &3" . $lang->translateString("command.help.title") . " &f-----"));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp help &7<command> &f- " . $lang->translateString("command.help.help")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7menu &f- " . $lang->translateString("command.help.menu")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7inspect &f- " . $lang->translateString("command.help.inspect")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7rollback &3<params> &f- " . $lang->translateString("command.help.rollback")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7restore &3<params> &f- " . $lang->translateString("command.help.restore")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7lookup &3<params> &f- " . $lang->translateString("command.help.lookup")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7purge &3<params> &f- " . $lang->translateString("command.help.purge")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7reload &f- " . $lang->translateString("command.help.reload")));
-        $sender->sendMessage(TextFormat::colorize("&3/bcp &7status &f- " . $lang->translateString("command.help.status")));
-        $sender->sendMessage(TextFormat::colorize("&f------"));
+        $this->sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &3" . $this->lang->translateString("command.help.title") . " &f-----"));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp help &7<command> &f- " . $this->lang->translateString("command.help.help")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7menu &f- " . $this->lang->translateString("command.help.menu")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7inspect &f- " . $this->lang->translateString("command.help.inspect")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7rollback &3<params> &f- " . $this->lang->translateString("command.help.rollback")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7restore &3<params> &f- " . $this->lang->translateString("command.help.restore")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7lookup &3<params> &f- " . $this->lang->translateString("command.help.lookup")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7purge &3<params> &f- " . $this->lang->translateString("command.help.purge")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7reload &f- " . $this->lang->translateString("command.help.reload")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7status &f- " . $this->lang->translateString("command.help.status")));
+        $this->sender->sendMessage(TextFormat::colorize("&f------"));
     }
 
-    public static function showSpecificHelp(CommandSender $sender, string $subCmd): void
+    public function showCommandHelp(string $subCmd): void
     {
-        $lang = Main::getInstance()->getLanguage();
         $subCmd = strtolower($subCmd);
-        $sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &3" . $lang->translateString("command.help.title") . "&f-----"));
+        $this->sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &3" . $this->lang->translateString("command.help.title") . "&f-----"));
         switch ($subCmd) {
             case "help":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp help &f- " . $lang->translateString("command.help.help2")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp help &f- " . $this->lang->translateString("command.help.help2")));
                 break;
             case "menu":
             case "ui":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp menu &f- " . $lang->translateString("command.help.menu")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp menu &f- " . $this->lang->translateString("command.help.menu")));
                 break;
             case "inspect":
             case "i":
-                $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.help.inspect1")));
-                $sender->sendMessage(TextFormat::colorize("&7* " . $lang->translateString("command.help.inspect2")));
-                $sender->sendMessage(TextFormat::colorize("&7* " . $lang->translateString("command.help.inspect3")));
-                $sender->sendMessage(TextFormat::colorize("&7* " . $lang->translateString("command.help.inspect4")));
-                $sender->sendMessage(TextFormat::colorize("&7* " . $lang->translateString("command.help.inspect5")));
-                $sender->sendMessage(TextFormat::colorize("&7* " . $lang->translateString("command.help.inspect6")));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.inspect7")));
+                $this->sender->sendMessage(TextFormat::colorize("&3" . $this->lang->translateString("command.help.inspect1")));
+                $this->sender->sendMessage(TextFormat::colorize("&7* " . $this->lang->translateString("command.help.inspect2")));
+                $this->sender->sendMessage(TextFormat::colorize("&7* " . $this->lang->translateString("command.help.inspect3")));
+                $this->sender->sendMessage(TextFormat::colorize("&7* " . $this->lang->translateString("command.help.inspect4")));
+                $this->sender->sendMessage(TextFormat::colorize("&7* " . $this->lang->translateString("command.help.inspect5")));
+                $this->sender->sendMessage(TextFormat::colorize("&7* " . $this->lang->translateString("command.help.inspect6")));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.inspect7")));
                 break;
             case "rollback":
             case "rb":
@@ -83,61 +89,61 @@ final class BCPHelpCommand
                 } elseif ($subCmd === "rb") {
                     $subCmd = "rollback";
                 }
-                $sender->sendMessage(TextFormat::colorize("&3/bcp {$subCmd} &7<params> &f- " . $lang->translateString("command.help.parameters1", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&3| &7u=<users> &f- " . $lang->translateString("command.help.parameters2", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&3| &7t=<time> &f- " . $lang->translateString("command.help.parameters3", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&3| &7r=<radius> &f- " . $lang->translateString("command.help.parameters4", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&3| &7a=<action> &f- " . $lang->translateString("command.help.parameters5", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&3| &7b=<blocks> &f- " . $lang->translateString("command.help.parameters6", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&3| &7e=<exclude> &f- " . $lang->translateString("command.help.parameters7", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.parameters8")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp {$subCmd} &7<params> &f- " . $this->lang->translateString("command.help.parameters1", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3| &7u=<users> &f- " . $this->lang->translateString("command.help.parameters2", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3| &7t=<time> &f- " . $this->lang->translateString("command.help.parameters3", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3| &7r=<radius> &f- " . $this->lang->translateString("command.help.parameters4", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3| &7a=<action> &f- " . $this->lang->translateString("command.help.parameters5", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3| &7b=<blocks> &f- " . $this->lang->translateString("command.help.parameters6", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3| &7e=<exclude> &f- " . $this->lang->translateString("command.help.parameters7", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.parameters8")));
                 break;
             case "lookup":
             case "l":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup <params>"));
-                $sender->sendMessage(TextFormat::colorize("&3/bcp l <params> &f- " . $lang->translateString("command.help.shortcut")));
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup <page> &f- " . $lang->translateString("command.help.lookup1")));
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup <page>:<lines> &f- " . $lang->translateString("command.help.lookup2")));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.lookup3")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup <params>"));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp l <params> &f- " . $this->lang->translateString("command.help.shortcut")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup <page> &f- " . $this->lang->translateString("command.help.lookup1")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup <page>:<lines> &f- " . $this->lang->translateString("command.help.lookup2")));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.lookup3")));
                 break;
             case "purge":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp purge t=<time> &f- " . $lang->translateString("command.help.purge1")));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.purge2")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp purge t=<time> &f- " . $this->lang->translateString("command.help.purge1")));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.purge2")));
                 break;
             case "user":
             case "u":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup u=<users> &f- " . $lang->translateString("command.help.parameters2", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.examples") . ": [u=shoghicp], [u=shoghicp,#zombie]"));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup u=<users> &f- " . $this->lang->translateString("command.help.parameters2", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.examples") . ": [u=shoghicp], [u=shoghicp,#zombie]"));
                 break;
             case "time":
             case "t":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup t=<time> &f- " . $lang->translateString("command.help.parameters3", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.examples") . ": [t=2w5d7h2m10s], [t=5d2h]."));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup t=<time> &f- " . $this->lang->translateString("command.help.parameters3", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.examples") . ": [t=2w5d7h2m10s], [t=5d2h]."));
                 break;
             case "radius":
             case "r":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup r=<radius> &f- " . $lang->translateString("command.help.parameters4", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.examples") . ": [r=10] (" . $lang->translateString("command.help.radius-example") . ")."));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup r=<radius> &f- " . $this->lang->translateString("command.help.parameters4", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.examples") . ": [r=10] (" . $this->lang->translateString("command.help.radius-example") . ")."));
                 break;
             case "action":
             case "a":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup a=<action> &f- " . $lang->translateString("command.help.parameters5", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.examples") . ": [a=block], [a=+block], [a=-block] [a=click], [a=container], [a=kill]"));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup a=<action> &f- " . $this->lang->translateString("command.help.parameters5", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.examples") . ": [a=block], [a=+block], [a=-block] [a=click], [a=container], [a=kill]"));
                 break;
             case "blocks":
             case "b":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup b=<blocks> &f- " . $lang->translateString("command.help.parameters6", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.examples") . ": [b=stone], [b=1,5,stained_glass:8]"));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.block-names") . ": https://minecraft.gamepedia.com/Block"));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup b=<blocks> &f- " . $this->lang->translateString("command.help.parameters6", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.examples") . ": [b=stone], [b=1,5,stained_glass:8]"));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.block-names") . ": https://minecraft.gamepedia.com/Block"));
                 break;
             case "exclude":
             case "e":
-                $sender->sendMessage(TextFormat::colorize("&3/bcp lookup e=<blocks> &f- " . $lang->translateString("command.help.parameters7", [$subCmd])));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.examples") . ": [e=stone], [e=1,5,stained_glass:8]"));
-                $sender->sendMessage(TextFormat::colorize("&7" . $lang->translateString("command.help.block-names") . ": https://minecraft.gamepedia.com/Block"));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup e=<blocks> &f- " . $this->lang->translateString("command.help.parameters7", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.examples") . ": [e=stone], [e=1,5,stained_glass:8]"));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.block-names") . ": https://minecraft.gamepedia.com/Block"));
                 break;
             default:
-                $sender->sendMessage(TextFormat::colorize($lang->translateString("command.help.info-not-found", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize($this->lang->translateString("command.help.info-not-found", [$subCmd])));
                 break;
         }
     }

@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\queries\Queries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
@@ -33,13 +32,13 @@ use SOFe\AwaitGenerator\Await;
 class Database
 {
     /** @var Main */
-    private $plugin;
-    /** @var DataConnector|null */
+    protected $plugin;
+    /** @var DataConnector */
     private $connector;
     /** @var PatchManager */
     private $patchManager;
-    /** @var Queries|null */
-    private $queries;
+    /** @var QueryManager */
+    private $queryManager;
 
     public function __construct(Main $plugin)
     {
@@ -62,7 +61,7 @@ class Database
                 $this->connector->loadQueryFile($patchResource);
             }
             $this->patchManager = new PatchManager($this->plugin, $this->connector);
-            $this->queries = new Queries($this->connector, $this->plugin->getParsedConfig());
+            $this->queryManager = new QueryManager($this->connector, $this->plugin->getParsedConfig());
 
             return true;
         } catch (SqlError $error) {
@@ -72,38 +71,40 @@ class Database
         return false;
     }
 
-    final public function getQueries(): Queries
+    final public function getQueryManager(): QueryManager
     {
-        if (!$this->isConnected() || !($this->queries instanceof Queries)) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
-            $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
+        if (!isset($this->queryManager)) {
+            $this->throwDatabaseException();
         }
 
-        return $this->queries;
+        return $this->queryManager;
     }
 
     final public function getPatchManager(): PatchManager
     {
-        return $this->patchManager;
-    }
+        if (!isset($this->patchManager)) {
+            $this->throwDatabaseException();
+        }
 
-    final public function isConnected(): bool
-    {
-        return ($this->connector instanceof DataConnector);
+        return $this->patchManager;
     }
 
     final public function disconnect(): void
     {
-        if ($this->isConnected()) {
-            $this->connector->waitAll();
-            $this->connector->close();
-            $this->connector = null;
-            $this->queries = null;
+        if (!isset($this->connector)) {
+            $this->throwDatabaseException();
         }
+
+        $this->connector->waitAll();
+        $this->connector->close();
     }
 
-    public function getStatus(): Generator
+    final public function getStatus(): Generator
     {
+        if (!isset($this->connector)) {
+            $this->throwDatabaseException();
+        }
+
         $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
         return yield Await::ONCE;
     }
@@ -115,10 +116,24 @@ class Database
      */
     public function getVersion(): string
     {
-        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], static function (array $rows) use (&$version) {
-            $version = (string)$rows[0]['version'];
-        });
+        if (!isset($this->connector)) {
+            $this->throwDatabaseException();
+        }
+
+        $version = "";
+        $this->connector->executeSelect(
+            QueriesConst::GET_DATABASE_STATUS,
+            [],
+            static function (array $rows) use (&$version) : void {
+                $version = (string)$rows[0]['version'];
+            }
+        );
         $this->connector->waitAll();
         return $version;
+    }
+
+    private function throwDatabaseException(): void
+    {
+        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
     }
 }

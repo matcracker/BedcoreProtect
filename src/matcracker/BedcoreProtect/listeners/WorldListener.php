@@ -22,8 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\event\block\LeavesDecayEvent;
 
 final class WorldListener extends BedcoreListener
@@ -32,12 +31,13 @@ final class WorldListener extends BedcoreListener
      * @param LeavesDecayEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackLeavesDecay(LeavesDecayEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel()) && $this->plugin->getParsedConfig()->getLeavesDecay()) {
-            $this->database->getQueries()->addBlockLogByBlock($block, $block, BlockFactory::get(BlockIds::AIR), Action::BREAK(), $block->asPosition());
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel())) && $this->config->getLeavesDecay()) {
+            $this->blocksQueries->addBlockLogByBlock($block, $block, $this->air, Action::BREAK(), $block->asPosition());
         }
     }
 }

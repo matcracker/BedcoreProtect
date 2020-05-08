@@ -21,8 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\math;
 
-use matcracker\BedcoreProtect\serializable\SerializableWorld;
-use pocketmine\block\Block;
+use matcracker\BedcoreProtect\serializable\SerializablePosition;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -56,11 +56,6 @@ final class Area
         return $this->bb;
     }
 
-    public function getWorld(): ?Level
-    {
-        return Server::getInstance()->getLevelByName($this->worldName);
-    }
-
     /**
      * @return Chunk[]
      */
@@ -68,19 +63,26 @@ final class Area
     {
         $areaChunks = [];
         for ($x = $this->bb->minX; $x <= $this->bb->maxX; $x += 16) {
+            $x = $x >> 4;
             for ($z = $this->bb->minZ; $z <= $this->bb->maxZ; $z += 16) {
-                $chunk = $this->getWorld()->getChunk($x >> 4, $z >> 4, true);
+                $z = $z >> 4;
+                $chunk = $this->getWorld()->getChunk($x, $z, true);
                 if ($chunk === null) {
                     continue;
                 }
-                $areaChunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk;
+                $areaChunks[Level::chunkHash($x, $z)] = $chunk;
             }
         }
         return $areaChunks;
     }
 
+    public function getWorld(): Level
+    {
+        return Utils::getLevelNonNull(Server::getInstance()->getLevelByName($this->worldName));
+    }
+
     /**
-     * @param SerializableWorld[]|Block[]|Vector3[] $positions
+     * @param SerializablePosition[]|Vector3[] $positions
      * @return Chunk[]
      */
     public function getTouchedChunks(array $positions): array

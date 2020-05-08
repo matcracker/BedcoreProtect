@@ -48,7 +48,7 @@ final class Forms
     {
         $lang = Main::getInstance()->getLanguage();
         return (new Form(
-            function (Player $player, $data) {
+            function (Player $player, $data): void {
                 switch ((int)$data) { //Clicked button
                     case 0: //Inspector
                         $player->chat('/bcp inspect');
@@ -65,13 +65,16 @@ final class Forms
                     case 4: //Restore
                         $player->sendForm($this->getInputMenu('restore'));
                         break;
-                    case 5: //Purge
+                    case 5: //Undo
+                        $player->chat('/bcp undo');
+                        break;
+                    case 6: //Purge
                         $player->sendForm($this->getPurgeMenu());
                         break;
-                    case 6: //Reload
+                    case 7: //Reload
                         $player->chat('/bcp reload');
                         break;
-                    case 7: //Status
+                    case 8: //Status
                         $player->chat('/bcp status');
                         break;
                 }
@@ -82,38 +85,23 @@ final class Forms
             ->addClassicButton($lang->translateString('form.menu.lookup'))
             ->addClassicButton($lang->translateString('general.rollback'))
             ->addClassicButton($lang->translateString('general.restore'))
+            ->addClassicButton($lang->translateString('general.undo'))
             ->addClassicButton($lang->translateString('form.menu.purge'))
             ->addClassicButton($lang->translateString('form.menu.reload'))
             ->addClassicButton($lang->translateString('form.menu.status'))
             ->setTitle(TextFormat::colorize('&3&l' . Main::PLUGIN_NAME . " " . $lang->translateString('form.menu.title')));
     }
 
-    private function getPurgeMenu(): BaseForm
-    {
-        $lang = Main::getInstance()->getLanguage();
-        return (new CustomForm(
-            function (Player $player, $data) {
-                if (is_array($data)) {
-                    $player->chat("/bcp purge t={$data[0]}");
-                }
-            },
-            function (Player $player) {
-                $player->sendForm($this->getMainMenu());
-            }
-        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
-    }
-
     private function getNearMenu(): BaseForm
     {
         $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
-            function (Player $player, $data) {
+            static function (Player $player, $data): void {
                 if (is_array($data)) {
                     $player->chat("/bcp near {$data[0]}");
                 }
             },
-            function (Player $player) {
+            function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
         ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
@@ -125,7 +113,7 @@ final class Forms
         $lang = Main::getInstance()->getLanguage();
         return (new CustomForm(
             $this->parseForm($type),
-            function (Player $player) {
+            function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
         ))->addLabel($lang->translateString('form.input-menu.required-fields'))
@@ -141,7 +129,7 @@ final class Forms
 
     private function parseForm(string $subCmd): Closure
     {
-        return function (Player $player, $data) use ($subCmd) {
+        return static function (Player $player, $data) use ($subCmd) : void {
             if (is_array($data)) {
                 $time = "t={$data[1]}";
                 $radius = $data[2] === 0 ? '' : "r={$data[2]}";
@@ -156,5 +144,21 @@ final class Forms
                 $player->chat("/bcp {$subCmd} {$time} {$radius} {$user} {$action} {$includeBlocks} {$excludeBlocks}");
             }
         };
+    }
+
+    private function getPurgeMenu(): BaseForm
+    {
+        $lang = Main::getInstance()->getLanguage();
+        return (new CustomForm(
+            static function (Player $player, $data): void {
+                if (is_array($data)) {
+                    $player->chat("/bcp purge t={$data[0]}");
+                }
+            },
+            function (Player $player): void {
+                $player->sendForm($this->getMainMenu());
+            }
+        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
     }
 }

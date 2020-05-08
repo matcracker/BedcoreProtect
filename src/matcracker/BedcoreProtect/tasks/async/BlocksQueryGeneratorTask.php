@@ -22,37 +22,30 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use ArrayOutOfBoundsException;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use pocketmine\scheduler\AsyncTask;
-use pocketmine\Server;
-use poggit\libasynql\DataConnector;
 use function count;
 use function is_array;
 use function mb_substr;
 use function serialize;
 use function unserialize;
 
-class AsyncBlocksQueryGenerator extends AsyncTask
+final class BlocksQueryGeneratorTask extends QueryGeneratorTask
 {
-    /** @var int */
-    private $lastLogId;
     /** @var string */
     private $oldBlocks;
     /** @var string */
     private $newBlocks;
 
     /**
-     * AsyncBlocksQueryGenerator constructor.
-     * @param DataConnector $connector
-     * @param int $lastLogId
+     * BlocksQueryGeneratorTask constructor.
+     * @param int $firstInsertedId
      * @param SerializableBlock[] $oldBlocks
      * @param SerializableBlock[]|SerializableBlock $newBlocks
+     * @param callable|null $onComplete
      */
-    public function __construct(DataConnector $connector, int $lastLogId, array $oldBlocks, $newBlocks)
+    public function __construct(int $firstInsertedId, array $oldBlocks, $newBlocks, ?callable $onComplete)
     {
-        $this->storeLocal($connector);
-        $this->lastLogId = $lastLogId;
+        parent::__construct($firstInsertedId, $onComplete);
         $this->oldBlocks = serialize($oldBlocks);
         $this->newBlocks = serialize($newBlocks);
     }
@@ -73,11 +66,11 @@ class AsyncBlocksQueryGenerator extends AsyncTask
             $newNBT = $newBlocks->getSerializedNbt();
 
             foreach ($oldBlocks as $oldBlock) {
-                $this->lastLogId++;
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
                 $oldNBT = $oldBlock->getSerializedNbt();
-                $query .= "('{$this->lastLogId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
+                $query .= "('{$this->logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
+                $this->logId++;
             }
         } else {
             if (count($oldBlocks) !== count($newBlocks)) {
@@ -85,7 +78,6 @@ class AsyncBlocksQueryGenerator extends AsyncTask
             }
 
             foreach ($oldBlocks as $key => $oldBlock) {
-                $this->lastLogId++;
                 $newBlock = $newBlocks[$key];
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
@@ -94,22 +86,12 @@ class AsyncBlocksQueryGenerator extends AsyncTask
                 $newMeta = $newBlock->getMeta();
                 $newNBT = $newBlock->getSerializedNbt();
 
-                $query .= "('{$this->lastLogId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
+                $query .= "('{$this->logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
+                $this->logId++;
             }
         }
         $query = mb_substr($query, 0, -1) . ';';
 
         $this->setResult($query);
-    }
-
-    public function onCompletion(Server $server): void
-    {
-        $plugin = Server::getInstance()->getPluginManager()->getPlugin(Main::PLUGIN_NAME);
-        if ($plugin === null) {
-            return;
-        }
-        /** @var DataConnector $connector */
-        $connector = $this->fetchLocal();
-        $connector->executeInsertRaw((string)$this->getResult());
     }
 }

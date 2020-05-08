@@ -1,3 +1,4 @@
+---
 # Plugin language
 language: eng
 
@@ -10,7 +11,7 @@ database:
   sqlite:
     # The file name of the database in the plugin data folder.
     # You can also put an absolute path here.
-    file: bedcore_database.db
+    file: logs.db
   # Edit these settings only if you choose "mysql".
   mysql:
     host: 127.0.0.1
@@ -18,7 +19,7 @@ database:
     username: root
     password: ""
     # The database name where plugin stores data.
-    schema:
+    schema: ""
   # The maximum number of simultaneous SQL queries
   # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
   worker-limit: 1
@@ -117,3 +118,4 @@ player-interactions: true
 
 # Logs changes made via the plugin "BlockSniper" if it's in use on your server.
 blocksniper-hook: false
+...

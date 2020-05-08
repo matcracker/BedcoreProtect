@@ -29,6 +29,7 @@ final class QueriesConst
     public const INIT_ENTITIES_LOG = 'bcp.table.entities_log';
     public const INIT_INVENTORIES_LOG = 'bcp.table.inventories_log';
     public const INIT_DATABASE_STATUS = 'bcp.table.db_status';
+    //The tables queries must be in this order due to relations between them.
     public const INIT_TABLES = [
         self::INIT_ENTITY, self::INIT_LOG_HISTORY,
         self::INIT_BLOCKS_LOG, self::INIT_ENTITIES_LOG,
@@ -36,6 +37,7 @@ final class QueriesConst
     ];
     public const BEGIN_TRANSACTION = 'bcp.transaction.begin';
     public const END_TRANSACTION = 'bcp.transaction.end';
+    public const ENABLE_FOREIGN_KEYS = 'bcp.pragma.foreign-keys-on';
     public const ADD_ENTITY = 'bcp.add.entity';
     public const ADD_DATABASE_VERSION = 'bcp.add.db_version';
     public const ADD_HISTORY_LOG = 'bcp.add.log.main';
@@ -51,7 +53,6 @@ final class QueriesConst
     public const GET_ROLLBACK_OLD_INVENTORIES = 'bcp.get.log.old_inventories';
     public const GET_ROLLBACK_NEW_INVENTORIES = 'bcp.get.log.new_inventories';
     public const GET_ROLLBACK_ENTITIES = 'bcp.get.log.entities';
-    public const GET_LAST_LOG_ID = 'bcp.get.log.last_id';
     public const GET_BLOCK_LOG = 'bcp.get.log.block';
     public const GET_ENTITY_LOG = 'bcp.get.log.entity';
     public const GET_NEAR_LOG = 'bcp.get.log.near';
@@ -60,6 +61,7 @@ final class QueriesConst
 
     private function __construct()
     {
+        //NOOP
     }
 
     public static function VERSION_PATCH(string $version, int $patchNumber): string

@@ -22,19 +22,18 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
-use UnexpectedValueException;
 use function array_chunk;
 use function array_key_exists;
 use function count;
 use function is_int;
 use function strtotime;
-use function var_export;
 
 final class Inspector
 {
@@ -59,7 +58,7 @@ final class Inspector
 
     private static function getSenderUUID(CommandSender $sender): string
     {
-        return ($sender instanceof Player ? $sender->getUniqueId() : $sender->getServer()->getServerUniqueId())->toString();
+        return $sender instanceof Player ? EntityUtils::getUniqueId($sender) : $sender->getServer()->getServerUniqueId()->toString();
     }
 
     /**
@@ -92,7 +91,7 @@ final class Inspector
         return self::$inspectors[self::getSenderUUID($inspector)]['enabled'] ?? false;
     }
 
-    public static function cacheLogs(CommandSender $inspector, array $logs = []): void
+    public static function saveLogs(CommandSender $inspector, array $logs = []): void
     {
         self::$inspectors[self::getSenderUUID($inspector)]['logs'] = $logs;
     }
@@ -102,12 +101,12 @@ final class Inspector
      *
      * @return array
      */
-    public static function getCachedLogs(CommandSender $inspector): array
+    public static function getSavedLogs(CommandSender $inspector): array
     {
         return self::$inspectors[self::getSenderUUID($inspector)]['logs'] ?? [];
     }
 
-    public static function clearCache(): void
+    public static function removeAll(): void
     {
         self::$inspectors = [];
     }
@@ -165,7 +164,7 @@ final class Inspector
                 if (isset($log["{$typeColumn}_amount"])) {
                     $amount = (int)$log["{$typeColumn}_amount"];
 
-                    $itemName = ItemFactory::get($id, $meta)->getName();
+                    $itemName = ItemFactory::get($id, $meta)->getVanillaName();
                     $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
                 } else {
                     $blockName = BlockFactory::get($id, $meta)->getName();
@@ -174,7 +173,8 @@ final class Inspector
             } elseif (isset($log['entity_to'])) {
                 $to = "#{$log['entity_to']}";
             } else {
-                throw new UnexpectedValueException('Unexpected log parsed. Is your database up to date?' . var_export($log, true));
+                $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString('inspector.corrupted-data')));
+                return;
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.

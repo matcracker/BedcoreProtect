@@ -22,14 +22,13 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockIds;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
+use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
 use pocketmine\block\Water;
 use pocketmine\event\block\BlockBreakEvent;
@@ -38,6 +37,7 @@ use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\math\Vector3;
+use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
 use function array_filter;
 use function count;
@@ -48,56 +48,53 @@ final class BlockListener extends BedcoreListener
      * @param BlockBreakEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel()) && $this->plugin->getParsedConfig()->getBlockBreak()) {
+
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
-            if (Inspector::isInspector($player)) { //It checks the block clicked
-                $this->database->getQueries()->requestBlockLog($player, $block);
-                $event->setCancelled();
-            } else {
-                $air = BlockFactory::get(BlockIds::AIR);
-
-                if ($block instanceof Door) {
-                    $top = $block->getDamage() & 0x08;
-                    $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
-                    if ($other instanceof Door and $other->getId() === $block->getId()) {
-                        $this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
-                    }
-                } elseif ($block instanceof Bed) {
-                    $other = $block->getOtherHalf();
-                    if ($other instanceof Bed) {
-                        $this->database->getQueries()->addBlockLogByEntity($player, $other, $air, Action::BREAK(), $other->asPosition());
-                    }
-                } elseif ($block instanceof Chest) {
-                    $tileChest = BlockUtils::asTile($block);
-                    if ($tileChest instanceof TileChest) {
-                        $inventory = $tileChest->getRealInventory();
-                        if (count($inventory->getContents()) > 0) {
-                            $this->database->getQueries()->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
-                        }
+            if ($block instanceof Door) {
+                $top = $block->getDamage() & 0x08;
+                $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
+                if ($other instanceof Door) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
+                }
+            } elseif ($block instanceof Bed) {
+                $other = $block->getOtherHalf();
+                if ($other instanceof Bed) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
+                }
+            } elseif ($block instanceof Chest) {
+                $tileChest = BlockUtils::asTile($block);
+                if ($tileChest instanceof TileChest) {
+                    $inventory = $tileChest->getRealInventory();
+                    if (count($inventory->getContents()) > 0) {
+                        $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                     }
                 }
-
-                $this->database->getQueries()->addBlockLogByEntity($player, $block, $air, Action::BREAK(), $block->asPosition());
-
-                if ($this->plugin->getParsedConfig()->getNaturalBreak()) {
-                    /**
-                     * @var Block[] $sides
-                     * Getting all blocks around the broken block that are consequently destroyed.
-                     */
-                    $sides = array_filter($block->getAllSides(), static function (Block $side) {
+            } elseif ($this->config->getNaturalBreak()) {
+                /**
+                 * @var Block[] $sides
+                 * Getting all blocks around the broken block that are consequently destroyed.
+                 */
+                $sides = array_filter(
+                    $block->getAllSides(),
+                    static function (Block $side): bool {
                         return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
-                    });
-
-                    if (count($sides) > 0) {
-                        $this->database->getQueries()->addBlocksLogByEntity($player, $sides, $air, Action::BREAK());
                     }
+                );
+
+                if (count($sides) > 0) {
+                    $this->blocksQueries->addBlocksLogByEntity($player, $sides, $this->air, Action::BREAK());
                 }
             }
+
+            $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
+
         }
     }
 
@@ -105,32 +102,43 @@ final class BlockListener extends BedcoreListener
      * @param BlockPlaceEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($player->getLevel()) && $this->plugin->getParsedConfig()->getBlockPlace()) {
-            $block = $event->getBlock();
+        $level = Utils::getLevelNonNull($player->getLevel());
+
+        if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
+            $block = $event->getBlock();
 
-            if (Inspector::isInspector($player)) { //It checks the block where the player places.
-                $this->database->getQueries()->requestBlockLog($player, $replacedBlock);
-                $event->setCancelled();
-            } else {
-                $otherHalfPos = null;
-                if ($block instanceof Bed) {
-                    $meta = ($player->getDirection() - 1) & 0x03;
-                    $otherHalfPos = $block->getSide(Bed::getOtherHalfSide($meta))->asPosition();
-                } elseif ($block instanceof Door) {
-                    $otherHalfPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
-                }
+            //HACK: Remove when issue PMMP#1760 is fixed (never).
+            $this->plugin->getScheduler()->scheduleDelayedTask(
+                new ClosureTask(
+                    function (int $currentTick) use ($replacedBlock, $block, $player, $level) : void {
+                        //Update the block instance to get the real placed block data.
+                        $updBlock = $level->getBlock($block->asVector3());
 
-                $this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+                        /** @var Block|null $otherHalfBlock */
+                        $otherHalfBlock = null;
+                        if ($updBlock instanceof Bed) {
+                            $otherHalfBlock = $updBlock->getOtherHalf();
+                        } elseif ($updBlock instanceof Door) {
+                            $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
+                        }
 
-                if ($otherHalfPos !== null) {
-                    $this->database->getQueries()->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE(), $otherHalfPos);
-                }
-            }
+                        if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
+                            $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
+
+                            if ($otherHalfBlock !== null) {
+                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
+                            }
+                        }
+                    }
+                ),
+                1
+            );
         }
     }
 
@@ -138,15 +146,16 @@ final class BlockListener extends BedcoreListener
      * @param BlockSpreadEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockSpread(BlockSpreadEvent $event): void
     {
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel()))) {
             if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
-                $this->database->getQueries()->addBlockLogByBlock($source, $block, $source, Action::PLACE());
+                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
             }
         }
     }
@@ -155,14 +164,13 @@ final class BlockListener extends BedcoreListener
      * @param BlockBurnEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel()) && $this->plugin->getParsedConfig()->getBlockBurn()) {
-            $cause = $event->getCausingBlock();
-
-            $this->database->getQueries()->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel())) && $this->config->getBlockBurn()) {
+            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, $this->air, Action::BREAK(), $block->asPosition());
         }
     }
 
@@ -170,16 +178,18 @@ final class BlockListener extends BedcoreListener
      * @param BlockFormEvent $event
      *
      * @priority MONITOR
+     * @ignoreCancelled
      */
     public function trackBlockForm(BlockFormEvent $event): void
     {
         $block = $event->getBlock();
-        $result = $event->getNewState();
 
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($block->getLevel())) {
-            if ($block instanceof Liquid && $this->plugin->getParsedConfig()->getLiquidTracking()) {
-                $liquid = $block instanceof Water ? BlockFactory::get(BlockIds::FLOWING_LAVA) : BlockFactory::get(BlockIds::FLOWING_WATER);
-                $this->database->getQueries()->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
+        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel()))) {
+            if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
+                $result = $event->getNewState();
+
+                $liquid = $block instanceof Water ? new Lava() : new Water();
+                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $block->asPosition());
             }
         }
     }

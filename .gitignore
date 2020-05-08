@@ -1,4 +1,5 @@
 /.idea
-/src/poggit
-/src/JackMD
-/vendor/pocketmine
+/libs
+/scripts
+/.php_cs.cache
+TODO

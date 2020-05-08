@@ -23,9 +23,12 @@ namespace matcracker\BedcoreProtect;
 
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
+use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\listeners\BedcoreListener;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
+use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
@@ -33,7 +36,6 @@ use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
-use RuntimeException;
 use function mkdir;
 use function version_compare;
 
@@ -43,18 +45,30 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /** @var Main|null */
+    /** @var Main */
     private static $instance;
+    /** @var BaseLang */
+    private $baseLang;
     /** @var Database */
     private $database;
     /** @var ConfigParser */
     private $configParser;
     /** @var ConfigParser */
     private $oldConfigParser;
-    /** @var BaseLang */
-    private $baseLang;
     /** @var bool */
     private $bsHooked = false;
+    /** @var BedcoreListener[] */
+    private $events;
+
+    public static function getInstance(): Main
+    {
+        return self::$instance;
+    }
+
+    public function getLanguage(): BaseLang
+    {
+        return $this->baseLang;
+    }
 
     public function getDatabase(): Database
     {
@@ -85,6 +99,9 @@ final class Main extends PluginBase
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
 
         if ($this->configParser->isValidConfig()) {
+            foreach ($this->events as $event) {
+                $event->config = $this->configParser;
+            }
             $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
             return true;
         }
@@ -92,24 +109,20 @@ final class Main extends PluginBase
         return false;
     }
 
-    public static function getInstance(): Main
-    {
-        if (self::$instance === null) {
-            throw new RuntimeException("Invalid plugin instance detected.");
-        }
-
-        return self::$instance;
-    }
-
     public function onLoad(): void
     {
         self::$instance = $this;
+
+        @mkdir($this->getDataFolder());
+
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
 
             return;
         }
+
+        $this->saveResource($this->configParser->getDatabaseFileName());
 
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
@@ -122,7 +135,7 @@ final class Main extends PluginBase
         }
 
         if ($this->configParser->getCheckUpdates()) {
-            UpdateNotifier::checkUpdate($this, $this->getName(), $this->getDescription()->getVersion());
+            UpdateNotifier::checkUpdate($this->getName(), $this->getDescription()->getVersion());
         }
     }
 
@@ -130,22 +143,21 @@ final class Main extends PluginBase
     {
         $this->database = new Database($this);
 
-        @mkdir($this->getDataFolder());
-        $this->saveResource('bedcore_database.db');
-
+        $pluginManager = $this->getServer()->getPluginManager();
         //Database connection
         if (!$this->database->connect()) {
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-
+            $pluginManager->disablePlugin($this);
             return;
         }
+
+        $queryManager = $this->database->getQueryManager();
+
         $version = $this->getVersion();
-        $this->database->getQueries()->init($version);
+        $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
             $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-
+            $pluginManager->disablePlugin($this);
             return;
         }
 
@@ -153,42 +165,31 @@ final class Main extends PluginBase
             $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
         }
 
+        $queryManager->setupDefaultData();
+
         if ($this->configParser->isSQLite()) {
-            $this->database->getQueries()->beginTransaction();
-            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+            $pluginQueries = $queryManager->getPluginQueries();
+            $pluginQueries->beginTransaction();
+            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($pluginQueries), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
         }
+
+        CommandParser::initActions();
 
         $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
 
         //Registering events
-        $events = [
+        $this->events = [
             new BlockListener($this),
             new EntityListener($this),
             new PlayerListener($this),
-            new WorldListener($this)
+            new WorldListener($this),
+            new InspectorListener($this),
+            new BlockSniperListener($this)
         ];
 
-        if ($this->bsHooked) {
-            $events[] = new BlockSniperListener($this);
+        foreach ($this->events as $event) {
+            $pluginManager->registerEvents($event, $this);
         }
-
-        foreach ($events as $event) {
-            $this->getServer()->getPluginManager()->registerEvents($event, $this);
-        }
-    }
-
-    public function isBlockSniperHooked(): bool
-    {
-        return $this->bsHooked;
-    }
-
-    public function getLanguage(): BaseLang
-    {
-        if ($this->baseLang === null) {
-            throw new RuntimeException("Invalid language state detected.");
-        }
-
-        return $this->baseLang;
     }
 
     /**
@@ -200,14 +201,18 @@ final class Main extends PluginBase
         return $this->getDescription()->getVersion();
     }
 
+    public function isBlockSniperHooked(): bool
+    {
+        return $this->bsHooked;
+    }
+
     public function onDisable(): void
     {
         $this->getScheduler()->cancelAllTasks();
         $this->database->disconnect();
 
-        Inspector::clearCache();
-        self::$instance = null;
+        Inspector::removeAll();
         $this->bsHooked = false;
-        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser);
+        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser, $this->events);
     }
 }

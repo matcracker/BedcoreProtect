@@ -29,16 +29,25 @@ use function iterator_to_array;
 
 final class BlockSniperListener extends BedcoreListener
 {
+    /**
+     * @param BrushUseEvent $event
+     *
+     * @softDepend BlockSniper
+     * @priority MONITOR
+     * @ignoreCancelled
+     */
     public function trackBrushUse(BrushUseEvent $event): void
     {
-        if ($this->plugin->getParsedConfig()->isEnabledWorld($event->getLevel()) && $this->plugin->getParsedConfig()->getBlockSniperHook()) {
+        $level = $event->getLevel();
+
+        if ($this->config->isEnabledWorld($level) && $this->config->getBlockSniperHook()) {
             /** @var Block[] $newBlocks */
             $newBlocks = iterator_to_array($event->getShape()->getBlocksInside());
             /** @var Block[] $oldBlocks */
-            $oldBlocks = array_map(static function (Block $block): Block {
-                return $block->getLevel()->getBlock($block->asVector3());
+            $oldBlocks = array_map(static function (Block $block) use ($level): Block {
+                return $level->getBlock($block->asVector3());
             }, $newBlocks);
-            $this->database->getQueries()->addBlocksLogByEntity($event->getPlayer(), $oldBlocks, $newBlocks, Action::PLACE());
+            $this->blocksQueries->addBlocksLogByEntity($event->getPlayer(), $oldBlocks, $newBlocks, Action::PLACE());
         }
     }
 }

@@ -13,13 +13,13 @@ CREATE TABLE IF NOT EXISTS "entities"
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS "log_history"
 (
-    log_id     INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    who        VARCHAR(36)                       NOT NULL,
-    x          BIGINT                            NOT NULL,
-    y          TINYINT UNSIGNED                  NOT NULL,
-    z          BIGINT                            NOT NULL,
-    world_name VARCHAR(255)                      NOT NULL,
-    action     TINYINT UNSIGNED                  NOT NULL,
+    log_id     INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
+    who        VARCHAR(36)                              NOT NULL,
+    x          BIGINT                                   NOT NULL,
+    y          TINYINT UNSIGNED                         NOT NULL,
+    z          BIGINT                                   NOT NULL,
+    world_name VARCHAR(255)                             NOT NULL,
+    action     TINYINT UNSIGNED                         NOT NULL,
     time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS "log_history"
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
-    history_id UNSIGNED BIG INT    NOT NULL,
-    old_id     UNSIGNED INTEGER    NOT NULL,
-    old_meta   UNSIGNED TINYINT(2) NOT NULL,
+    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
+    old_id     UNSIGNED INTEGER        NOT NULL,
+    old_meta   UNSIGNED TINYINT(2)     NOT NULL,
     old_nbt    BLOB DEFAULT NULL,
-    new_id     UNSIGNED INTEGER    NOT NULL,
-    new_meta   UNSIGNED TINYINT(2) NOT NULL,
+    new_id     UNSIGNED INTEGER        NOT NULL,
+    new_meta   UNSIGNED TINYINT(2)     NOT NULL,
     new_nbt    BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS "entities_log"
 (
-    history_id      UNSIGNED BIG INT NOT NULL,
-    entityfrom_uuid VARCHAR(36)      NOT NULL,
-    entityfrom_id   UNSIGNED INTEGER NOT NULL,
+    history_id      UNSIGNED BIG INT UNIQUE NOT NULL,
+    entityfrom_uuid VARCHAR(36)             NOT NULL,
+    entityfrom_id   UNSIGNED INTEGER        NOT NULL,
     entityfrom_nbt  BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS "entities_log"
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
-    history_id UNSIGNED BIG INT NOT NULL,
-    slot       UNSIGNED TINYINT NOT NULL,
+    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
+    slot       UNSIGNED TINYINT        NOT NULL,
     old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
     old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
     old_nbt    BLOB                DEFAULT NULL,
@@ -81,6 +81,11 @@ BEGIN TRANSACTION;
 -- #        }
 -- #        {end
 END TRANSACTION;
+-- #        }
+-- #    }
+-- #    {pragma
+-- #        {foreign-keys-on
+PRAGMA foreign_keys = ON;
 -- #        }
 -- #    }
 -- #    {add
@@ -113,6 +118,7 @@ INSERT INTO "log_history"(who, x, y, z, world_name,
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
 -- #            }
 -- #            {block
+-- #                :log_id int
 -- #                :old_id int
 -- #                :old_meta int
 -- #                :old_nbt ?string
@@ -121,17 +127,19 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #                :new_nbt ?string
 INSERT INTO "blocks_log"(history_id, old_id, old_meta, old_nbt, new_id, new_meta,
                          new_nbt)
-VALUES (LAST_INSERT_ROWID(), :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
+VALUES (:log_id, :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
         :new_nbt);
 -- #            }
 -- #            {entity
+-- #                :log_id int
 -- #                :uuid string
 -- #                :id int
 -- #                :nbt ?string
 INSERT INTO "entities_log"(history_id, entityfrom_uuid, entityfrom_id, entityfrom_nbt)
-VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
+VALUES (:log_id, (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #            }
 -- #            {inventory
+-- #                :log_id int
 -- #                :slot int
 -- #                :old_id int 0
 -- #                :old_meta int 0
@@ -143,7 +151,7 @@ VALUES (LAST_INSERT_ROWID(), (SELECT uuid FROM entities WHERE uuid = :uuid), :id
 -- #                :new_amount int 0
 INSERT INTO "inventories_log"(history_id, slot, old_id, old_meta, old_nbt, old_amount, new_id,
                               new_meta, new_nbt, new_amount)
-VALUES (LAST_INSERT_ROWID(), :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id,
+VALUES (:log_id, :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id,
         :new_meta, :new_nbt, :new_amount);
 -- #            }
 -- #        }
@@ -177,10 +185,6 @@ FROM status
 LIMIT 1;
 -- #        }
 -- #        {log
--- #            {last_id
-SELECT MAX(log_id) AS lastId
-FROM "log_history";
--- #            }
 -- #            {old_blocks
 -- #                :log_ids list:int
 SELECT history_id,
@@ -241,7 +245,8 @@ WHERE log_id IN :log_ids;
 -- #            }
 -- #            {entities
 -- #                :log_ids list:int
-SELECT e.entity_classpath,
+SELECT log_id,
+       e.entity_classpath,
        el.entityfrom_id,
        el.entityfrom_nbt,
        x,
