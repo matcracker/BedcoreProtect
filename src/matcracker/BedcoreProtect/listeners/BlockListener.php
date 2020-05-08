@@ -170,9 +170,7 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
         if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel())) && $this->config->getBlockBurn()) {
-            $cause = $event->getCausingBlock();
-
-            $this->blocksQueries->addBlockLogByBlock($cause, $block, $cause, Action::BREAK());
+            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, $this->air, Action::BREAK(), $block->asPosition());
         }
     }
 
