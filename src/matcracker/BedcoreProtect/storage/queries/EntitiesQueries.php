@@ -76,8 +76,8 @@ class EntitiesQueries extends Query
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
-        $damager = SerializableEntity::fromPrimitive($damager);
-        $entity = SerializableEntity::fromPrimitive($entity);
+        $damager = SerializableEntity::serialize($damager);
+        $entity = SerializableEntity::serialize($entity);
 
         Await::f2c(
             function () use ($damager, $entity, $action): Generator {
@@ -113,8 +113,8 @@ class EntitiesQueries extends Query
 
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
-        $entity = SerializableEntity::fromPrimitive($entity);
-        $block = SerializableBlock::fromPrimitive($block);
+        $entity = SerializableEntity::serialize($entity);
+        $block = SerializableBlock::serialize($block);
         Await::f2c(
             function () use ($entity, $block, $action): Generator {
                 yield $this->addEntityGenerator($entity);
@@ -130,7 +130,7 @@ class EntitiesQueries extends Query
 
     final public function addEntity(Entity $entity): void
     {
-        $entity = SerializableEntity::fromPrimitive($entity);
+        $entity = SerializableEntity::serialize($entity);
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->addEntityGenerator($entity);

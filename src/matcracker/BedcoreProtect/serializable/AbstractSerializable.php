@@ -28,11 +28,11 @@ abstract class AbstractSerializable
      * @param mixed $object
      * @return static
      */
-    abstract public static function fromPrimitive($object): self;
+    abstract public static function serialize($object): self;
 
     /**
      * Returns an instance of primitive object from AbstractSerializable.
      * @return mixed
      */
-    abstract public function toPrimitive();
+    abstract public function unserialize();
 }

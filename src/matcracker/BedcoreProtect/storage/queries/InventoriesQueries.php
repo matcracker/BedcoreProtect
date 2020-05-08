@@ -76,7 +76,7 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $position = SerializablePosition::fromPrimitive(Position::fromObject($holder, $player->getLevel()));
+        $position = SerializablePosition::serialize(Position::fromObject($holder, $player->getLevel()));
 
         Await::f2c(
             function () use ($playerUuid, $slotAction, $position): Generator {
@@ -132,11 +132,11 @@ class InventoriesQueries extends Query
     {
         /** @var SerializableItem[] $contents */
         $contents = array_map(static function (Item $item): SerializableItem {
-            return SerializableItem::fromPrimitive($item);
+            return SerializableItem::serialize($item);
         }, $inventory->getContents());
 
         /** @var SerializablePosition[] $positions */
-        $positions = array_fill(0, count($contents), SerializablePosition::fromPrimitive($inventoryPosition));
+        $positions = array_fill(0, count($contents), SerializablePosition::serialize($inventoryPosition));
 
         $logsTask = new LogsQueryGeneratorTask(
             EntityUtils::getUniqueId($player),

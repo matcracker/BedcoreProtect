@@ -48,7 +48,7 @@ class SerializablePosition extends AbstractSerializable
      * @param Vector3 $vector3
      * @return SerializablePosition
      */
-    public static function fromPrimitive($vector3): AbstractSerializable
+    public static function serialize($vector3): AbstractSerializable
     {
         if (!$vector3 instanceof Vector3) {
             throw new InvalidArgumentException("Expected Vector3 instance, got " . get_class($vector3));
@@ -87,7 +87,7 @@ class SerializablePosition extends AbstractSerializable
     /**
      * @return Position
      */
-    public function toPrimitive()
+    public function unserialize()
     {
         $world = $this->worldName !== null ? Server::getInstance()->getLevelByName($this->worldName) : null;
         return new Position($this->x, $this->y, $this->z, $world);

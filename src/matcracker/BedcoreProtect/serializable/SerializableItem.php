@@ -50,7 +50,7 @@ final class SerializableItem extends AbstractSerializable
      * @param Item $item
      * @return SerializableItem
      */
-    public static function fromPrimitive($item): AbstractSerializable
+    public static function serialize($item): AbstractSerializable
     {
         if (!$item instanceof Item) {
             throw new InvalidArgumentException("Expected Item instance, got " . get_class($item));
@@ -87,7 +87,7 @@ final class SerializableItem extends AbstractSerializable
     /**
      * @return Item
      */
-    public function toPrimitive()
+    public function unserialize()
     {
         return ItemFactory::get($this->id, $this->meta, $this->count, Utils::deserializeNBT($this->serializedNbt));
     }

@@ -79,9 +79,9 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $entity = SerializableEntity::fromPrimitive($entity);
-        $oldBlock = SerializableBlock::fromPrimitive($oldBlock);
-        $newBlock = SerializableBlock::fromPrimitive($newBlock);
+        $entity = SerializableEntity::serialize($entity);
+        $oldBlock = SerializableBlock::serialize($oldBlock);
+        $newBlock = SerializableBlock::serialize($newBlock);
 
         Await::f2c(
             function () use ($entity): Generator {
@@ -95,7 +95,7 @@ class BlocksQueries extends Query
 
     final protected function addRawBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Action $action, ?Position $position = null): void
     {
-        $position = $position !== null ? SerializablePosition::fromPrimitive($position) : $newBlock;
+        $position = $position !== null ? SerializablePosition::serialize($position) : $newBlock;
 
         Await::f2c(
             function () use ($uuid, $oldBlock, $newBlock, $action, $position): Generator {
@@ -134,8 +134,8 @@ class BlocksQueries extends Query
 
         $this->addRawBlockLog(
             "{$name}-uuid",
-            SerializableBlock::fromPrimitive($oldBlock),
-            SerializableBlock::fromPrimitive($newBlock),
+            SerializableBlock::serialize($oldBlock),
+            SerializableBlock::serialize($newBlock),
             $action,
             $position
         );
@@ -148,7 +148,7 @@ class BlocksQueries extends Query
      */
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Action $action): void
     {
-        $itemFrame = SerializableBlock::fromPrimitive($itemFrame);
+        $itemFrame = SerializableBlock::serialize($itemFrame);
         $this->addRawBlockLog(EntityUtils::getUniqueId($player), $itemFrame, $itemFrame, $action);
     }
 
@@ -165,7 +165,7 @@ class BlocksQueries extends Query
         }
 
         $oldBlocks = array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::fromPrimitive($block);
+            return SerializableBlock::serialize($block);
         }, $oldBlocks);
 
         if (is_array($newBlocks)) {
@@ -176,13 +176,13 @@ class BlocksQueries extends Query
             (function (Block ...$_) { //Type-safe check
             })(... $newBlocks);
             $newBlocks = array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::fromPrimitive($block);
+                return SerializableBlock::serialize($block);
             }, $newBlocks);
         } else {
-            $newBlocks = SerializableBlock::fromPrimitive($newBlocks);
+            $newBlocks = SerializableBlock::serialize($newBlocks);
         }
 
-        $entity = SerializableEntity::fromPrimitive($entity);
+        $entity = SerializableEntity::serialize($entity);
         Await::f2c(
             function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
                 yield $this->entitiesQueries->addEntityGenerator($entity);
@@ -242,7 +242,7 @@ class BlocksQueries extends Query
                     $area->getWorld()->addTile($tile);
                 }
             } else {
-                $tile = BlockUtils::asTile($block->toPrimitive());
+                $tile = BlockUtils::asTile($block->unserialize());
                 if ($tile !== null) {
                     $area->getWorld()->removeTile($tile);
                 }

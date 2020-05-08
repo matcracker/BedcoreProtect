@@ -51,7 +51,7 @@ final class SerializableBlock extends SerializablePosition
      * @param Block $block
      * @return SerializableBlock
      */
-    public static function fromPrimitive($block): AbstractSerializable
+    public static function serialize($block): AbstractSerializable
     {
         if (!$block instanceof Block) {
             throw new InvalidArgumentException("Expected Block instance, got " . get_class($block));
@@ -64,7 +64,7 @@ final class SerializableBlock extends SerializablePosition
             (int)$block->getX(),
             (int)$block->getY(),
             (int)$block->getZ(),
-            parent::fromPrimitive($block)->worldName,
+            parent::serialize($block)->worldName,
             BlockUtils::serializeTileTag($block)
         );
     }
@@ -72,9 +72,9 @@ final class SerializableBlock extends SerializablePosition
     /**
      * @return Block
      */
-    public function toPrimitive()
+    public function unserialize()
     {
-        return BlockFactory::get($this->id, $this->meta, parent::toPrimitive());
+        return BlockFactory::get($this->id, $this->meta, parent::unserialize());
     }
 
     public function getName(): string

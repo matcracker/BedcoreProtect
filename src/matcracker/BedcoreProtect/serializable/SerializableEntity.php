@@ -60,7 +60,7 @@ final class SerializableEntity extends SerializablePosition
      * @param Entity $entity
      * @return SerializableEntity
      */
-    public static function fromPrimitive($entity): AbstractSerializable
+    public static function serialize($entity): AbstractSerializable
     {
         $classPath = get_class($entity);
         if (!$entity instanceof Entity) {
@@ -82,7 +82,7 @@ final class SerializableEntity extends SerializablePosition
             (float)$entity->getX(),
             (float)$entity->getY(),
             (float)$entity->getZ(),
-            parent::fromPrimitive($entity->asPosition())->worldName,
+            parent::serialize($entity->asPosition())->worldName,
             Utils::serializeNBT($entity->namedtag)
         );
     }
@@ -90,9 +90,9 @@ final class SerializableEntity extends SerializablePosition
     /**
      * @return Entity|null
      */
-    public function toPrimitive()
+    public function unserialize()
     {
-        if (($level = parent::toPrimitive()->getLevel()) === null) {
+        if (($level = parent::unserialize()->getLevel()) === null) {
             throw new RuntimeException("Could not create an entity with \"null\" world.");
         }
 
