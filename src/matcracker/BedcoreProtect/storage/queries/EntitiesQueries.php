@@ -58,9 +58,6 @@ class EntitiesQueries extends Query
                 yield $this->addRawEntity('leaves-uuid', '#decay');
 
                 yield Await::ALL;
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }
@@ -90,9 +87,6 @@ class EntitiesQueries extends Query
                 /** @var int $lastId */
                 $lastId = yield $this->addRawLog($damager->getUniqueId(), $entity, $action);
                 yield $this->addEntityLog($lastId, $entity);
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }
@@ -130,9 +124,6 @@ class EntitiesQueries extends Query
                 $lastId = yield $this->addRawLog("{$name}-uuid", $block, $action);
 
                 yield $this->addEntityLog($lastId, $entity);
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }
@@ -143,9 +134,6 @@ class EntitiesQueries extends Query
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->addEntityGenerator($entity);
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }

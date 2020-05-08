@@ -122,9 +122,6 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
-                    },
-                    static function (): void {
-                        //NOOP
                     }
                 );
                 return true;

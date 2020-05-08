@@ -82,9 +82,6 @@ final class PatchManager
 
                     yield $this->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $pluginVersion]);
                 }
-            },
-            static function (): void {
-                //NOOP
             }
         );
         //Pause the main thread until all the patches are applied.

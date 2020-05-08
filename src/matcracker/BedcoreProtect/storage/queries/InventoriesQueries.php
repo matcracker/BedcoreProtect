@@ -106,9 +106,6 @@ class InventoriesQueries extends Query
                 }
 
                 yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }

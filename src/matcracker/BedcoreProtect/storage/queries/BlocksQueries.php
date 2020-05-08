@@ -111,9 +111,6 @@ class BlocksQueries extends Query
                     'new_meta' => $newBlock->getMeta(),
                     'new_nbt' => $newBlock->getSerializedNbt()
                 ]);
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }
@@ -215,9 +212,6 @@ class BlocksQueries extends Query
                 );
 
                 Server::getInstance()->getAsyncPool()->submitTask($logsTask);
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }

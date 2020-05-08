@@ -101,9 +101,6 @@ final class QueryManager
                 }
 
                 yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ['version' => $pluginVersion]);
-            },
-            static function (): void {
-                //NOOP
             }
         );
 
@@ -172,9 +169,6 @@ final class QueryManager
                     },
                     false
                 );
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }

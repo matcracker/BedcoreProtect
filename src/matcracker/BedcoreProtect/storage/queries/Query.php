@@ -81,9 +81,6 @@ abstract class Query
                         }
                     }
                 );
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }

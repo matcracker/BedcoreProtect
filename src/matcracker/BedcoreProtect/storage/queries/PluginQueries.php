@@ -133,9 +133,6 @@ class PluginQueries extends Query
                     yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
                     yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
                 }
-            },
-            static function (): void {
-                //NOOP
             }
         );
     }

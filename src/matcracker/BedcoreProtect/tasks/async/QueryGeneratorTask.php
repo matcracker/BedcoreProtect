@@ -63,9 +63,6 @@ abstract class QueryGeneratorTask extends AsyncTask
             Await::f2c(
                 static function () use ($query, $onComplete): Generator {
                     yield $onComplete($query);
-                },
-                static function (): void {
-                    //NOOP
                 }
             );
         }
