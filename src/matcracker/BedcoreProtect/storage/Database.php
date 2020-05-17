@@ -91,12 +91,10 @@ class Database
 
     final public function disconnect(): void
     {
-        if (!isset($this->connector)) {
-            $this->throwDatabaseException();
+        if ($this->connector instanceof DataConnector) {
+            $this->connector->waitAll();
+            $this->connector->close();
         }
-
-        $this->connector->waitAll();
-        $this->connector->close();
     }
 
     final public function getStatus(): Generator
