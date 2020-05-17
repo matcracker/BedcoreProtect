@@ -56,19 +56,19 @@ class Database
                 'sqlite' => 'sqlite.sql',
                 'mysql' => 'mysql.sql'
             ]);
-            $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
-            if ($patchResource !== null) {
-                $this->connector->loadQueryFile($patchResource);
-            }
-            $this->patchManager = new PatchManager($this->plugin, $this->connector);
-            $this->queryManager = new QueryManager($this->connector, $this->plugin->getParsedConfig());
-
-            return true;
         } catch (SqlError $error) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
+            return false;
         }
 
-        return false;
+        $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
+        if ($patchResource !== null) {
+            $this->connector->loadQueryFile($patchResource);
+        }
+        $this->patchManager = new PatchManager($this->plugin, $this->connector);
+        $this->queryManager = new QueryManager($this->connector, $this->plugin->getParsedConfig());
+
+        return true;
     }
 
     final public function getQueryManager(): QueryManager
