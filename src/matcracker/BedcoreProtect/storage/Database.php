@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\storage;
 use Generator;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use poggit\libasynql\ConfigException;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
@@ -51,24 +52,30 @@ class Database
      */
     final public function connect(): bool
     {
+        $parsedConfig = $this->plugin->getParsedConfig();
+
+        if ($parsedConfig->isSQLite() && ($limit = $parsedConfig->getWorkerLimit()) > 1) {
+            throw new ConfigException("SQLite worker limit must be 1, got {$limit}");
+        }
+
         try {
             $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
                 'sqlite' => 'sqlite.sql',
                 'mysql' => 'mysql.sql'
             ]);
-            $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
-            if ($patchResource !== null) {
-                $this->connector->loadQueryFile($patchResource);
-            }
-            $this->patchManager = new PatchManager($this->plugin, $this->connector);
-            $this->queryManager = new QueryManager($this->connector, $this->plugin->getParsedConfig());
-
-            return true;
         } catch (SqlError $error) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
+            return false;
         }
 
-        return false;
+        $patchResource = $this->plugin->getResource('patches/' . $parsedConfig->getDatabaseType() . '_patch.sql');
+        if ($patchResource !== null) {
+            $this->connector->loadQueryFile($patchResource);
+        }
+        $this->patchManager = new PatchManager($this->plugin, $this->connector);
+        $this->queryManager = new QueryManager($this->connector, $parsedConfig);
+
+        return true;
     }
 
     final public function getQueryManager(): QueryManager
@@ -91,12 +98,10 @@ class Database
 
     final public function disconnect(): void
     {
-        if (!isset($this->connector)) {
-            $this->throwDatabaseException();
+        if ($this->connector instanceof DataConnector) {
+            $this->connector->waitAll();
+            $this->connector->close();
         }
-
-        $this->connector->waitAll();
-        $this->connector->close();
     }
 
     final public function getStatus(): Generator

@@ -168,9 +168,12 @@ final class Main extends PluginBase
         $queryManager->setupDefaultData();
 
         if ($this->configParser->isSQLite()) {
-            $pluginQueries = $queryManager->getPluginQueries();
-            $pluginQueries->beginTransaction();
-            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($pluginQueries), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+            $queryManager->getPluginQueries()->beginTransaction();
+            $this->getScheduler()->scheduleDelayedRepeatingTask(
+                new SQLiteTransactionTask($queryManager->getPluginQueries()),
+                SQLiteTransactionTask::getTicks(),
+                SQLiteTransactionTask::getTicks()
+            );
         }
 
         CommandParser::initActions();
