@@ -54,10 +54,7 @@ class EntitiesQueries extends Query
                 yield $this->addRawEntity('water-uuid', '#water');
                 yield $this->addRawEntity('still water-uuid', '#water');
                 yield $this->addRawEntity('lava-uuid', '#lava');
-<<<<<<< HEAD
-=======
                 yield $this->addRawEntity('still lava-uuid', '#lava');
->>>>>>> stable
                 yield $this->addRawEntity('fire block-uuid', '#fire');
                 yield $this->addRawEntity('leaves-uuid', '#decay');
 

@@ -127,16 +127,6 @@ class PluginQueries extends Query
      */
     final public function storeTransaction(): void
     {
-<<<<<<< HEAD
-        Await::f2c(
-            function (): Generator {
-                if ($this->configParser->isSQLite()) {
-                    yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
-                    yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
-                }
-            }
-        );
-=======
         if ($this->configParser->isSQLite()) {
             Await::f2c(
                 function (): Generator {
@@ -145,7 +135,6 @@ class PluginQueries extends Query
                 }
             );
         }
->>>>>>> stable
     }
 
     protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
