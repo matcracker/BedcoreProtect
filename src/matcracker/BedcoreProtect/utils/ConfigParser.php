@@ -87,15 +87,6 @@ final class ConfigParser
         return (string)$this->data['database']['sqlite']['file'];
     }
 
-    /**
-     * Return the numbers of workers limit.
-     * @return int
-     */
-    public function getWorkerLimit(): int
-    {
-        return (int)$this->data['database']['worker-limit'];
-    }
-
     public function isEnabledWorld(Level $world): bool
     {
         if (!$this->isValid) {
