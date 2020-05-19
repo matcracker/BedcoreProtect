@@ -67,10 +67,12 @@ final class SerializableEntity extends SerializablePosition
             throw new InvalidArgumentException("Expected Entity instance, got " . $classPath);
         }
 
-        $entity->saveNBT();
+        if (!$entity instanceof Player) {
+            $entity->saveNBT();
 
-        if ($entity instanceof Living) {
-            $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
+            if ($entity instanceof Living) {
+                $entity->namedtag->setFloat("Health", $entity->getMaxHealth());
+            }
         }
 
         return new self(
