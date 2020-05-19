@@ -93,6 +93,7 @@ final class QueryManager
         Await::f2c(
             function () use ($pluginVersion): Generator {
                 if ($this->configParser->isSQLite()) {
+                    yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
                     yield $this->executeGeneric(QueriesConst::ENABLE_FOREIGN_KEYS);
                 }
 
@@ -122,6 +123,7 @@ final class QueryManager
     public function setupDefaultData(): void
     {
         $this->entitiesQueries->addDefaultEntities();
+        $this->connector->waitAll();
     }
 
     public function rollback(Area $area, CommandParser $commandParser): void

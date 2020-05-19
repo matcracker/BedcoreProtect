@@ -75,15 +75,10 @@ CREATE TABLE IF NOT EXISTS status
 );
 -- #        }
 -- #    }
--- #    {transaction
--- #        {begin
-BEGIN TRANSACTION;
--- #        }
--- #        {end
-END TRANSACTION;
--- #        }
--- #    }
 -- #    {pragma
+-- #        {enable-wal-mode
+PRAGMA journal_mode = WAL;
+-- #        }
 -- #        {foreign-keys-on
 PRAGMA foreign_keys = ON;
 -- #        }

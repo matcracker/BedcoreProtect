@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\storage;
 use Generator;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
-use poggit\libasynql\ConfigException;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
@@ -53,10 +52,6 @@ class Database
     final public function connect(): bool
     {
         $parsedConfig = $this->plugin->getParsedConfig();
-
-        if ($parsedConfig->isSQLite() && ($limit = $parsedConfig->getWorkerLimit()) > 1) {
-            throw new ConfigException("SQLite worker limit must be 1, got {$limit}");
-        }
 
         try {
             $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
