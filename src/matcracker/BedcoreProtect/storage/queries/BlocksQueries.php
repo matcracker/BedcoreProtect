@@ -79,7 +79,20 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $entity = SerializableEntity::serialize($entity);
+        $this->addBlockLogBySerializedEntity(SerializableEntity::serialize($entity), $oldBlock, $newBlock, $action, $position);
+    }
+
+    /**
+     * It logs the entity who makes the action for block.
+     *
+     * @param SerializableEntity $entity
+     * @param Block $oldBlock
+     * @param Block $newBlock
+     * @param Action $action
+     * @param Position|null $position
+     */
+    public function addBlockLogBySerializedEntity(SerializableEntity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
+    {
         $oldBlock = SerializableBlock::serialize($oldBlock);
         $newBlock = SerializableBlock::serialize($newBlock);
 
