@@ -35,8 +35,8 @@ final class QueriesConst
         self::INIT_BLOCKS_LOG, self::INIT_ENTITIES_LOG,
         self::INIT_INVENTORIES_LOG, self::INIT_DATABASE_STATUS
     ];
-    public const ENABLE_WAL_MODE = 'bcp.pragma.enable-wal-mode';
-    public const ENABLE_FOREIGN_KEYS = 'bcp.pragma.foreign-keys-on';
+    public const ENABLE_WAL_MODE = 'bcp.generic.enable_wal_mode';
+    public const SET_FOREIGN_KEYS = 'bcp.generic.set_foreign_keys';
     public const ADD_ENTITY = 'bcp.add.entity';
     public const ADD_DATABASE_VERSION = 'bcp.add.db_version';
     public const ADD_HISTORY_LOG = 'bcp.add.log.main';

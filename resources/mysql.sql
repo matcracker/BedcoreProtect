@@ -4,7 +4,7 @@
 -- #        {entities
 CREATE TABLE IF NOT EXISTS entities
 (
-    uuid             VARCHAR(36) UNIQUE PRIMARY KEY  NOT NULL,
+    uuid             VARCHAR(36) PRIMARY KEY,
     entity_name      VARCHAR(16)                     NOT NULL,
     entity_classpath TEXT                            NOT NULL,
     address          VARCHAR(15) DEFAULT '127.0.0.1' NOT NULL
@@ -13,27 +13,27 @@ CREATE TABLE IF NOT EXISTS entities
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS log_history
 (
-    log_id     BIGINT UNSIGNED UNIQUE AUTO_INCREMENT PRIMARY KEY NOT NULL,
-    who        VARCHAR(36)                                       NOT NULL,
-    x          BIGINT                                            NOT NULL,
-    y          TINYINT UNSIGNED                                  NOT NULL,
-    z          BIGINT                                            NOT NULL,
-    world_name VARCHAR(255)                                      NOT NULL,
-    action     TINYINT UNSIGNED                                  NOT NULL,
-    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP            NOT NULL,
-    rollback   BOOLEAN      DEFAULT FALSE                        NOT NULL,
+    log_id     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    who        VARCHAR(36)                            NOT NULL,
+    x          BIGINT                                 NOT NULL,
+    y          TINYINT UNSIGNED                       NOT NULL,
+    z          BIGINT                                 NOT NULL,
+    world_name VARCHAR(255)                           NOT NULL,
+    action     TINYINT UNSIGNED                       NOT NULL,
+    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    rollback   BOOLEAN      DEFAULT FALSE             NOT NULL,
     FOREIGN KEY (who) REFERENCES entities (uuid)
 );
 -- #        }
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS blocks_log
 (
-    history_id BIGINT UNSIGNED UNIQUE NOT NULL,
-    old_id     INTEGER UNSIGNED       NOT NULL,
-    old_meta   TINYINT(2) UNSIGNED    NOT NULL,
+    history_id BIGINT UNSIGNED PRIMARY KEY,
+    old_id     INTEGER UNSIGNED    NOT NULL,
+    old_meta   TINYINT(2) UNSIGNED NOT NULL,
     old_nbt    LONGBLOB DEFAULT NULL,
-    new_id     INTEGER UNSIGNED       NOT NULL,
-    new_meta   TINYINT(2) UNSIGNED    NOT NULL,
+    new_id     INTEGER UNSIGNED    NOT NULL,
+    new_meta   TINYINT(2) UNSIGNED NOT NULL,
     new_nbt    LONGBLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS blocks_log
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS entities_log
 (
-    history_id      BIGINT UNSIGNED UNIQUE NOT NULL,
-    entityfrom_uuid VARCHAR(36)            NOT NULL,
-    entityfrom_id   INTEGER UNSIGNED       NOT NULL,
+    history_id      BIGINT UNSIGNED PRIMARY KEY,
+    entityfrom_uuid VARCHAR(36)      NOT NULL,
+    entityfrom_id   INTEGER UNSIGNED NOT NULL,
     entityfrom_nbt  LONGBLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS entities_log
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (
-    history_id BIGINT UNSIGNED UNIQUE        NOT NULL,
+    history_id BIGINT UNSIGNED PRIMARY KEY,
     slot       TINYINT UNSIGNED              NOT NULL,
     old_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
     old_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
@@ -68,11 +68,17 @@ CREATE TABLE IF NOT EXISTS inventories_log
 -- #        {db_status
 CREATE TABLE IF NOT EXISTS status
 (
-    only_one_row BOOLEAN PRIMARY KEY DEFAULT TRUE              NOT NULL,
+    only_one_row BOOLEAN PRIMARY KEY DEFAULT TRUE,
     version      VARCHAR(20)                                   NOT NULL,
     upgraded_on  TIMESTAMP(6)        DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CHECK (only_one_row)
 );
+-- #        }
+-- #    }
+-- #    {generic
+-- #        {set_foreign_keys
+-- #            :flag bool
+SET FOREIGN_KEY_CHECKS = :flag;
 -- #        }
 -- #    }
 -- #    {add

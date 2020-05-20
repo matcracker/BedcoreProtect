@@ -94,8 +94,9 @@ final class QueryManager
             function () use ($pluginVersion): Generator {
                 if ($this->configParser->isSQLite()) {
                     yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
-                    yield $this->executeGeneric(QueriesConst::ENABLE_FOREIGN_KEYS);
                 }
+
+                yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
                 foreach (QueriesConst::INIT_TABLES as $queryTable) {
                     yield $this->executeGeneric($queryTable);
