@@ -160,8 +160,8 @@ final class Main extends PluginBase
             return;
         }
 
-        if ($this->database->getPatchManager()->patch()) {
-            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
+        if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
+            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $lastPatch]));
         }
 
         $queryManager->setupDefaultData();

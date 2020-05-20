@@ -29,6 +29,7 @@ use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 use function array_filter;
+use function copy;
 use function count;
 use function fclose;
 use function is_resource;
@@ -51,42 +52,56 @@ final class PatchManager
     }
 
     /**
-     * Return true if patch updated the database.
-     * @return bool
+     * Returns the last applied patch version or null if the patch is not applied.
+     * @return string|null
      */
-    public function patch(): bool
+    public function patch(): ?string
     {
-        $updated = false;
+        $patchVersion = null;
         Await::f2c(
-            function () use (&$updated) : Generator {
+            function () use (&$patchVersion) : Generator {
                 /** @var array $rows */
                 $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
 
                 $versions = $this->getVersionsToPatch($rows[0]['version']);
-                if ($updated = (count($versions) > 0)) { //This means the database is not updated.
-                    $pluginVersion = $this->plugin->getVersion();
-                    $dbType = $this->plugin->getParsedConfig()->getDatabaseType();
+                if (count($versions) > 0) { //This means the database is not updated.
+                    $parsedConfig = $this->plugin->getParsedConfig();
+                    $dbType = $parsedConfig->getDatabaseType();
 
-                    $this->plugin->getLogger()->info($this->plugin->getLanguage()->translateString("database.version.upgrading", [$pluginVersion]));
-
-                    /**
-                     * @var string $version
-                     * @var int[] $dbTypes
-                     */
-                    foreach ($versions as $version => $dbTypes) {
-                        $patchNumbers = $dbTypes[$dbType];
-                        for ($i = 1; $i <= $patchNumbers; $i++) {
-                            yield $this->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
+                    if ($parsedConfig->isSQLite()) { //Backup
+                        $dbFilePath = $this->plugin->getDataFolder() . $parsedConfig->getDatabaseFileName();
+                        if (!copy($dbFilePath, $dbFilePath . "." . $rows[0]['version'] . ".bak")) {
+                            $this->plugin->getLogger()->warning($this->plugin->getLanguage()->translateString('database.version.backup-failed'));
                         }
                     }
 
-                    yield $this->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $pluginVersion]);
+                    /**
+                     * @var string $version
+                     */
+                    foreach ($versions as $version => $dbTypes) {
+                        $patchNumbers = $dbTypes[$dbType] ?? 0;
+                        if ($patchNumbers <= 0) {
+                            $this->plugin->getLogger()->debug("Skipped patch update v{$version} of {$dbType}.");
+                            continue;
+                        }
+
+                        $this->plugin->getLogger()->info($this->plugin->getLanguage()->translateString("database.version.upgrading", [$version]));
+
+                        yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => false]);
+                        for ($i = 1; $i <= $patchNumbers; $i++) {
+                            yield $this->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
+                        }
+                        yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
+
+                        yield $this->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $version]);
+                        $patchVersion = $version;
+                    }
                 }
             }
         );
         //Pause the main thread until all the patches are applied.
         $this->connector->waitAll();
-        return $updated;
+        return $patchVersion;
     }
 
     private function executeSelect(string $query, array $args = []): Generator
@@ -97,7 +112,7 @@ final class PatchManager
 
     /**
      * @param string $db_version
-     * @return string[]
+     * @return int[][]
      */
     private function getVersionsToPatch(string $db_version): array
     {
