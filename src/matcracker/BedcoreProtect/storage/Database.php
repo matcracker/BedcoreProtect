@@ -82,6 +82,11 @@ class Database
         return $this->queryManager;
     }
 
+    private function throwDatabaseException(): void
+    {
+        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
+    }
+
     final public function getPatchManager(): PatchManager
     {
         if (!isset($this->patchManager)) {
@@ -130,10 +135,5 @@ class Database
         );
         $this->connector->waitAll();
         return $version;
-    }
-
-    private function throwDatabaseException(): void
-    {
-        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
     }
 }
