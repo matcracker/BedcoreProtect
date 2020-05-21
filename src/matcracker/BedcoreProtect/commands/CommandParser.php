@@ -58,6 +58,9 @@ use function time;
 final class CommandParser
 {
     public const MAX_PARAMETERS = 6;
+    public const PARAMETERS = [
+        'user', 'time', 'radius', 'action', 'include', 'exclude'
+    ];
 
     /** @var Action[][] */
     public static $ACTIONS;
@@ -142,7 +145,7 @@ final class CommandParser
         foreach ($this->arguments as $argument) {
             $arrayData = explode("=", $argument);
             if (count($arrayData) !== 2) {
-                $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
+                $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
                 return false;
             }
 
@@ -205,7 +208,7 @@ final class CommandParser
                 case 'a':
                     $paramValues = strtolower($paramValues);
                     if (!array_key_exists($paramValues, self::$ACTIONS)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-action');
+                        $this->errorMessage = $lang->translateString('parser.invalid-action', [$paramValues, implode(', ', array_keys(self::$ACTIONS))]);
 
                         return false;
                     }
@@ -243,7 +246,7 @@ final class CommandParser
                     }
                     break;
                 default:
-                    $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(',', array_keys(self::$ACTIONS))]);
+                    $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
                     return false;
             }
         }
