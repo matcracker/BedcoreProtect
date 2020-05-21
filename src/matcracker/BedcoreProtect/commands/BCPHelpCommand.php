@@ -49,6 +49,7 @@ final class BCPHelpCommand
         $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7rollback &3<params> &f- " . $this->lang->translateString("command.help.rollback")));
         $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7restore &3<params> &f- " . $this->lang->translateString("command.help.restore")));
         $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7lookup &3<params> &f- " . $this->lang->translateString("command.help.lookup")));
+        $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7show &3<params> &f- " . $this->lang->translateString("command.help.show")));
         $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7purge &3<params> &f- " . $this->lang->translateString("command.help.purge")));
         $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7reload &f- " . $this->lang->translateString("command.help.reload")));
         $this->sender->sendMessage(TextFormat::colorize("&3/bcp &7status &f- " . $this->lang->translateString("command.help.status")));
@@ -102,9 +103,12 @@ final class BCPHelpCommand
             case "l":
                 $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup <params>"));
                 $this->sender->sendMessage(TextFormat::colorize("&3/bcp l <params> &f- " . $this->lang->translateString("command.help.shortcut")));
-                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup <page> &f- " . $this->lang->translateString("command.help.lookup1")));
-                $this->sender->sendMessage(TextFormat::colorize("&3/bcp lookup <page>:<lines> &f- " . $this->lang->translateString("command.help.lookup2")));
-                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.lookup3")));
+                $this->sender->sendMessage(TextFormat::colorize("&7" . $this->lang->translateString("command.help.lookup-more-details")));
+                break;
+            case "show":
+            case "s":
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp show <page> &f- " . $this->lang->translateString("command.help.show-page")));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp show <page>:<lines> &f- " . $this->lang->translateString("command.help.show-page-lines")));
                 break;
             case "purge":
                 $this->sender->sendMessage(TextFormat::colorize("&3/bcp purge t=<time> &f- " . $this->lang->translateString("command.help.purge1")));

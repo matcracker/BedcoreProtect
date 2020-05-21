@@ -181,6 +181,6 @@ final class Inspector
             $inspector->sendMessage(TextFormat::colorize(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
                 . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
         }
-        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data') . ' /bcp l <page>:<lines>.'));
+        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data')));
     }
 }

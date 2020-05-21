@@ -131,33 +131,39 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     if ($parser->parse()) {
                         $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
                     } else {
-                        if (count($logs = Inspector::getSavedLogs($sender)) > 0) {
-                            $page = 0;
-                            $lines = 4;
-                            $split = explode(":", $args[1]);
-                            if ($ctype = ctype_digit($split[0])) {
-                                $page = (int)$split[0];
-                            }
-
-                            if (isset($split[1]) && $ctype = ctype_digit($split[1])) {
-                                $lines = (int)$split[1];
-                            }
-
-                            if (!$ctype) {
-                                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.no-numeric-value')));
-
-                                return true;
-                            }
-
-                            Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
-                        } else {
-                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
-                        }
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
                     $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.one-parameter')));
                 }
+                return true;
+            case 'show':
+                if (isset($args[1])) {
+                    if (count($logs = Inspector::getSavedLogs($sender)) > 0) {
+                        $page = 0;
+                        $lines = 4;
+                        $split = explode(":", $args[1]);
+                        if ($ctype = ctype_digit($split[0])) {
+                            $page = (int)$split[0];
+                        }
 
+                        if (isset($split[1]) && $ctype = ctype_digit($split[1])) {
+                            $lines = (int)$split[1];
+                        }
+
+                        if (!$ctype) {
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.no-numeric-value')));
+
+                            return true;
+                        }
+
+                        Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
+                    } else {
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.show.no-logs')));
+                    }
+                } else {
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.one-parameter')));
+                }
                 return true;
             case 'purge':
                 if (isset($args[1])) {
