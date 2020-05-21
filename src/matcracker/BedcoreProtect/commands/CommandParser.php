@@ -50,7 +50,6 @@ use function explode;
 use function implode;
 use function in_array;
 use function intval;
-use function is_array;
 use function mb_substr;
 use function strtolower;
 use function time;
@@ -220,30 +219,29 @@ final class CommandParser
                 case 'exclude':
                 case 'e':
                     $index = mb_substr($param, 0, 1) === 'b' ? 'blocks' : 'exclusions';
-                    try {
-                        $items = ItemFactory::fromString($paramValues, true);
 
-                        if (!is_array($items)) {
-                            throw new UnexpectedValueException("Expected Item[], got Item.");
+                    $items = [];
+                    foreach (explode(",", $paramValues) as $i) {
+                        try {
+                            $items[] = ItemFactory::fromString($i);
+                        } catch (InvalidArgumentException $exception) {
+                            $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'blocks' ? 'include' : 'exclude'), [$i]);
+
+                            return false;
                         }
-
-                        $this->data[$index] =
-                            array_filter(
-                                array_map(
-                                    static function (Item $item): Block {
-                                        return $item->getBlock();
-                                    },
-                                    $items
-                                ),
-                                static function (Block $block): bool {
-                                    return !$block instanceof Air;
-                                }
-                            );
-                    } catch (InvalidArgumentException $exception) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'blocks' ? 'include' : 'exclude'));
-
-                        return false;
                     }
+
+                    $this->data[$index] = array_filter(
+                        array_map(
+                            static function (Item $item): Block {
+                                return $item->getBlock();
+                            },
+                            $items
+                        ),
+                        static function (Block $block): bool {
+                            return !$block instanceof Air;
+                        }
+                    );
                     break;
                 default:
                     $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
