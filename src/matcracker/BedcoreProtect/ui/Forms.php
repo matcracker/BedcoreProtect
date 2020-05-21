@@ -133,7 +133,7 @@ final class Forms
             if (is_array($data)) {
                 $time = "t={$data[1]}";
                 $radius = $data[2] === 0 ? '' : "r={$data[2]}";
-                $user = strlen($data[4]) === 0 ? '' : "u={$data[4]}";
+                $user = strlen($data[4]) === 0 ? '' : "\"u={$data[4]}\"";
                 $action = '';
                 if ($data[5] !== -1) {
                     $a = array_keys(CommandParser::$ACTIONS)[$data[5]];
