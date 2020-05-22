@@ -231,7 +231,7 @@ class BlocksQueries extends Query
 
     protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
-        $prefix = $rollback ? 'old' : 'new';
+        $prefix = $this->getRollbackPrefix($rollback);
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
 

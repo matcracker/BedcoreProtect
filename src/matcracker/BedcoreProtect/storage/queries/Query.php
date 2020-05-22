@@ -153,4 +153,9 @@ abstract class Query
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
     }
+
+    final protected function getRollbackPrefix(bool $rollback): string
+    {
+        return $rollback ? 'old' : 'new';
+    }
 }
