@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
-use ArrayOutOfBoundsException;
 use BadMethodCallException;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\enums\Action;
@@ -30,9 +29,6 @@ use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\block\Air;
-use pocketmine\block\Block;
-use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
@@ -42,8 +38,8 @@ use function array_flip;
 use function array_intersect_key;
 use function array_key_exists;
 use function array_keys;
-use function array_map;
 use function array_shift;
+use function array_unique;
 use function count;
 use function ctype_digit;
 use function explode;
@@ -60,6 +56,8 @@ final class CommandParser
     public const PARAMETERS = [
         'user', 'time', 'radius', 'action', 'include', 'exclude'
     ];
+
+    public const ITEM_META_NO_STRICT = 0x8001;
 
     /** @var Action[][] */
     public static $ACTIONS;
@@ -85,7 +83,7 @@ final class CommandParser
         'time' => null,
         'radius' => null,
         'action' => null,
-        'blocks' => null,
+        'inclusions' => null,
         'exclusions' => null
     ];
 
@@ -174,7 +172,7 @@ final class CommandParser
                             return false;
                         }
                     }
-                    $this->data['user'] = $users;
+                    $this->data['user'] = array_unique($users);
                     break;
                 case 'time':
                 case 't':
@@ -212,36 +210,42 @@ final class CommandParser
                         return false;
                     }
 
-                    $this->data['action'] = $paramValues;
+                    $this->data['action'] = self::$ACTIONS[$paramValues];
                     break;
-                case 'blocks':
-                case 'b':
+                case 'include':
+                case 'i':
                 case 'exclude':
                 case 'e':
-                    $index = mb_substr($param, 0, 1) === 'b' ? 'blocks' : 'exclusions';
+                    $index = mb_substr($param, 0, 1) === 'i' ? 'inclusions' : 'exclusions';
 
                     $items = [];
-                    foreach (explode(",", $paramValues) as $i) {
+                    foreach (explode(",", $paramValues) as $strItem) {
                         try {
-                            $items[] = ItemFactory::fromString($i);
+                            $item = ItemFactory::fromString($strItem);
                         } catch (InvalidArgumentException $exception) {
-                            $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'blocks' ? 'include' : 'exclude'), [$i]);
+                            $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'inclusions' ? 'include' : 'exclude'), [$strItem]);
 
                             return false;
                         }
+
+                        /*
+                         * Allows to include/exclude item in strict mode.
+                         * Example:
+                         * - include=5      --> includes all blocks with ID 5 (no strict)
+                         * - include=5:0    --> includes only block with ID 5 and meta 0 (strict)
+                         */
+                        $e = explode(":", $strItem);
+                        if (!isset($e[1])) {
+                            $meta = self::ITEM_META_NO_STRICT;
+                        }
+
+                        $items[] = [
+                            "id" => $item->getId(),
+                            "meta" => $meta ?? $item->getDamage()
+                        ];
                     }
 
-                    $this->data[$index] = array_filter(
-                        array_map(
-                            static function (Item $item): Block {
-                                return $item->getBlock();
-                            },
-                            $items
-                        ),
-                        static function (Block $block): bool {
-                            return !$block instanceof Air;
-                        }
-                    );
+                    $this->data[$index] = $items;
                     break;
                 default:
                     $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
@@ -273,14 +277,24 @@ final class CommandParser
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
         }
 
-        $innerJoin = "";
+        $case = $innerJoin = "";
 
-        if ($this->getBlocks() !== null || $this->getExclusions() !== null) {
+        if ($this->getInclusions() !== null || $this->getExclusions() !== null) {
+            $case = ",
+                    CASE
+                        WHEN old_id = 0 THEN new_id
+                        WHEN new_id = 0 THEN old_id
+                    END AS id,
+                    CASE
+                        WHEN old_id = 0 THEN new_meta
+                        WHEN new_id = 0 THEN old_meta
+                    END AS meta";
+
             $innerJoin = "INNER JOIN blocks_log ON log_history.log_id = history_id";
         }
 
         $query = /**@lang text */
-            "SELECT log_id FROM log_history {$innerJoin} WHERE rollback = '" . intval(!$rollback) . "' AND ";
+            "SELECT log_id {$case} FROM log_history {$innerJoin} WHERE rollback = '" . intval(!$rollback) . "' AND ";
 
         $this->buildConditionalQuery($query, $bb);
 
@@ -290,11 +304,11 @@ final class CommandParser
     }
 
     /**
-     * @return Block[]|null
+     * @return int[][]|null
      */
-    public function getBlocks(): ?array
+    public function getInclusions(): ?array
     {
-        return $this->getData('blocks');
+        return $this->getData('inclusions');
     }
 
     /**
@@ -312,7 +326,7 @@ final class CommandParser
     }
 
     /**
-     * @return Block[]|null
+     * @return int[][]|null
      */
     public function getExclusions(): ?array
     {
@@ -332,10 +346,11 @@ final class CommandParser
 
             switch ($key) {
                 case 'user':
+                    $query .= '(';
                     foreach ($value as $user) {
                         $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '{$user}') OR ";
                     }
-                    $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
+                    $query = mb_substr($query, 0, -4) . ') AND '; //Remove excessive " OR " string.
                     break;
                 case 'time':
                     $diffTime = time() - (int)$value;
@@ -348,21 +363,22 @@ final class CommandParser
                 case 'radius':
                     if ($bb !== null) {
                         $bb = MathUtils::floorBoundingBox($bb);
-                        $query .= "(x BETWEEN '{$bb->minX}' AND '{$bb->maxX}') AND ";
-                        $query .= "(y BETWEEN '{$bb->minY}' AND '{$bb->maxY}') AND ";
-                        $query .= "(z BETWEEN '{$bb->minZ}' AND '{$bb->maxZ}') AND ";
+                        $query .= "(x BETWEEN {$bb->minX} AND {$bb->maxX}) AND ";
+                        $query .= "(y BETWEEN {$bb->minY} AND {$bb->maxY}) AND ";
+                        $query .= "(z BETWEEN {$bb->minZ} AND {$bb->maxZ}) AND ";
                     }
 
                     break;
                 case 'action':
-                    $actions = self::toActions($value);
-                    foreach ($actions as $action) {
+                    $query .= '(';
+                    /** @var Action[] $value */
+                    foreach ($value as $action) {
                         $query .= "action = {$action->getType()} OR ";
                     }
-                    $query = mb_substr($query, 0, -4) . ' AND '; //Remove excessive " OR " string.
+                    $query = mb_substr($query, 0, -4) . ') AND '; //Remove excessive " OR " string.
                     break;
                 case 'exclusions':
-                case 'blocks':
+                case 'inclusions':
                     if ($key === 'exclusions') {
                         $operator = '<>';
                         $condition = 'OR';
@@ -371,11 +387,16 @@ final class CommandParser
                         $condition = 'AND';
                     }
 
-                    /** @var Block $block */
-                    foreach ($value as $block) {
-                        $id = $block->getId();
-                        $meta = $block->getDamage();
-                        $query .= "(old_id {$operator} '{$id}' {$condition} old_meta {$operator} '{$meta}') AND ";
+                    /** @var int[] $blockData */
+                    foreach ($value as $blockData) {
+                        $id = $blockData["id"];
+                        $meta = $blockData["meta"];
+
+                        $query .= "(id {$operator} {$id}";
+                        if ($meta !== self::ITEM_META_NO_STRICT) {
+                            $query .= " {$condition} meta {$operator} {$meta}";
+                        }
+                        $query .= ") AND ";
                     }
                     break;
                 default:
@@ -384,20 +405,6 @@ final class CommandParser
         }
 
         $query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
-    }
-
-    /**
-     * @param string $cmdAction
-     *
-     * @return Action[]
-     */
-    public static function toActions(string $cmdAction): array
-    {
-        if (!array_key_exists($cmdAction, self::$ACTIONS)) {
-            throw new ArrayOutOfBoundsException("The {$cmdAction} is not a valid action.");
-        }
-
-        return self::$ACTIONS[$cmdAction];
     }
 
     /**
@@ -417,28 +424,43 @@ final class CommandParser
         }
 
         $query = /**@lang text */
-            'SELECT *,
-            bl.old_id, bl.old_meta, bl.new_id, bl.new_meta, il.old_amount, il.new_amount,
-            CASE
-                WHEN il.old_id IS NULL THEN bl.old_id
-                WHEN bl.old_id IS NULL THEN il.old_id
-            END AS old_id,
-            CASE
-                WHEN il.old_meta IS NULL THEN bl.old_meta
-                WHEN bl.old_meta IS NULL THEN il.old_meta
-            END AS old_meta,  
-            CASE
-                WHEN il.new_id IS NULL THEN bl.new_id
-                WHEN bl.new_id IS NULL THEN il.new_id
-            END AS new_id,
-            CASE
-                WHEN il.new_meta IS NULL THEN bl.new_meta
-                WHEN bl.new_meta IS NULL THEN il.new_meta
-            END AS new_meta,  
-            e.entity_name AS entity_from FROM log_history 
-            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
-            LEFT JOIN entities e ON log_history.who = e.uuid 
-            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ';
+            'SELECT tmp.*,e1.entity_name AS entity_from, e2.entity_name AS entity_to,
+                CASE
+                    WHEN tmp.action = 0 OR tmp.action = 6 THEN new_id
+                    WHEN tmp.action = 1 OR tmp.action = 7 THEN old_id
+                    ELSE
+                        new_id
+                END AS id,
+                CASE
+                    WHEN tmp.action = 0 OR tmp.action = 6 THEN new_meta
+                    WHEN tmp.action = 1 OR tmp.action = 7 THEN old_meta
+                    ELSE
+                        new_meta
+                END AS meta
+            FROM (SELECT log_history.*, old_amount, new_amount,
+                CASE
+                    WHEN il.old_id IS NULL THEN bl.old_id
+                    WHEN bl.old_id IS NULL THEN il.old_id
+                END AS old_id,
+                CASE
+                    WHEN il.old_meta IS NULL THEN bl.old_meta
+                    WHEN bl.old_meta IS NULL THEN il.old_meta
+                END AS old_meta,
+                CASE
+                    WHEN il.new_id IS NULL THEN bl.new_id
+                    WHEN bl.new_id IS NULL THEN il.new_id
+                END AS new_id,
+                CASE
+                    WHEN il.new_meta IS NULL THEN bl.new_meta
+                    WHEN bl.new_meta IS NULL THEN il.new_meta
+                END AS new_meta
+                FROM log_history
+                LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
+                LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
+            ) AS tmp
+            LEFT JOIN entities_log el ON tmp.log_id = el.history_id
+            LEFT JOIN entities e1 ON tmp.who = e1.uuid
+            LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ';
 
         $this->buildConditionalQuery($query, null);
 
@@ -470,7 +492,10 @@ final class CommandParser
         return $this->data;
     }
 
-    public function getUsers(): ?string
+    /**
+     * @return string[]|null
+     */
+    public function getUsers(): ?array
     {
         return $this->getData('user');
     }
@@ -480,8 +505,11 @@ final class CommandParser
         return $this->getData('radius');
     }
 
-    public function getAction(): ?string
+    /**
+     * @return Action[]|null
+     */
+    public function getAction(): ?array
     {
-        return $this->getData("action");
+        return $this->getData('action');
     }
 }
