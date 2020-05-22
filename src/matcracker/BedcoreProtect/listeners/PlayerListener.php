@@ -65,13 +65,15 @@ final class PlayerListener extends BedcoreListener
         $player = $event->getPlayer();
         if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getBuckets()) {
             $block = $event->getBlockClicked();
-            $fireEmptyEvent = ($event instanceof PlayerBucketEmptyEvent);
+            $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
             $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getDamage() : $event->getItem()->getDamage();
             $liquid = BlockFactory::get($bucketMeta);
 
             if ($fireEmptyEvent) {
-                $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
+                if (!$block instanceof $liquid) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
+                }
             } else {
                 $face = $event->getBlockFace();
                 switch ($face) {
