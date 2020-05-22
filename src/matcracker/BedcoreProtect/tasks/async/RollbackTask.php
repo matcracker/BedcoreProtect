@@ -26,8 +26,11 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\block\Block;
+use pocketmine\event\block\BlockUpdateEvent;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
+use pocketmine\math\AxisAlignedBB;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use function count;
@@ -81,15 +84,6 @@ final class RollbackTask extends AsyncTask
             }
         }
 
-        foreach ($chunks as $chunk) {
-            /*
-             * TODO: Find a better method that works.
-             * When a chunk contains some blocks with light source (e.g. Fire) and is removing them (e.g. Fire placed -> rollback -> air),
-             * it should also remove the light around it. This feature doesn't remove the whole light but it's better than nothing.
-             */
-            $chunk->populateSkyLight();
-        }
-
         $this->setResult($chunks);
     }
 
@@ -103,6 +97,10 @@ final class RollbackTask extends AsyncTask
                 $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
             }
 
+            foreach ($this->blocks as $block) {
+                $this->updateBlock($world, $block->unserialize());
+            }
+
             /**@var Closure|null $onComplete */
             $onComplete = $this->fetchLocal();
 
@@ -114,4 +112,18 @@ final class RollbackTask extends AsyncTask
         }
     }
 
+    private function updateBlock(Level $world, Block $block): void
+    {
+        $world->updateAllLight($block);
+
+        $ev = new BlockUpdateEvent($block);
+        $ev->call();
+        if (!$ev->isCancelled()) {
+            foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
+                $entity->onNearbyBlockChange();
+            }
+            $ev->getBlock()->onNearbyBlockChange();
+            $world->scheduleNeighbourBlockUpdates($block->asVector3());
+        }
+    }
 }
