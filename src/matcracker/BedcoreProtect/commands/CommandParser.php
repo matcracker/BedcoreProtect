@@ -29,6 +29,7 @@ use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
@@ -221,6 +222,7 @@ final class CommandParser
                     $items = [];
                     foreach (explode(",", $paramValues) as $strItem) {
                         try {
+                            /** @var Item $item */
                             $item = ItemFactory::fromString($strItem);
                         } catch (InvalidArgumentException $exception) {
                             $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'inclusions' ? 'include' : 'exclude'), [$strItem]);
@@ -371,7 +373,7 @@ final class CommandParser
                     break;
                 case 'action':
                     $query .= '(';
-                    /** @var Action[] $value */
+                    /** @var Action $action */
                     foreach ($value as $action) {
                         $query .= "action = {$action->getType()} OR ";
                     }
