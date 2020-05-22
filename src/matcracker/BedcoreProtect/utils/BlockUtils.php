@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\block\Anvil;
-use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\BlockIds;
 use pocketmine\block\BrewingStand;
@@ -58,11 +57,11 @@ final class BlockUtils
      */
     public static function canBeClicked(Block $block): bool
     {
-        $blocks = [
+        static $blocks = [
             WoodenDoor::class, Door::class,
             IronTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
-            Bed::class, ItemFrame::class,
-            WoodenButton::class, StoneButton::class
+            ItemFrame::class, WoodenButton::class,
+            StoneButton::class
         ];
 
         return in_array(get_class($block), $blocks) || self::hasInventory($block);
@@ -77,7 +76,7 @@ final class BlockUtils
      */
     public static function hasInventory(Block $block): bool
     {
-        $blocks = [
+        static $blocks = [
             EnderChest::class, TrappedChest::class,
             Chest::class, Furnace::class, EnchantingTable::class,
             Anvil::class, BrewingStand::class
