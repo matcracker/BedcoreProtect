@@ -145,16 +145,12 @@ final class PlayerListener extends BedcoreListener
                         if ($tile instanceof TileItemFrame) {
                             //I consider the ItemFrame as a fake inventory holder to only log "adding/removing" item.
                             if (!$tile->hasItem() && !$itemInHand->isNull()) {
-                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, Action::ADD());
-                                return;
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $itemInHand->setCount(1), Action::ADD());
                             } elseif ($tile->hasItem() && $leftClickBlock) {
-                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, Action::REMOVE());
-                                return;
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $tile->getItem(), Action::REMOVE());
                             }
                         }
-                    }
-
-                    if (!$clickedBlock instanceof Air) {
+                    } else {
                         $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
                     }
                 }

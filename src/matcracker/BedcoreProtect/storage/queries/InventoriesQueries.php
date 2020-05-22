@@ -128,6 +128,26 @@ class InventoriesQueries extends Query
         return yield Await::ONCE;
     }
 
+    /**
+     * Item frames do not have an inventory but we treat them as if they did.
+     *
+     * @param Player $player
+     * @param Item $item
+     * @param Action $action
+     * @param SerializablePosition $position
+     */
+    public function addItemFrameSlotLog(Player $player, Item $item, Action $action, SerializablePosition $position): void
+    {
+        $uuid = EntityUtils::getUniqueId($player);
+        $item = clone $item;
+        Await::f2c(
+            function () use ($uuid, $item, $action, $position): Generator {
+                $logId = yield $this->addRawLog($uuid, $position, $action);
+                yield $this->addInventorySlotLog($logId, 0, $item, $item);
+            }
+        );
+    }
+
     public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
     {
         /** @var SerializableItem[] $contents */

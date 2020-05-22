@@ -40,6 +40,7 @@ use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
+use pocketmine\item\Item;
 use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
@@ -61,11 +62,14 @@ class BlocksQueries extends Query
 {
     /** @var EntitiesQueries */
     protected $entitiesQueries;
+    /** @var InventoriesQueries */
+    protected $inventoriesQueries;
 
-    public function __construct(DataConnector $connector, ConfigParser $configParser, EntitiesQueries $entitiesQueries)
+    public function __construct(DataConnector $connector, ConfigParser $configParser, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {
         parent::__construct($connector, $configParser);
         $this->entitiesQueries = $entitiesQueries;
+        $this->inventoriesQueries = $inventoriesQueries;
     }
 
     /**
@@ -157,12 +161,14 @@ class BlocksQueries extends Query
     /**
      * @param Player $player
      * @param ItemFrame $itemFrame
+     * @param Item $item
      * @param Action $action
      */
-    public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Action $action): void
+    public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
         $itemFrame = SerializableBlock::serialize($itemFrame);
         $this->addRawBlockLog(EntityUtils::getUniqueId($player), $itemFrame, $itemFrame, $action);
+        $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $itemFrame);
     }
 
     /**
