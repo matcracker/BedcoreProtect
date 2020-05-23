@@ -129,8 +129,9 @@ final class PatchManager
 
         $patchConfig = yaml_parse($patchContent) ?? [];
         fclose($res);
-        return array_filter($patchConfig, static function (string $version) use ($db_version): bool {
-            return version_compare($version, $db_version) > 0;
+        return array_filter($patchConfig, function (string $patchVersion) use ($db_version): bool {
+            return version_compare($this->plugin->getVersion(), $db_version) > 0
+                && version_compare($patchVersion, $db_version) > 0;
         }, ARRAY_FILTER_USE_KEY);
     }
 

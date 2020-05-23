@@ -70,8 +70,8 @@ final class QueryManager
 
         $this->pluginQueries = new PluginQueries($connector, $configParser);
         $this->entitiesQueries = new EntitiesQueries($connector, $configParser);
-        $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries);
         $this->inventoriesQueries = new InventoriesQueries($connector, $configParser);
+        $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
     public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void

@@ -31,6 +31,7 @@ use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
 use pocketmine\Player;
+use pocketmine\plugin\PluginException;
 
 /**
  * It contains all the queries methods related to the plugin and logs.
@@ -40,7 +41,6 @@ use pocketmine\Player;
  */
 class PluginQueries extends Query
 {
-
     public function requestNearLog(Player $inspector, Position $position, int $near): void
     {
         $this->requestLog(QueriesConst::GET_NEAR_LOG, $inspector, $position, $near);
@@ -102,6 +102,6 @@ class PluginQueries extends Query
 
     protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
-        yield from [];
+        throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }
 }

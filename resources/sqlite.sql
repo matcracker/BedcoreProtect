@@ -193,7 +193,8 @@ SELECT history_id,
        world_name
 FROM "log_history"
          INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {new_blocks
 -- #                :log_ids list:int
@@ -207,7 +208,8 @@ SELECT history_id,
        world_name
 FROM "log_history"
          INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {old_inventories
 -- #                :log_ids list:int
@@ -222,7 +224,8 @@ SELECT history_id,
        z
 FROM "log_history"
          INNER JOIN inventories_log il ON log_history.log_id = il.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {new_inventories
 -- #                :log_ids list:int
@@ -237,7 +240,8 @@ SELECT history_id,
        z
 FROM "log_history"
          INNER JOIN inventories_log il ON log_history.log_id = il.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {entities
 -- #                :log_ids list:int
@@ -252,7 +256,8 @@ SELECT log_id,
 FROM "log_history"
          INNER JOIN entities_log el ON log_history.log_id = el.history_id
          INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {block
 -- #                :min_x int
