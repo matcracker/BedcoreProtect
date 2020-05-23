@@ -102,7 +102,6 @@ final class InspectorListener extends BedcoreListener
                 $event->setCancelled();
 
             } elseif (BlockUtils::canBeClicked($clickedBlock)) {
-                //This check must be done due to allow BlockPlaceEvent to be fired (second "OR" condition)
                 $this->pluginQueries->requestBlockLog($player, $clickedBlock);
                 $event->setCancelled();
             }
