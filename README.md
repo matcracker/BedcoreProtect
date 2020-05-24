@@ -74,6 +74,7 @@ The main command is **/bedcoreprotect** but it accepts the folllowing aliases: *
 - **/bcp rollback \<params> - _Rollback block data_** (**Permission:** _bcp.subcommand.rollback_)
 - **/bcp restore \<params> - _Restore block data_** (**Permission:** _bcp.subcommand.restore_)
 - **/bcp lookup \<params> - _Advanced block data lookup_** (**Permission:** _bcp.subcommand.lookup_)
+- **/bcp show \<params> - _Allows to show a specific page of logs._** (**Permission:** _bcp.subcommand.show_)
 - **/bcp purge \<params> - _Delete old block data_** (**Permission:** _bcp.subcommand.purge_)
 - **/bcp reload - _Reload the configuration file_** (**Permission:** _bcp.subcommand.reload_)
 - **/bcp status - _View the plugin status_** (**Permission:** _bcp.subcommand.status_)
@@ -135,8 +136,11 @@ Restoring can be used to undo rollbacks.
 
 > **/bcp lookup u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
 _Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br><br>
-If multiple pages are returned, use the command **"/bcp lookup \<page>"** to switch pages.<br>
-To change the number of lines displayed on a page, use the command **"/bcp lookup \<page>:\<lines>"**.<br><br>
+
+> **/bcp show \<page>:\[lines]**<br>
+_Allow to switch pages of /bcp lookup command. Shortcut: **"/bcp s"**._<br><br>
+When multiple pages returned from lookup command, use the command **"/bcp show \<page>"** to switch pages.<br>
+To change the number of lines displayed on a page, use the command **"/bcp show \<page>:\<lines>"**.<br><br>
 For example, **"/bcp l 1:10"** will return 10 lines of data, starting at the first page.
 
 > **/bcp purge t=\<time>**<br>
