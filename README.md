@@ -135,7 +135,7 @@ _Same parameters as /bcp rollback. Shortcut: **"/bcp rs"**._<br><br>
 Restoring can be used to undo rollbacks.
 
 > **/bcp lookup u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
-_Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br><br>
+_Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br>
 
 > **/bcp show \<page>:\[lines]**<br>
 _Allow to switch pages of /bcp lookup command. Shortcut: **"/bcp s"**._<br><br>
