@@ -426,42 +426,46 @@ final class CommandParser
         }
 
         $query = /**@lang text */
-            'SELECT tmp.*,e1.entity_name AS entity_from, e2.entity_name AS entity_to,
-                CASE
-                    WHEN tmp.action = 0 OR tmp.action = 6 THEN new_id
-                    WHEN tmp.action = 1 OR tmp.action = 7 THEN old_id
+            'SELECT tmp_ids.*, e1.entity_name AS entity_from, e2.entity_name AS entity_to                
+            FROM
+            (SELECT tmp_logs.*,
+                 CASE
+                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_id
+                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_id
                     ELSE
                         new_id
                 END AS id,
                 CASE
-                    WHEN tmp.action = 0 OR tmp.action = 6 THEN new_meta
-                    WHEN tmp.action = 1 OR tmp.action = 7 THEN old_meta
+                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_meta
+                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_meta
                     ELSE
                         new_meta
                 END AS meta
-            FROM (SELECT log_history.*, old_amount, new_amount,
-                CASE
-                    WHEN il.old_id IS NULL THEN bl.old_id
-                    WHEN bl.old_id IS NULL THEN il.old_id
-                END AS old_id,
-                CASE
-                    WHEN il.old_meta IS NULL THEN bl.old_meta
-                    WHEN bl.old_meta IS NULL THEN il.old_meta
-                END AS old_meta,
-                CASE
-                    WHEN il.new_id IS NULL THEN bl.new_id
-                    WHEN bl.new_id IS NULL THEN il.new_id
-                END AS new_id,
-                CASE
-                    WHEN il.new_meta IS NULL THEN bl.new_meta
-                    WHEN bl.new_meta IS NULL THEN il.new_meta
-                END AS new_meta
+                FROM
+                (SELECT log_history.*, old_amount, new_amount,
+                    CASE
+                        WHEN il.old_id IS NULL THEN bl.old_id
+                        WHEN bl.old_id IS NULL THEN il.old_id
+                    END AS old_id,
+                    CASE
+                        WHEN il.old_meta IS NULL THEN bl.old_meta
+                        WHEN bl.old_meta IS NULL THEN il.old_meta
+                    END AS old_meta,
+                    CASE
+                        WHEN il.new_id IS NULL THEN bl.new_id
+                        WHEN bl.new_id IS NULL THEN il.new_id
+                    END AS new_id,
+                    CASE
+                        WHEN il.new_meta IS NULL THEN bl.new_meta
+                        WHEN bl.new_meta IS NULL THEN il.new_meta
+                    END AS new_meta
                 FROM log_history
                 LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
                 LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
-            ) AS tmp
-            LEFT JOIN entities_log el ON tmp.log_id = el.history_id
-            LEFT JOIN entities e1 ON tmp.who = e1.uuid
+                ) AS tmp_logs
+            ) AS tmp_ids
+            LEFT JOIN entities_log el ON tmp_ids.log_id = el.history_id
+            LEFT JOIN entities e1 ON tmp_ids.who = e1.uuid
             LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ';
 
         $this->buildConditionalQuery($query, null);
