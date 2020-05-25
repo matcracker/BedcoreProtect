@@ -143,15 +143,16 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $page = 0;
                         $lines = 4;
                         $split = explode(":", $args[1]);
-                        if ($ctype = ctype_digit($split[0])) {
+                        if ($pageType = ctype_digit($split[0])) {
                             $page = (int)$split[0];
                         }
 
-                        if (isset($split[1]) && $ctype = ctype_digit($split[1])) {
+                        $lineType = true;
+                        if (isset($split[1]) && $lineType = ctype_digit($split[1])) {
                             $lines = (int)$split[1];
                         }
 
-                        if (!$ctype) {
+                        if (!$pageType || !$lineType) {
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.error.no-numeric-value')));
 
                             return true;

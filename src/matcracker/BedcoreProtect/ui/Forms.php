@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\ui;
 
 use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\FormLib\BaseForm;
@@ -48,7 +49,7 @@ final class Forms
     {
         $lang = Main::getInstance()->getLanguage();
         return (new Form(
-            function (Player $player, $data): void {
+            function (Player $player, $data) use ($lang): void {
                 switch ((int)$data) { //Clicked button
                     case 0: //Inspector
                         $player->chat('/bcp inspect');
@@ -59,22 +60,29 @@ final class Forms
                     case 2: //Lookup
                         $player->sendForm($this->getInputMenu('lookup'));
                         break;
-                    case 3: //Rollback
+                    case 3: //Show
+                        if (count(($logs = Inspector::getSavedLogs($player))) > 0) {
+                            $player->sendForm($this->getShowMenu());
+                        } else {
+                            $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.show.no-logs')));
+                        }
+                        break;
+                    case 4: //Rollback
                         $player->sendForm($this->getInputMenu('rollback'));
                         break;
-                    case 4: //Restore
+                    case 5: //Restore
                         $player->sendForm($this->getInputMenu('restore'));
                         break;
-                    case 5: //Undo
+                    case 6: //Undo
                         $player->chat('/bcp undo');
                         break;
-                    case 6: //Purge
+                    case 7: //Purge
                         $player->sendForm($this->getPurgeMenu());
                         break;
-                    case 7: //Reload
+                    case 8: //Reload
                         $player->chat('/bcp reload');
                         break;
-                    case 8: //Status
+                    case 9: //Status
                         $player->chat('/bcp status');
                         break;
                 }
@@ -83,6 +91,7 @@ final class Forms
             ->addClassicButton($lang->translateString('form.menu.inspector'))
             ->addClassicButton($lang->translateString('form.menu.near'))
             ->addClassicButton($lang->translateString('form.menu.lookup'))
+            ->addClassicButton($lang->translateString('form.menu.show'))
             ->addClassicButton($lang->translateString('general.rollback'))
             ->addClassicButton($lang->translateString('general.restore'))
             ->addClassicButton($lang->translateString('general.undo'))
@@ -106,6 +115,23 @@ final class Forms
             }
         ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
             ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.near')));
+    }
+
+    private function getShowMenu(): BaseForm
+    {
+        $lang = Main::getInstance()->getLanguage();
+        return (new CustomForm(
+            static function (Player $player, $data): void {
+                if (is_array($data)) {
+                    $player->chat("/bcp show {$data[0]}:{$data[1]}");
+                }
+            },
+            function (Player $player): void {
+                $player->sendForm($this->getMainMenu());
+            }
+        ))->addInput($lang->translateString('form.input-menu.page-number'), "1", "1")
+            ->addInput($lang->translateString('form.input-menu.lines-number'), "4", "4")
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.show')));
     }
 
     private function getInputMenu(string $type): BaseForm
