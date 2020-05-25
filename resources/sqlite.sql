@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS status
 -- #        {enable_wal_mode
 PRAGMA journal_mode = WAL;
 -- #        }
+-- #        {set_sync_normal
+PRAGMA synchronous = NORMAL;
+-- #        }
 -- #        {set_foreign_keys
 -- #            :flag bool
 PRAGMA foreign_keys = :flag;

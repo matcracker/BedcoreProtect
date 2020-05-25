@@ -36,6 +36,7 @@ final class QueriesConst
         self::INIT_INVENTORIES_LOG, self::INIT_DATABASE_STATUS
     ];
     public const ENABLE_WAL_MODE = 'bcp.generic.enable_wal_mode';
+    public const SET_SYNC_NORMAL = 'bcp.generic.set_sync_normal';
     public const SET_FOREIGN_KEYS = 'bcp.generic.set_foreign_keys';
     public const ADD_ENTITY = 'bcp.add.entity';
     public const ADD_DATABASE_VERSION = 'bcp.add.db_version';
