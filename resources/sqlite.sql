@@ -4,22 +4,22 @@
 -- #        {entities
 CREATE TABLE IF NOT EXISTS "entities"
 (
-    uuid             VARCHAR(36) UNIQUE PRIMARY KEY NOT NULL,
-    entity_name      VARCHAR(16)                    NOT NULL,
-    entity_classpath TEXT                           NOT NULL,
+    uuid             VARCHAR(36) PRIMARY KEY,
+    entity_name      VARCHAR(16) NOT NULL,
+    entity_classpath TEXT        NOT NULL,
     address          VARCHAR(15) DEFAULT '127.0.0.1' NOT NULL
 );
 -- #        }
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS "log_history"
 (
-    log_id     INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
-    who        VARCHAR(36)                              NOT NULL,
-    x          BIGINT                                   NOT NULL,
-    y          TINYINT UNSIGNED                         NOT NULL,
-    z          BIGINT                                   NOT NULL,
-    world_name VARCHAR(255)                             NOT NULL,
-    action     TINYINT UNSIGNED                         NOT NULL,
+    log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    who        VARCHAR(36)      NOT NULL,
+    x          BIGINT           NOT NULL,
+    y          TINYINT UNSIGNED NOT NULL,
+    z          BIGINT           NOT NULL,
+    world_name VARCHAR(255)     NOT NULL,
+    action     TINYINT UNSIGNED NOT NULL,
     time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS "log_history"
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
-    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
-    old_id     UNSIGNED INTEGER        NOT NULL,
-    old_meta   UNSIGNED TINYINT(2)     NOT NULL,
+    history_id UNSIGNED BIG INT PRIMARY KEY,
+    old_id     UNSIGNED INTEGER    NOT NULL,
+    old_meta   UNSIGNED TINYINT(2) NOT NULL,
     old_nbt    BLOB DEFAULT NULL,
-    new_id     UNSIGNED INTEGER        NOT NULL,
-    new_meta   UNSIGNED TINYINT(2)     NOT NULL,
+    new_id     UNSIGNED INTEGER    NOT NULL,
+    new_meta   UNSIGNED TINYINT(2) NOT NULL,
     new_nbt    BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS "entities_log"
 (
-    history_id      UNSIGNED BIG INT UNIQUE NOT NULL,
-    entityfrom_uuid VARCHAR(36)             NOT NULL,
-    entityfrom_id   UNSIGNED INTEGER        NOT NULL,
+    history_id      UNSIGNED BIG INT PRIMARY KEY,
+    entityfrom_uuid VARCHAR(36)      NOT NULL,
+    entityfrom_id   UNSIGNED INTEGER NOT NULL,
     entityfrom_nbt  BLOB DEFAULT NULL,
     FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS "entities_log"
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
-    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
-    slot       UNSIGNED TINYINT        NOT NULL,
+    history_id UNSIGNED BIG INT PRIMARY KEY,
+    slot       UNSIGNED TINYINT NOT NULL,
     old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
     old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
     old_nbt    BLOB                DEFAULT NULL,
@@ -68,24 +68,23 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
 -- #        {db_status
 CREATE TABLE IF NOT EXISTS status
 (
-    only_one_row TINYINT(1) PRIMARY KEY DEFAULT 1 NOT NULL,
+    only_one_row TINYINT(1) PRIMARY KEY DEFAULT 1,
     version      VARCHAR(20) NOT NULL,
     upgraded_on  TIMESTAMP(6)           DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
     CHECK (only_one_row)
 );
 -- #        }
 -- #    }
--- #    {transaction
--- #        {begin
-BEGIN TRANSACTION;
+-- #    {generic
+-- #        {enable_wal_mode
+PRAGMA journal_mode = WAL;
 -- #        }
--- #        {end
-END TRANSACTION;
+-- #        {set_sync_normal
+PRAGMA synchronous = NORMAL;
 -- #        }
--- #    }
--- #    {pragma
--- #        {foreign-keys-on
-PRAGMA foreign_keys = ON;
+-- #        {set_foreign_keys
+-- #            :flag bool
+PRAGMA foreign_keys = :flag;
 -- #        }
 -- #    }
 -- #    {add
@@ -197,7 +196,8 @@ SELECT history_id,
        world_name
 FROM "log_history"
          INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {new_blocks
 -- #                :log_ids list:int
@@ -211,7 +211,8 @@ SELECT history_id,
        world_name
 FROM "log_history"
          INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {old_inventories
 -- #                :log_ids list:int
@@ -226,7 +227,8 @@ SELECT history_id,
        z
 FROM "log_history"
          INNER JOIN inventories_log il ON log_history.log_id = il.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {new_inventories
 -- #                :log_ids list:int
@@ -241,7 +243,8 @@ SELECT history_id,
        z
 FROM "log_history"
          INNER JOIN inventories_log il ON log_history.log_id = il.history_id
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {entities
 -- #                :log_ids list:int
@@ -256,7 +259,8 @@ SELECT log_id,
 FROM "log_history"
          INNER JOIN entities_log el ON log_history.log_id = el.history_id
          INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
-WHERE log_id IN :log_ids;
+WHERE log_id IN :log_ids
+ORDER BY time DESC;
 -- #            }
 -- #            {block
 -- #                :min_x int

@@ -70,8 +70,8 @@ final class QueryManager
 
         $this->pluginQueries = new PluginQueries($connector, $configParser);
         $this->entitiesQueries = new EntitiesQueries($connector, $configParser);
-        $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries);
         $this->inventoriesQueries = new InventoriesQueries($connector, $configParser);
+        $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
     public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
@@ -93,8 +93,11 @@ final class QueryManager
         Await::f2c(
             function () use ($pluginVersion): Generator {
                 if ($this->configParser->isSQLite()) {
-                    yield $this->executeGeneric(QueriesConst::ENABLE_FOREIGN_KEYS);
+                    yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
+                    yield $this->executeGeneric(QueriesConst::SET_SYNC_NORMAL);
                 }
+
+                yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
                 foreach (QueriesConst::INIT_TABLES as $queryTable) {
                     yield $this->executeGeneric($queryTable);
@@ -122,6 +125,7 @@ final class QueryManager
     public function setupDefaultData(): void
     {
         $this->entitiesQueries->addDefaultEntities();
+        $this->connector->waitAll();
     }
 
     public function rollback(Area $area, CommandParser $commandParser): void

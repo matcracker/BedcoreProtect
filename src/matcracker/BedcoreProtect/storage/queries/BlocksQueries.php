@@ -40,6 +40,7 @@ use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
+use pocketmine\item\Item;
 use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\Server;
@@ -61,11 +62,14 @@ class BlocksQueries extends Query
 {
     /** @var EntitiesQueries */
     protected $entitiesQueries;
+    /** @var InventoriesQueries */
+    protected $inventoriesQueries;
 
-    public function __construct(DataConnector $connector, ConfigParser $configParser, EntitiesQueries $entitiesQueries)
+    public function __construct(DataConnector $connector, ConfigParser $configParser, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {
         parent::__construct($connector, $configParser);
         $this->entitiesQueries = $entitiesQueries;
+        $this->inventoriesQueries = $inventoriesQueries;
     }
 
     /**
@@ -79,7 +83,20 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $entity = SerializableEntity::serialize($entity);
+        $this->addBlockLogBySerializedEntity(SerializableEntity::serialize($entity), $oldBlock, $newBlock, $action, $position);
+    }
+
+    /**
+     * It logs the entity who makes the action for block.
+     *
+     * @param SerializableEntity $entity
+     * @param Block $oldBlock
+     * @param Block $newBlock
+     * @param Action $action
+     * @param Position|null $position
+     */
+    public function addBlockLogBySerializedEntity(SerializableEntity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
+    {
         $oldBlock = SerializableBlock::serialize($oldBlock);
         $newBlock = SerializableBlock::serialize($newBlock);
 
@@ -144,12 +161,14 @@ class BlocksQueries extends Query
     /**
      * @param Player $player
      * @param ItemFrame $itemFrame
+     * @param Item $item
      * @param Action $action
      */
-    public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Action $action): void
+    public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
         $itemFrame = SerializableBlock::serialize($itemFrame);
         $this->addRawBlockLog(EntityUtils::getUniqueId($player), $itemFrame, $itemFrame, $action);
+        $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $itemFrame);
     }
 
     /**
@@ -218,7 +237,7 @@ class BlocksQueries extends Query
 
     protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
-        $prefix = $rollback ? 'old' : 'new';
+        $prefix = $this->getRollbackPrefix($rollback);
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
 

@@ -38,6 +38,7 @@ use function is_string;
 use function json_decode;
 use function key;
 use function microtime;
+use function min;
 use function preg_match;
 use function preg_replace;
 use const PHP_INT_MAX;
@@ -96,7 +97,7 @@ final class Utils
             }
         }
 
-        return (int)($time > PHP_INT_MAX ? PHP_INT_MAX : $time);
+        return (int)min($time, PHP_INT_MAX);
     }
 
     public static function timeAgo(int $timestamp, int $level = 6): string

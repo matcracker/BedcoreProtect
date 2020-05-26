@@ -86,30 +86,24 @@ final class InspectorListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
-            if (Inspector::isInspector($player)) {
-                $clickedBlock = $event->getBlock();
-                $itemInHand = $event->getItem();
-                $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
-                $rightClickBlock = $event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK;
+        if (Inspector::isInspector($player) && $this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
+            $clickedBlock = $event->getBlock();
 
-                if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $position = $clickedBlock->asPosition();
-                    $tileChest = BlockUtils::asTile($clickedBlock);
-                    if ($tileChest instanceof Chest) { //This is needed for double chest to get the position of its holder (the left chest).
-                        $holder = $tileChest->getInventory()->getHolder();
-                        if ($holder !== null) {
-                            $position = $holder->asPosition();
-                        }
+            if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
+                $position = $clickedBlock->asPosition();
+                $tileChest = BlockUtils::asTile($clickedBlock);
+                if ($tileChest instanceof Chest) { //This is needed for double chest to get the position of its holder (the left chest).
+                    $holder = $tileChest->getInventory()->getHolder();
+                    if ($holder !== null) {
+                        $position = $holder->asPosition();
                     }
-                    $this->pluginQueries->requestTransactionLog($player, $position);
-                    $event->setCancelled();
-
-                } elseif ($leftClickBlock || ($rightClickBlock && !$itemInHand->canBePlaced())) {
-                    //This check must be done due to allow BlockPlaceEvent to be fired (second "OR" condition)
-                    $this->pluginQueries->requestBlockLog($player, $clickedBlock);
-                    $event->setCancelled();
                 }
+                $this->pluginQueries->requestTransactionLog($player, $position);
+                $event->setCancelled();
+
+            } elseif (BlockUtils::canBeClicked($clickedBlock)) {
+                $this->pluginQueries->requestBlockLog($player, $clickedBlock);
+                $event->setCancelled();
             }
         }
     }

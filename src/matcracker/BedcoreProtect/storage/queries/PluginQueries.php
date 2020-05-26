@@ -31,7 +31,7 @@ use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
 use pocketmine\Player;
-use SOFe\AwaitGenerator\Await;
+use pocketmine\plugin\PluginException;
 
 /**
  * It contains all the queries methods related to the plugin and logs.
@@ -41,17 +41,6 @@ use SOFe\AwaitGenerator\Await;
  */
 class PluginQueries extends Query
 {
-
-    /**
-     * Can be used only with SQLite.
-     */
-    final public function beginTransaction(): void
-    {
-        if ($this->configParser->isSQLite()) {
-            $this->connector->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
-        }
-    }
-
     public function requestNearLog(Player $inspector, Position $position, int $near): void
     {
         $this->requestLog(QueriesConst::GET_NEAR_LOG, $inspector, $position, $near);
@@ -111,34 +100,8 @@ class PluginQueries extends Query
         ], $onSuccess);
     }
 
-    /**
-     * Can be used only with SQLite.
-     */
-    final public function endTransaction(): void
-    {
-        if ($this->configParser->isSQLite()) {
-            $this->connector->executeGeneric(QueriesConst::END_TRANSACTION);
-        }
-    }
-
-    /**
-     * Can be used only with SQLite.
-     * It ends the current transaction and starts a new one.
-     */
-    final public function storeTransaction(): void
-    {
-        if ($this->configParser->isSQLite()) {
-            Await::f2c(
-                function (): Generator {
-                    yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
-                    yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
-                }
-            );
-        }
-    }
-
     protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
     {
-        yield from [];
+        throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }
 }

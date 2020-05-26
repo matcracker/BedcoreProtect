@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\serializable\SerializableEntity;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Bed;
@@ -112,6 +113,7 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
             $block = $event->getBlock();
+            $player = SerializableEntity::serialize($player);
 
             //HACK: Remove when issue PMMP#1760 is fixed (never).
             $this->plugin->getScheduler()->scheduleDelayedTask(
@@ -129,10 +131,10 @@ final class BlockListener extends BedcoreListener
                         }
 
                         if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
-                            $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
+                            $this->blocksQueries->addBlockLogBySerializedEntity($player, $replacedBlock, $updBlock, Action::PLACE());
 
                             if ($otherHalfBlock !== null) {
-                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
+                                $this->blocksQueries->addBlockLogBySerializedEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
                             }
                         }
                     }

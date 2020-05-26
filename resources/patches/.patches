@@ -8,4 +8,7 @@
 0.6.0:
   sqlite: 16
   mysql: 4
+0.6.2:
+  sqlite: 16
+  mysql: 16
 ...

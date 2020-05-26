@@ -32,7 +32,6 @@ use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
-use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
 use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
@@ -161,20 +160,11 @@ final class Main extends PluginBase
             return;
         }
 
-        if ($this->database->getPatchManager()->patch()) {
-            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $version]));
+        if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
+            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $lastPatch]));
         }
 
         $queryManager->setupDefaultData();
-
-        if ($this->configParser->isSQLite()) {
-            $queryManager->getPluginQueries()->beginTransaction();
-            $this->getScheduler()->scheduleDelayedRepeatingTask(
-                new SQLiteTransactionTask($queryManager->getPluginQueries()),
-                SQLiteTransactionTask::getTicks(),
-                SQLiteTransactionTask::getTicks()
-            );
-        }
 
         CommandParser::initActions();
 

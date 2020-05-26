@@ -57,8 +57,6 @@ class EntitiesQueries extends Query
                 yield $this->addRawEntity('still lava-uuid', '#lava');
                 yield $this->addRawEntity('fire block-uuid', '#fire');
                 yield $this->addRawEntity('leaves-uuid', '#decay');
-
-                yield Await::ALL;
             }
         );
     }

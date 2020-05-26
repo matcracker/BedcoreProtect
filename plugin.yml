@@ -1,8 +1,8 @@
 ---
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-version: 0.6.1
-api: [3.4.0]
+version: 0.6.2
+api: 3.4.0
 
 softdepend: BlockSniper
 load: POSTWORLD
@@ -32,6 +32,8 @@ permissions:
         description: "Allows the user to run the sub-command /bedcoreprotect reload"
       bcp.subcommand.restore:
         description: "Allows the user to run the sub-command /bedcoreprotect restore"
+      bcp.subcommand.show:
+        description: "Allows the user to run the sub-command /bedcoreprotect show"
       bcp.subcommand.status:
         description: "Allows the user to run the sub-command /bedcoreprotect status"
       bcp.subcommand.undo:
