@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use function get_class;
+use const PHP_EOL;
 
 final class SerializableBlock extends SerializablePosition
 {
@@ -99,6 +100,6 @@ final class SerializableBlock extends SerializablePosition
 
     public function __toString(): string
     {
-        return "SerializableBlock({$this->id}:{$this->meta})[{$this->worldName}]";
+        return parent::__toString() . PHP_EOL . "SerializableBlock(id={$this->id},meta={$this->meta})";
     }
 }

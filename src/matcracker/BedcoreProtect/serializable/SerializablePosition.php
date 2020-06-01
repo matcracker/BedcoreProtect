@@ -92,4 +92,9 @@ class SerializablePosition extends AbstractSerializable
         $world = $this->worldName !== null ? Server::getInstance()->getLevelByName($this->worldName) : null;
         return new Position($this->x, $this->y, $this->z, $world);
     }
+
+    public function __toString(): string
+    {
+        return "SerializablePosition(x={$this->x},y={$this->y},z={$this->z},world={$this->worldName})";
+    }
 }

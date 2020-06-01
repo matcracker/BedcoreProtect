@@ -117,23 +117,6 @@ final class Forms
             ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.near')));
     }
 
-    private function getShowMenu(): BaseForm
-    {
-        $lang = Main::getInstance()->getLanguage();
-        return (new CustomForm(
-            static function (Player $player, $data): void {
-                if (is_array($data)) {
-                    $player->chat("/bcp show {$data[0]}:{$data[1]}");
-                }
-            },
-            function (Player $player): void {
-                $player->sendForm($this->getMainMenu());
-            }
-        ))->addInput($lang->translateString('form.input-menu.page-number'), "1", "1")
-            ->addInput($lang->translateString('form.input-menu.lines-number'), "4", "4")
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.show')));
-    }
-
     private function getInputMenu(string $type): BaseForm
     {
         $lang = Main::getInstance()->getLanguage();
@@ -170,6 +153,23 @@ final class Forms
                 $player->chat("/bcp {$subCmd} {$time} {$radius} {$user} {$action} {$includeBlocks} {$excludeBlocks}");
             }
         };
+    }
+
+    private function getShowMenu(): BaseForm
+    {
+        $lang = Main::getInstance()->getLanguage();
+        return (new CustomForm(
+            static function (Player $player, $data): void {
+                if (is_array($data)) {
+                    $player->chat("/bcp show {$data[0]}:{$data[1]}");
+                }
+            },
+            function (Player $player): void {
+                $player->sendForm($this->getMainMenu());
+            }
+        ))->addInput($lang->translateString('form.input-menu.page-number'), "1", "1")
+            ->addInput($lang->translateString('form.input-menu.lines-number'), "4", "4")
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.show')));
     }
 
     private function getPurgeMenu(): BaseForm
