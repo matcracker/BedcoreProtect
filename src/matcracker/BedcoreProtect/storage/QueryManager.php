@@ -39,6 +39,7 @@ use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
+use function array_key_exists;
 use function count;
 use function preg_match;
 use function round;
@@ -48,6 +49,8 @@ final class QueryManager
 {
     /** @var mixed[][] */
     private static $additionalReports = [];
+    /** @var Area[] */
+    private static $activeRollbacks = [];
     /** @var DataConnector */
     private $connector;
     /** @var ConfigParser */
@@ -143,6 +146,25 @@ final class QueryManager
     {
         Await::f2c(
             function () use ($rollback, $area, $commandParser, $logs) : Generator {
+                $senderName = $commandParser->getSenderName();
+                $player = Server::getInstance()->getPlayer($senderName);
+
+                if (array_key_exists($senderName, self::$activeRollbacks)) {
+                    if ($player !== null) {
+                        $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "It is not possible to perform more than one rollback at a time."));
+                    }
+                    return;
+                }
+
+                foreach (self::$activeRollbacks as $rbSender => $activeRollback) {
+                    if ($activeRollback->getBoundingBox()->intersectsWith($area->getBoundingBox())) {
+                        if ($player !== null) {
+                            $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "{$rbSender} is already operating in this area. Try again."));
+                        }
+                        return;
+                    }
+                }
+
                 /** @var int[] $logIds */
                 $logIds = $logs ?? [];
 
@@ -160,7 +182,8 @@ final class QueryManager
                     return;
                 }
 
-                $this->undoData[$commandParser->getSenderName()] = new UndoRollbackData($rollback, $area, $commandParser, $logIds);
+                self::$activeRollbacks[$senderName] = $area;
+                $this->undoData[$senderName] = new UndoRollbackData($rollback, $area, $commandParser, $logIds);
 
                 $this->getBlocksQueries()->rawRollback(
                     $rollback,
@@ -169,7 +192,15 @@ final class QueryManager
                     $logIds,
                     function () use ($rollback, $area, $commandParser, $logIds): void {
                         $this->getInventoriesQueries()->rawRollback($rollback, $area, $commandParser, $logIds, null, false);
-                        $this->getEntitiesQueries()->rawRollback($rollback, $area, $commandParser, $logIds);
+                        $this->getEntitiesQueries()->rawRollback(
+                            $rollback,
+                            $area,
+                            $commandParser,
+                            $logIds,
+                            static function () use ($commandParser) {
+                                unset(self::$activeRollbacks[$commandParser->getSenderName()]);
+                            }
+                        );
                     },
                     false
                 );
