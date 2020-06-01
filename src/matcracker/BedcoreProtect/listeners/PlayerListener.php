@@ -26,7 +26,11 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
+use pocketmine\block\Dirt;
+use pocketmine\block\Farmland;
 use pocketmine\block\Fire;
+use pocketmine\block\Grass;
+use pocketmine\block\GrassPath;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\TNT;
 use pocketmine\event\inventory\InventoryTransactionEvent;
@@ -37,6 +41,8 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
+use pocketmine\item\Hoe;
+use pocketmine\item\Shovel;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\tile\ItemFrame as TileItemFrame;
@@ -115,43 +121,51 @@ final class PlayerListener extends BedcoreListener
         $player = $event->getPlayer();
 
         if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
-            $clickedBlock = $event->getBlock();
             $itemInHand = $event->getItem();
-            $leftClickBlock = $event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK;
-            $rightClickBlock = $event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK;
+            $face = $event->getFace();
+            $clickedBlock = $event->getBlock();
+            $replacedBlock = $clickedBlock->getSide($face);
 
-            if ($leftClickBlock || $rightClickBlock) {
-                $face = $event->getFace();
-                $replacedBlock = $clickedBlock->getSide($face);
-                if ($leftClickBlock) {
-                    if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
-                        $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
-                        return;
-                    }
-                } else { //Right click
-                    if ($this->config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
-                        if ($clickedBlock instanceof TNT) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
-                        } else {
-                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
-                        }
-                        return;
+            if ($event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+                if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
+                } elseif ($this->config->getPlayerInteractions() && $clickedBlock instanceof ItemFrame) {
+                    $tile = BlockUtils::asTile($clickedBlock);
+                    if ($tile instanceof TileItemFrame && $tile->hasItem()) {
+                        //I consider the ItemFrame as a fake inventory holder to only log "removing" item.
+                        $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $tile->getItem(), Action::REMOVE());
                     }
                 }
-
-                if ($this->config->getPlayerInteractions() && BlockUtils::canBeClicked($clickedBlock)) {
-                    if ($clickedBlock instanceof ItemFrame) {
-                        $tile = BlockUtils::asTile($clickedBlock);
-                        if ($tile instanceof TileItemFrame) {
-                            //I consider the ItemFrame as a fake inventory holder to only log "adding/removing" item.
-                            if (!$tile->hasItem() && !$itemInHand->isNull()) {
-                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $itemInHand->setCount(1), Action::ADD());
-                            } elseif ($tile->hasItem() && $leftClickBlock) {
-                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $tile->getItem(), Action::REMOVE());
-                            }
-                        }
+            } elseif ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+                if ($this->config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
+                    if ($clickedBlock instanceof TNT) {
+                        $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
                     } else {
-                        $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+                        $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                    }
+                } elseif ($this->config->getPlayerInteractions()) {
+                    if ($itemInHand instanceof Hoe) {
+                        if ($clickedBlock instanceof Grass || $clickedBlock instanceof Dirt) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new Farmland(), Action::PLACE(), $clickedBlock->asPosition());
+                            return;
+                        }
+                    } elseif ($itemInHand instanceof Shovel) {
+                        if ($clickedBlock instanceof Grass) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new GrassPath(), Action::PLACE(), $clickedBlock->asPosition());
+                            return;
+                        }
+                    }
+
+                    if (BlockUtils::canBeClicked($clickedBlock)) {
+                        if ($clickedBlock instanceof ItemFrame) {
+                            $tile = BlockUtils::asTile($clickedBlock);
+                            if ($tile instanceof TileItemFrame && !$tile->hasItem() && !$itemInHand->isNull()) {
+                                //I consider the ItemFrame as a fake inventory holder to only log "adding" item.
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $itemInHand->setCount(1), Action::ADD());
+                            }
+                        } else {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());
+                        }
                     }
                 }
             }
