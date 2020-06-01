@@ -29,9 +29,11 @@ use pocketmine\block\Chest;
 use pocketmine\block\Door;
 use pocketmine\block\EnchantingTable;
 use pocketmine\block\EnderChest;
+use pocketmine\block\FenceGate;
 use pocketmine\block\Furnace;
 use pocketmine\block\IronTrapdoor;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\Lever;
 use pocketmine\block\StoneButton;
 use pocketmine\block\Trapdoor;
 use pocketmine\block\TrappedChest;
@@ -59,8 +61,9 @@ final class BlockUtils
     {
         static $blocks = [
             WoodenDoor::class, Door::class,
-            IronTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
+            IronTrapdoor::class, Trapdoor::class,//Remove Iron Trapdoor and Door classes when PM-MP supports redstone.
             ItemFrame::class, WoodenButton::class,
+            Lever::class, FenceGate::class,
             StoneButton::class
         ];
 
