@@ -25,15 +25,15 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\serializable\SerializableEntity;
 use matcracker\BedcoreProtect\storage\QueryManager;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\entity\Entity;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
+use function get_class;
 use function microtime;
 
 /**
@@ -61,13 +61,19 @@ class EntitiesQueries extends Query
         );
     }
 
-    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): Generator
+    /**
+     * @param string $uuid
+     * @param string $name
+     * @param string $classPath
+     * @return Generator
+     * @internal
+     */
+    final public function addRawEntity(string $uuid, string $name, string $classPath = ''): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
             'name' => $name,
-            'path' => $classPath,
-            'address' => $address
+            'path' => $classPath
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;
@@ -75,61 +81,66 @@ class EntitiesQueries extends Query
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
-        $damager = SerializableEntity::serialize($damager);
-        $entity = SerializableEntity::serialize($entity);
-
+        $entityNbt = EntityUtils::getSerializedNbt($entity);
+        $worldName = $entity->getLevel()->getName();
+        $time = microtime(true);
         Await::f2c(
-            function () use ($damager, $entity, $action): Generator {
+            function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
                 yield $this->addEntityGenerator($damager);
                 yield $this->addEntityGenerator($entity);
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($damager->getUniqueId(), $entity, $action);
-                yield $this->addEntityLog($lastId, $entity);
+                $lastId = yield $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->asVector3(), $worldName, $action, $time);
+                yield $this->addEntityLog($lastId, $entity, $entityNbt);
             }
         );
     }
 
     /**
-     * @param SerializableEntity $entity
+     * @param Entity $entity
      * @return Generator
      * @internal
      */
-    final public function addEntityGenerator(SerializableEntity $entity): Generator
+    final public function addEntityGenerator(Entity $entity): Generator
     {
-        return $this->addRawEntity($entity->getUniqueId(), $entity->getName(), $entity->getClassPath(), $entity->getAddress());
+        return $this->addRawEntity(
+            EntityUtils::getUniqueId($entity),
+            EntityUtils::getName($entity),
+            get_class($entity)
+        );
     }
 
-    final protected function addEntityLog(int $logId, SerializableEntity $entity): Generator
+    final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
             'log_id' => $logId,
-            'uuid' => $entity->getUniqueId(),
+            'uuid' => EntityUtils::getUniqueId($entity),
             'id' => $entity->getId(),
-            'nbt' => $entity->getSerializedNbt()
+            'nbt' => $serializedNbt
         ]);
     }
 
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
-        $entity = SerializableEntity::serialize($entity);
-        $block = SerializableBlock::serialize($block);
+        $serializedNbt = EntityUtils::getSerializedNbt($entity);
+        $worldName = $block->getLevel()->getName();
+        $time = microtime(true);
+
         Await::f2c(
-            function () use ($entity, $block, $action): Generator {
+            function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
                 yield $this->addEntityGenerator($entity);
 
                 $name = $block->getName();
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog("{$name}-uuid", $block, $action);
+                $lastId = yield $this->addRawLog("{$name}-uuid", $block->asVector3(), $worldName, $action, $time);
 
-                yield $this->addEntityLog($lastId, $entity);
+                yield $this->addEntityLog($lastId, $entity, $serializedNbt);
             }
         );
     }
 
     final public function addEntity(Entity $entity): void
     {
-        $entity = SerializableEntity::serialize($entity);
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->addEntityGenerator($entity);

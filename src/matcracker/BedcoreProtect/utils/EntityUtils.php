@@ -77,6 +77,21 @@ final class EntityUtils
     }
 
     /**
+     * @param Entity $entity
+     * @return string
+     */
+    public static function getSerializedNbt(Entity $entity): string
+    {
+        $entity->saveNBT();
+        $namedTag = clone $entity->namedtag;
+        if ($entity instanceof Living) {
+            $namedTag->setFloat("Health", $entity->getMaxHealth());
+        }
+
+        return Utils::serializeNBT($namedTag);
+    }
+
+    /**
      * Returns an array with all registered entities save names
      * @return array
      */

@@ -5,9 +5,8 @@
 CREATE TABLE IF NOT EXISTS entities
 (
     uuid             VARCHAR(36) PRIMARY KEY,
-    entity_name      VARCHAR(16)                     NOT NULL,
-    entity_classpath TEXT                            NOT NULL,
-    address          VARCHAR(15) DEFAULT '127.0.0.1' NOT NULL
+    entity_name      VARCHAR(16) NOT NULL,
+    entity_classpath TEXT        NOT NULL
 );
 -- #        }
 -- #        {log_history
@@ -70,7 +69,7 @@ CREATE TABLE IF NOT EXISTS status
 (
     only_one_row BOOLEAN PRIMARY KEY DEFAULT TRUE,
     version      VARCHAR(20)                                   NOT NULL,
-    upgraded_on  TIMESTAMP(6)        DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    upgraded_on  TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CHECK (only_one_row)
 );
 -- #        }
@@ -86,10 +85,9 @@ SET FOREIGN_KEY_CHECKS = :flag;
 -- #            :uuid string
 -- #            :name string
 -- #            :path string
--- #            :address string 127.0.0.1
-INSERT INTO entities (uuid, entity_name, entity_classpath, address)
-VALUES (:uuid, :name, :path, :address)
-ON DUPLICATE KEY UPDATE address=:address;
+INSERT INTO entities (uuid, entity_name, entity_classpath)
+VALUES (:uuid, :name, :path)
+ON DUPLICATE KEY UPDATE entity_name=:name;
 -- #        }
 -- #        {db_version
 -- #            :version string
@@ -105,9 +103,9 @@ ON DUPLICATE KEY UPDATE version=version;
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
-INSERT INTO log_history(who, x, y, z, world_name,
-                        action)
-VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action);
+-- #                :time float
+INSERT INTO log_history(who, x, y, z, world_name, action, time)
+VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, FROM_UNIXTIME(:time));
 -- #            }
 -- #            {block
 -- #                :log_id int
@@ -117,8 +115,7 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #                :new_id int
 -- #                :new_meta int
 -- #                :new_nbt ?string
-INSERT INTO blocks_log(history_id, old_id, old_meta, old_nbt, new_id, new_meta,
-                       new_nbt)
+INSERT INTO blocks_log(history_id, old_id, old_meta, old_nbt, new_id, new_meta, new_nbt)
 VALUES (:log_id, :old_id, :old_meta, :old_nbt, :new_id, :new_meta, :new_nbt);
 -- #            }
 -- #            {entity
@@ -140,8 +137,8 @@ VALUES (:log_id, (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #                :new_meta int 0
 -- #                :new_nbt ?string
 -- #                :new_amount int 0
-INSERT INTO inventories_log(history_id, slot, old_id, old_meta, old_nbt, old_amount, new_id,
-                            new_meta, new_nbt, new_amount)
+INSERT INTO inventories_log(history_id, slot, old_id, old_meta, old_nbt, old_amount, new_id, new_meta, new_nbt,
+                            new_amount)
 VALUES (:log_id, :slot, :old_id, :old_meta, :old_nbt, :old_amount, :new_id, :new_meta, :new_nbt, :new_amount);
 -- #            }
 -- #        }

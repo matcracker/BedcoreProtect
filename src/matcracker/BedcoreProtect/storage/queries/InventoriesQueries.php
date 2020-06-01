@@ -76,10 +76,11 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $position = SerializablePosition::serialize(Position::fromObject($holder, $player->getLevel()));
+        $worldName = $player->getLevel()->getName();
+        $time = microtime(true);
 
         Await::f2c(
-            function () use ($playerUuid, $slotAction, $position): Generator {
+            function () use ($playerUuid, $slotAction, $holder, $worldName, $time): Generator {
                 $slot = $slotAction->getSlot();
                 $sourceItem = $slotAction->getSourceItem();
                 $targetItem = $slotAction->getTargetItem();
@@ -94,15 +95,15 @@ class InventoriesQueries extends Query
                         $action = Action::REMOVE();
                         $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
                     }
-                    $lastId = yield $this->addRawLog($playerUuid, $position, $action);
+                    $lastId = yield $this->addRawLog($playerUuid, $holder, $worldName, $action, $time);
                 } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
-                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                    $lastId = yield $this->addRawLog($playerUuid, $holder, $worldName, Action::REMOVE(), $time);
                     yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
-                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                    $lastId = yield $this->addRawLog($playerUuid, $holder, $worldName, Action::ADD(), $time);
                 } elseif (!$sourceItem->isNull()) {
-                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::REMOVE());
+                    $lastId = yield $this->addRawLog($playerUuid, $holder, $worldName, Action::REMOVE(), $time);
                 } else {
-                    $lastId = yield $this->addRawLog($playerUuid, $position, Action::ADD());
+                    $lastId = yield $this->addRawLog($playerUuid, $holder, $worldName, Action::ADD(), $time);
                 }
 
                 yield $this->addInventorySlotLog($lastId, $slot, $sourceItem, $targetItem);
@@ -134,15 +135,17 @@ class InventoriesQueries extends Query
      * @param Player $player
      * @param Item $item
      * @param Action $action
-     * @param SerializablePosition $position
+     * @param Position $position
      */
-    public function addItemFrameSlotLog(Player $player, Item $item, Action $action, SerializablePosition $position): void
+    public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Position $position): void
     {
-        $uuid = EntityUtils::getUniqueId($player);
         $item = clone $item;
+        $worldName = $position->getLevel()->getName();
+        $time = microtime(true);
+
         Await::f2c(
-            function () use ($uuid, $item, $action, $position): Generator {
-                $logId = yield $this->addRawLog($uuid, $position, $action);
+            function () use ($player, $item, $action, $position, $worldName, $time): Generator {
+                $logId = yield $this->addRawLog(EntityUtils::getUniqueId($player), $position->asVector3(), $worldName, $action, $time);
                 yield $this->addInventorySlotLog($logId, 0, $item, $item);
             }
         );

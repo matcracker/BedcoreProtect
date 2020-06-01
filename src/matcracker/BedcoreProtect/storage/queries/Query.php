@@ -26,12 +26,11 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function floor;
 use function microtime;
 use function strtolower;
 
@@ -112,12 +111,6 @@ abstract class Query
         $this->rawRollback(false, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
-    final protected function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
     /**
      * @param string $query
      * @param array $args
@@ -130,15 +123,16 @@ abstract class Query
         return yield Await::ONCE;
     }
 
-    final protected function addRawLog(string $uuid, SerializablePosition $position, Action $action): Generator
+    final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
             'uuid' => strtolower($uuid),
-            'x' => (int)floor($position->getX()),
-            'y' => (int)floor($position->getY()),
-            'z' => (int)floor($position->getZ()),
-            'world_name' => $position->getWorldName(),
-            'action' => $action->getType()
+            'x' => $position->getFloorX(),
+            'y' => $position->getFloorY(),
+            'z' => $position->getFloorZ(),
+            'world_name' => $worldName,
+            'action' => $action->getType(),
+            'time' => $time
         ]);
     }
 

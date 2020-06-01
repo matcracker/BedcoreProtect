@@ -123,4 +123,9 @@ ALTER TABLE temp
     RENAME TO log_history;
 -- #        }
 -- #    }
+-- #    {0.7.0
+-- #        {1
+ALTER TABLE entities DROP COLUMN address;
+-- #        }
+-- #    }
 -- #}

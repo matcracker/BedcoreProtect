@@ -111,7 +111,7 @@ final class BlockUtils
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
         if (($tile = self::asTile($block)) !== null) {
-            return $tile->saveNBT();
+            return clone $tile->saveNBT();
         }
 
         return null;
@@ -127,11 +127,11 @@ final class BlockUtils
      */
     public static function asTile(Block $block): ?Tile
     {
-        if ($block->getLevel() === null) {
+        if (($level = $block->getLevel()) === null) {
             return null;
         }
 
-        return $block->getLevel()->getTile($block->asPosition());
+        return $level->getTile($block->asVector3());
     }
 
     /**
