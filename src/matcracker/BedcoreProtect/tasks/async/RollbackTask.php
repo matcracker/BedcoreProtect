@@ -27,7 +27,6 @@ use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
-use pocketmine\event\block\BlockUpdateEvent;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -77,10 +76,10 @@ final class RollbackTask extends AsyncTask
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
 
-        foreach ($this->blocks as $vector) {
-            $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
+        foreach ($this->blocks as $block) {
+            $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
-                $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, (int)$vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
+                $chunks[$index]->setBlock((int)$block->getX() & 0x0f, (int)$block->getY(), (int)$block->getZ() & 0x0f, $block->getId(), $block->getMeta());
             }
         }
 
@@ -115,15 +114,9 @@ final class RollbackTask extends AsyncTask
     private function updateBlock(Level $world, Block $block): void
     {
         $world->updateAllLight($block);
-
-        $ev = new BlockUpdateEvent($block);
-        $ev->call();
-        if (!$ev->isCancelled()) {
-            foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
-                $entity->onNearbyBlockChange();
-            }
-            $ev->getBlock()->onNearbyBlockChange();
-            $world->scheduleNeighbourBlockUpdates($block->asVector3());
+        foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
+            $entity->onNearbyBlockChange();
         }
+        $world->scheduleNeighbourBlockUpdates($block->asVector3());
     }
 }
