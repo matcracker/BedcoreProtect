@@ -28,6 +28,7 @@ use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
+use pocketmine\block\Fallable;
 use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
 use pocketmine\block\Water;
@@ -113,32 +114,36 @@ final class BlockListener extends BedcoreListener
             $replacedBlock = $event->getBlockReplaced();
             $block = $event->getBlock();
 
-            //HACK: Remove when issue PMMP#1760 is fixed (never).
-            $this->plugin->getScheduler()->scheduleDelayedTask(
-                new ClosureTask(
-                    function (int $currentTick) use ($replacedBlock, $block, $player, $level) : void {
-                        //Update the block instance to get the real placed block data.
-                        $updBlock = $level->getBlock($block->asVector3());
+            if ($block instanceof Fallable) {
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+            } else {
+                //HACK: Remove when issue PMMP#1760 is fixed (never).
+                $this->plugin->getScheduler()->scheduleDelayedTask(
+                    new ClosureTask(
+                        function (int $currentTick) use ($replacedBlock, $block, $player, $level) : void {
+                            //Update the block instance to get the real placed block data.
+                            $updBlock = $level->getBlock($block->asVector3());
 
-                        /** @var Block|null $otherHalfBlock */
-                        $otherHalfBlock = null;
-                        if ($updBlock instanceof Bed) {
-                            $otherHalfBlock = $updBlock->getOtherHalf();
-                        } elseif ($updBlock instanceof Door) {
-                            $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
-                        }
+                            /** @var Block|null $otherHalfBlock */
+                            $otherHalfBlock = null;
+                            if ($updBlock instanceof Bed) {
+                                $otherHalfBlock = $updBlock->getOtherHalf();
+                            } elseif ($updBlock instanceof Door) {
+                                $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
+                            }
 
-                        if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
-                            $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
+                            if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
+                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
 
-                            if ($otherHalfBlock !== null) {
-                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
+                                if ($otherHalfBlock !== null) {
+                                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
+                                }
                             }
                         }
-                    }
-                ),
-                1
-            );
+                    ),
+                    1
+                );
+            }
         }
     }
 
