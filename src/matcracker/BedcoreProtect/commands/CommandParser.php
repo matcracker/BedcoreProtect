@@ -300,7 +300,7 @@ final class CommandParser
 
         $this->buildConditionalQuery($query, $bb);
 
-        $query .= ' ORDER BY time DESC;';
+        $query .= ' ORDER BY time'. ($rollback ? ' DESC' : '') . ';';
 
         return $query;
     }

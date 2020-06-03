@@ -210,7 +210,7 @@ SELECT history_id,
 FROM "log_history"
          INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id
 WHERE log_id IN :log_ids
-ORDER BY time DESC;
+ORDER BY time;
 -- #            }
 -- #            {old_inventories
 -- #                :log_ids list:int
@@ -242,7 +242,7 @@ SELECT history_id,
 FROM "log_history"
          INNER JOIN inventories_log il ON log_history.log_id = il.history_id
 WHERE log_id IN :log_ids
-ORDER BY time DESC;
+ORDER BY time;
 -- #            }
 -- #            {entities
 -- #                :log_ids list:int

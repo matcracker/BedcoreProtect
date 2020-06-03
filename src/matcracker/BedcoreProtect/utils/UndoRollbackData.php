@@ -33,21 +33,21 @@ final class UndoRollbackData
     /** @var CommandParser */
     private $commandParser;
     /** @var int[] */
-    private $logs;
+    private $logIds;
 
     /**
      * UndoRollbackData constructor.
      * @param bool $rollback
      * @param Area $area
      * @param CommandParser $commandParser
-     * @param int[] $logs
+     * @param int[] $logIds
      */
-    public function __construct(bool $rollback, Area $area, CommandParser $commandParser, array $logs)
+    public function __construct(bool $rollback, Area $area, CommandParser $commandParser, array $logIds)
     {
         $this->rollback = !$rollback;
         $this->area = $area;
         $this->commandParser = $commandParser;
-        $this->logs = $logs;
+        $this->logIds = $logIds;
     }
 
     public function isRollback(): bool
@@ -68,8 +68,8 @@ final class UndoRollbackData
     /**
      * @return int[]
      */
-    public function getLogs(): array
+    public function getLogIds(): array
     {
-        return $this->logs;
+        return $this->logIds;
     }
 }

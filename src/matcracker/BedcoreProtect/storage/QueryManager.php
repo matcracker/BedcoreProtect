@@ -140,12 +140,12 @@ final class QueryManager
      * @param bool $rollback
      * @param Area $area
      * @param CommandParser $commandParser
-     * @param int[]|null $logs
+     * @param int[]|null $logIds
      */
-    private function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?array $logs = null): void
+    private function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?array $logIds = null): void
     {
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $logs) : Generator {
+            function () use ($rollback, $area, $commandParser, $logIds) : Generator {
                 $senderName = $commandParser->getSenderName();
                 $player = Server::getInstance()->getPlayer($senderName);
 
@@ -166,17 +166,7 @@ final class QueryManager
                 }
 
                 /** @var int[] $logIds */
-                $logIds = $logs ?? [];
-
-                if ($logs === null) {
-                    /** @var int[][] $logRows */
-                    $logRows = yield $this->getRollbackLogIds($rollback, $area, $commandParser);
-
-                    foreach ($logRows as $logRow) {
-                        $logIds[] = (int)$logRow['log_id'];
-                    }
-                }
-
+                $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $area, $commandParser);
                 if (count($logIds) === 0) { //No changes.
                     self::sendRollbackReport($rollback, $area, $commandParser);
                     return;
@@ -211,8 +201,17 @@ final class QueryManager
     private function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
     {
         $query = $commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox());
+        $onSuccess = yield;
+        $wrapOnSuccess = function (array $rows) use ($onSuccess) {
+            /** @var int[] $logIds */
+            $logIds = [];
+            foreach ($rows as $row) {
+                $logIds[] = (int)$row['log_id'];
+            }
+            $onSuccess($logIds);
+        };
 
-        $this->connector->executeSelectRaw($query, [], yield, yield Await::REJECT);
+        $this->connector->executeSelectRaw($query, [], $wrapOnSuccess, yield Await::REJECT);
         return yield Await::ONCE;
     }
 
@@ -279,7 +278,7 @@ final class QueryManager
 
         $data = $this->undoData[$player->getName()];
 
-        $this->rawRollback($data->isRollback(), $data->getArea(), $data->getCommandParser(), $data->getLogs());
+        $this->rawRollback($data->isRollback(), $data->getArea(), $data->getCommandParser(), $data->getLogIds());
         return true;
     }
 
