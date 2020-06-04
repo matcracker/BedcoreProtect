@@ -139,7 +139,6 @@ class InventoriesQueries extends Query
      */
     public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Position $position): void
     {
-        $item = clone $item;
         $worldName = $position->getLevel()->getName();
         $time = microtime(true);
 

@@ -34,7 +34,6 @@ use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
-use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
@@ -43,9 +42,11 @@ use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\Server;
+use pocketmine\tile\ItemFrame;
 use pocketmine\tile\Tile;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
+use function array_map;
 use function count;
 use function is_array;
 use function microtime;
@@ -160,19 +161,28 @@ class BlocksQueries extends Query
      */
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
-        $nbt = BlockUtils::serializeTileTag($itemFrame);
+        $item = clone $item;
+        $oldNbt = Utils::serializeNBT($nbt = $itemFrame->saveNBT());
+
+        $nbt->setTag($item->nbtSerialize(-1, ItemFrame::TAG_ITEM));
+        if ($action->equals(Action::CLICK())) {
+            $nbt->setByte(ItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % 8);
+        }
+        $newNbt = Utils::serializeNBT($nbt);
+
+        $itemFrameBlock = $itemFrame->getBlock();
         $position = $itemFrame->asVector3();
         $worldName = $itemFrame->getLevel()->getName();
         $time = microtime(true);
 
         Await::f2c(
-            function () use ($player, $itemFrame, $nbt, $position, $worldName, $action, $time) : Generator {
+            function () use ($player, $itemFrameBlock, $oldNbt, $newNbt, $position, $worldName, $action, $time) : Generator {
                 yield $this->addRawBlockLog(
                     EntityUtils::getUniqueId($player),
-                    $itemFrame,
-                    $nbt,
-                    $itemFrame,
-                    $nbt,
+                    $itemFrameBlock,
+                    $oldNbt,
+                    $itemFrameBlock,
+                    $newNbt,
                     $position,
                     $worldName,
                     $action,
@@ -180,7 +190,9 @@ class BlocksQueries extends Query
                 );
             },
             function () use ($player, $item, $action, $itemFrame): void {
-                $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $itemFrame);
+                if (!$action->equals(Action::CLICK())) {
+                    $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $itemFrame);
+                }
             }
         );
     }
