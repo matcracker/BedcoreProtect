@@ -32,6 +32,7 @@ use pocketmine\block\Fallable;
 use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
 use pocketmine\block\Water;
+use pocketmine\block\WaterLily;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
 use pocketmine\event\block\BlockFormEvent;
@@ -116,6 +117,9 @@ final class BlockListener extends BedcoreListener
 
             if ($block instanceof Fallable) {
                 $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+            } elseif ($block instanceof WaterLily && $replacedBlock instanceof Water) {
+                $upPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
+                $this->blocksQueries->addBlockLogByEntity($player, $this->air, $block, Action::PLACE(), $upPos);
             } else {
                 //HACK: Remove when issue PMMP#1760 is fixed (never).
                 $this->plugin->getScheduler()->scheduleDelayedTask(
