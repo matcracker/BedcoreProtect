@@ -28,6 +28,7 @@ use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
+use pocketmine\block\DoublePlant;
 use pocketmine\block\Fallable;
 use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
@@ -121,7 +122,7 @@ final class BlockListener extends BedcoreListener
                 $upPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
                 $this->blocksQueries->addBlockLogByEntity($player, $this->air, $block, Action::PLACE(), $upPos);
             } else {
-                //HACK: Remove when issue PMMP#1760 is fixed (never).
+                //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
                 $this->plugin->getScheduler()->scheduleDelayedTask(
                     new ClosureTask(
                         function (int $currentTick) use ($replacedBlock, $block, $player, $level) : void {
@@ -132,7 +133,7 @@ final class BlockListener extends BedcoreListener
                             $otherHalfBlock = null;
                             if ($updBlock instanceof Bed) {
                                 $otherHalfBlock = $updBlock->getOtherHalf();
-                            } elseif ($updBlock instanceof Door) {
+                            } elseif ($updBlock instanceof Door || $updBlock instanceof DoublePlant) {
                                 $otherHalfBlock = $updBlock->getSide(Vector3::SIDE_UP);
                             }
 
