@@ -31,15 +31,60 @@ trait EnumTrait
 {
     use RegistryTrait;
 
+    /**
+     * Registers the given object as an enum member.
+     *
+     * @throws InvalidArgumentException
+     */
+    protected static function register(self $member): void
+    {
+        self::_registryRegister($member->name(), $member);
+    }
+
+    protected static function registerAll(self ...$members): void
+    {
+        foreach ($members as $member) {
+            self::register($member);
+        }
+    }
+
+    /**
+     * Returns all members of the enum.
+     * This is overridden to change the return typehint.
+     *
+     * @return self[]
+     */
+    public static function getAll(): array
+    {
+        //phpstan doesn't support generic traits yet :(
+        /** @var self[] $result */
+        $result = self::_registryGetAll();
+        return $result;
+    }
+
+    /**
+     * Returns the enum member matching the given name.
+     * This is overridden to change the return typehint.
+     *
+     * @throws InvalidArgumentException if no member matches.
+     */
+    public static function fromString(string $name): self
+    {
+        //phpstan doesn't support generic traits yet :(
+        /** @var self $result */
+        $result = self::_registryFromString($name);
+        return $result;
+    }
+
     /** @var int|null */
     private static $nextId = null;
+
     /** @var string */
     private $enumName;
     /** @var int */
     private $runtimeId;
 
     /**
-     * @param string $enumName
      * @throws InvalidArgumentException
      */
     private function __construct(string $enumName)
@@ -55,70 +100,6 @@ trait EnumTrait
         $this->runtimeId = self::$nextId++;
     }
 
-    /**
-     * Returns all members of the enum.
-     * This is overridden to change the return typehint.
-     *
-     * @return self[]
-     */
-    public static function getAll(): array
-    {
-        return self::_registryGetAll();
-    }
-
-    /**
-     * Returns the enum member matching the given name.
-     * This is overridden to change the return typehint.
-     *
-     * @param string $name
-     *
-     * @return self
-     * @throws InvalidArgumentException if no member matches.
-     */
-    public static function fromString(string $name): self
-    {
-        return self::_registryFromString($name);
-    }
-
-    /**
-     * @throws InvalidArgumentException
-     * @internal Lazy-inits the enum if necessary.
-     *
-     */
-    protected static function checkInit(): void
-    {
-        if (self::$members === null) {
-            self::$members = [];
-            foreach (self::setup() as $item) {
-                self::register($item);
-            }
-        }
-    }
-
-    /**
-     * Returns an array of enum members to be registered.
-     *
-     * (This ought to be private, but traits suck too much for that.)
-     *
-     * @return self[]|iterable
-     */
-    abstract protected static function setup(): iterable;
-
-    /**
-     * Registers the given object as an enum member.
-     *
-     * @param self $member
-     *
-     * @throws InvalidArgumentException
-     */
-    protected static function register(self $member): void
-    {
-        self::_registryRegister($member->name(), $member);
-    }
-
-    /**
-     * @return string
-     */
     public function name(): string
     {
         return $this->enumName;
@@ -128,8 +109,6 @@ trait EnumTrait
      * Returns a runtime-only identifier for this enum member. This will be different with each run, so don't try to
      * hardcode it.
      * This can be useful for switches or array indexing.
-     *
-     * @return int
      */
     public function id(): int
     {
@@ -138,9 +117,7 @@ trait EnumTrait
 
     /**
      * Returns whether the two objects are equivalent.
-     *
-     * @param self $other
-     *
+     * @param EnumTrait $other
      * @return bool
      */
     public function equals(self $other): bool
