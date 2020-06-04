@@ -71,13 +71,10 @@ final class Action
         return self::$numericIdMap[$type];
     }
 
-    /**
-     * @return Action[]
-     */
-    protected static function setup(): array
+    protected static function setup(): void
     {
         $lang = Main::getInstance()->getLanguage();
-        return [
+        self::registerAll(
             //Blocks actions
             new self('place', 0, $lang->translateString('action.place')),
             new self('break', 1, $lang->translateString('action.break')),
@@ -89,7 +86,7 @@ final class Action
             //Inventories actions
             new self('add', 6, $lang->translateString('action.add')),
             new self('remove', 7, $lang->translateString('action.remove'))
-        ];
+        );
     }
 
     protected static function register(Action $action): void
