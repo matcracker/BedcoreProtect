@@ -117,7 +117,7 @@ trait EnumTrait
 
     /**
      * Returns whether the two objects are equivalent.
-     * @param EnumTrait $other
+     * @param self $other
      * @return bool
      */
     public function equals(self $other): bool
