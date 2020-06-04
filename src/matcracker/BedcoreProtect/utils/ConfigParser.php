@@ -267,14 +267,6 @@ final class ConfigParser
         return (bool)$this->data['player-interactions'];
     }
 
-    public function getBlockSniperHook(): bool
-    {
-        if (!$this->isValid) {
-            throw new BadMethodCallException('The configuration must be validated.');
-        }
-        return (bool)$this->data['blocksniper-hook'];
-    }
-
     public function isValidConfig(): bool
     {
         return $this->isValid;

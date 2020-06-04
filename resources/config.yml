@@ -115,7 +115,4 @@ item-transactions: true
 # Track player interactions, such as when a player opens a door, presses
 # a button, or opens a chest. Player interactions can't be rolled back.
 player-interactions: true
-
-# Logs changes made via the plugin "BlockSniper" if it's in use on your server.
-blocksniper-hook: false
 ...

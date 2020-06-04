@@ -26,7 +26,6 @@ use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\listeners\BedcoreListener;
 use matcracker\BedcoreProtect\listeners\BlockListener;
-use matcracker\BedcoreProtect\listeners\BlockSniperListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
 use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
@@ -54,8 +53,6 @@ final class Main extends PluginBase
     private $configParser;
     /** @var ConfigParser */
     private $oldConfigParser;
-    /** @var bool */
-    private $bsHooked = false;
     /** @var BedcoreListener[] */
     private $events;
 
@@ -125,14 +122,6 @@ final class Main extends PluginBase
 
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
 
-        if ($this->configParser->getBlockSniperHook()) {
-            $bsPlugin = $this->getServer()->getPluginManager()->getPlugin('BlockSniper');
-            $this->bsHooked = $bsPlugin !== null;
-            if (!$this->bsHooked) {
-                $this->getLogger()->warning($this->baseLang->translateString('blocksniper.hook.no-hook'));
-            }
-        }
-
         if ($this->configParser->getCheckUpdates()) {
             UpdateNotifier::checkUpdate($this->getName(), $this->getDescription()->getVersion());
         }
@@ -176,8 +165,7 @@ final class Main extends PluginBase
             new EntityListener($this),
             new PlayerListener($this),
             new WorldListener($this),
-            new InspectorListener($this),
-            new BlockSniperListener($this)
+            new InspectorListener($this)
         ];
 
         foreach ($this->events as $event) {
@@ -194,18 +182,12 @@ final class Main extends PluginBase
         return $this->getDescription()->getVersion();
     }
 
-    public function isBlockSniperHooked(): bool
-    {
-        return $this->bsHooked;
-    }
-
     public function onDisable(): void
     {
         $this->getScheduler()->cancelAllTasks();
         $this->database->disconnect();
 
         Inspector::removeAll();
-        $this->bsHooked = false;
         unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser, $this->events);
     }
 }
