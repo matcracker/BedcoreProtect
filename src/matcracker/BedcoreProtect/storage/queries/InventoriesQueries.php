@@ -33,7 +33,6 @@ use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\inventory\ContainerInventory;
-use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
@@ -150,19 +149,16 @@ class InventoriesQueries extends Query
         );
     }
 
-    public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
+    public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
     {
         /** @var SerializableItem[] $contents */
         $contents = array_map(static function (Item $item): SerializableItem {
             return SerializableItem::serialize($item);
         }, $inventory->getContents());
 
-        /** @var SerializablePosition[] $positions */
-        $positions = array_fill(0, count($contents), SerializablePosition::serialize($inventoryPosition));
-
         $logsTask = new LogsQueryGeneratorTask(
             EntityUtils::getUniqueId($player),
-            $positions,
+            array_fill(0, count($contents), SerializablePosition::serialize($inventoryPosition)),
             Action::REMOVE(),
             function (string $query) use ($contents): Generator {
                 [$firstInsertedId, $affectedRows] = yield $this->executeInsertRaw($query, [], true);
