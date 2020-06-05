@@ -148,7 +148,7 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
     {
         $entityRows = [];
 
@@ -178,7 +178,7 @@ class EntitiesQueries extends Query
         }
 
         if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage(microtime(true) - $startTime, 'rollback.entities', [$entities]);
+            QueryManager::addReportMessage($senderName, 'rollback.entities', [$entities]);
         }
 
         $onComplete();

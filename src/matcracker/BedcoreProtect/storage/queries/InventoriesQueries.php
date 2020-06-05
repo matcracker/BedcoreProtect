@@ -182,7 +182,7 @@ class InventoriesQueries extends Query
         Server::getInstance()->getAsyncPool()->submitTask($logsTask);
     }
 
-    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
     {
         $prefix = $this->getRollbackPrefix($rollback);
 
@@ -210,7 +210,7 @@ class InventoriesQueries extends Query
         }
 
         if (($items = count($inventoryRows)) > 0) {
-            QueryManager::addReportMessage(microtime(true) - $startTime, 'rollback.items', [$items]);
+            QueryManager::addReportMessage($senderName, 'rollback.items', [$items]);
         }
 
         $onComplete();

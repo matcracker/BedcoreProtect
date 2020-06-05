@@ -41,6 +41,7 @@ use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 use function array_key_exists;
 use function count;
+use function microtime;
 use function preg_match;
 use function round;
 use function time;
@@ -77,13 +78,18 @@ final class QueryManager
         $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
-    public static function addReportMessage(float $executionTime, string $reportMessage, array $params = []): void
+    public static function addReportMessage(string $senderName, string $reportMessage, array $params = []): void
     {
         $lang = Main::getInstance()->getLanguage();
 
-        self::$additionalReports[] = [
-            'message' => TextFormat::colorize('&f- ' . $lang->translateString($reportMessage, $params)),
-            'time' => $executionTime
+        self::$additionalReports[$senderName]['messages'][] = TextFormat::colorize('&f- ' . $lang->translateString($reportMessage, $params));
+    }
+
+    private static function initAdditionReports(string $senderName): void
+    {
+        self::$additionalReports[$senderName] = [
+            'messages' => [],
+            'startTime' => microtime(true)
         ];
     }
 
@@ -163,6 +169,8 @@ final class QueryManager
             }
         }
 
+        self::initAdditionReports($senderName);
+
         Await::f2c(
             function () use ($rollback, $area, $commandParser, $senderName, $logIds) : Generator {
                 /** @var int[] $logIds */
@@ -217,7 +225,12 @@ final class QueryManager
 
     public static function sendRollbackReport(bool $rollback, Area $area, CommandParser $commandParser): void
     {
-        if (($sender = Server::getInstance()->getPlayer($commandParser->getSenderName())) !== null) {
+        $senderName = $commandParser->getSenderName();
+        if (!array_key_exists($senderName, self::$additionalReports)) {
+            return;
+        }
+
+        if (($sender = Server::getInstance()->getPlayer($senderName)) !== null) {
             $date = Utils::timeAgo(time() - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
@@ -226,24 +239,22 @@ final class QueryManager
             $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
             $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.radius', [$commandParser->getRadius() ?? 0])));
 
-            $duration = 0;
-
-            if (count(self::$additionalReports) > 0) {
-                foreach (self::$additionalReports as $additionalReport) {
-                    $sender->sendMessage($additionalReport['message']);
-                    $duration += $additionalReport['time'];
+            if (count(self::$additionalReports[$senderName]['messages']) > 0) {
+                foreach (self::$additionalReports[$senderName]['messages'] as $message) {
+                    $sender->sendMessage($message);
                 }
             } else {
                 $sender->sendMessage(TextFormat::colorize('&f- &b' . $lang->translateString('rollback.no-changes')));
             }
 
-            $duration = round($duration, 2);
+            $diff = microtime(true) - self::$additionalReports[$senderName]['startTime'];
+            $duration = round($diff, 2);
 
             $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.time-taken', [$duration])));
             $sender->sendMessage(TextFormat::colorize('&f------'));
         }
 
-        self::$additionalReports = [];
+        unset(self::$additionalReports[$senderName]);
     }
 
     /**

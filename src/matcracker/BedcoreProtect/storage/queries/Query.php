@@ -31,7 +31,6 @@ use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function microtime;
 use function strtolower;
 
 abstract class Query
@@ -67,8 +66,8 @@ abstract class Query
                 yield $this->onRollback(
                     $rollback,
                     $area,
+                    $commandParser->getSenderName(),
                     $logIds,
-                    microtime(true),
                     function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
                         if ($onPreComplete) {
                             $onPreComplete();
@@ -87,12 +86,12 @@ abstract class Query
     /**
      * @param bool $rollback
      * @param Area $area
+     * @param string $senderName
      * @param int[] $logIds
-     * @param float $startTime
      * @param Closure $onComplete
      * @return Generator
      */
-    abstract protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator;
+    abstract protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator;
 
     /**
      * @param bool $rollback

@@ -33,7 +33,6 @@ use pocketmine\math\AxisAlignedBB;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use function count;
-use function microtime;
 
 final class RollbackTask extends AsyncTask
 {
@@ -41,10 +40,10 @@ final class RollbackTask extends AsyncTask
     protected $rollback;
     /** @var Area */
     protected $area;
+    /** @var string */
+    protected $senderName;
     /** @var SerializableBlock[] */
     protected $blocks;
-    /** @var float */
-    private $startTime;
     /** @var string[] */
     private $serializedChunks;
 
@@ -52,16 +51,16 @@ final class RollbackTask extends AsyncTask
      * RollbackTask constructor.
      * @param bool $rollback
      * @param Area $area
+     * @param string $senderName
      * @param SerializableBlock[] $blocks
-     * @param float $startTime
      * @param Closure $onComplete
      */
-    public function __construct(bool $rollback, Area $area, array $blocks, float $startTime, Closure $onComplete)
+    public function __construct(bool $rollback, Area $area, string $senderName, array $blocks, Closure $onComplete)
     {
         $this->rollback = $rollback;
         $this->area = $area;
+        $this->senderName = $senderName;
         $this->blocks = $blocks;
-        $this->startTime = $startTime;
 
         $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
         $this->storeLocal($onComplete);
@@ -103,9 +102,9 @@ final class RollbackTask extends AsyncTask
             /**@var Closure|null $onComplete */
             $onComplete = $this->fetchLocal();
 
-            QueryManager::addReportMessage(microtime(true) - $this->startTime, 'rollback.blocks', [count($this->blocks)]);
+            QueryManager::addReportMessage($this->senderName, 'rollback.blocks', [count($this->blocks)]);
             //Set the execution time to 0 to avoid duplication of time in the same operation.
-            QueryManager::addReportMessage(0, 'rollback.modified-chunks', [count($chunks)]);
+            QueryManager::addReportMessage($this->senderName, 'rollback.modified-chunks', [count($chunks)]);
 
             $onComplete();
         }

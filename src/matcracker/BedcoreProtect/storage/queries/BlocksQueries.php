@@ -249,7 +249,7 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
     {
         $prefix = $this->getRollbackPrefix($rollback);
         /** @var SerializableBlock[] $blocks */
@@ -282,6 +282,6 @@ class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $blocks, $startTime, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $senderName, $blocks, $onComplete));
     }
 }
