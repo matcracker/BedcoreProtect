@@ -49,7 +49,6 @@ use pocketmine\item\Shovel;
 use pocketmine\item\SpawnEgg;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
-use pocketmine\Player;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\ItemFrame as TileItemFrame;
 use UnexpectedValueException;
@@ -154,9 +153,9 @@ final class PlayerListener extends BedcoreListener
                         return;
                     } elseif ($itemInHand instanceof PaintingItem) {
                         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-                            function (int $currentTick) use ($player, $level, $replacedBlock, $itemInHand): void {
+                            function (int $currentTick) use ($player, $level, $replacedBlock): void {
                                 $entity = $level->getNearestEntity($replacedBlock, 1, Painting::class);
-                                if ($entity instanceof Painting) {
+                                if ($entity !== null) {
                                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::PLACE());
                                 }
                             }
@@ -181,7 +180,7 @@ final class PlayerListener extends BedcoreListener
                             function (int $currentTick) use ($player, $level, $replacedBlock, $itemInHand): void {
                                 $entity = $level->getNearestEntity($replacedBlock, 1, EntityUtils::getClassByNetworkId($itemInHand->getDamage()));
 
-                                if ($entity !== null && !$entity instanceof Player) {
+                                if ($entity !== null) {
                                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::PLACE());
                                 }
                             }
