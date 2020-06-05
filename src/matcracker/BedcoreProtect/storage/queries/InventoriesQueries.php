@@ -75,7 +75,7 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $worldName = $player->getLevel()->getName();
+        $worldName = Utils::getLevelNonNull($player->getLevel())->getName();
         $time = microtime(true);
 
         Await::f2c(
@@ -138,7 +138,7 @@ class InventoriesQueries extends Query
      */
     public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Position $position): void
     {
-        $worldName = $position->getLevel()->getName();
+        $worldName = Utils::getLevelNonNull($position->getLevel())->getName();
         $time = microtime(true);
 
         Await::f2c(

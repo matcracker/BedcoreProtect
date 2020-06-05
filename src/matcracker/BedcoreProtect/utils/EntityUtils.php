@@ -120,7 +120,7 @@ final class EntityUtils
      * Returns the entity class from the its network ID.
      * @param int $networkId
      * @return string
-     * @phpstan-return class-string<TEntity>
+     * @phpstan-return class-string<Entity>
      */
     public static function getClassByNetworkId(int $networkId): string
     {

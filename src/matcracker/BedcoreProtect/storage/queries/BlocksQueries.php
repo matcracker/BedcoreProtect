@@ -85,7 +85,7 @@ class BlocksQueries extends Query
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
-        $worldName = $pos->getLevel()->getName();
+        $worldName = Utils::getLevelNonNull($pos->getLevel())->getName();
         $time = microtime(true);
 
         Await::f2c(
@@ -132,7 +132,7 @@ class BlocksQueries extends Query
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
-        $worldName = $pos->getLevel()->getName();
+        $worldName = Utils::getLevelNonNull($pos->getLevel())->getName();
         $time = microtime(true);
 
         Await::f2c(
@@ -171,7 +171,7 @@ class BlocksQueries extends Query
 
         $itemFrameBlock = $itemFrame->getBlock();
         $position = $itemFrame->asVector3();
-        $worldName = $itemFrame->getLevel()->getName();
+        $worldName = Utils::getLevelNonNull($itemFrame->getLevel())->getName();
         $time = microtime(true);
 
         Await::f2c(

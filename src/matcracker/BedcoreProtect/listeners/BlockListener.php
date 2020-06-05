@@ -55,8 +55,9 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
+        $level = Utils::getLevelNonNull($player->getLevel());
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getBlockBreak()) {
+        if ($this->config->isEnabledWorld($level) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
             if ($block instanceof Door) {
@@ -67,7 +68,7 @@ final class BlockListener extends BedcoreListener
                 }
             } elseif ($block instanceof Bed) {
                 $other = $block->getOtherHalf();
-                if ($other instanceof Bed) {
+                if ($other !== null) {
                     $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
                 }
             } elseif ($block instanceof Chest) {
@@ -82,20 +83,17 @@ final class BlockListener extends BedcoreListener
 
             if ($this->config->getNaturalBreak()) {
                 $sides = $block->getAllSides();
-                $this->plugin->getScheduler()->scheduleDelayedTask(
-                    new ClosureTask(
-                        function (int $currentTick) use ($player, $block, $sides): void {
-                            $updSides = $block->getLevel()->getBlock($block->asVector3())->getAllSides();
+                $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
+                    function (int $currentTick) use ($player, $block, $level, $sides): void {
+                        $updSides = $level->getBlock($block->asVector3())->getAllSides();
 
-                            for ($i = 0, $maxI = count($updSides); $i < $maxI; $i++) {
-                                if (!($updSides[$i] instanceof $sides[$i])) {
-                                    $this->blocksQueries->addBlockLogByEntity($player, $sides[$i], $this->air, Action::BREAK(), $sides[$i]->asPosition());
-                                }
+                        for ($i = 0, $maxI = count($updSides); $i < $maxI; $i++) {
+                            if (!($updSides[$i] instanceof $sides[$i])) {
+                                $this->blocksQueries->addBlockLogByEntity($player, $sides[$i], $this->air, Action::BREAK(), $sides[$i]->asPosition());
                             }
                         }
-                    ),
-                    2
-                );
+                    }
+                ), 2);
             }
 
             $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
