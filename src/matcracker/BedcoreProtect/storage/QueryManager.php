@@ -144,27 +144,27 @@ final class QueryManager
      */
     private function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, ?array $logIds = null): void
     {
+        $senderName = $commandParser->getSenderName();
+        $player = Server::getInstance()->getPlayer($senderName);
+
+        if (array_key_exists($senderName, self::$activeRollbacks)) {
+            if ($player !== null) {
+                $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "It is not possible to perform more than one rollback at a time."));
+            }
+            return;
+        }
+
+        foreach (self::$activeRollbacks as $rbSender => $activeRollback) {
+            if ($activeRollback->getBoundingBox()->intersectsWith($area->getBoundingBox())) {
+                if ($player !== null) {
+                    $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "{$rbSender} is already operating in this area. Try again."));
+                }
+                return;
+            }
+        }
+
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $logIds) : Generator {
-                $senderName = $commandParser->getSenderName();
-                $player = Server::getInstance()->getPlayer($senderName);
-
-                if (array_key_exists($senderName, self::$activeRollbacks)) {
-                    if ($player !== null) {
-                        $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "It is not possible to perform more than one rollback at a time."));
-                    }
-                    return;
-                }
-
-                foreach (self::$activeRollbacks as $rbSender => $activeRollback) {
-                    if ($activeRollback->getBoundingBox()->intersectsWith($area->getBoundingBox())) {
-                        if ($player !== null) {
-                            $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "{$rbSender} is already operating in this area. Try again."));
-                        }
-                        return;
-                    }
-                }
-
+            function () use ($rollback, $area, $commandParser, $senderName, $logIds) : Generator {
                 /** @var int[] $logIds */
                 $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $area, $commandParser);
                 if (count($logIds) === 0) { //No changes.
