@@ -75,15 +75,12 @@ final class Action
     {
         $lang = Main::getInstance()->getLanguage();
         self::registerAll(
-            //Blocks actions
             new self('place', 0, $lang->translateString('action.place')),
             new self('break', 1, $lang->translateString('action.break')),
             new self('click', 2, $lang->translateString('action.click')),
-            //Entities actions
             new self('spawn', 3, $lang->translateString('action.place')),
             new self('despawn', 4, $lang->translateString('action.break')),
             new self('kill', 5, $lang->translateString('action.kill')),
-            //Inventories actions
             new self('add', 6, $lang->translateString('action.add')),
             new self('remove', 7, $lang->translateString('action.remove'))
         );
