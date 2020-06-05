@@ -30,7 +30,7 @@ final class BlocksQueryGeneratorTask extends QueryGeneratorTask
 {
     /** @var SerializableBlock[] */
     private $oldBlocks;
-    /** @var SerializableBlock[]|SerializableBlock */
+    /** @var SerializableBlock[] */
     private $newBlocks;
 
     /**
