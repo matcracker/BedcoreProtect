@@ -48,7 +48,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->config->isEnabledWorld(Utils::getLevelNonNull($entity->getLevel())) && $this->config->getExplosions()) {
-            $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), $this->air, Action::BREAK());
+            $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), [$this->air], Action::BREAK());
         }
     }
 

@@ -48,7 +48,6 @@ use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function count;
-use function is_array;
 use function microtime;
 use function strlen;
 
@@ -200,12 +199,12 @@ class BlocksQueries extends Query
     /**
      * @param Entity $entity
      * @param Block[] $oldBlocks
-     * @param Block[]|Block $newBlocks
+     * @param Block[] $newBlocks
      * @param Action $action
      */
-    public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, $newBlocks, Action $action): void
+    public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action): void
     {
-        if (count($oldBlocks) === 0) {
+        if (count($oldBlocks) === 0 || count($newBlocks) === 0) {
             return;
         }
 
@@ -213,19 +212,9 @@ class BlocksQueries extends Query
             return SerializableBlock::serialize($block);
         }, $oldBlocks);
 
-        if (is_array($newBlocks)) {
-            if (count($newBlocks) === 0) {
-                return;
-            }
-
-            (function (Block ...$_) { //Type-safe check
-            })(... $newBlocks);
-            $newBlocks = array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::serialize($block);
-            }, $newBlocks);
-        } else {
-            $newBlocks = SerializableBlock::serialize($newBlocks);
-        }
+        $newBlocks = array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::serialize($block);
+        }, $newBlocks);
 
         Await::f2c(
             function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
