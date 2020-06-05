@@ -42,7 +42,6 @@ use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
-use function array_filter;
 use function count;
 
 final class BlockListener extends BedcoreListener
@@ -79,25 +78,27 @@ final class BlockListener extends BedcoreListener
                         $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $block->asPosition());
                     }
                 }
-            } elseif ($this->config->getNaturalBreak()) {
-                /**
-                 * @var Block[] $sides
-                 * Getting all blocks around the broken block that are consequently destroyed.
-                 */
-                $sides = array_filter(
-                    $block->getAllSides(),
-                    static function (Block $side): bool {
-                        return $side->canBePlaced() && !$side->isSolid() && $side->isTransparent();
-                    }
-                );
+            }
 
-                if (count($sides) > 0) {
-                    $this->blocksQueries->addBlocksLogByEntity($player, $sides, $this->air, Action::BREAK());
-                }
+            if ($this->config->getNaturalBreak()) {
+                $sides = $block->getAllSides();
+                $this->plugin->getScheduler()->scheduleDelayedTask(
+                    new ClosureTask(
+                        function (int $currentTick) use ($player, $block, $sides): void {
+                            $updSides = $block->getLevel()->getBlock($block->asVector3())->getAllSides();
+
+                            for ($i = 0, $maxI = count($updSides); $i < $maxI; $i++) {
+                                if (!($updSides[$i] instanceof $sides[$i])) {
+                                    $this->blocksQueries->addBlockLogByEntity($player, $sides[$i], $this->air, Action::BREAK(), $sides[$i]->asPosition());
+                                }
+                            }
+                        }
+                    ),
+                    2
+                );
             }
 
             $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
-
         }
     }
 
