@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
@@ -33,6 +34,7 @@ use pocketmine\block\Grass;
 use pocketmine\block\GrassPath;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\TNT;
+use pocketmine\entity\object\Painting;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
@@ -42,9 +44,13 @@ use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
+use pocketmine\item\PaintingItem;
 use pocketmine\item\Shovel;
+use pocketmine\item\SpawnEgg;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\Player;
+use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\ItemFrame as TileItemFrame;
 use UnexpectedValueException;
 
@@ -119,8 +125,9 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
         $player = $event->getPlayer();
+        $level = Utils::getLevelNonNull($player->getLevel());
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
+        if ($this->config->isEnabledWorld($level)) {
             $itemInHand = $event->getItem();
             $face = $event->getFace();
             $clickedBlock = $event->getBlock();
@@ -137,13 +144,28 @@ final class PlayerListener extends BedcoreListener
                     }
                 }
             } elseif ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
-                if ($this->config->getBlockPlace() && $itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
-                    if ($clickedBlock instanceof TNT) {
-                        $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
-                    } else {
-                        $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                if ($this->config->getBlockPlace()) {
+                    if ($itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
+                        if ($clickedBlock instanceof TNT) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                        } else {
+                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                        }
+                        return;
+                    } elseif ($itemInHand instanceof PaintingItem) {
+                        $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
+                            function (int $currentTick) use ($player, $level, $replacedBlock, $itemInHand): void {
+                                $entity = $level->getNearestEntity($replacedBlock, 1, Painting::class);
+                                if ($entity instanceof Painting) {
+                                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::PLACE());
+                                }
+                            }
+                        ), 1);
+                        return;
                     }
-                } elseif ($this->config->getPlayerInteractions()) {
+                }
+
+                if ($this->config->getPlayerInteractions()) {
                     if ($itemInHand instanceof Hoe) {
                         if ($clickedBlock instanceof Grass || $clickedBlock instanceof Dirt) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new Farmland(), Action::PLACE(), $clickedBlock->asPosition());
@@ -154,6 +176,17 @@ final class PlayerListener extends BedcoreListener
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new GrassPath(), Action::PLACE(), $clickedBlock->asPosition());
                             return;
                         }
+                    } elseif ($itemInHand instanceof SpawnEgg) {
+                        $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
+                            function (int $currentTick) use ($player, $level, $replacedBlock, $itemInHand): void {
+                                $entity = $level->getNearestEntity($replacedBlock, 1, EntityUtils::getClassByNetworkId($itemInHand->getDamage()));
+
+                                if ($entity !== null && !$entity instanceof Player) {
+                                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::PLACE());
+                                }
+                            }
+                        ), 1);
+                        return;
                     }
 
                     if (BlockUtils::canBeClicked($clickedBlock)) {

@@ -25,7 +25,6 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\entity\Human;
-use pocketmine\entity\Living;
 use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
@@ -34,7 +33,6 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
 use pocketmine\event\entity\EntitySpawnEvent;
-use pocketmine\Player;
 
 final class EntityListener extends BedcoreListener
 {
@@ -71,19 +69,6 @@ final class EntityListener extends BedcoreListener
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
                 $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getDamage()), $this->air, Action::BREAK(), $entity->asPosition());
 
-            } else {
-                if (!($entity instanceof Living || $entity instanceof Painting)) {
-                    return;
-                }
-
-                if ($entity instanceof Painting && !$this->config->getBlockPlace()) {
-                    return;
-                }
-
-                $player = $level->getNearestEntity($entity, 6, Player::class);
-                if ($player !== null) {
-                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
-                }
             }
         }
     }

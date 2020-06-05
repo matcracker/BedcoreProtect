@@ -28,8 +28,8 @@ use pocketmine\entity\Living;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
+use function array_key_exists;
 use function array_merge;
-use function array_values;
 use function strval;
 
 final class EntityUtils
@@ -93,25 +93,55 @@ final class EntityUtils
 
     /**
      * Returns an array with all registered entities save names
-     * @return array
+     * @return string[]
      */
     public static function getSaveNames(): array
+    {
+        $names = [];
+
+        $values = (array)self::getEntityProperty('saveNames');
+        foreach ($values as $value) {
+            $names = array_merge($names, $value);
+        }
+
+        return $names;
+    }
+
+    /**
+     * Returns an array with all registered entities.
+     * @return string[]
+     */
+    public static function getKnownEntities(): array
+    {
+        return (array)self::getEntityProperty('knownEntities');
+    }
+
+    /**
+     * Returns the entity class from the its network ID.
+     * @param int $networkId
+     * @return string
+     */
+    public static function getClassByNetworkId(int $networkId): string
+    {
+        $values = self::getKnownEntities();
+        if (!array_key_exists($networkId, $values)) {
+            throw new InvalidArgumentException("The network ID \"{$networkId}\" is not registered.");
+        }
+
+        return $values[$networkId];
+    }
+
+    private static function getEntityProperty(string $property)
     {
         //HACK ^-^
         try {
             $r = new ReflectionClass(Entity::class);
-            $property = $r->getProperty('saveNames');
+            $property = $r->getProperty($property);
             $property->setAccessible(true);
-            $names = [];
 
-            $values = array_values((array)$property->getValue());
-            foreach ($values as $value) {
-                $names = array_merge($names, $value);
-            }
-
-            return $names;
+            return $property->getValue();
         } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException('Could not get entities names.');
+            throw new InvalidArgumentException("Could not get \"{$property}\" entity property.");
         }
     }
 }
