@@ -144,10 +144,10 @@ final class PlayerListener extends BedcoreListener
                 }
             } elseif ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 if ($this->config->getBlockPlace()) {
-                    if ($itemInHand instanceof FlintSteel && $replacedBlock instanceof Air) {
+                    if ($itemInHand instanceof FlintSteel) {
                         if ($clickedBlock instanceof TNT) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
-                        } else {
+                        } elseif ($replacedBlock instanceof Air) {
                             $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
                         }
                         return;
