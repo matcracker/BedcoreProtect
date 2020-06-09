@@ -201,8 +201,9 @@ class BlocksQueries extends Query
      * @param Block[] $oldBlocks
      * @param Block[] $newBlocks
      * @param Action $action
+     * @param float $time
      */
-    public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action): void
+    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time)
     {
         if (count($oldBlocks) === 0 || count($newBlocks) === 0) {
             return;
@@ -218,12 +219,15 @@ class BlocksQueries extends Query
 
         Await::f2c(
             function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
+            function () use ($entity, $oldBlocks, $newBlocks, $action, $time) : Generator {
                 yield $this->entitiesQueries->addEntityGenerator($entity);
 
                 $logsTask = new LogsQueryGeneratorTask(
                     EntityUtils::getUniqueId($entity),
                     $oldBlocks,
                     $action,
+                    $time,
+                    $this->configParser->isSQLite(),
                     function (string $query) use ($oldBlocks, $newBlocks) : Generator {
                         [$firstInsertedId, $affectedRows] = yield $this->executeInsertRaw($query, [], true);
 

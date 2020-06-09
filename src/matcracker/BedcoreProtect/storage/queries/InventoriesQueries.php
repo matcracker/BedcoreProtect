@@ -151,6 +151,8 @@ class InventoriesQueries extends Query
 
     public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
     {
+        $time = microtime(true);
+
         /** @var SerializableItem[] $contents */
         $contents = array_map(static function (Item $item): SerializableItem {
             return SerializableItem::serialize($item);
@@ -160,6 +162,8 @@ class InventoriesQueries extends Query
             EntityUtils::getUniqueId($player),
             array_fill(0, count($contents), SerializablePosition::serialize($inventoryPosition)),
             Action::REMOVE(),
+            $time,
+            $this->configParser->isSQLite(),
             function (string $query) use ($contents): Generator {
                 [$firstInsertedId, $affectedRows] = yield $this->executeInsertRaw($query, [], true);
 
