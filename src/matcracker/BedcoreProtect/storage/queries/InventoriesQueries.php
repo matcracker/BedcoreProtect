@@ -75,7 +75,7 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $worldName = Utils::getLevelNonNull($player->getLevel())->getName();
+        $worldName = $player->getLevelNonNull()->getName();
         $time = microtime(true);
 
         Await::f2c(

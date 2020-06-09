@@ -82,7 +82,7 @@ class EntitiesQueries extends Query
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
         $entityNbt = EntityUtils::getSerializedNbt($entity);
-        $worldName = Utils::getLevelNonNull($entity->getLevel())->getName();
+        $worldName = $entity->getLevelNonNull()->getName();
         $time = microtime(true);
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
@@ -123,7 +123,7 @@ class EntitiesQueries extends Query
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
-        $worldName = Utils::getLevelNonNull($block->getLevel())->getName();
+        $worldName = $block->getLevelNonNull()->getName();
         $time = microtime(true);
 
         Await::f2c(

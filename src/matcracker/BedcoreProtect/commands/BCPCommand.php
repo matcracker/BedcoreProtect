@@ -28,7 +28,6 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\ui\Forms;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\PluginIdentifiableCommand;
@@ -229,7 +228,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $level = Utils::getLevelNonNull($sender->getLevel());
+                        $level = $sender->getLevelNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$level->getName()])));
 
                         $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? 0);
@@ -246,7 +245,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $level = Utils::getLevelNonNull($sender->getLevel());
+                        $level = $sender->getLevelNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.restore.started', [$level->getName()])));
 
                         $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius());

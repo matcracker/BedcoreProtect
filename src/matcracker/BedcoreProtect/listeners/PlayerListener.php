@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\Dirt;
@@ -74,7 +73,7 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getBuckets()) {
+        if ($this->config->isEnabledWorld($player->getLevelNonNull()) && $this->config->getBuckets()) {
             $block = $event->getBlockClicked();
             $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
@@ -124,7 +123,7 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = Utils::getLevelNonNull($player->getLevel());
+        $level = $player->getLevelNonNull();
 
         if ($this->config->isEnabledWorld($level)) {
             $itemInHand = $event->getItem();
@@ -135,6 +134,7 @@ final class PlayerListener extends BedcoreListener
             if ($event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                 if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
                     $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
+
                 } elseif ($this->config->getPlayerInteractions() && $clickedBlock instanceof ItemFrame) {
                     $tile = BlockUtils::asTile($clickedBlock);
                     if ($tile instanceof TileItemFrame && $tile->hasItem()) {
@@ -219,7 +219,7 @@ final class PlayerListener extends BedcoreListener
         $transaction = $event->getTransaction();
         $player = $transaction->getSource();
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel())) && $this->config->getItemTransactions()) {
+        if ($this->config->isEnabledWorld($player->getLevelNonNull()) && $this->config->getItemTransactions()) {
             $actions = $transaction->getActions();
 
             foreach ($actions as $action) {

@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\Chest;
@@ -55,7 +54,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = Utils::getLevelNonNull($player->getLevel());
+        $level = $player->getLevelNonNull();
 
         if ($this->config->isEnabledWorld($level) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
@@ -109,7 +108,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = Utils::getLevelNonNull($player->getLevel());
+        $level = $player->getLevelNonNull();
 
         if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
@@ -178,7 +177,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel())) && $this->config->getBlockBurn()) {
+        if ($this->config->isEnabledWorld($block->getLevelNonNull()) && $this->config->getBlockBurn()) {
             $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, $this->air, Action::BREAK(), $block->asPosition());
         }
     }
@@ -192,8 +191,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockForm(BlockFormEvent $event): void
     {
         $block = $event->getBlock();
-
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel()))) {
+        if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
             if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
                 $result = $event->getNewState();
 
