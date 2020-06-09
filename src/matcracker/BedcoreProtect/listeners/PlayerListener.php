@@ -188,7 +188,7 @@ final class PlayerListener extends BedcoreListener
                         return;
                     }
 
-                    if (BlockUtils::canBeClicked($clickedBlock)) {
+                    if (!$player->isSneaking() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
                             $tile = BlockUtils::asTile($clickedBlock);
                             if ($tile instanceof TileItemFrame) {
