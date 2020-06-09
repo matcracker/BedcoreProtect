@@ -188,9 +188,9 @@ class BlocksQueries extends Query
                     $time
                 );
             },
-            function () use ($player, $item, $action, $itemFrame): void {
+            function () use ($player, $item, $action, $position, $worldName): void {
                 if (!$action->equals(Action::CLICK())) {
-                    $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $itemFrame);
+                    $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $position, $worldName);
                 }
             }
         );

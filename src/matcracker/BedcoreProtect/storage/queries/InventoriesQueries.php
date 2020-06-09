@@ -134,16 +134,16 @@ class InventoriesQueries extends Query
      * @param Player $player
      * @param Item $item
      * @param Action $action
-     * @param Position $position
+     * @param Vector3 $position
+     * @param string $worldName
      */
-    public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Position $position): void
+    public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Vector3 $position, string $worldName): void
     {
-        $worldName = Utils::getLevelNonNull($position->getLevel())->getName();
         $time = microtime(true);
 
         Await::f2c(
             function () use ($player, $item, $action, $position, $worldName, $time): Generator {
-                $logId = yield $this->addRawLog(EntityUtils::getUniqueId($player), $position->asVector3(), $worldName, $action, $time);
+                $logId = yield $this->addRawLog(EntityUtils::getUniqueId($player), $position, $worldName, $action, $time);
                 yield $this->addInventorySlotLog($logId, 0, $item, $item);
             }
         );
