@@ -23,14 +23,17 @@ namespace matcracker\BedcoreProtect\tasks\async;
 
 use ArrayOutOfBoundsException;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
+use function array_key_first;
 use function count;
 use function mb_substr;
+use function serialize;
+use function unserialize;
 
 final class BlocksQueryGeneratorTask extends QueryGeneratorTask
 {
-    /** @var SerializableBlock[] */
+    /** @var string */
     private $oldBlocks;
-    /** @var SerializableBlock[] */
+    /** @var string */
     private $newBlocks;
 
     /**
@@ -43,22 +46,27 @@ final class BlocksQueryGeneratorTask extends QueryGeneratorTask
     public function __construct(int $firstInsertedId, array $oldBlocks, array $newBlocks, ?callable $onComplete)
     {
         parent::__construct($firstInsertedId, $onComplete);
-        $this->oldBlocks = $oldBlocks;
-        $this->newBlocks = $newBlocks;
+        $this->oldBlocks = serialize($oldBlocks);
+        $this->newBlocks = serialize($newBlocks);
     }
 
     public function onRun(): void
     {
+        /** @var SerializableBlock[] $oldBlocks */
+        $oldBlocks = unserialize($this->oldBlocks);
+        /** @var SerializableBlock[] $newBlocks */
+        $newBlocks = unserialize($this->newBlocks);
+
         $query = /**@lang text */
             "INSERT INTO blocks_log(history_id, old_id, old_meta, old_nbt, new_id, new_meta, new_nbt) VALUES";
 
-        if (count($this->newBlocks) === 1) {
-            $newId = $this->newBlocks[0]->getId();
-            $newMeta = $this->newBlocks[0]->getMeta();
-            $newNBT = $this->newBlocks[0]->getSerializedNbt();
+        if (count($newBlocks) === 1) {
+            $idx = array_key_first($newBlocks);
+            $newId = $newBlocks[$idx]->getId();
+            $newMeta = $newBlocks[$idx]->getMeta();
+            $newNBT = $newBlocks[$idx]->getSerializedNbt();
 
-            foreach ($this->oldBlocks as $key => $oldBlock) {
-                $newBlock = $newBlock ?? $this->newBlocks[$key];
+            foreach ($oldBlocks as $key => $oldBlock) {
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
                 $oldNBT = $oldBlock->getSerializedNbt();
@@ -67,15 +75,15 @@ final class BlocksQueryGeneratorTask extends QueryGeneratorTask
                 $this->logId++;
             }
 
-        } elseif (($oldC = count($this->oldBlocks)) === ($newC = count($this->newBlocks))) {
-            foreach ($this->oldBlocks as $key => $oldBlock) {
+        } elseif (($oldC = count($oldBlocks)) === ($newC = count($newBlocks))) {
+            foreach ($oldBlocks as $key => $oldBlock) {
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
                 $oldNBT = $oldBlock->getSerializedNbt();
 
-                $newId = $this->newBlocks[$key]->getId();
-                $newMeta = $this->newBlocks[$key]->getMeta();
-                $newNBT = $this->newBlocks[$key]->getSerializedNbt();
+                $newId = $newBlocks[$key]->getId();
+                $newMeta = $newBlocks[$key]->getMeta();
+                $newNBT = $newBlocks[$key]->getSerializedNbt();
 
                 $query .= "('{$this->logId}', '{$oldId}', '{$oldMeta}', '{$oldNBT}', '{$newId}', '{$newMeta}', '{$newNBT}'),";
                 $this->logId++;
