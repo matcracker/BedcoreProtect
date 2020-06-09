@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\block\Air;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\Chest;
@@ -161,9 +162,9 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-            if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
-                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
         if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
+            if ($source instanceof Liquid && !$block instanceof Air) {
+                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::BREAK());
             }
         }
     }
