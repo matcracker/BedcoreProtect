@@ -161,9 +161,9 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($block->getLevel()))) {
             if ($source instanceof Liquid && $source->getId() === $source->getStillForm()->getId()) {
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::PLACE());
+        if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
             }
         }
     }
