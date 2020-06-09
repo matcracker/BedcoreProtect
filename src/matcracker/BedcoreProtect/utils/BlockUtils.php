@@ -31,6 +31,7 @@ use pocketmine\block\EnchantingTable;
 use pocketmine\block\EnderChest;
 use pocketmine\block\FenceGate;
 use pocketmine\block\Furnace;
+use pocketmine\block\IronDoor;
 use pocketmine\block\IronTrapdoor;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Lever;
@@ -60,7 +61,7 @@ final class BlockUtils
     public static function canBeClicked(Block $block): bool
     {
         static $blocks = [
-            WoodenDoor::class, Door::class,
+            WoodenDoor::class, IronDoor::class,
             IronTrapdoor::class, Trapdoor::class,//Remove Iron Trapdoor and Door classes when PM-MP supports redstone.
             ItemFrame::class, WoodenButton::class,
             Lever::class, FenceGate::class,
