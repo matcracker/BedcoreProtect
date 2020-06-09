@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use matcracker\BedcoreProtect\utils\EntityUtils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\Dirt;
@@ -45,7 +44,6 @@ use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
 use pocketmine\item\PaintingItem;
 use pocketmine\item\Shovel;
-use pocketmine\item\SpawnEgg;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\ClosureTask;
@@ -175,17 +173,6 @@ final class PlayerListener extends BedcoreListener
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new GrassPath(), Action::PLACE(), $clickedBlock->asPosition());
                             return;
                         }
-                    } elseif ($itemInHand instanceof SpawnEgg) {
-                        $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-                            function (int $currentTick) use ($player, $level, $replacedBlock, $itemInHand): void {
-                                $entity = $level->getNearestEntity($replacedBlock, 1, EntityUtils::getClassByNetworkId($itemInHand->getDamage()));
-
-                                if ($entity !== null) {
-                                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::PLACE());
-                                }
-                            }
-                        ), 1);
-                        return;
                     }
 
                     if (!$player->isSneaking() && BlockUtils::canBeClicked($clickedBlock)) {
