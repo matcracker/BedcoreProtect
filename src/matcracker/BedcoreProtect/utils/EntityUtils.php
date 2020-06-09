@@ -84,6 +84,8 @@ final class EntityUtils
     {
         $entity->saveNBT();
         $namedTag = clone $entity->namedtag;
+        $namedTag->setShort("Fire", 0);
+
         if ($entity instanceof Living) {
             $namedTag->setFloat("Health", $entity->getMaxHealth());
         }
