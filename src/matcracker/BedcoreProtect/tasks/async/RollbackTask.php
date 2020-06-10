@@ -27,6 +27,7 @@ use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
+use pocketmine\block\Liquid;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -115,6 +116,9 @@ final class RollbackTask extends AsyncTask
         $world->updateAllLight($block);
         foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
             $entity->onNearbyBlockChange();
+        }
+        if ($block instanceof Liquid) {
+            $block->onNearbyBlockChange();
         }
         $world->scheduleNeighbourBlockUpdates($block->asVector3());
     }
