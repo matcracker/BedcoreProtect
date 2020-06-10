@@ -165,8 +165,9 @@ final class BlockListener extends BedcoreListener
         $source = $event->getSource();
 
         if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
-            if ($source instanceof Liquid && !$block instanceof Air) {
-                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, Action::BREAK());
+            if ($source instanceof Liquid) {
+                $action = !$block instanceof Air ? Action::BREAK() : Action::PLACE();
+                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, $action, $block->asPosition());
             }
         }
     }
@@ -194,6 +195,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockForm(BlockFormEvent $event): void
     {
         $block = $event->getBlock();
+
         if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
             if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
                 $result = $event->getNewState();
