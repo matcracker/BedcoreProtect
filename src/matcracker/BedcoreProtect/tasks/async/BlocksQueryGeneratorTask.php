@@ -66,7 +66,7 @@ final class BlocksQueryGeneratorTask extends QueryGeneratorTask
             $newMeta = $newBlocks[$idx]->getMeta();
             $newNBT = $newBlocks[$idx]->getSerializedNbt();
 
-            foreach ($oldBlocks as $key => $oldBlock) {
+            foreach ($oldBlocks as $oldBlock) {
                 $oldId = $oldBlock->getId();
                 $oldMeta = $oldBlock->getMeta();
                 $oldNBT = $oldBlock->getSerializedNbt();
