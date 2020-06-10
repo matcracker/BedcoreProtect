@@ -118,8 +118,10 @@ final class BlockListener extends BedcoreListener
             if ($block instanceof Fallable) {
                 $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
             } elseif ($block instanceof WaterLily && $replacedBlock instanceof Water) {
-                $upPos = $block->getSide(Vector3::SIDE_UP)->asPosition();
-                $this->blocksQueries->addBlockLogByEntity($player, $this->air, $block, Action::PLACE(), $upPos);
+                $upPos = $block->getSide(Vector3::SIDE_UP);
+                if ($upPos instanceof Air) {
+                    $this->blocksQueries->addBlockLogByEntity($player, $this->air, $block, Action::PLACE(), $upPos->asPosition());
+                }
             } else {
                 //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
                 $this->plugin->getScheduler()->scheduleDelayedTask(
