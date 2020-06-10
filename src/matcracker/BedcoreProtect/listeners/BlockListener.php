@@ -21,7 +21,9 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
+use InvalidStateException;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\Bed;
@@ -39,9 +41,12 @@ use pocketmine\event\block\BlockBurnEvent;
 use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
+use pocketmine\event\block\SignChangeEvent;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
+use function array_filter;
+use function array_key_exists;
 use function count;
 
 final class BlockListener extends BedcoreListener
@@ -60,19 +65,9 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($level) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
-            if ($block instanceof Door) {
-                $top = $block->getDamage() & 0x08;
-                $other = $block->getSide($top ? Vector3::SIDE_DOWN : Vector3::SIDE_UP);
-                if ($other instanceof Door) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
-                }
-            } elseif ($block instanceof Bed) {
-                $other = $block->getOtherHalf();
-                if ($other !== null) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $other, $this->air, Action::BREAK(), $other->asPosition());
-                }
-            } elseif ($block instanceof Chest) {
+            if ($block instanceof Chest) {
                 $tileChest = BlockUtils::asTile($block);
+
                 if ($tileChest instanceof TileChest) {
                     $inventory = $tileChest->getRealInventory();
                     if (count($inventory->getContents()) > 0) {
@@ -81,22 +76,41 @@ final class BlockListener extends BedcoreListener
                 }
             }
 
-            if ($this->config->getNaturalBreak()) {
-                $sides = $block->getAllSides();
-                $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-                    function (int $currentTick) use ($player, $block, $level, $sides): void {
-                        $updSides = $level->getBlock($block->asVector3())->getAllSides();
-
-                        for ($i = 0, $maxI = count($updSides); $i < $maxI; $i++) {
-                            if (!($updSides[$i] instanceof $sides[$i])) {
-                                $this->blocksQueries->addBlockLogByEntity($player, $sides[$i], $this->air, Action::BREAK(), $sides[$i]->asPosition());
-                            }
-                        }
-                    }
-                ), 2);
-            }
-
             $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
+
+            if ($this->config->getNaturalBreak()) {
+                $sides = array_filter(
+                    BlockUtils::getRecursiveBlockSides($block),
+                    static function (Block $block): bool {
+                        return !$block instanceof Air;
+                    }
+                );
+
+                if (count($sides) > 0) {
+                    $this->blocksQueries->addScheduledBlocksLogByEntity(
+                        $player,
+                        $sides,
+                        Action::BREAK(),
+                        function (array &$oldBlocks) use ($level, $sides) : array {
+                            $newBlocks = [];
+                            foreach ($sides as $key => $side) {
+                                $updSide = $level->getBlock($side->asVector3());
+                                if ($updSide instanceof $side) {
+                                    if (!array_key_exists($key, $oldBlocks)) {
+                                        throw new InvalidStateException("Key {$key} is missing.");
+                                    }
+                                    unset($oldBlocks[$key]);
+                                } else {
+                                    $newBlocks[$key] = SerializableBlock::serialize($updSide);
+                                }
+                            }
+
+                            return $newBlocks;
+                        },
+                        2
+                    );
+                }
+            }
         }
     }
 

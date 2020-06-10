@@ -30,7 +30,6 @@ use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\UndoRollbackData;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\Player;
@@ -52,10 +51,11 @@ final class QueryManager
     private static $additionalReports = [];
     /** @var Area[] */
     private static $activeRollbacks = [];
+
+    /** @var Main */
+    private $plugin;
     /** @var DataConnector */
     private $connector;
-    /** @var ConfigParser */
-    private $configParser;
     /** @var PluginQueries */
     private $pluginQueries;
     /** @var BlocksQueries */
@@ -67,15 +67,15 @@ final class QueryManager
     /** @var UndoRollbackData[] */
     private $undoData = [];
 
-    public function __construct(DataConnector $connector, ConfigParser $configParser)
+    public function __construct(Main $plugin, DataConnector $connector)
     {
+        $this->plugin = $plugin;
         $this->connector = $connector;
-        $this->configParser = $configParser;
 
-        $this->pluginQueries = new PluginQueries($connector, $configParser);
-        $this->entitiesQueries = new EntitiesQueries($connector, $configParser);
-        $this->inventoriesQueries = new InventoriesQueries($connector, $configParser);
-        $this->blocksQueries = new BlocksQueries($connector, $configParser, $this->entitiesQueries, $this->inventoriesQueries);
+        $this->pluginQueries = new PluginQueries($plugin, $connector);
+        $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
+        $this->inventoriesQueries = new InventoriesQueries($plugin, $connector);
+        $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
     public static function addReportMessage(string $senderName, string $reportMessage, array $params = []): void
@@ -101,7 +101,7 @@ final class QueryManager
 
         Await::f2c(
             function () use ($pluginVersion): Generator {
-                if ($this->configParser->isSQLite()) {
+                if ($this->plugin->getParsedConfig()->isSQLite()) {
                     yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
                     yield $this->executeGeneric(QueriesConst::SET_SYNC_NORMAL);
                 }

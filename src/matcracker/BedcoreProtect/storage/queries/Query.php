@@ -25,6 +25,7 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\ConfigParser;
@@ -35,15 +36,18 @@ use function strtolower;
 
 abstract class Query
 {
+    /** @var Main */
+    protected $plugin;
     /** @var DataConnector */
     protected $connector;
     /** @var ConfigParser */
     protected $configParser;
 
-    public function __construct(DataConnector $connector, ConfigParser $configParser)
+    public function __construct(Main $plugin, DataConnector $connector)
     {
+        $this->plugin = $plugin;
         $this->connector = $connector;
-        $this->configParser = $configParser;
+        $this->configParser = $plugin->getParsedConfig();
     }
 
     public function rollback(Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void

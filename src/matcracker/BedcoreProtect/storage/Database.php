@@ -51,8 +51,6 @@ class Database
      */
     final public function connect(): bool
     {
-        $parsedConfig = $this->plugin->getParsedConfig();
-
         try {
             $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
                 'sqlite' => 'sqlite.sql',
@@ -63,12 +61,12 @@ class Database
             return false;
         }
 
-        $patchResource = $this->plugin->getResource('patches/' . $parsedConfig->getDatabaseType() . '_patch.sql');
+        $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
         if ($patchResource !== null) {
             $this->connector->loadQueryFile($patchResource);
         }
         $this->patchManager = new PatchManager($this->plugin, $this->connector);
-        $this->queryManager = new QueryManager($this->connector, $parsedConfig);
+        $this->queryManager = new QueryManager($this->plugin, $this->connector);
 
         return true;
     }

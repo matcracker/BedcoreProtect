@@ -24,13 +24,13 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use Closure;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\tasks\async\BlocksQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
@@ -41,6 +41,7 @@ use pocketmine\item\Item;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
+use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
 use pocketmine\tile\ItemFrame;
 use pocketmine\tile\Tile;
@@ -64,9 +65,9 @@ class BlocksQueries extends Query
     /** @var InventoriesQueries */
     protected $inventoriesQueries;
 
-    public function __construct(DataConnector $connector, ConfigParser $configParser, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
+    public function __construct(Main $plugin, DataConnector $connector, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {
-        parent::__construct($connector, $configParser);
+        parent::__construct($plugin, $connector);
         $this->entitiesQueries = $entitiesQueries;
         $this->inventoriesQueries = $inventoriesQueries;
     }
@@ -94,6 +95,36 @@ class BlocksQueries extends Query
                 yield $this->addRawBlockLog(EntityUtils::getUniqueId($entity), $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time);
             }
         );
+    }
+
+    /**
+     * @param Entity $entity
+     * @param Block[] $oldBlocks
+     * @param Action $action
+     * @param Closure $onTaskRun
+     * @param int $delay
+     */
+    final public function addScheduledBlocksLogByEntity(Entity $entity, array $oldBlocks, Action $action, Closure $onTaskRun, int $delay): void
+    {
+        $time = microtime(true);
+        $oldBlocks = array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::serialize($block);
+        }, $oldBlocks);
+
+        $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
+            function (int $currentTick) use ($entity, $oldBlocks, $action, $onTaskRun, $time) : void {
+                /** @var SerializableBlock[] $newBlocks */
+                $newBlocks = $onTaskRun($oldBlocks);
+
+                $this->addSerialBlocksLogByEntity(
+                    $entity,
+                    $oldBlocks,
+                    $newBlocks,
+                    $action,
+                    $time
+                );
+            }
+        ), $delay);
     }
 
     final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
@@ -198,8 +229,8 @@ class BlocksQueries extends Query
 
     /**
      * @param Entity $entity
-     * @param Block[] $oldBlocks
-     * @param Block[] $newBlocks
+     * @param SerializableBlock[] $oldBlocks
+     * @param SerializableBlock[] $newBlocks
      * @param Action $action
      * @param float $time
      */
@@ -209,16 +240,7 @@ class BlocksQueries extends Query
             return;
         }
 
-        $oldBlocks = array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
-        }, $oldBlocks);
-
-        $newBlocks = array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
-        }, $newBlocks);
-
         Await::f2c(
-            function () use ($entity, $oldBlocks, $newBlocks, $action) : Generator {
             function () use ($entity, $oldBlocks, $newBlocks, $action, $time) : Generator {
                 yield $this->entitiesQueries->addEntityGenerator($entity);
 
@@ -254,6 +276,27 @@ class BlocksQueries extends Query
     }
 
     protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
+    /**
+     * @param Entity $entity
+     * @param Block[] $oldBlocks
+     * @param Block[] $newBlocks
+     * @param Action $action
+     */
+    public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action): void
+    {
+        $this->addSerialBlocksLogByEntity(
+            $entity,
+            array_map(static function (Block $block): SerializableBlock {
+                return SerializableBlock::serialize($block);
+            }, $oldBlocks),
+            array_map(static function (Block $block): SerializableBlock {
+                return SerializableBlock::serialize($block);
+            }, $newBlocks),
+            $action,
+            microtime(true)
+        );
+    }
+
     {
         $prefix = $this->getRollbackPrefix($rollback);
         /** @var SerializableBlock[] $blocks */
