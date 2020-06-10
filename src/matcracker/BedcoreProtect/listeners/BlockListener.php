@@ -201,4 +201,19 @@ final class BlockListener extends BedcoreListener
             }
         }
     }
+
+    /**
+     * @param SignChangeEvent $event
+     *
+     * @priority MONITOR
+     * @ignoreCancelled
+     */
+    public function trackSignChange(SignChangeEvent $event): void
+    {
+        $block = $event->getBlock();
+
+        if ($this->config->isEnabledWorld($block->getLevelNonNull()) && $this->config->getSignText()) {
+            $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, Action::UPDATE());
+        }
+    }
 }

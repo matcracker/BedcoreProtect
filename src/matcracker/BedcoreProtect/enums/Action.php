@@ -39,6 +39,7 @@ use function array_key_exists;
  * @method static self KILL()
  * @method static self ADD()
  * @method static self REMOVE()
+ * @method static self UPDATE()
  */
 final class Action
 {
@@ -82,7 +83,8 @@ final class Action
             new self('despawn', 4, $lang->translateString('action.break')),
             new self('kill', 5, $lang->translateString('action.kill')),
             new self('add', 6, $lang->translateString('action.add')),
-            new self('remove', 7, $lang->translateString('action.remove'))
+            new self('remove', 7, $lang->translateString('action.remove')),
+            new self('update', 255, "update")
         );
     }
 
