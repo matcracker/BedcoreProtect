@@ -32,8 +32,10 @@ use pocketmine\block\Fire;
 use pocketmine\block\Grass;
 use pocketmine\block\GrassPath;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\Lava;
 use pocketmine\block\Liquid;
 use pocketmine\block\TNT;
+use pocketmine\block\Water;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
@@ -78,6 +80,7 @@ final class PlayerListener extends BedcoreListener
             $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
             $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getDamage() : $event->getItem()->getDamage();
+            /** @var Water|Lava $liquid */
             $liquid = BlockFactory::get($bucketMeta);
 
             if ($fireEmptyEvent) {
