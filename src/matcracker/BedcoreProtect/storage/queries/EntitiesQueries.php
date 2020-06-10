@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
@@ -148,37 +149,39 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $entityRows = [];
 
         if ($this->configParser->getRollbackEntities()) {
+            $world = $area->getWorld();
+
             $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
 
             foreach ($entityRows as $row) {
                 $action = Action::fromType((int)$row['action']);
-                if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
-                    $entityId = (int)$row['entityfrom_id'];
-                    $entity = $area->getWorld()->getEntity($entityId);
-                    if ($entity !== null) {
-                        $entity->close();
-                    }
-                } else {
-                    $logId = (int)$row['log_id'];
+                if (
+                    ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
+                    (!$rollback && $action->equals(Action::SPAWN()))
+                ) {
                     /** @var Entity $entityClass */
                     $entityClass = (string)$row['entity_classpath'];
-                    $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
-                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
+                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row['entityfrom_nbt']));
                     if ($entity !== null) {
-                        yield $this->updateEntityId($logId, $entity);
+                        yield $this->updateEntityId((int)$row['log_id'], $entity);
                         $entity->spawnToAll();
+                    }
+                } else {
+                    $entity = $world->getEntity((int)$row['entityfrom_id']);
+                    if ($entity !== null) {
+                        $entity->close();
                     }
                 }
             }
         }
 
         if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage($senderName, 'rollback.entities', [$entities]);
+            QueryManager::addReportMessage($commandParser->getSenderName(), 'rollback.entities', [$entities]);
         }
 
         $onComplete();

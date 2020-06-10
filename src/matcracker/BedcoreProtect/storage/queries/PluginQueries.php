@@ -99,7 +99,7 @@ class PluginQueries extends Query
         ], $onSuccess);
     }
 
-    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }

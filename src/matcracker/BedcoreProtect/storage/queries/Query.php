@@ -70,7 +70,7 @@ abstract class Query
                 yield $this->onRollback(
                     $rollback,
                     $area,
-                    $commandParser->getSenderName(),
+                    $commandParser,
                     $logIds,
                     function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
                         if ($onPreComplete) {
@@ -90,12 +90,12 @@ abstract class Query
     /**
      * @param bool $rollback
      * @param Area $area
-     * @param string $senderName
+     * @param CommandParser $commandParser
      * @param int[] $logIds
      * @param Closure $onComplete
      * @return Generator
      */
-    abstract protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator;
+    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator;
 
     /**
      * @param bool $rollback
@@ -149,10 +149,5 @@ abstract class Query
     {
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
-    }
-
-    final protected function getRollbackPrefix(bool $rollback): string
-    {
-        return $rollback ? 'old' : 'new';
     }
 }

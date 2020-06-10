@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableItem;
@@ -187,17 +188,17 @@ class InventoriesQueries extends Query
         Server::getInstance()->getAsyncPool()->submitTask($logsTask);
     }
 
-    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
-        $prefix = $this->getRollbackPrefix($rollback);
-
         $inventoryRows = [];
 
         if ($this->configParser->getRollbackItems()) {
             if ($rollback) {
                 $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
+                $prefix = 'old';
             } else {
                 $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds]);
+                $prefix = 'new';
             }
 
             foreach ($inventoryRows as $row) {
@@ -218,7 +219,7 @@ class InventoriesQueries extends Query
         }
 
         if (($items = count($inventoryRows)) > 0) {
-            QueryManager::addReportMessage($senderName, 'rollback.items', [$items]);
+            QueryManager::addReportMessage($commandParser->getSenderName(), 'rollback.items', [$items]);
         }
 
         $onComplete();

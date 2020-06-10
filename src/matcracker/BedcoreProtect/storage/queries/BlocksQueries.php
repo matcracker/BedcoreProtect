@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
@@ -275,7 +276,6 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, string $senderName, array $logIds, Closure $onComplete): Generator
     /**
      * @param Entity $entity
      * @param Block[] $oldBlocks
@@ -297,15 +297,17 @@ class BlocksQueries extends Query
         );
     }
 
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
-        $prefix = $this->getRollbackPrefix($rollback);
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
 
         if ($rollback) {
             $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ['log_ids' => $logIds]);
+            $prefix = 'old';
         } else {
             $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds]);
+            $prefix = 'new';
         }
 
         foreach ($blockRows as $row) {
@@ -329,6 +331,6 @@ class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $senderName, $blocks, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $commandParser->getSenderName(), $blocks, $onComplete));
     }
 }
