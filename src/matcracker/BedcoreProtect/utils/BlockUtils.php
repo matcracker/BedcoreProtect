@@ -150,6 +150,7 @@ final class BlockUtils
             BlockIds::BED_BLOCK => Tile::BED,
             BlockIds::BREWING_STAND_BLOCK => Tile::BREWING_STAND,
             BlockIds::CHEST => Tile::CHEST,
+            BlockIds::TRAPPED_CHEST => Tile::CHEST,
             BlockIds::ENCHANTING_TABLE => Tile::ENCHANT_TABLE,
             BlockIds::ENDER_CHEST => Tile::ENDER_CHEST,
             BlockIds::FLOWER_POT_BLOCK => Tile::FLOWER_POT,
