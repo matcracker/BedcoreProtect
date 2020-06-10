@@ -157,7 +157,7 @@ final class PlayerListener extends BedcoreListener
                             function (int $currentTick) use ($player, $level, $replacedBlock): void {
                                 $entity = $level->getNearestEntity($replacedBlock, 1, Painting::class);
                                 if ($entity !== null) {
-                                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::PLACE());
+                                    $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
                                 }
                             }
                         ), 1);

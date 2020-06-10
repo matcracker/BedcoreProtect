@@ -90,7 +90,7 @@ final class EntityListener extends BedcoreListener
             if ($entity instanceof Painting && $this->config->getBlockBreak()) {
                 $damager = $event->getDamager();
                 if ($damager !== null) {
-                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::BREAK());
+                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::DESPAWN());
                 }
             }
         }
