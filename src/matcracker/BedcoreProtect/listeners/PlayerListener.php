@@ -31,6 +31,7 @@ use pocketmine\block\Fire;
 use pocketmine\block\Grass;
 use pocketmine\block\GrassPath;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\Liquid;
 use pocketmine\block\TNT;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\inventory\InventoryTransactionEvent;
@@ -79,7 +80,7 @@ final class PlayerListener extends BedcoreListener
             $liquid = BlockFactory::get($bucketMeta);
 
             if ($fireEmptyEvent) {
-                if (!$block instanceof $liquid) {
+                if (!$block instanceof $liquid || ($block instanceof Liquid && !$block instanceof $liquid)) {
                     $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
                 }
             } else {
