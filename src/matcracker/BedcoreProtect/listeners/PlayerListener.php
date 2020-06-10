@@ -25,6 +25,7 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
+use pocketmine\block\Cake;
 use pocketmine\block\Dirt;
 use pocketmine\block\Farmland;
 use pocketmine\block\Fire;
@@ -172,6 +173,11 @@ final class PlayerListener extends BedcoreListener
                     } elseif ($itemInHand instanceof Shovel) {
                         if ($clickedBlock instanceof Grass) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new GrassPath(), Action::PLACE(), $clickedBlock->asPosition());
+                            return;
+                        }
+                    } elseif ($clickedBlock instanceof Cake) {
+                        if ($player->isSurvival() && $clickedBlock->getDamage() > 5) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
                             return;
                         }
                     }
