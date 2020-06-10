@@ -39,6 +39,7 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\tile\Chest;
@@ -201,7 +202,10 @@ class InventoriesQueries extends Query
 
             foreach ($inventoryRows as $row) {
                 $amount = (int)$row["{$prefix}_amount"];
-                $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
+                /** @var CompoundTag|null $nbt */
+                if (($nbt = $row["{$prefix}_nbt"]) !== null) {
+                    $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
+                }
                 $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
                 $vector = new Vector3((int)$row['x'], (int)$row['y'], (int)$row['z']);
                 $tile = $area->getWorld()->getTile($vector);
