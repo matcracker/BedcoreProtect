@@ -147,10 +147,11 @@ final class PlayerListener extends BedcoreListener
                     if ($itemInHand instanceof FlintSteel) {
                         if ($clickedBlock instanceof TNT) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                            return;
                         } elseif ($replacedBlock instanceof Air) {
                             $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                            return;
                         }
-                        return;
                     } elseif ($itemInHand instanceof PaintingItem) {
                         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
                             function (int $currentTick) use ($player, $level, $replacedBlock): void {
