@@ -30,7 +30,7 @@ use const DIRECTORY_SEPARATOR;
 final class ConfigUpdater
 {
     private const KEY_NOT_PRESENT = -1;
-    public const LAST_VERSION = 1;
+    public const LAST_VERSION = 0;
 
     private $plugin;
 
