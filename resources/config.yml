@@ -1,4 +1,7 @@
 ---
+# Configuration file version. DON'T EDIT!
+config-version: 0
+
 # Plugin language
 language: eng
 

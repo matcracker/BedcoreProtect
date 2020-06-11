@@ -32,6 +32,7 @@ use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\ConfigUpdater;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
 use function mkdir;
@@ -110,6 +111,8 @@ final class Main extends PluginBase
         self::$instance = $this;
 
         @mkdir($this->getDataFolder());
+
+        (new ConfigUpdater($this))->checkUpdate();
 
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
