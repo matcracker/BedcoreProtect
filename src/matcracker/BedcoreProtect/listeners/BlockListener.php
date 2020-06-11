@@ -47,6 +47,7 @@ use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
 use function array_filter;
 use function array_key_exists;
+use function array_merge;
 use function count;
 
 final class BlockListener extends BedcoreListener
@@ -67,7 +68,6 @@ final class BlockListener extends BedcoreListener
 
             if ($block instanceof Chest) {
                 $tileChest = BlockUtils::asTile($block);
-
                 if ($tileChest instanceof TileChest) {
                     $inventory = $tileChest->getRealInventory();
                     if (count($inventory->getContents()) > 0) {
@@ -79,37 +79,43 @@ final class BlockListener extends BedcoreListener
             $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
 
             if ($this->config->getNaturalBreak()) {
+                $sides = $block->getAllSides();
+                foreach ($sides as $side) {
+                    foreach ($side->getAffectedBlocks() as $affectedSide) {
+                        $sides = array_merge($sides, $affectedSide->getAllSides());
+                    }
+                }
+
                 $sides = array_filter(
-                    BlockUtils::getRecursiveBlockSides($block),
+                    $sides,
                     static function (Block $block): bool {
                         return !$block instanceof Air;
                     }
                 );
 
-                if (count($sides) > 0) {
-                    $this->blocksQueries->addScheduledBlocksLogByEntity(
-                        $player,
-                        $sides,
-                        Action::BREAK(),
-                        function (array &$oldBlocks) use ($level, $sides) : array {
-                            $newBlocks = [];
-                            foreach ($sides as $key => $side) {
-                                $updSide = $level->getBlock($side->asVector3());
-                                if ($updSide instanceof $side) {
-                                    if (!array_key_exists($key, $oldBlocks)) {
-                                        throw new InvalidStateException("Key {$key} is missing.");
-                                    }
-                                    unset($oldBlocks[$key]);
-                                } else {
-                                    $newBlocks[$key] = SerializableBlock::serialize($updSide);
+                $this->blocksQueries->addScheduledBlocksLogByEntity(
+                    $player,
+                    $sides,
+                    Action::BREAK(),
+                    function (array &$oldBlocks) use ($level, $sides) : array {
+                        $newBlocks = [];
+                        foreach ($sides as $key => $side) {
+                            /** @var Block $updSide */
+                            $updSide = $level->getBlock($side->asVector3());
+                            if ($updSide instanceof $side) {
+                                if (!array_key_exists($key, $oldBlocks)) {
+                                    throw new InvalidStateException("Key {$key} is missing.");
                                 }
+                                unset($oldBlocks[$key]);
+                            } else {
+                                $newBlocks[$key] = SerializableBlock::serialize($updSide);
                             }
+                        }
 
-                            return $newBlocks;
-                        },
-                        2
-                    );
-                }
+                        return $newBlocks;
+                    },
+                    2
+                );
             }
         }
     }

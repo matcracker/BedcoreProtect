@@ -107,6 +107,10 @@ class BlocksQueries extends Query
      */
     final public function addScheduledBlocksLogByEntity(Entity $entity, array $oldBlocks, Action $action, Closure $onTaskRun, int $delay): void
     {
+        if (count($oldBlocks) === 0) {
+            return;
+        }
+
         $time = microtime(true);
         $oldBlocks = array_map(static function (Block $block): SerializableBlock {
             return SerializableBlock::serialize($block);

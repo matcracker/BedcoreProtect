@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\block\Anvil;
-use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\BlockIds;
 use pocketmine\block\BrewingStand;
@@ -31,19 +30,12 @@ use pocketmine\block\Button;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
 use pocketmine\block\EnchantingTable;
-use pocketmine\block\Fallable;
 use pocketmine\block\FenceGate;
-use pocketmine\block\Flowable;
 use pocketmine\block\ItemFrame;
-use pocketmine\block\Ladder;
 use pocketmine\block\Lever;
-use pocketmine\block\SignPost;
-use pocketmine\block\StandingBanner;
 use pocketmine\block\Trapdoor;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\tile\Tile;
-use function array_merge;
-use function count;
 use function is_a;
 
 final class BlockUtils
@@ -93,70 +85,6 @@ final class BlockUtils
 
         foreach ($blockClasses as $blockClass) {
             if (is_a($block, $blockClass)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static function isConnectableBlock(Block $block): bool
-    {
-        static $blockClasses = [
-            Door::class, Bed::class,
-            SignPost::class, StandingBanner::class,
-            Flowable::class, Fallable::class,
-            Ladder::class
-        ];
-
-        foreach ($blockClasses as $blockClass) {
-            if (is_a($block, $blockClass)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param Block $block
-     * @param Block[] $prevSides
-     * @return Block[]
-     */
-    public static function getRecursiveBlockSides(Block $block, array $prevSides = []): array
-    {
-        $newSides = [];
-
-        if (count($prevSides) > 0) {
-            foreach ($block->getAllSides() as $side) {
-                if (!self::in_array($side, $prevSides)) {
-                    $newSides[] = $side;
-                }
-            }
-        } else {
-            $newSides = $block->getAllSides();
-        }
-
-        $prevSides = array_merge($prevSides, $newSides);
-
-        foreach ($newSides as $newSide) {
-            if (BlockUtils::isConnectableBlock($newSide)) {
-                return array_merge($newSides, self::getRecursiveBlockSides($newSide, array_merge([$block, $newSide], $prevSides)));
-            }
-        }
-
-        return $newSides;
-    }
-
-    /**
-     * @param Block $block
-     * @param Block[] $blocks
-     * @return bool
-     */
-    private static function in_array(Block $block, array $blocks): bool
-    {
-        foreach ($blocks as $b) {
-            if ($block->asVector3()->equals($b->asVector3())) {
                 return true;
             }
         }
