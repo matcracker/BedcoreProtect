@@ -100,12 +100,8 @@ final class BlockListener extends BedcoreListener
                     function (array &$oldBlocks) use ($level, $sides) : array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
-                            /** @var Block $updSide */
                             $updSide = $level->getBlock($side->asVector3());
                             if ($updSide instanceof $side) {
-                                if (!array_key_exists($key, $oldBlocks)) {
-                                    throw new InvalidStateException("Key {$key} is missing.");
-                                }
                                 unset($oldBlocks[$key]);
                             } else {
                                 $newBlocks[$key] = SerializableBlock::serialize($updSide);
