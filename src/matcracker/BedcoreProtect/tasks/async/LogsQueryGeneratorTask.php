@@ -33,32 +33,46 @@ final class LogsQueryGeneratorTask extends QueryGeneratorTask
     private $positions;
     /** @var Action */
     private $action;
+    /** @var float */
+    private $time;
+    /** @var bool */
+    private $isSQLite;
 
     /**
      * LogsQueryGen constructor.
      * @param string $uuid
      * @param SerializablePosition[] $positions
      * @param Action $action
+     * @param float $time
+     * @param bool $isSQLite
      * @param callable|null $onComplete
      */
-    public function __construct(string $uuid, array $positions, Action $action, ?callable $onComplete)
+    public function __construct(string $uuid, array $positions, Action $action, float $time, bool $isSQLite, ?callable $onComplete)
     {
         parent::__construct(-1, $onComplete);
         $this->uuid = $uuid;
         $this->positions = $positions;
         $this->action = $action;
+        $this->time = $time;
+        $this->isSQLite = $isSQLite;
     }
 
     public function onRun(): void
     {
         $query = /**@lang text */
-            'INSERT INTO log_history(who, x, y, z, world_name, action) VALUES';
+            'INSERT INTO log_history(who, x, y, z, world_name, action, time) VALUES';
+
+        if ($this->isSQLite) {
+            $qTime = "STRFTIME('%Y-%m-%d %H:%M:%f', {$this->time}, 'unixepoch', 'localtime')";
+        } else {
+            $qTime = "FROM_UNIXTIME({$this->time})";
+        }
 
         foreach ($this->positions as $position) {
             $x = $position->getX();
             $y = $position->getY();
             $z = $position->getZ();
-            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$this->uuid}'), '{$x}', '{$y}', '{$z}', '{$position->getWorldName()}', '{$this->action->getType()}'),";
+            $query .= "((SELECT uuid FROM entities WHERE uuid = '{$this->uuid}'), '{$x}', '{$y}', '{$z}', '{$position->getWorldName()}', '{$this->action->getType()}', {$qTime}),";
         }
 
         $query = mb_substr($query, 0, -1) . ';';

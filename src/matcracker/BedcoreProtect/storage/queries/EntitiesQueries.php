@@ -23,17 +23,18 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
+use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\serializable\SerializableEntity;
 use matcracker\BedcoreProtect\storage\QueryManager;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\entity\Entity;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
+use function get_class;
 use function microtime;
 
 /**
@@ -61,13 +62,19 @@ class EntitiesQueries extends Query
         );
     }
 
-    final protected function addRawEntity(string $uuid, string $name, string $classPath = '', string $address = '127.0.0.1'): Generator
+    /**
+     * @param string $uuid
+     * @param string $name
+     * @param string $classPath
+     * @return Generator
+     * @internal
+     */
+    final public function addRawEntity(string $uuid, string $name, string $classPath = ''): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
             'name' => $name,
-            'path' => $classPath,
-            'address' => $address
+            'path' => $classPath
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;
@@ -75,61 +82,66 @@ class EntitiesQueries extends Query
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
-        $damager = SerializableEntity::serialize($damager);
-        $entity = SerializableEntity::serialize($entity);
-
+        $entityNbt = EntityUtils::getSerializedNbt($entity);
+        $worldName = $entity->getLevelNonNull()->getName();
+        $time = microtime(true);
         Await::f2c(
-            function () use ($damager, $entity, $action): Generator {
+            function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
                 yield $this->addEntityGenerator($damager);
                 yield $this->addEntityGenerator($entity);
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($damager->getUniqueId(), $entity, $action);
-                yield $this->addEntityLog($lastId, $entity);
+                $lastId = yield $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->asVector3(), $worldName, $action, $time);
+                yield $this->addEntityLog($lastId, $entity, $entityNbt);
             }
         );
     }
 
     /**
-     * @param SerializableEntity $entity
+     * @param Entity $entity
      * @return Generator
      * @internal
      */
-    final public function addEntityGenerator(SerializableEntity $entity): Generator
+    final public function addEntityGenerator(Entity $entity): Generator
     {
-        return $this->addRawEntity($entity->getUniqueId(), $entity->getName(), $entity->getClassPath(), $entity->getAddress());
+        return $this->addRawEntity(
+            EntityUtils::getUniqueId($entity),
+            EntityUtils::getName($entity),
+            get_class($entity)
+        );
     }
 
-    final protected function addEntityLog(int $logId, SerializableEntity $entity): Generator
+    final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
             'log_id' => $logId,
-            'uuid' => $entity->getUniqueId(),
+            'uuid' => EntityUtils::getUniqueId($entity),
             'id' => $entity->getId(),
-            'nbt' => $entity->getSerializedNbt()
+            'nbt' => $serializedNbt
         ]);
     }
 
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
-        $entity = SerializableEntity::serialize($entity);
-        $block = SerializableBlock::serialize($block);
+        $serializedNbt = EntityUtils::getSerializedNbt($entity);
+        $worldName = $block->getLevelNonNull()->getName();
+        $time = microtime(true);
+
         Await::f2c(
-            function () use ($entity, $block, $action): Generator {
+            function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
                 yield $this->addEntityGenerator($entity);
 
                 $name = $block->getName();
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog("{$name}-uuid", $block, $action);
+                $lastId = yield $this->addRawLog("{$name}-uuid", $block->asVector3(), $worldName, $action, $time);
 
-                yield $this->addEntityLog($lastId, $entity);
+                yield $this->addEntityLog($lastId, $entity, $serializedNbt);
             }
         );
     }
 
     final public function addEntity(Entity $entity): void
     {
-        $entity = SerializableEntity::serialize($entity);
         Await::f2c(
             function () use ($entity): Generator {
                 yield $this->addEntityGenerator($entity);
@@ -137,37 +149,39 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $entityRows = [];
 
         if ($this->configParser->getRollbackEntities()) {
+            $world = $area->getWorld();
+
             $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
 
             foreach ($entityRows as $row) {
                 $action = Action::fromType((int)$row['action']);
-                if (($rollback && $action->equals(Action::SPAWN())) || (!$rollback && !$action->equals(Action::SPAWN()))) {
-                    $entityId = (int)$row['entityfrom_id'];
-                    $entity = $area->getWorld()->getEntity($entityId);
-                    if ($entity !== null) {
-                        $entity->close();
-                    }
-                } else {
-                    $logId = (int)$row['log_id'];
+                if (
+                    ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
+                    (!$rollback && $action->equals(Action::SPAWN()))
+                ) {
                     /** @var Entity $entityClass */
                     $entityClass = (string)$row['entity_classpath'];
-                    $nbt = Utils::deserializeNBT($row['entityfrom_nbt']);
-                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $area->getWorld(), $nbt);
+                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row['entityfrom_nbt']));
                     if ($entity !== null) {
-                        yield $this->updateEntityId($logId, $entity);
+                        yield $this->updateEntityId((int)$row['log_id'], $entity);
                         $entity->spawnToAll();
+                    }
+                } else {
+                    $entity = $world->getEntity((int)$row['entityfrom_id']);
+                    if ($entity !== null) {
+                        $entity->close();
                     }
                 }
             }
         }
 
         if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage(microtime(true) - $startTime, 'rollback.entities', [$entities]);
+            QueryManager::addReportMessage($commandParser->getSenderName(), 'rollback.entities', [$entities]);
         }
 
         $onComplete();

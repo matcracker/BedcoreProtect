@@ -1,10 +1,9 @@
 ---
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-version: 0.6.2
-api: 3.4.0
+version: 0.7.0
+api: 3.13.0
 
-softdepend: BlockSniper
 load: POSTWORLD
 author: matcracker
 description: "BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine server. Rollback and restore any amount of damage"

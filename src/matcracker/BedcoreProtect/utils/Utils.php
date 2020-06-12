@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
 use pocketmine\level\format\Chunk;
-use pocketmine\level\Level;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\NamedTag;
@@ -131,15 +130,6 @@ final class Utils
         }
 
         return $string . ' ago';
-    }
-
-    public static function getLevelNonNull(?Level $level): Level //TODO: remove when PMMP adds it.
-    {
-        if ($level === null) {
-            throw new UnexpectedValueException("Position world is null");
-        }
-
-        return $level;
     }
 
     /**

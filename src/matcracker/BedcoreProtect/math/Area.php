@@ -21,8 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\math;
 
+use InvalidStateException;
 use matcracker\BedcoreProtect\serializable\SerializablePosition;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
@@ -78,7 +78,12 @@ final class Area
 
     public function getWorld(): Level
     {
-        return Utils::getLevelNonNull(Server::getInstance()->getLevelByName($this->worldName));
+        $world = Server::getInstance()->getLevelByName($this->worldName);
+        if ($world === null) {
+            throw new InvalidStateException("Position world is null");
+        }
+
+        return $world;
     }
 
     /**

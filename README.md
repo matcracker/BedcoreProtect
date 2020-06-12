@@ -34,7 +34,6 @@ BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for Poc
 Rollback or restore multiple players at once.
 - Lookup, rollback, or restore by a specific action.
 - Exclude multiple blocks.
-- BlockSniper support.
 
 ...and much more!!
 
