@@ -30,7 +30,7 @@ use const DIRECTORY_SEPARATOR;
 final class ConfigUpdater
 {
     private const KEY_NOT_PRESENT = -1;
-    public const LAST_VERSION = 0;
+    public const LAST_VERSION = 1;
 
     private $plugin;
 
@@ -49,12 +49,12 @@ final class ConfigUpdater
         }
 
         if (!$this->saveConfigBackup()) {
-            $this->plugin->getLogger()->critical("Could not save the new configuration file.");
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("config.updater.save-error"));
             $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
             return;
         }
 
-        $this->plugin->getLogger()->critical("Your config.yml file is outdated and it has been saved a copy in the plugin data folder. Please update the new configuration file accordingly.");
+        $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("config.updater.outdated"));
     }
 
     private function saveConfigBackup(): bool
