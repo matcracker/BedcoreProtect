@@ -141,7 +141,7 @@ _Search through block data using the same parameters as /bcp rollback. Shortcut:
 _Allow to switch pages of /bcp lookup command. Shortcut: **"/bcp s"**._<br><br>
 When multiple pages returned from lookup command, use the command **"/bcp show \<page>"** to switch pages.<br>
 To change the number of lines displayed on a page, use the command **"/bcp show \<page>:\<lines>"**.<br><br>
-For example, **"/bcp l 1:10"** will return 10 lines of data, starting at the first page.
+For example, **"/bcp show 1:10"** will return 10 lines of data, starting at the first page.
 
 > **/bcp purge t=\<time>**<br>
 _Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>
