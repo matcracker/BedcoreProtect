@@ -39,6 +39,7 @@ use function array_key_exists;
  * @method static self KILL()
  * @method static self ADD()
  * @method static self REMOVE()
+ * @method static self UPDATE()
  */
 final class Action
 {
@@ -71,25 +72,20 @@ final class Action
         return self::$numericIdMap[$type];
     }
 
-    /**
-     * @return Action[]
-     */
-    protected static function setup(): array
+    protected static function setup(): void
     {
         $lang = Main::getInstance()->getLanguage();
-        return [
-            //Blocks actions
+        self::registerAll(
             new self('place', 0, $lang->translateString('action.place')),
             new self('break', 1, $lang->translateString('action.break')),
             new self('click', 2, $lang->translateString('action.click')),
-            //Entities actions
             new self('spawn', 3, $lang->translateString('action.place')),
             new self('despawn', 4, $lang->translateString('action.break')),
             new self('kill', 5, $lang->translateString('action.kill')),
-            //Inventories actions
             new self('add', 6, $lang->translateString('action.add')),
-            new self('remove', 7, $lang->translateString('action.remove'))
-        ];
+            new self('remove', 7, $lang->translateString('action.remove')),
+            new self('update', 255, "update")
+        );
     }
 
     protected static function register(Action $action): void

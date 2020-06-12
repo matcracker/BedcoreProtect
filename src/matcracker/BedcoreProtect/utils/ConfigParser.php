@@ -38,10 +38,8 @@ final class ConfigParser
 {
     /** @var Config */
     private $config;
-
     /** @var array */
     private $data = [];
-
     /** @var bool */
     private $isValid = false;
 
@@ -66,6 +64,10 @@ final class ConfigParser
 
     public function isSQLite(): bool
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException('The configuration must be validated.');
+        }
+
         return $this->getDatabaseType() === 'sqlite';
     }
 
@@ -84,6 +86,10 @@ final class ConfigParser
      */
     public function getDatabaseFileName(): string
     {
+        if (!$this->isValid) {
+            throw new BadMethodCallException('The configuration must be validated.');
+        }
+
         return (string)$this->data['database']['sqlite']['file'];
     }
 
@@ -265,14 +271,6 @@ final class ConfigParser
         }
 
         return (bool)$this->data['player-interactions'];
-    }
-
-    public function getBlockSniperHook(): bool
-    {
-        if (!$this->isValid) {
-            throw new BadMethodCallException('The configuration must be validated.');
-        }
-        return (bool)$this->data['blocksniper-hook'];
     }
 
     public function isValidConfig(): bool

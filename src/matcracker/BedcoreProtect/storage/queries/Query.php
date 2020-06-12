@@ -25,27 +25,29 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\serializable\SerializablePosition;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\ConfigParser;
+use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function floor;
-use function microtime;
 use function strtolower;
 
 abstract class Query
 {
+    /** @var Main */
+    protected $plugin;
     /** @var DataConnector */
     protected $connector;
     /** @var ConfigParser */
     protected $configParser;
 
-    public function __construct(DataConnector $connector, ConfigParser $configParser)
+    public function __construct(Main $plugin, DataConnector $connector)
     {
+        $this->plugin = $plugin;
         $this->connector = $connector;
-        $this->configParser = $configParser;
+        $this->configParser = $plugin->getParsedConfig();
     }
 
     public function rollback(Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
@@ -68,8 +70,8 @@ abstract class Query
                 yield $this->onRollback(
                     $rollback,
                     $area,
+                    $commandParser,
                     $logIds,
-                    microtime(true),
                     function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
                         if ($onPreComplete) {
                             $onPreComplete();
@@ -88,12 +90,12 @@ abstract class Query
     /**
      * @param bool $rollback
      * @param Area $area
+     * @param CommandParser $commandParser
      * @param int[] $logIds
-     * @param float $startTime
      * @param Closure $onComplete
      * @return Generator
      */
-    abstract protected function onRollback(bool $rollback, Area $area, array $logIds, float $startTime, Closure $onComplete): Generator;
+    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator;
 
     /**
      * @param bool $rollback
@@ -112,12 +114,6 @@ abstract class Query
         $this->rawRollback(false, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
-    final protected function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
     /**
      * @param string $query
      * @param array $args
@@ -130,15 +126,16 @@ abstract class Query
         return yield Await::ONCE;
     }
 
-    final protected function addRawLog(string $uuid, SerializablePosition $position, Action $action): Generator
+    final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
             'uuid' => strtolower($uuid),
-            'x' => (int)floor($position->getX()),
-            'y' => (int)floor($position->getY()),
-            'z' => (int)floor($position->getZ()),
-            'world_name' => $position->getWorldName(),
-            'action' => $action->getType()
+            'x' => $position->getFloorX(),
+            'y' => $position->getFloorY(),
+            'z' => $position->getFloorZ(),
+            'world_name' => $worldName,
+            'action' => $action->getType(),
+            'time' => $time
         ]);
     }
 
@@ -152,10 +149,5 @@ abstract class Query
     {
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
-    }
-
-    final protected function getRollbackPrefix(bool $rollback): string
-    {
-        return $rollback ? 'old' : 'new';
     }
 }

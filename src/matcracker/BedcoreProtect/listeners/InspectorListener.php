@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\ItemFrame;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
@@ -52,7 +51,7 @@ final class InspectorListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
+        if ($this->config->isEnabledWorld($player->getLevelNonNull())) {
             if (Inspector::isInspector($player)) { //It checks the block clicked
                 $this->pluginQueries->requestBlockLog($player, $event->getBlock());
                 $event->setCancelled();
@@ -69,7 +68,7 @@ final class InspectorListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if ($this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
+        if ($this->config->isEnabledWorld($player->getLevelNonNull())) {
             if (Inspector::isInspector($player)) { //It checks the block where the player places.
                 $this->pluginQueries->requestBlockLog($player, $event->getBlockReplaced());
                 $event->setCancelled();
@@ -86,7 +85,7 @@ final class InspectorListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if (Inspector::isInspector($player) && $this->config->isEnabledWorld(Utils::getLevelNonNull($player->getLevel()))) {
+        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getLevelNonNull())) {
             $clickedBlock = $event->getBlock();
 
             if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {

@@ -27,14 +27,12 @@ use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
-use pocketmine\event\block\BlockUpdateEvent;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use function count;
-use function microtime;
 
 final class RollbackTask extends AsyncTask
 {
@@ -42,10 +40,10 @@ final class RollbackTask extends AsyncTask
     protected $rollback;
     /** @var Area */
     protected $area;
+    /** @var string */
+    protected $senderName;
     /** @var SerializableBlock[] */
     protected $blocks;
-    /** @var float */
-    private $startTime;
     /** @var string[] */
     private $serializedChunks;
 
@@ -53,16 +51,16 @@ final class RollbackTask extends AsyncTask
      * RollbackTask constructor.
      * @param bool $rollback
      * @param Area $area
+     * @param string $senderName
      * @param SerializableBlock[] $blocks
-     * @param float $startTime
      * @param Closure $onComplete
      */
-    public function __construct(bool $rollback, Area $area, array $blocks, float $startTime, Closure $onComplete)
+    public function __construct(bool $rollback, Area $area, string $senderName, array $blocks, Closure $onComplete)
     {
         $this->rollback = $rollback;
         $this->area = $area;
+        $this->senderName = $senderName;
         $this->blocks = $blocks;
-        $this->startTime = $startTime;
 
         $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
         $this->storeLocal($onComplete);
@@ -77,10 +75,10 @@ final class RollbackTask extends AsyncTask
             $chunks[$hash] = Chunk::fastDeserialize($chunkData);
         }
 
-        foreach ($this->blocks as $vector) {
-            $index = Level::chunkHash($vector->getX() >> 4, $vector->getZ() >> 4);
+        foreach ($this->blocks as $block) {
+            $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
-                $chunks[$index]->setBlock((int)$vector->getX() & 0x0f, (int)$vector->getY(), (int)$vector->getZ() & 0x0f, $vector->getId(), $vector->getMeta());
+                $chunks[$index]->setBlock((int)$block->getX() & 0x0f, (int)$block->getY(), (int)$block->getZ() & 0x0f, $block->getId(), $block->getMeta());
             }
         }
 
@@ -104,9 +102,9 @@ final class RollbackTask extends AsyncTask
             /**@var Closure|null $onComplete */
             $onComplete = $this->fetchLocal();
 
-            QueryManager::addReportMessage(microtime(true) - $this->startTime, 'rollback.blocks', [count($this->blocks)]);
+            QueryManager::addReportMessage($this->senderName, 'rollback.blocks', [count($this->blocks)]);
             //Set the execution time to 0 to avoid duplication of time in the same operation.
-            QueryManager::addReportMessage(0, 'rollback.modified-chunks', [count($chunks)]);
+            QueryManager::addReportMessage($this->senderName, 'rollback.modified-chunks', [count($chunks)]);
 
             $onComplete();
         }
@@ -115,15 +113,9 @@ final class RollbackTask extends AsyncTask
     private function updateBlock(Level $world, Block $block): void
     {
         $world->updateAllLight($block);
-
-        $ev = new BlockUpdateEvent($block);
-        $ev->call();
-        if (!$ev->isCancelled()) {
-            foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
-                $entity->onNearbyBlockChange();
-            }
-            $ev->getBlock()->onNearbyBlockChange();
-            $world->scheduleNeighbourBlockUpdates($block->asVector3());
+        foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
+            $entity->onNearbyBlockChange();
         }
+        $world->scheduleNeighbourBlockUpdates($block->asVector3());
     }
 }

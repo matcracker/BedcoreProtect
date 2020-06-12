@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
-use BlockHorizons\BlockSniper\sessions\SessionManager;
 use Generator;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
@@ -29,11 +28,9 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\ui\Forms;
-use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\PluginIdentifiableCommand;
-use pocketmine\math\AxisAlignedBB;
 use pocketmine\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\utils\TextFormat;
@@ -119,7 +116,6 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$pluginVersion])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-connection', [$config->getPrintableDatabaseType()])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.database-version', [$dbVersion])));
-                        $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.blocksniper-hook', [$this->plugin->isBlockSniperHooked() ? $lang->translateString("generic.yes") : $lang->translateString("generic.no")])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.author', [implode(', ', $description->getAuthors())])));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.website', [$description->getWebsite()])));
                     }
@@ -176,7 +172,6 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.success')));
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });
-
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
@@ -233,10 +228,10 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $level = Utils::getLevelNonNull($sender->getLevel());
+                        $level = $sender->getLevelNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$level->getName()])));
 
-                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? 0);
+                        $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? 0);
                         $this->queryManager->rollback(new Area($level, $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
@@ -250,10 +245,10 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
                     if ($parser->parse()) {
-                        $level = Utils::getLevelNonNull($sender->getLevel());
+                        $level = $sender->getLevelNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.restore.started', [$level->getName()])));
 
-                        $bb = $this->getSelectionArea($sender) ?? MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius());
+                        $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius());
                         $this->queryManager->restore(new Area($level, $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
@@ -290,21 +285,6 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
         }
 
         return $subCmd;
-    }
-
-    private function getSelectionArea(Player $player): ?AxisAlignedBB
-    {
-        if ($this->plugin->isBlockSniperHooked()) {
-            $session = SessionManager::getPlayerSession($player);
-            if ($session !== null) {
-                $selection = $session->getSelection();
-                if ($selection->ready()) {
-                    return $selection->box();
-                }
-            }
-        }
-
-        return null;
     }
 
     /**
