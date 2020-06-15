@@ -112,8 +112,6 @@ final class Main extends PluginBase
 
         @mkdir($this->getDataFolder());
 
-        (new ConfigUpdater($this))->checkUpdate();
-
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -121,9 +119,10 @@ final class Main extends PluginBase
             return;
         }
 
-        $this->saveResource($this->configParser->getDatabaseFileName());
-
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+        (new ConfigUpdater($this))->checkUpdate();
+
+        $this->saveResource($this->configParser->getDatabaseFileName());
 
         if ($this->configParser->getCheckUpdates()) {
             UpdateNotifier::checkUpdate($this->getName(), $this->getDescription()->getVersion());
