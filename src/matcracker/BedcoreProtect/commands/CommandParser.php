@@ -48,7 +48,7 @@ use function implode;
 use function in_array;
 use function intval;
 use function mb_substr;
-use function strtolower;
+use function mb_strtolower;
 use function time;
 
 final class CommandParser
@@ -147,7 +147,7 @@ final class CommandParser
                 return false;
             }
 
-            $param = strtolower($arrayData[0]);
+            $param = mb_strtolower($arrayData[0]);
             $paramValues = (string)$arrayData[1];
 
             switch ($param) {
@@ -204,7 +204,7 @@ final class CommandParser
                     break;
                 case 'action':
                 case 'a':
-                    $paramValues = strtolower($paramValues);
+                    $paramValues = mb_strtolower($paramValues);
                     if (!array_key_exists($paramValues, self::$ACTIONS)) {
                         $this->errorMessage = $lang->translateString('parser.invalid-action', [$paramValues, implode(', ', array_keys(self::$ACTIONS))]);
 

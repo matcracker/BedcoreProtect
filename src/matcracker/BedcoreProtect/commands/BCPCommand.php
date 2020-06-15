@@ -39,7 +39,7 @@ use function count;
 use function ctype_digit;
 use function explode;
 use function implode;
-use function strtolower;
+use function mb_strtolower;
 use function version_compare;
 use const PHP_INT_MAX;
 
@@ -72,7 +72,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
             return false;
         }
 
-        $subCmd = $this->removeAbbreviation(strtolower($args[0]));
+        $subCmd = $this->removeAbbreviation(mb_strtolower($args[0]));
         if (!$sender->hasPermission("bcp.subcommand.{$subCmd}") || !$sender->hasPermission('bcp.command.bedcoreprotect')) {
             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.no-permission')));
 

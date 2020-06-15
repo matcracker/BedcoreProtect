@@ -32,7 +32,7 @@ use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function strtolower;
+use function mb_strtolower;
 
 abstract class Query
 {
@@ -129,7 +129,7 @@ abstract class Query
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => strtolower($uuid),
+            'uuid' => mb_strtolower($uuid),
             'x' => $position->getFloorX(),
             'y' => $position->getFloorY(),
             'z' => $position->getFloorZ(),
