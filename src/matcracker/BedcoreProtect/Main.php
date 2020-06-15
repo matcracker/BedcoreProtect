@@ -190,6 +190,5 @@ final class Main extends PluginBase
         $this->database->disconnect();
 
         Inspector::removeAll();
-        unset($this->database, $this->baseLang, $this->configParser, $this->oldConfigParser, $this->events);
     }
 }
