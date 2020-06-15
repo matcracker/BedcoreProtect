@@ -11,7 +11,7 @@
 0.6.2:
   sqlite: 16
   mysql: 16
-0.7.0:
+0.7.1:
   sqlite: 4
   mysql: 1
 ...
