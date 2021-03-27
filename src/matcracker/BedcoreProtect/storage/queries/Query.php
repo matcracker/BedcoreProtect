@@ -128,7 +128,7 @@ abstract class Query
 
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
-        return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
+        return $this->connector->asyncInsert(QueriesConst::ADD_HISTORY_LOG, [
             'uuid' => mb_strtolower($uuid),
             'x' => $position->getFloorX(),
             'y' => $position->getFloorY(),
@@ -137,17 +137,5 @@ abstract class Query
             'action' => $action->getType(),
             'time' => $time
         ]);
-    }
-
-    final protected function executeInsert(string $query, array $args = []): Generator
-    {
-        $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    final protected function executeSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 }

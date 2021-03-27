@@ -137,7 +137,7 @@ class BlocksQueries extends Query
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
-        return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
+        return yield $this->connector->asyncInsert(QueriesConst::ADD_BLOCK_LOG, [
             'log_id' => $lastId,
             'old_id' => $oldBlock->getId(),
             'old_meta' => $oldBlock->getDamage(),
@@ -307,10 +307,10 @@ class BlocksQueries extends Query
         $blocks = [];
 
         if ($rollback) {
-            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ['log_ids' => $logIds]);
+            $blockRows = yield $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ['log_ids' => $logIds]);
             $prefix = 'old';
         } else {
-            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds]);
+            $blockRows = yield $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds]);
             $prefix = 'new';
         }
 

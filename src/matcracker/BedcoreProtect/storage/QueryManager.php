@@ -102,33 +102,21 @@ final class QueryManager
         Await::f2c(
             function () use ($pluginVersion): Generator {
                 if ($this->plugin->getParsedConfig()->isSQLite()) {
-                    yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
-                    yield $this->executeGeneric(QueriesConst::SET_SYNC_NORMAL);
+                    yield $this->connector->asyncGeneric(QueriesConst::ENABLE_WAL_MODE);
+                    yield $this->connector->asyncGeneric(QueriesConst::SET_SYNC_NORMAL);
                 }
 
-                yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
+                yield $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
                 foreach (QueriesConst::INIT_TABLES as $queryTable) {
-                    yield $this->executeGeneric($queryTable);
+                    yield $this->connector->asyncGeneric($queryTable);
                 }
 
-                yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ['version' => $pluginVersion]);
+                yield $this->connector->asyncInsert(QueriesConst::ADD_DATABASE_VERSION, ['version' => $pluginVersion]);
             }
         );
 
         $this->connector->waitAll();
-    }
-
-    private function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    private function executeInsert(string $query, array $args = []): Generator
-    {
-        $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 
     public function setupDefaultData(): void

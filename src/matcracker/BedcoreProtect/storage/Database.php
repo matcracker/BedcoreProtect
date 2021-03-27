@@ -108,8 +108,7 @@ class Database
             $this->throwDatabaseException();
         }
 
-        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
-        return yield Await::ONCE;
+        return $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
     }
 
     /**

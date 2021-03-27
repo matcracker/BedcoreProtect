@@ -114,7 +114,7 @@ class InventoriesQueries extends Query
 
     final protected function addInventorySlotLog(int $logId, int $slot, Item $oldItem, Item $newItem): Generator
     {
-        $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
+        return $this->connector->asyncInsert(QueriesConst::ADD_INVENTORY_LOG, [
             'log_id' => $logId,
             'slot' => $slot,
             'old_id' => $oldItem->getId(),
@@ -125,9 +125,7 @@ class InventoriesQueries extends Query
             'new_meta' => $newItem->getDamage(),
             'new_nbt' => Utils::serializeNBT($newItem->getNamedTag()),
             'new_amount' => $newItem->getCount()
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 
     /**
@@ -194,10 +192,10 @@ class InventoriesQueries extends Query
 
         if ($this->configParser->getRollbackItems()) {
             if ($rollback) {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
+                $inventoryRows = yield $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
                 $prefix = 'old';
             } else {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds]);
+                $inventoryRows = yield $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds]);
                 $prefix = 'new';
             }
 

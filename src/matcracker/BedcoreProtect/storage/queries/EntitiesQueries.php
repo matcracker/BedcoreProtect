@@ -71,13 +71,11 @@ class EntitiesQueries extends Query
      */
     final public function addRawEntity(string $uuid, string $name, string $classPath = ''): Generator
     {
-        $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
+        return yield $this->connector->asyncInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
             'name' => $name,
             'path' => $classPath
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
@@ -113,7 +111,7 @@ class EntitiesQueries extends Query
 
     final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
-        return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+        return $this->connector->asyncInsert(QueriesConst::ADD_ENTITY_LOG, [
             'log_id' => $logId,
             'uuid' => EntityUtils::getUniqueId($entity),
             'id' => $entity->getId(),
@@ -156,7 +154,7 @@ class EntitiesQueries extends Query
         if ($this->configParser->getRollbackEntities()) {
             $world = $area->getWorld();
 
-            $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
+            $entityRows = yield $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
 
             foreach ($entityRows as $row) {
                 $action = Action::fromType((int)$row['action']);
@@ -189,11 +187,9 @@ class EntitiesQueries extends Query
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator
     {
-        $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
+        return $this->connector->asyncInsert(QueriesConst::UPDATE_ENTITY_ID, [
             'log_id' => $logId,
             'entity_id' => $entity->getId()
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 }
