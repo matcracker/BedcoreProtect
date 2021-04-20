@@ -155,9 +155,6 @@ final class CommandParser
                 case 'user':
                 case 'u':
                     $users = explode(',', $paramValues);
-                    if (count($users) < 1) {
-                        return false;
-                    }
 
                     foreach ($users as &$user) {
                         if (mb_substr($user, 0, 1) === '#') { //Entity

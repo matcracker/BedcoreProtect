@@ -119,22 +119,6 @@ final class EntityUtils
     }
 
     /**
-     * Returns the entity class from the its network ID.
-     * @param int $networkId
-     * @return string
-     * @phpstan-return class-string<Entity>
-     */
-    public static function getClassByNetworkId(int $networkId): string
-    {
-        $values = self::getKnownEntities();
-        if (!array_key_exists($networkId, $values)) {
-            throw new InvalidArgumentException("The network ID \"{$networkId}\" is not registered.");
-        }
-
-        return $values[$networkId];
-    }
-
-    /**
      * @param string $property
      * @return mixed
      */

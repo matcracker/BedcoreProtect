@@ -239,7 +239,7 @@ class BlocksQueries extends Query
      * @param Action $action
      * @param float $time
      */
-    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time)
+    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time) : void
     {
         if (count($oldBlocks) === 0 || count($newBlocks) === 0) {
             return;
