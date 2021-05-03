@@ -47,19 +47,24 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
-        Await::f2c(
-            function (): Generator {
-                $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-                yield $this->addRawEntity($serverUuid, '#console');
-                yield $this->addRawEntity('flow-uuid', '#flow');
-                yield $this->addRawEntity('water-uuid', '#water');
-                yield $this->addRawEntity('still water-uuid', '#water');
-                yield $this->addRawEntity('lava-uuid', '#lava');
-                yield $this->addRawEntity('still lava-uuid', '#lava');
-                yield $this->addRawEntity('fire block-uuid', '#fire');
-                yield $this->addRawEntity('leaves-uuid', '#decay');
+        static $map = [
+            "flow-uuid" => "#flow",
+            "water-uuid" => "#water",
+            "still water-uuid" => "#water",
+            "lava-uuid" => "#lava",
+            "still lava-uuid" => "#lava",
+            "fire block-uuid" => "#fire",
+            "leaves-uuid" => "#decay"
+        ];
+
+        Await::f2c(function () use ($map): Generator {
+            $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
+
+            yield $this->addRawEntity($serverUuid, '#console');
+            foreach ($map as $uuid => $name) {
+                yield $this->addRawEntity($uuid, $name, "");
             }
-        );
+        });
     }
 
     /**

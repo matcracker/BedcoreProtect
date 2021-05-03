@@ -257,25 +257,16 @@ final class QueryManager
         unset(self::$additionalReports[$senderName]);
     }
 
-    /**
-     * @return BlocksQueries
-     */
     public function getBlocksQueries(): BlocksQueries
     {
         return $this->blocksQueries;
     }
 
-    /**
-     * @return InventoriesQueries
-     */
     public function getInventoriesQueries(): InventoriesQueries
     {
         return $this->inventoriesQueries;
     }
 
-    /**
-     * @return EntitiesQueries
-     */
     public function getEntitiesQueries(): EntitiesQueries
     {
         return $this->entitiesQueries;
@@ -298,9 +289,6 @@ final class QueryManager
         $this->rawRollback(false, $area, $commandParser);
     }
 
-    /**
-     * @return PluginQueries
-     */
     public function getPluginQueries(): PluginQueries
     {
         return $this->pluginQueries;
