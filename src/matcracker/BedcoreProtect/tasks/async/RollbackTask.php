@@ -26,10 +26,10 @@ use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\block\Block;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
+use pocketmine\math\Vector3;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use function count;
@@ -96,7 +96,7 @@ final class RollbackTask extends AsyncTask
             }
 
             foreach ($this->blocks as $block) {
-                $this->updateBlock($world, $block->unserialize());
+                $this->updatePosition($world, $block->asVector3()->floor());
             }
 
             /**@var Closure|null $onComplete */
@@ -110,12 +110,12 @@ final class RollbackTask extends AsyncTask
         }
     }
 
-    private function updateBlock(Level $world, Block $block): void
+    private function updatePosition(Level $world, Vector3 $vector3): void
     {
-        $world->updateAllLight($block);
-        foreach ($world->getNearbyEntities(new AxisAlignedBB($block->x - 1, $block->y - 1, $block->z - 1, $block->x + 2, $block->y + 2, $block->z + 2)) as $entity) {
+        $world->updateAllLight($vector3);
+        foreach ($world->getNearbyEntities(new AxisAlignedBB($vector3->x - 1, $vector3->y - 1, $vector3->z - 1, $vector3->x + 2, $vector3->y + 2, $vector3->z + 2)) as $entity) {
             $entity->onNearbyBlockChange();
         }
-        $world->scheduleNeighbourBlockUpdates($block->asVector3());
+        $world->scheduleNeighbourBlockUpdates($vector3);
     }
 }
