@@ -102,6 +102,22 @@ class BlocksQueries extends Query
         );
     }
 
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    {
+        /** @var int $lastId */
+        $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
+
+        return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
+            'log_id' => $lastId,
+            'old_id' => $oldBlock->getId(),
+            'old_meta' => $oldBlock->getDamage(),
+            'old_nbt' => $oldNbt,
+            'new_id' => $newBlock->getId(),
+            'new_meta' => $newBlock->getDamage(),
+            'new_nbt' => $newNbt
+        ]);
+    }
+
     /**
      * @param Entity $entity
      * @param Block[] $oldBlocks
@@ -133,20 +149,77 @@ class BlocksQueries extends Query
         ), $delay);
     }
 
-    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    /**
+     * @param Entity $entity
+     * @param Block[] $oldBlocks
+     * @param Block[] $newBlocks
+     * @param Action $action
+     * @param float $time
+     */
+    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time): void
     {
-        /** @var int $lastId */
-        $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
+        $cntOldBlocks = count($oldBlocks);
+        $cntNewBlocks = count($newBlocks);
 
-        return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            'log_id' => $lastId,
-            'old_id' => $oldBlock->getId(),
-            'old_meta' => $oldBlock->getDamage(),
-            'old_nbt' => $oldNbt,
-            'new_id' => $newBlock->getId(),
-            'new_meta' => $newBlock->getDamage(),
-            'new_nbt' => $newNbt
-        ]);
+        if ($cntOldBlocks === 0 || $cntNewBlocks === 0) {
+            return;
+
+        } elseif ($cntNewBlocks === 1) {
+            $newSerBlocks = [SerializableBlock::serialize($newBlocks[array_key_first($newBlocks)])];
+
+        } elseif ($cntOldBlocks === $cntNewBlocks) {
+            $newSerBlocks = array_map(static function (Block $block): SerializableBlock {
+                return SerializableBlock::serialize($block);
+            }, $newBlocks);
+
+        } else {
+            throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
+        }
+
+        $oldSerBlocks = array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::serialize($block);
+        }, $oldBlocks);
+
+        $uuidEntity = EntityUtils::getUniqueId($entity);
+        $worldName = $entity->getLevelNonNull()->getName();
+
+        $this->mutexBlock->putClosure(
+            function () use ($entity, $uuidEntity, $oldSerBlocks, $newSerBlocks, $cntNewBlocks, $worldName, $action, $time): Generator {
+                yield $this->entitiesQueries->addEntity($entity);
+
+                yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+
+                if ($cntNewBlocks === 1) {
+                    $newBlock = $newSerBlocks[0];
+
+                    foreach ($oldSerBlocks as $oldBlock) {
+                        yield $this->addRawSerialBlockLog(
+                            $uuidEntity,
+                            $oldBlock,
+                            $newBlock,
+                            $oldBlock->asVector3(),
+                            $worldName,
+                            $action,
+                            $time
+                        );
+                    }
+                } else {
+                    foreach ($oldSerBlocks as $key => $oldBlock) {
+                        yield $this->addRawSerialBlockLog(
+                            $uuidEntity,
+                            $oldBlock,
+                            $newSerBlocks[$key],
+                            $oldBlock->asVector3(),
+                            $worldName,
+                            $action,
+                            $time
+                        );
+                    }
+                }
+
+                yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+            }
+        );
     }
 
     final protected function addRawSerialBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Vector3 $position, string $worldName, Action $action, float $time): Generator
@@ -243,79 +316,6 @@ class BlocksQueries extends Query
                 if (!$action->equals(Action::CLICK())) {
                     $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $position, $worldName);
                 }
-            }
-        );
-    }
-
-    /**
-     * @param Entity $entity
-     * @param Block[] $oldBlocks
-     * @param Block[] $newBlocks
-     * @param Action $action
-     * @param float $time
-     */
-    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time): void
-    {
-        $cntOldBlocks = count($oldBlocks);
-        $cntNewBlocks = count($newBlocks);
-
-        if ($cntOldBlocks === 0 || $cntNewBlocks === 0) {
-            return;
-
-        } elseif ($cntNewBlocks === 1) {
-            $newSerBlocks = [SerializableBlock::serialize($newBlocks[array_key_first($newBlocks)])];
-
-        } elseif ($cntOldBlocks === $cntNewBlocks) {
-            $newSerBlocks = array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::serialize($block);
-            }, $newBlocks);
-
-        } else {
-            throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
-        }
-
-        $oldSerBlocks = array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
-        }, $oldBlocks);
-
-        $uuidEntity = EntityUtils::getUniqueId($entity);
-        $worldName = $entity->getLevelNonNull()->getName();
-
-        $this->mutexBlock->putClosure(
-            function () use ($entity, $uuidEntity, $oldSerBlocks, $newSerBlocks, $cntNewBlocks, $worldName, $action, $time): Generator {
-                yield $this->entitiesQueries->addEntity($entity);
-
-                yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
-
-                if ($cntNewBlocks === 1) {
-                    $newBlock = $newSerBlocks[0];
-
-                    foreach ($oldSerBlocks as $oldBlock) {
-                        yield $this->addRawSerialBlockLog(
-                            $uuidEntity,
-                            $oldBlock,
-                            $newBlock,
-                            $oldBlock->asVector3(),
-                            $worldName,
-                            $action,
-                            $time
-                        );
-                    }
-                } else {
-                    foreach ($oldSerBlocks as $key => $oldBlock) {
-                        yield $this->addRawSerialBlockLog(
-                            $uuidEntity,
-                            $oldBlock,
-                            $newSerBlocks[$key],
-                            $oldBlock->asVector3(),
-                            $worldName,
-                            $action,
-                            $time
-                        );
-                    }
-                }
-
-                yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
             }
         );
     }

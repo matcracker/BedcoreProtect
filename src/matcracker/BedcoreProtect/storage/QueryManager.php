@@ -85,14 +85,6 @@ final class QueryManager
         self::$additionalReports[$senderName]['messages'][] = TextFormat::colorize('&f- ' . $lang->translateString($reportMessage, $params));
     }
 
-    private static function initAdditionReports(string $senderName): void
-    {
-        self::$additionalReports[$senderName] = [
-            'messages' => [],
-            'startTime' => microtime(true)
-        ];
-    }
-
     public function init(string $pluginVersion): void
     {
         if (!preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $pluginVersion)) {
@@ -172,7 +164,7 @@ final class QueryManager
         self::initAdditionReports($senderName);
 
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $senderName, $logIds) : Generator {
+            function () use ($rollback, $area, $commandParser, $senderName, $logIds): Generator {
                 /** @var int[] $logIds */
                 $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $area, $commandParser);
                 if (count($logIds) === 0) { //No changes.
@@ -204,6 +196,14 @@ final class QueryManager
                 );
             }
         );
+    }
+
+    private static function initAdditionReports(string $senderName): void
+    {
+        self::$additionalReports[$senderName] = [
+            'messages' => [],
+            'startTime' => microtime(true)
+        ];
     }
 
     private function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator

@@ -47,8 +47,8 @@ use function explode;
 use function implode;
 use function in_array;
 use function intval;
-use function mb_substr;
 use function mb_strtolower;
+use function mb_substr;
 use function time;
 
 final class CommandParser

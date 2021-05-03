@@ -66,7 +66,7 @@ abstract class Query
     public function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback) : Generator {
+            function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): Generator {
                 yield $this->onRollback(
                     $rollback,
                     $area,

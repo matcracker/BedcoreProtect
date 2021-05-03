@@ -103,7 +103,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'status':
                 Await::f2c(
-                    function () use ($sender, $config, $lang) : Generator {
+                    function () use ($sender, $config, $lang): Generator {
                         $description = $this->plugin->getDescription();
                         $pluginVersion = $description->getVersion();
                         $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];

@@ -28,7 +28,6 @@ use pocketmine\entity\Living;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
-use function array_key_exists;
 use function array_merge;
 use function strval;
 
@@ -110,15 +109,6 @@ final class EntityUtils
     }
 
     /**
-     * Returns an array with all registered entities.
-     * @return string[]
-     */
-    public static function getKnownEntities(): array
-    {
-        return (array)self::getEntityProperty('knownEntities');
-    }
-
-    /**
      * @param string $property
      * @return mixed
      */
@@ -134,5 +124,14 @@ final class EntityUtils
         } catch (ReflectionException $exception) {
             throw new InvalidArgumentException("Could not get \"{$property}\" entity property.");
         }
+    }
+
+    /**
+     * Returns an array with all registered entities.
+     * @return string[]
+     */
+    public static function getKnownEntities(): array
+    {
+        return (array)self::getEntityProperty('knownEntities');
     }
 }
