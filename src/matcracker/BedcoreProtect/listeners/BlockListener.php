@@ -94,7 +94,7 @@ final class BlockListener extends BedcoreListener
                             if ($updSide instanceof $side) {
                                 unset($oldBlocks[$key]);
                             } else {
-                                $newBlocks[$key] = SerializableBlock::serialize($updSide);
+                                $newBlocks[$key] = $updSide;
                             }
                         }
 

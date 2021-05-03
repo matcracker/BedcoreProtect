@@ -85,6 +85,12 @@ PRAGMA synchronous = NORMAL;
 -- #            :flag bool
 PRAGMA foreign_keys = :flag;
 -- #        }
+-- #        {begin_transaction
+BEGIN TRANSACTION;
+-- #        }
+-- #        {end_transaction
+END TRANSACTION;
+-- #        }
 -- #    }
 -- #    {add
 -- #        {entity
