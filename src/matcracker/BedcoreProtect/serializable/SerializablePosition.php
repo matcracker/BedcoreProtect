@@ -84,6 +84,11 @@ class SerializablePosition extends AbstractSerializable
         return $this->worldName;
     }
 
+    final public function asVector3(): Vector3
+    {
+        return new Vector3($this->x, $this->y, $this->z);
+    }
+
     /**
      * @return Position
      */

@@ -25,7 +25,7 @@ use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
 use pocketmine\lang\BaseLang;
 use pocketmine\utils\TextFormat;
-use function strtolower;
+use function mb_strtolower;
 
 final class BCPHelpCommand
 {
@@ -58,7 +58,7 @@ final class BCPHelpCommand
 
     public function showCommandHelp(string $subCmd): void
     {
-        $subCmd = strtolower($subCmd);
+        $subCmd = mb_strtolower($subCmd);
         $this->sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &3" . $this->lang->translateString("command.help.title") . "&f-----"));
         switch ($subCmd) {
             case "help":

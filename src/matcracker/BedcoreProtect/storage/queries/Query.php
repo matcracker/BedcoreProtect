@@ -32,7 +32,7 @@ use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function strtolower;
+use function mb_strtolower;
 
 abstract class Query
 {
@@ -66,7 +66,7 @@ abstract class Query
     public function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback) : Generator {
+            function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): Generator {
                 yield $this->onRollback(
                     $rollback,
                     $area,
@@ -129,7 +129,7 @@ abstract class Query
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => strtolower($uuid),
+            'uuid' => mb_strtolower($uuid),
             'x' => $position->getFloorX(),
             'y' => $position->getFloorY(),
             'z' => $position->getFloorZ(),
@@ -148,6 +148,12 @@ abstract class Query
     final protected function executeSelect(string $query, array $args = []): Generator
     {
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    final protected function executeGeneric(string $query, array $args = []): Generator
+    {
+        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
     }
 }

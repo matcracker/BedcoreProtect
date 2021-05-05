@@ -138,7 +138,7 @@ final class Forms
 
     private function parseForm(string $subCmd): Closure
     {
-        return static function (Player $player, $data) use ($subCmd) : void {
+        return static function (Player $player, $data) use ($subCmd): void {
             if (is_array($data)) {
                 $time = "t={$data[1]}";
                 $radius = $data[2] === 0 ? '' : "r={$data[2]}";

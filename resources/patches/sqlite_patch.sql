@@ -210,26 +210,26 @@ ALTER TABLE "temp"
     RENAME TO "log_history";
 -- #        }
 -- #    }
--- #    {0.7.0
+-- #    {0.7.1
 -- #        {1
-ALTER TABLE "entities"
-    RENAME TO "entities_old";
--- #        }
--- #        {2
-CREATE TABLE IF NOT EXISTS "entities"
+CREATE TABLE IF NOT EXISTS "entities_new"
 (
     uuid             VARCHAR(36) PRIMARY KEY,
     entity_name      VARCHAR(16) NOT NULL,
     entity_classpath TEXT        NOT NULL
 );
 -- #        }
--- #        {3
-INSERT INTO "entities" (uuid, entity_name, entity_classpath)
+-- #        {2
+INSERT INTO "entities_new" (uuid, entity_name, entity_classpath)
 SELECT uuid, entity_name, entity_classpath
-FROM "entities_old";
+FROM "entities";
+-- #        }
+-- #        {3
+DROP TABLE "entities";
 -- #        }
 -- #        {4
-DROP TABLE "entities_old";
+ALTER TABLE "entities_new"
+    RENAME TO "entities";
 -- #        }
 -- #    }
 -- #}

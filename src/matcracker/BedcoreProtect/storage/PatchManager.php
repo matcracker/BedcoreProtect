@@ -59,7 +59,7 @@ final class PatchManager
     {
         $patchVersion = null;
         Await::f2c(
-            function () use (&$patchVersion) : Generator {
+            function () use (&$patchVersion): Generator {
                 /** @var array $rows */
                 $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
 

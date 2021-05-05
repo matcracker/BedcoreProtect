@@ -21,9 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use InvalidStateException;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\Bed;
@@ -45,8 +43,6 @@ use pocketmine\event\block\SignChangeEvent;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\Chest as TileChest;
-use function array_filter;
-use function array_key_exists;
 use function array_merge;
 use function count;
 
@@ -79,32 +75,25 @@ final class BlockListener extends BedcoreListener
             $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $block->asPosition());
 
             if ($this->config->getNaturalBreak()) {
-                $sides = $block->getAllSides();
-                foreach ($sides as $side) {
-                    foreach ($side->getAffectedBlocks() as $affectedSide) {
-                        $sides = array_merge($sides, $affectedSide->getAllSides());
+                $sides = [];
+                foreach ($block->getAllSides() as $side) {
+                    if (!$side instanceof Air) {
+                        $sides = array_merge($sides, $side->getAffectedBlocks());
                     }
                 }
-
-                $sides = array_filter(
-                    $sides,
-                    static function (Block $block): bool {
-                        return !$block instanceof Air;
-                    }
-                );
 
                 $this->blocksQueries->addScheduledBlocksLogByEntity(
                     $player,
                     $sides,
                     Action::BREAK(),
-                    function (array &$oldBlocks) use ($level, $sides) : array {
+                    function (array &$oldBlocks) use ($level, $sides): array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
                             $updSide = $level->getBlock($side->asVector3());
                             if ($updSide instanceof $side) {
                                 unset($oldBlocks[$key]);
                             } else {
-                                $newBlocks[$key] = SerializableBlock::serialize($updSide);
+                                $newBlocks[$key] = $updSide;
                             }
                         }
 
@@ -142,7 +131,7 @@ final class BlockListener extends BedcoreListener
                 //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
                 $this->plugin->getScheduler()->scheduleDelayedTask(
                     new ClosureTask(
-                        function (int $currentTick) use ($replacedBlock, $block, $player, $level) : void {
+                        function (int $currentTick) use ($replacedBlock, $block, $player, $level): void {
                             //Update the block instance to get the real placed block data.
                             $updBlock = $level->getBlock($block->asVector3());
 

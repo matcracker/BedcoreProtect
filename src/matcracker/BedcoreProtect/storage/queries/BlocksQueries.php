@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
+use ArrayOutOfBoundsException;
 use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
@@ -28,9 +29,8 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\tasks\async\BlocksQueryGeneratorTask;
-use matcracker\BedcoreProtect\tasks\async\LogsQueryGeneratorTask;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
+use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -48,6 +48,7 @@ use pocketmine\tile\ItemFrame;
 use pocketmine\tile\Tile;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
+use function array_key_first;
 use function array_map;
 use function count;
 use function microtime;
@@ -65,12 +66,15 @@ class BlocksQueries extends Query
     protected $entitiesQueries;
     /** @var InventoriesQueries */
     protected $inventoriesQueries;
+    /** @var AwaitMutex */
+    private $mutexBlock;
 
     public function __construct(Main $plugin, DataConnector $connector, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {
         parent::__construct($plugin, $connector);
         $this->entitiesQueries = $entitiesQueries;
         $this->inventoriesQueries = $inventoriesQueries;
+        $this->mutexBlock = new AwaitMutex();
     }
 
     /**
@@ -92,10 +96,26 @@ class BlocksQueries extends Query
 
         Await::f2c(
             function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
-                yield $this->entitiesQueries->addEntityGenerator($entity);
+                yield $this->entitiesQueries->addEntity($entity);
                 yield $this->addRawBlockLog(EntityUtils::getUniqueId($entity), $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time);
             }
         );
+    }
+
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    {
+        /** @var int $lastId */
+        $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
+
+        return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
+            'log_id' => $lastId,
+            'old_id' => $oldBlock->getId(),
+            'old_meta' => $oldBlock->getDamage(),
+            'old_nbt' => $oldNbt,
+            'new_id' => $newBlock->getId(),
+            'new_meta' => $newBlock->getDamage(),
+            'new_nbt' => $newNbt
+        ]);
     }
 
     /**
@@ -112,13 +132,10 @@ class BlocksQueries extends Query
         }
 
         $time = microtime(true);
-        $oldBlocks = array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
-        }, $oldBlocks);
 
         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-            function (int $currentTick) use ($entity, $oldBlocks, $action, $onTaskRun, $time) : void {
-                /** @var SerializableBlock[] $newBlocks */
+            function (int $currentTick) use ($entity, $oldBlocks, $action, $onTaskRun, $time): void {
+                /** @var Block[] $newBlocks */
                 $newBlocks = $onTaskRun($oldBlocks);
 
                 $this->addSerialBlocksLogByEntity(
@@ -132,7 +149,80 @@ class BlocksQueries extends Query
         ), $delay);
     }
 
-    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    /**
+     * @param Entity $entity
+     * @param Block[] $oldBlocks
+     * @param Block[] $newBlocks
+     * @param Action $action
+     * @param float $time
+     */
+    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time): void
+    {
+        $cntOldBlocks = count($oldBlocks);
+        $cntNewBlocks = count($newBlocks);
+
+        if ($cntOldBlocks === 0 || $cntNewBlocks === 0) {
+            return;
+
+        } elseif ($cntNewBlocks === 1) {
+            $newSerBlocks = [SerializableBlock::serialize($newBlocks[array_key_first($newBlocks)])];
+
+        } elseif ($cntOldBlocks === $cntNewBlocks) {
+            $newSerBlocks = array_map(static function (Block $block): SerializableBlock {
+                return SerializableBlock::serialize($block);
+            }, $newBlocks);
+
+        } else {
+            throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
+        }
+
+        $oldSerBlocks = array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::serialize($block);
+        }, $oldBlocks);
+
+        $uuidEntity = EntityUtils::getUniqueId($entity);
+        $worldName = $entity->getLevelNonNull()->getName();
+
+        $this->mutexBlock->putClosure(
+            function () use ($entity, $uuidEntity, $oldSerBlocks, $newSerBlocks, $cntNewBlocks, $worldName, $action, $time): Generator {
+                yield $this->entitiesQueries->addEntity($entity);
+
+                yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+
+                if ($cntNewBlocks === 1) {
+                    $newBlock = $newSerBlocks[0];
+
+                    foreach ($oldSerBlocks as $oldBlock) {
+                        yield $this->addRawSerialBlockLog(
+                            $uuidEntity,
+                            $oldBlock,
+                            $newBlock,
+                            $oldBlock->asVector3(),
+                            $worldName,
+                            $action,
+                            $time
+                        );
+                    }
+                } else {
+                    foreach ($oldSerBlocks as $key => $oldBlock) {
+                        yield $this->addRawSerialBlockLog(
+                            $uuidEntity,
+                            $oldBlock,
+                            $newSerBlocks[$key],
+                            $oldBlock->asVector3(),
+                            $worldName,
+                            $action,
+                            $time
+                        );
+                    }
+                }
+
+                yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+            }
+        );
+    }
+
+    final protected function addRawSerialBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -140,11 +230,11 @@ class BlocksQueries extends Query
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
             'log_id' => $lastId,
             'old_id' => $oldBlock->getId(),
-            'old_meta' => $oldBlock->getDamage(),
-            'old_nbt' => $oldNbt,
+            'old_meta' => $oldBlock->getMeta(),
+            'old_nbt' => $oldBlock->getSerializedNbt(),
             'new_id' => $newBlock->getId(),
-            'new_meta' => $newBlock->getDamage(),
-            'new_nbt' => $newNbt
+            'new_meta' => $newBlock->getMeta(),
+            'new_nbt' => $newBlock->getSerializedNbt()
         ]);
     }
 
@@ -172,7 +262,7 @@ class BlocksQueries extends Query
         $time = microtime(true);
 
         Await::f2c(
-            function () use ($name, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time) : Generator {
+            function () use ($name, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
                 yield $this->addRawBlockLog(
                     $name,
                     $oldBlock,
@@ -210,72 +300,22 @@ class BlocksQueries extends Query
         $worldName = $itemFrame->getLevelNonNull()->getName();
         $time = microtime(true);
 
-        Await::f2c(
-            function () use ($player, $itemFrameBlock, $oldNbt, $newNbt, $position, $worldName, $action, $time) : Generator {
-                yield $this->addRawBlockLog(
-                    EntityUtils::getUniqueId($player),
-                    $itemFrameBlock,
-                    $oldNbt,
-                    $itemFrameBlock,
-                    $newNbt,
-                    $position,
-                    $worldName,
-                    $action,
-                    $time
-                );
-            },
+        Await::g2c(
+            $this->addRawBlockLog(
+                EntityUtils::getUniqueId($player),
+                $itemFrameBlock,
+                $oldNbt,
+                $itemFrameBlock,
+                $newNbt,
+                $position,
+                $worldName,
+                $action,
+                $time
+            ),
             function () use ($player, $item, $action, $position, $worldName): void {
                 if (!$action->equals(Action::CLICK())) {
                     $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $position, $worldName);
                 }
-            }
-        );
-    }
-
-    /**
-     * @param Entity $entity
-     * @param SerializableBlock[] $oldBlocks
-     * @param SerializableBlock[] $newBlocks
-     * @param Action $action
-     * @param float $time
-     */
-    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time)
-    {
-        if (count($oldBlocks) === 0 || count($newBlocks) === 0) {
-            return;
-        }
-
-        Await::f2c(
-            function () use ($entity, $oldBlocks, $newBlocks, $action, $time) : Generator {
-                yield $this->entitiesQueries->addEntityGenerator($entity);
-
-                $logsTask = new LogsQueryGeneratorTask(
-                    EntityUtils::getUniqueId($entity),
-                    $oldBlocks,
-                    $action,
-                    $time,
-                    $this->configParser->isSQLite(),
-                    function (string $query) use ($oldBlocks, $newBlocks) : Generator {
-                        [$firstInsertedId, $affectedRows] = yield $this->executeInsertRaw($query, [], true);
-
-                        if ($this->configParser->isSQLite()) {
-                            $firstInsertedId -= $affectedRows - 1;
-                        }
-
-                        $blocksTask = new BlocksQueryGeneratorTask(
-                            $firstInsertedId,
-                            $oldBlocks,
-                            $newBlocks,
-                            function (string $query): Generator {
-                                yield $this->executeInsertRaw($query);
-                            }
-                        );
-
-                        Server::getInstance()->getAsyncPool()->submitTask($blocksTask);
-                    }
-                );
-
-                Server::getInstance()->getAsyncPool()->submitTask($logsTask);
             }
         );
     }
@@ -290,12 +330,8 @@ class BlocksQueries extends Query
     {
         $this->addSerialBlocksLogByEntity(
             $entity,
-            array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::serialize($block);
-            }, $oldBlocks),
-            array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::serialize($block);
-            }, $newBlocks),
+            $oldBlocks,
+            $newBlocks,
             $action,
             microtime(true)
         );

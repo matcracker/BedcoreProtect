@@ -79,6 +79,12 @@ CREATE TABLE IF NOT EXISTS status
 -- #            :flag bool
 SET FOREIGN_KEY_CHECKS = :flag;
 -- #        }
+-- #        {begin_transaction
+START TRANSACTION;
+-- #        }
+-- #        {end_transaction
+COMMIT;
+-- #        }
 -- #    }
 -- #    {add
 -- #        {entity

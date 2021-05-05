@@ -50,6 +50,7 @@ use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\ItemFrame as TileItemFrame;
+use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 
 final class PlayerListener extends BedcoreListener
@@ -61,7 +62,7 @@ final class PlayerListener extends BedcoreListener
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {
-        $this->entitiesQueries->addEntity($event->getPlayer());
+        Await::g2c($this->entitiesQueries->addEntity($event->getPlayer()));
     }
 
     /**

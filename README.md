@@ -1,7 +1,7 @@
 [![](https://poggit.pmmp.io/shield.dl.total/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
-[![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/eAePyeb)
+[![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Uf6U78g)
 
 # BedcoreProtect
 BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
@@ -140,7 +140,7 @@ _Search through block data using the same parameters as /bcp rollback. Shortcut:
 _Allow to switch pages of /bcp lookup command. Shortcut: **"/bcp s"**._<br><br>
 When multiple pages returned from lookup command, use the command **"/bcp show \<page>"** to switch pages.<br>
 To change the number of lines displayed on a page, use the command **"/bcp show \<page>:\<lines>"**.<br><br>
-For example, **"/bcp l 1:10"** will return 10 lines of data, starting at the first page.
+For example, **"/bcp show 1:10"** will return 10 lines of data, starting at the first page.
 
 > **/bcp purge t=\<time>**<br>
 _Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>

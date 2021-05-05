@@ -127,7 +127,7 @@ class Database
         $this->connector->executeSelect(
             QueriesConst::GET_DATABASE_STATUS,
             [],
-            static function (array $rows) use (&$version) : void {
+            static function (array $rows) use (&$version): void {
                 $version = (string)$rows[0]['version'];
             }
         );

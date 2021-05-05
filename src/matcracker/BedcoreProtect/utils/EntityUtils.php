@@ -28,7 +28,6 @@ use pocketmine\entity\Living;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
-use function array_key_exists;
 use function array_merge;
 use function strval;
 
@@ -110,31 +109,6 @@ final class EntityUtils
     }
 
     /**
-     * Returns an array with all registered entities.
-     * @return string[]
-     */
-    public static function getKnownEntities(): array
-    {
-        return (array)self::getEntityProperty('knownEntities');
-    }
-
-    /**
-     * Returns the entity class from the its network ID.
-     * @param int $networkId
-     * @return string
-     * @phpstan-return class-string<Entity>
-     */
-    public static function getClassByNetworkId(int $networkId): string
-    {
-        $values = self::getKnownEntities();
-        if (!array_key_exists($networkId, $values)) {
-            throw new InvalidArgumentException("The network ID \"{$networkId}\" is not registered.");
-        }
-
-        return $values[$networkId];
-    }
-
-    /**
      * @param string $property
      * @return mixed
      */
@@ -150,5 +124,14 @@ final class EntityUtils
         } catch (ReflectionException $exception) {
             throw new InvalidArgumentException("Could not get \"{$property}\" entity property.");
         }
+    }
+
+    /**
+     * Returns an array with all registered entities.
+     * @return string[]
+     */
+    public static function getKnownEntities(): array
+    {
+        return (array)self::getEntityProperty('knownEntities');
     }
 }

@@ -31,7 +31,7 @@ final class ConfigUpdater
 {
     private const KEY_NOT_PRESENT = -1;
     public const LAST_VERSION = 1;
-
+    /** @var Main */
     private $plugin;
 
     public function __construct(Main $plugin)

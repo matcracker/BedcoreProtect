@@ -47,19 +47,24 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
-        Await::f2c(
-            function (): Generator {
-                $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-                yield $this->addRawEntity($serverUuid, '#console');
-                yield $this->addRawEntity('flow-uuid', '#flow');
-                yield $this->addRawEntity('water-uuid', '#water');
-                yield $this->addRawEntity('still water-uuid', '#water');
-                yield $this->addRawEntity('lava-uuid', '#lava');
-                yield $this->addRawEntity('still lava-uuid', '#lava');
-                yield $this->addRawEntity('fire block-uuid', '#fire');
-                yield $this->addRawEntity('leaves-uuid', '#decay');
+        static $map = [
+            "flow-uuid" => "#flow",
+            "water-uuid" => "#water",
+            "still water-uuid" => "#water",
+            "lava-uuid" => "#lava",
+            "still lava-uuid" => "#lava",
+            "fire block-uuid" => "#fire",
+            "leaves-uuid" => "#decay"
+        ];
+
+        Await::f2c(function () use ($map): Generator {
+            $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
+
+            yield $this->addRawEntity($serverUuid, '#console');
+            foreach ($map as $uuid => $name) {
+                yield $this->addRawEntity($uuid, $name, "");
             }
-        );
+        });
     }
 
     /**
@@ -69,7 +74,7 @@ class EntitiesQueries extends Query
      * @return Generator
      * @internal
      */
-    final public function addRawEntity(string $uuid, string $name, string $classPath = ''): Generator
+    final public function addRawEntity(string $uuid, string $name, string $classPath = ""): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
             'uuid' => $uuid,
@@ -87,8 +92,8 @@ class EntitiesQueries extends Query
         $time = microtime(true);
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
-                yield $this->addEntityGenerator($damager);
-                yield $this->addEntityGenerator($entity);
+                yield $this->addEntity($damager);
+                yield $this->addEntity($entity);
 
                 /** @var int $lastId */
                 $lastId = yield $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->asVector3(), $worldName, $action, $time);
@@ -102,7 +107,7 @@ class EntitiesQueries extends Query
      * @return Generator
      * @internal
      */
-    final public function addEntityGenerator(Entity $entity): Generator
+    final public function addEntity(Entity $entity): Generator
     {
         return $this->addRawEntity(
             EntityUtils::getUniqueId($entity),
@@ -129,22 +134,13 @@ class EntitiesQueries extends Query
 
         Await::f2c(
             function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
-                yield $this->addEntityGenerator($entity);
+                yield $this->addEntity($entity);
 
                 $name = $block->getName();
                 /** @var int $lastId */
                 $lastId = yield $this->addRawLog("{$name}-uuid", $block->asVector3(), $worldName, $action, $time);
 
                 yield $this->addEntityLog($lastId, $entity, $serializedNbt);
-            }
-        );
-    }
-
-    final public function addEntity(Entity $entity): void
-    {
-        Await::f2c(
-            function () use ($entity): Generator {
-                yield $this->addEntityGenerator($entity);
             }
         );
     }

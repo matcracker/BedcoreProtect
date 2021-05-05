@@ -85,14 +85,6 @@ final class QueryManager
         self::$additionalReports[$senderName]['messages'][] = TextFormat::colorize('&f- ' . $lang->translateString($reportMessage, $params));
     }
 
-    private static function initAdditionReports(string $senderName): void
-    {
-        self::$additionalReports[$senderName] = [
-            'messages' => [],
-            'startTime' => microtime(true)
-        ];
-    }
-
     public function init(string $pluginVersion): void
     {
         if (!preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $pluginVersion)) {
@@ -172,7 +164,7 @@ final class QueryManager
         self::initAdditionReports($senderName);
 
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $senderName, $logIds) : Generator {
+            function () use ($rollback, $area, $commandParser, $senderName, $logIds): Generator {
                 /** @var int[] $logIds */
                 $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $area, $commandParser);
                 if (count($logIds) === 0) { //No changes.
@@ -206,6 +198,14 @@ final class QueryManager
         );
     }
 
+    private static function initAdditionReports(string $senderName): void
+    {
+        self::$additionalReports[$senderName] = [
+            'messages' => [],
+            'startTime' => microtime(true)
+        ];
+    }
+
     private function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
     {
         $query = $commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox());
@@ -235,7 +235,7 @@ final class QueryManager
             $lang = Main::getInstance()->getLanguage();
 
             $sender->sendMessage(TextFormat::colorize('&f--- &3' . Main::PLUGIN_NAME . '&7 ' . $lang->translateString('rollback.report') . ' &f---'));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorld()->getName()])));
+            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorldName()])));
             $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
             $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.radius', [$commandParser->getRadius() ?? 0])));
 
@@ -257,25 +257,16 @@ final class QueryManager
         unset(self::$additionalReports[$senderName]);
     }
 
-    /**
-     * @return BlocksQueries
-     */
     public function getBlocksQueries(): BlocksQueries
     {
         return $this->blocksQueries;
     }
 
-    /**
-     * @return InventoriesQueries
-     */
     public function getInventoriesQueries(): InventoriesQueries
     {
         return $this->inventoriesQueries;
     }
 
-    /**
-     * @return EntitiesQueries
-     */
     public function getEntitiesQueries(): EntitiesQueries
     {
         return $this->entitiesQueries;
@@ -298,9 +289,6 @@ final class QueryManager
         $this->rawRollback(false, $area, $commandParser);
     }
 
-    /**
-     * @return PluginQueries
-     */
     public function getPluginQueries(): PluginQueries
     {
         return $this->pluginQueries;

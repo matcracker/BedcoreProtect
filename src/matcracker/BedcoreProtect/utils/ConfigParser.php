@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\utils;
 use BadMethodCallException;
 use pocketmine\level\Level;
 use pocketmine\utils\Config;
+use poggit\libasynql\SqlDialect;
 use function count;
 use function date_default_timezone_set;
 use function in_array;
@@ -68,7 +69,7 @@ final class ConfigParser
             throw new BadMethodCallException('The configuration must be validated.');
         }
 
-        return $this->getDatabaseType() === 'sqlite';
+        return $this->getDatabaseType() === SqlDialect::SQLITE;
     }
 
     public function getDatabaseType(): string
