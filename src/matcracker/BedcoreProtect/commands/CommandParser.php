@@ -33,12 +33,16 @@ use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
+use poggit\libasynql\generic\GenericStatementImpl;
+use poggit\libasynql\generic\GenericVariable;
+use poggit\libasynql\SqlDialect;
 use UnexpectedValueException;
 use function array_filter;
 use function array_flip;
 use function array_intersect_key;
 use function array_key_exists;
 use function array_keys;
+use function array_map;
 use function array_shift;
 use function array_unique;
 use function count;
@@ -58,8 +62,6 @@ final class CommandParser
         'user', 'time', 'radius', 'action', 'include', 'exclude'
     ];
 
-    public const ITEM_META_NO_STRICT = 0x8001;
-
     /** @var Action[][] */
     public static $ACTIONS;
 
@@ -78,7 +80,7 @@ final class CommandParser
     private $errorMessage;
 
     //Default data values
-    /** @var mixed[] */
+    /** @var array */
     private $data = [
         'user' => null,
         'time' => null,
@@ -216,7 +218,8 @@ final class CommandParser
                 case 'e':
                     $index = mb_substr($param, 0, 1) === 'i' ? 'inclusions' : 'exclusions';
 
-                    $items = [];
+                    /** @var int[] $itemIds */
+                    $itemIds = [];
                     foreach (explode(",", $paramValues) as $strItem) {
                         try {
                             /** @var Item $item */
@@ -227,24 +230,11 @@ final class CommandParser
                             return false;
                         }
 
-                        /*
-                         * Allows to include/exclude item in strict mode.
-                         * Example:
-                         * - include=5      --> includes all blocks with ID 5 (no strict)
-                         * - include=5:0    --> includes only block with ID 5 and meta 0 (strict)
-                         */
-                        $e = explode(":", $strItem);
-                        if (!isset($e[1])) {
-                            $meta = self::ITEM_META_NO_STRICT;
-                        }
-
-                        $items[] = [
-                            "id" => $item->getId(),
-                            "meta" => $meta ?? $item->getDamage()
-                        ];
+                        $itemIds[] = $item->getId();
                     }
 
-                    $this->data[$index] = $items;
+                    $this->data[$index] = $itemIds;
+
                     break;
                 default:
                     $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
@@ -293,13 +283,27 @@ final class CommandParser
         }
 
         $query = /**@lang text */
-            "SELECT log_id {$case} FROM log_history {$innerJoin} WHERE rollback = '" . intval(!$rollback) . "' AND ";
+            "SELECT log_id $case FROM log_history $innerJoin WHERE rollback = '" . intval(!$rollback) . "' AND ";
 
-        $this->buildConditionalQuery($query, $bb);
+        /** @var GenericVariable[] $variables */
+        $variables = [];
+        $parameters = [];
+
+        $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
         $query .= ' ORDER BY time' . ($rollback ? ' DESC' : '') . ';';
 
-        return $query;
+        $statement = GenericStatementImpl::forDialect(
+            $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
+            "dyn-log-selection-query",
+            $query,
+            "",
+            $variables,
+            null,
+            0
+        );
+
+        return $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $outArgs);
     }
 
     /**
@@ -332,7 +336,13 @@ final class CommandParser
         return $this->getData('exclusions');
     }
 
-    protected function buildConditionalQuery(string &$query, ?AxisAlignedBB $bb): void
+    /**
+     * @param string $query
+     * @param GenericVariable[] $variables
+     * @param array $params
+     * @param AxisAlignedBB|null $bb
+     */
+    protected function buildConditionalQuery(string &$query, array &$variables, array &$params, ?AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
@@ -345,59 +355,66 @@ final class CommandParser
 
             switch ($key) {
                 case 'user':
-                    $query .= '(';
-                    foreach ($value as $user) {
-                        $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '{$user}') OR ";
-                    }
-                    $query = mb_substr($query, 0, -4) . ') AND '; //Remove excessive " OR " string.
+                    $variables["users"] = new GenericVariable("users", "list:string", null);
+                    $params["users"] = $value;
+
+                    $query .= "(who IN (SELECT uuid FROM entities WHERE entity_name IN :users)) AND ";
                     break;
                 case 'time':
-                    $diffTime = time() - (int)$value;
+                    $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_INT, null);
+                    $params["time"] = time() - (int)$value;
+
                     if ($this->configParser->isSQLite()) {
-                        $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
+                        $query .= "(time BETWEEN DATETIME(:time, 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
                     } else {
-                        $query .= "(time BETWEEN FROM_UNIXTIME({$diffTime}) AND CURRENT_TIMESTAMP) AND ";
+                        $query .= "(time BETWEEN FROM_UNIXTIME(:time) AND CURRENT_TIMESTAMP) AND ";
                     }
                     break;
                 case 'radius':
                     if ($bb !== null) {
                         $bb = MathUtils::floorBoundingBox($bb);
-                        $query .= "(x BETWEEN {$bb->minX} AND {$bb->maxX}) AND ";
-                        $query .= "(y BETWEEN {$bb->minY} AND {$bb->maxY}) AND ";
-                        $query .= "(z BETWEEN {$bb->minZ} AND {$bb->maxZ}) AND ";
+
+                        $variables["min_x"] = new GenericVariable("min_x", GenericVariable::TYPE_FLOAT, null);
+                        $params["min_x"] = $bb->minX;
+                        $variables["min_y"] = new GenericVariable("min_y", GenericVariable::TYPE_FLOAT, null);
+                        $params["min_y"] = $bb->minY;
+                        $variables["min_z"] = new GenericVariable("min_z", GenericVariable::TYPE_FLOAT, null);
+                        $params["min_z"] = $bb->minZ;
+
+                        $variables["max_x"] = new GenericVariable("max_x", GenericVariable::TYPE_FLOAT, null);
+                        $params["max_x"] = $bb->maxX;
+                        $variables["max_y"] = new GenericVariable("max_y", GenericVariable::TYPE_FLOAT, null);
+                        $params["max_y"] = $bb->maxY;
+                        $variables["max_z"] = new GenericVariable("max_z", GenericVariable::TYPE_FLOAT, null);
+                        $params["max_z"] = $bb->maxZ;
+
+                        $query .= "(x BETWEEN :min_x AND :max_x) AND (y BETWEEN :min_y AND :max_y) AND (z BETWEEN :min_z AND :max_z) AND ";
                     }
 
                     break;
                 case 'action':
-                    $query .= '(';
-                    /** @var Action $action */
-                    foreach ($value as $action) {
-                        $query .= "action = {$action->getType()} OR ";
-                    }
-                    $query = mb_substr($query, 0, -4) . ') AND '; //Remove excessive " OR " string.
+                    $variables["actions"] = new GenericVariable("actions", "list:int", null);
+                    $params["actions"] = array_map(static function (Action $action): int {
+                        return $action->getType();
+                    }, $value);
+
+                    $query .= "(action IN :actions) AND ";
                     break;
+
                 case 'exclusions':
-                case 'inclusions':
-                    if ($key === 'exclusions') {
-                        $operator = '<>';
-                        $condition = 'OR';
-                    } else {
-                        $operator = '=';
-                        $condition = 'AND';
-                    }
+                    $variables["exclusions"] = new GenericVariable("exclusions", "list:int", null);
+                    $params["exclusions"] = $value;
 
-                    /** @var int[] $blockData */
-                    foreach ($value as $blockData) {
-                        $id = $blockData["id"];
-                        $meta = $blockData["meta"];
-
-                        $query .= "(id {$operator} {$id}";
-                        if ($meta !== self::ITEM_META_NO_STRICT) {
-                            $query .= " {$condition} meta {$operator} {$meta}";
-                        }
-                        $query .= ") AND ";
-                    }
+                    $query .= "(id NOT IN :exclusions) AND ";
                     break;
+
+                case 'inclusions':
+                    $variables["inclusions"] = new GenericVariable("inclusions", "list:int", null);
+                    $params["inclusions"] = $value;
+
+                    $query .= "(id IN :inclusions) AND ";
+                    break;
+
                 default:
                     throw new UnexpectedValueException("\"{$key}\" is not a expected data key.");
             }
@@ -465,11 +482,25 @@ final class CommandParser
             LEFT JOIN entities e1 ON tmp_ids.who = e1.uuid
             LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ';
 
-        $this->buildConditionalQuery($query, null);
+        /** @var GenericVariable[] $variables */
+        $variables = [];
+        $parameters = [];
+
+        $this->buildConditionalQuery($query, $variables, $parameters, null);
 
         $query .= ' ORDER BY time DESC;';
 
-        return $query;
+        $statement = GenericStatementImpl::forDialect(
+            $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
+            "dyn-lookup-query",
+            $query,
+            "",
+            $variables,
+            null,
+            0
+        );
+
+        return $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $outArgs);
     }
 
     /**
