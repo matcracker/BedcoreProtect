@@ -1,6 +1,6 @@
 ---
 # Configuration file version. DON'T EDIT!
-config-version: 1
+config-version: 2
 
 # Plugin language
 language: eng
@@ -26,10 +26,6 @@ database:
   # The maximum number of simultaneous SQL queries
   # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
   worker-limit: 1
-
-# The timezone where you are located. This is necessary to correctly log the time of events.
-# To find your timezone, check here: https://www.php.net/manual/en/timezones.php
-timezone: "Europe/Lisbon"
 
 # A list of worlds where the plugin can track logs
 enabled-worlds: []

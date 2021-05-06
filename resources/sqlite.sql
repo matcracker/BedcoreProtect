@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS "log_history"
     z          BIGINT           NOT NULL,
     world_name VARCHAR(255)     NOT NULL,
     action     TINYINT UNSIGNED NOT NULL,
-    time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
+    time       INTEGER UNSIGNED NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
@@ -116,10 +116,9 @@ VALUES (:version);
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
--- #                :time float
+-- #                :time int
 INSERT INTO "log_history"(who, x, y, z, world_name, action, time)
-VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action,
-        STRFTIME('%Y-%m-%d %H:%M:%f', :time, 'unixepoch', 'localtime'));
+VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, :time);
 -- #            }
 -- #            {block
 -- #                :log_id int
@@ -171,7 +170,7 @@ WHERE history_id = :log_id;
 -- #             :version string
 UPDATE status
 SET version     = :version,
-    upgraded_on = (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime'));
+    upgraded_on = (STRFTIME('%Y-%m-%d %H:%M:%s', 'now', 'localtime'));
 -- #        }
 -- #        {rollback_status
 -- #             :rollback bool
@@ -401,6 +400,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < DATETIME(((SELECT strftime('%s', 'now')) - :time), 'unixepoch', 'localtime');
+WHERE time < (SELECT STRFTIME('%s', 'now')) - :time;
 -- #    }
 -- #}

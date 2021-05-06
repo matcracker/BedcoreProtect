@@ -45,7 +45,7 @@ use pocketmine\tile\Chest;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function count;
-use function microtime;
+use function time;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -84,7 +84,7 @@ class InventoriesQueries extends Query
 
         $playerUuid = EntityUtils::getUniqueId($player);
         $worldName = $player->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         Await::f2c(
             function () use ($playerUuid, $slotAction, $holder, $worldName, $time): Generator {
@@ -154,7 +154,7 @@ class InventoriesQueries extends Query
     public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
     {
         $worldName = $player->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         $contents = $inventory->getContents();
 

@@ -365,9 +365,9 @@ final class CommandParser
                     $params["time"] = time() - (int)$value;
 
                     if ($this->configParser->isSQLite()) {
-                        $query .= "(time BETWEEN DATETIME(:time, 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
+                        $query .= "(time BETWEEN :time AND STRFTIME('%s', 'now')) AND ";
                     } else {
-                        $query .= "(time BETWEEN FROM_UNIXTIME(:time) AND CURRENT_TIMESTAMP) AND ";
+                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP()) AND ";
                     }
                     break;
                 case 'radius':

@@ -14,4 +14,7 @@
 0.7.1:
   sqlite: 4
   mysql: 1
+0.8.0:
+  sqlite: 5
+  mysql: 3
 ...

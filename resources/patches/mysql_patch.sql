@@ -128,4 +128,15 @@ ALTER TABLE temp
 ALTER TABLE entities DROP COLUMN address;
 -- #        }
 -- #    }
+-- #    {0.8.0
+-- #        {1
+ALTER TABLE log_history MODIFY COLUMN time BIGINT UNSIGNED NOT NULL;
+-- #        }
+-- #        {2
+UPDATE log_history SET time = (UNIX_TIMESTAMP(time));
+-- #        }
+-- #        {3
+ALTER TABLE log_history MODIFY COLUMN time INTEGER UNSIGNED NOT NULL;
+-- #        }
+-- #    }
 -- #}

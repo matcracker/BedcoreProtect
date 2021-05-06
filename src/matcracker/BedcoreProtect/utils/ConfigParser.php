@@ -26,7 +26,6 @@ use pocketmine\level\Level;
 use pocketmine\utils\Config;
 use poggit\libasynql\SqlDialect;
 use function count;
-use function date_default_timezone_set;
 use function in_array;
 
 /**
@@ -286,16 +285,6 @@ final class ConfigParser
         $this->isValid = true;
         $this->data = $data;
 
-        date_default_timezone_set($this->getTimezone());
         return $this;
-    }
-
-    public function getTimezone(): string
-    {
-        if (!$this->isValid) {
-            throw new BadMethodCallException('The configuration must be validated.');
-        }
-
-        return (string)$this->data['timezone'];
     }
 }

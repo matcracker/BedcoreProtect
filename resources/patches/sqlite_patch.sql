@@ -232,4 +232,45 @@ ALTER TABLE "entities_new"
     RENAME TO "entities";
 -- #        }
 -- #    }
+-- #    {0.8.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS "log_history_new"
+(
+    log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    who        VARCHAR(36)      NOT NULL,
+    x          BIGINT           NOT NULL,
+    y          TINYINT UNSIGNED NOT NULL,
+    z          BIGINT           NOT NULL,
+    world_name VARCHAR(255)     NOT NULL,
+    action     TINYINT UNSIGNED NOT NULL,
+    time       INTEGER UNSIGNED NOT NULL,
+    "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
+    FOREIGN KEY (who) REFERENCES "entities" (uuid)
+);
+-- #        }
+-- #        {2
+INSERT INTO "log_history_new" (log_id, who, x, y, z, world_name, action, time, "rollback")
+SELECT log_id,
+       who,
+       x,
+       y,
+       z,
+       world_name,
+       action,
+       time,
+       "rollback"
+FROM "log_history";
+-- #        }
+-- #        {3
+UPDATE "log_history_new"
+SET time = STRFTIME('%s', time);
+-- #        }
+-- #        {4
+DROP TABLE "log_history";
+-- #        }
+-- #        {5
+ALTER TABLE "log_history_new"
+    RENAME TO "log_history";
+-- #        }
+-- #    }
 -- #}

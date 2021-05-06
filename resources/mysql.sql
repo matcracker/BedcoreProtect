@@ -13,14 +13,14 @@ CREATE TABLE IF NOT EXISTS entities
 CREATE TABLE IF NOT EXISTS log_history
 (
     log_id     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    who        VARCHAR(36)                            NOT NULL,
-    x          BIGINT                                 NOT NULL,
-    y          TINYINT UNSIGNED                       NOT NULL,
-    z          BIGINT                                 NOT NULL,
-    world_name VARCHAR(255)                           NOT NULL,
-    action     TINYINT UNSIGNED                       NOT NULL,
-    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    rollback   BOOLEAN      DEFAULT FALSE             NOT NULL,
+    who        VARCHAR(36)           NOT NULL,
+    x          BIGINT                NOT NULL,
+    y          TINYINT UNSIGNED      NOT NULL,
+    z          BIGINT                NOT NULL,
+    world_name VARCHAR(255)          NOT NULL,
+    action     TINYINT UNSIGNED      NOT NULL,
+    time       INTEGER UNSIGNED      NOT NULL,
+    rollback   BOOLEAN DEFAULT FALSE NOT NULL,
     FOREIGN KEY (who) REFERENCES entities (uuid)
 );
 -- #        }
@@ -109,9 +109,9 @@ ON DUPLICATE KEY UPDATE version=version;
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
--- #                :time float
+-- #                :time int
 INSERT INTO log_history(who, x, y, z, world_name, action, time)
-VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, FROM_UNIXTIME(:time));
+VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, :time);
 -- #            }
 -- #            {block
 -- #                :log_id int
@@ -392,6 +392,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < FROM_UNIXTIME(UNIX_TIMESTAMP() - :time);
+WHERE time < UNIX_TIMESTAMP() - :time;
 -- #    }
 -- #}

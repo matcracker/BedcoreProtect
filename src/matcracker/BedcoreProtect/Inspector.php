@@ -32,8 +32,6 @@ use pocketmine\utils\TextFormat;
 use function array_chunk;
 use function array_key_exists;
 use function count;
-use function is_int;
-use function strtotime;
 
 final class Inspector
 {
@@ -154,7 +152,7 @@ final class Inspector
             $action = Action::fromType((int)$log['action']);
             $rollback = (bool)$log['rollback'];
 
-            $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
+            $timeStamp = (int)$log['time'];
 
             $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? 'old' : 'new';
 

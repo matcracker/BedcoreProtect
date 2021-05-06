@@ -35,7 +35,7 @@ use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
 use function get_class;
-use function microtime;
+use function time;
 
 /**
  * It contains all the queries methods related to entities.
@@ -89,7 +89,7 @@ class EntitiesQueries extends Query
     {
         $entityNbt = EntityUtils::getSerializedNbt($entity);
         $worldName = $entity->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
                 yield $this->addEntity($damager);
@@ -130,7 +130,7 @@ class EntitiesQueries extends Query
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
         $worldName = $block->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         Await::f2c(
             function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {

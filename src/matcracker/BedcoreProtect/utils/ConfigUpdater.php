@@ -29,8 +29,9 @@ use const DIRECTORY_SEPARATOR;
 
 final class ConfigUpdater
 {
+    public const LAST_VERSION = 2;
     private const KEY_NOT_PRESENT = -1;
-    public const LAST_VERSION = 1;
+
     /** @var Main */
     private $plugin;
 
