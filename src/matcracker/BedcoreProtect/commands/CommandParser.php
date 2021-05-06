@@ -220,6 +220,9 @@ final class CommandParser
 
                     /** @var int[] $itemIds */
                     $itemIds = [];
+                    /** @var int[] $itemMetas */
+                    $itemMetas = [];
+
                     foreach (explode(",", $paramValues) as $strItem) {
                         try {
                             /** @var Item $item */
@@ -231,9 +234,13 @@ final class CommandParser
                         }
 
                         $itemIds[] = $item->getId();
+                        $itemMetas[] = $item->getDamage();
                     }
 
-                    $this->data[$index] = $itemIds;
+                    $this->data[$index] = [
+                        "ids" => $itemIds,
+                        "metas" => $itemMetas
+                    ];
 
                     break;
                 default:
@@ -266,10 +273,16 @@ final class CommandParser
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
         }
 
-        $case = $innerJoin = "";
+        /** @var GenericVariable[] $variables */
+        $variables["rollback"] = new GenericVariable("rollback", GenericVariable::TYPE_INT, null);
+        /** @var array $parameters */
+        $parameters["rollback"] = intval(!$rollback);
 
         if ($this->getInclusions() !== null || $this->getExclusions() !== null) {
-            $case = ",
+            $query = /**@lang text */
+                "SELECT log_id, id, meta 
+                FROM 
+                (SELECT log_history.*,
                     CASE
                         WHEN old_id = 0 THEN new_id
                         WHEN new_id = 0 THEN old_id
@@ -277,21 +290,18 @@ final class CommandParser
                     CASE
                         WHEN old_id = 0 THEN new_meta
                         WHEN new_id = 0 THEN old_meta
-                    END AS meta";
-
-            $innerJoin = "INNER JOIN blocks_log ON log_history.log_id = history_id";
+                    END AS meta
+                FROM log_history INNER JOIN blocks_log ON log_history.log_id = history_id
+                ) AS tmp_logs
+                WHERE rollback = :rollback AND ";
+        } else {
+            $query = /**@lang text */
+                "SELECT log_id FROM log_history WHERE rollback = :rollback AND ";
         }
-
-        $query = /**@lang text */
-            "SELECT log_id $case FROM log_history $innerJoin WHERE rollback = '" . intval(!$rollback) . "' AND ";
-
-        /** @var GenericVariable[] $variables */
-        $variables = [];
-        $parameters = [];
 
         $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
-        $query .= ' ORDER BY time' . ($rollback ? ' DESC' : '') . ';';
+        $query .= " ORDER BY time" . ($rollback ? " DESC" : "") . ";";
 
         $statement = GenericStatementImpl::forDialect(
             $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
@@ -402,17 +412,21 @@ final class CommandParser
                     break;
 
                 case 'exclusions':
-                    $variables["exclusions"] = new GenericVariable("exclusions", "list:int", null);
-                    $params["exclusions"] = $value;
+                    $variables["exclusions_ids"] = new GenericVariable("exclusions_ids", "list:int", null);
+                    $params["exclusions_ids"] = $value["ids"];
+                    $variables["exclusions_metas"] = new GenericVariable("exclusions_metas", "list:int", null);
+                    $params["exclusions_metas"] = $value["metas"];
 
-                    $query .= "(id NOT IN :exclusions) AND ";
+                    $query .= "(id NOT IN :exclusions_ids OR meta NOT IN :exclusions_metas) AND ";
                     break;
 
                 case 'inclusions':
-                    $variables["inclusions"] = new GenericVariable("inclusions", "list:int", null);
-                    $params["inclusions"] = $value;
+                    $variables["inclusions_ids"] = new GenericVariable("inclusions_ids", "list:int", null);
+                    $params["inclusions_ids"] = $value["ids"];
+                    $variables["inclusions_metas"] = new GenericVariable("inclusions_metas", "list:int", null);
+                    $params["inclusions_metas"] = $value["metas"];
 
-                    $query .= "(id IN :inclusions) AND ";
+                    $query .= "(id IN :inclusions_ids AND meta IN :inclusions_metas) AND ";
                     break;
 
                 default:
