@@ -61,7 +61,7 @@ final class Forms
                         $player->sendForm($this->getInputMenu('lookup'));
                         break;
                     case 3: //Show
-                        if (count(($logs = Inspector::getSavedLogs($player))) > 0) {
+                        if (count(Inspector::getSavedLogs($player)) > 0) {
                             $player->sendForm($this->getShowMenu());
                         } else {
                             $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.show.no-logs')));
@@ -107,13 +107,13 @@ final class Forms
         return (new CustomForm(
             static function (Player $player, $data): void {
                 if (is_array($data)) {
-                    $player->chat("/bcp near {$data[0]}");
+                    $player->chat("/bcp near {$data["radius"]}");
                 }
             },
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius())
+        ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius")
             ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.near')));
     }
 
@@ -126,31 +126,33 @@ final class Forms
                 $player->sendForm($this->getMainMenu());
             }
         ))->addLabel($lang->translateString('form.input-menu.required-fields'))
-            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s")
-            ->addSlider($lang->translateString('form.input-menu.radius'), 0, $this->configParser->getMaxRadius())
+            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s", null, "time")
+            ->addSlider($lang->translateString('form.input-menu.radius'), 0, $this->configParser->getMaxRadius(), null, null, "radius")
             ->addLabel($lang->translateString('form.input-menu.optional-fields'))
-            ->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'))
-            ->addDropdown($lang->translateString('general.action'), array_keys(CommandParser::$ACTIONS), -1)
-            ->addInput($lang->translateString('form.input-menu.restrict-blocks'), 'stone,dirt,2:0')
-            ->addInput($lang->translateString('form.input-menu.exclude-blocks'), 'stone,dirt,2:0')
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString("general.{$type}")));
+            ->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'), null, "user")
+            ->addDropdown($lang->translateString('general.action'), array_keys(CommandParser::$ACTIONS), -1, "action")
+            ->addInput($lang->translateString('form.input-menu.restrict-blocks'), 'stone,dirt,2:0', null, "inclusions")
+            ->addInput($lang->translateString('form.input-menu.exclude-blocks'), 'stone,dirt,2:0', null, "exclusions")
+            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString("general.$type")));
     }
 
     private function parseForm(string $subCmd): Closure
     {
         return static function (Player $player, $data) use ($subCmd): void {
             if (is_array($data)) {
-                $time = "t={$data[1]}";
-                $radius = $data[2] === 0 ? '' : "r={$data[2]}";
-                $user = strlen($data[4]) === 0 ? '' : "\"u={$data[4]}\"";
-                $action = '';
-                if ($data[5] !== -1) {
-                    $a = array_keys(CommandParser::$ACTIONS)[$data[5]];
-                    $action = "a={$a}";
+                $time = "t={$data["time"]}";
+                $radius = $data["radius"] === 0 ? "" : "r={$data["radius"]}";
+                $user = strlen($data["user"]) === 0 ? "" : "\"u={$data["user"]}\"";
+                if ($data["action"] !== -1) {
+                    $a = array_keys(CommandParser::$ACTIONS)[$data["action"]];
+                    $action = "a=$a";
+                } else {
+                    $action = "";
                 }
-                $includeBlocks = strlen($data[6]) === 0 ? '' : "b={$data[6]}";
-                $excludeBlocks = strlen($data[7]) === 0 ? '' : "e={$data[7]}";
-                $player->chat("/bcp {$subCmd} {$time} {$radius} {$user} {$action} {$includeBlocks} {$excludeBlocks}");
+                $includeBlocks = strlen($data["inclusions"]) === 0 ? "" : "i={$data["inclusions"]}";
+                $excludeBlocks = strlen($data["exclusions"]) === 0 ? "" : "e={$data["exclusions"]}";
+
+                $player->chat("/bcp $subCmd $time $radius $user $action $includeBlocks $excludeBlocks");
             }
         };
     }
@@ -161,14 +163,14 @@ final class Forms
         return (new CustomForm(
             static function (Player $player, $data): void {
                 if (is_array($data)) {
-                    $player->chat("/bcp show {$data[0]}:{$data[1]}");
+                    $player->chat("/bcp show {$data["page"]}:{$data["lines"]}");
                 }
             },
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addInput($lang->translateString('form.input-menu.page-number'), "1", "1")
-            ->addInput($lang->translateString('form.input-menu.lines-number'), "4", "4")
+        ))->addInput($lang->translateString('form.input-menu.page-number'), "1", "1", "page")
+            ->addInput($lang->translateString('form.input-menu.lines-number'), "4", "4", "lines")
             ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.show')));
     }
 
@@ -178,13 +180,13 @@ final class Forms
         return (new CustomForm(
             static function (Player $player, $data): void {
                 if (is_array($data)) {
-                    $player->chat("/bcp purge t={$data[0]}");
+                    $player->chat("/bcp purge t={$data["time"]}");
                 }
             },
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s')
+        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s', null, "time")
             ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
     }
 }
