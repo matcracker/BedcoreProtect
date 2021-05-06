@@ -103,7 +103,7 @@ class InventoriesQueries extends Query
                         $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
                     }
                 } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
-                    yield $this->addInventorySlotLog($playerUuid, $holder, $worldName, Action::REMOVE(), $time, $slot, $sourceItem, $targetItem);
+                    yield $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, Action::REMOVE(), $time);
                     $action = Action::ADD();
                 } elseif (!$sourceItem->isNull()) {
                     $action = Action::REMOVE();
@@ -111,12 +111,12 @@ class InventoriesQueries extends Query
                     $action = Action::ADD();
                 }
 
-                yield $this->addInventorySlotLog($playerUuid, $holder, $worldName, $action, $time, $slot, $sourceItem, $targetItem);
+                yield $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, $action, $time);
             }
         );
     }
 
-    final protected function addInventorySlotLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time, int $slot, Item $oldItem, Item $newItem): Generator
+    final protected function addInventorySlotLog(string $uuid, int $slot, Item $oldItem, Item $newItem, Vector3 $position, string $worldName, Action $action, int $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -148,7 +148,7 @@ class InventoriesQueries extends Query
      */
     public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Vector3 $position, string $worldName): void
     {
-        Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), $position, $worldName, $action, microtime(true), 0, $item, $item));
+        Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, time()));
     }
 
     public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
@@ -171,13 +171,13 @@ class InventoriesQueries extends Query
                 foreach ($contents as $slot => $content) {
                     yield $this->addInventorySlotLog(
                         EntityUtils::getUniqueId($player),
+                        $slot,
+                        $content,
+                        $airItem,
                         $inventoryPosition,
                         $worldName,
                         Action::REMOVE(),
-                        $time,
-                        $slot,
-                        $content,
-                        $airItem
+                        $time
                     );
                 }
 
