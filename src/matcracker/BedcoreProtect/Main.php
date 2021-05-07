@@ -112,6 +112,14 @@ final class Main extends PluginBase
 
         @mkdir($this->getDataFolder());
 
+        $confUpdater = new ConfigUpdater($this);
+
+        if ($confUpdater->checkUpdate()) {
+            if (!$confUpdater->update()) {
+                $this->getLogger()->critical("Could not save the new configuration file.");
+            }
+        }
+
         $this->configParser = (new ConfigParser($this->getConfig()))->validate();
         if (!$this->configParser->isValidConfig()) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -120,7 +128,6 @@ final class Main extends PluginBase
         }
 
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
-        (new ConfigUpdater($this))->checkUpdate();
 
         $this->saveResource($this->configParser->getDatabaseFileName());
 

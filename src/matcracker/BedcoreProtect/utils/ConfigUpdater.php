@@ -23,6 +23,9 @@ namespace matcracker\BedcoreProtect\utils;
 
 use matcracker\BedcoreProtect\Main;
 use function date;
+use function gettype;
+use function in_array;
+use function is_array;
 use function is_string;
 use function rename;
 use const DIRECTORY_SEPARATOR;
@@ -40,22 +43,30 @@ final class ConfigUpdater
         $this->plugin = $plugin;
     }
 
-    public function checkUpdate(): void
+    public function checkUpdate(): bool
     {
-        $config = $this->plugin->getConfig();
-        $confVersion = (int)$config->get("config-version", self::KEY_NOT_PRESENT);
+        $confVersion = (int)$this->plugin->getConfig()->get("config-version", self::KEY_NOT_PRESENT);
 
-        if ($confVersion === self::LAST_VERSION) {
-            return;
-        }
+        return $confVersion !== self::LAST_VERSION;
+    }
 
+    public function update(): bool
+    {
+        //Get a copy of previous configuration
+        $oldConfigData = $this->plugin->getConfig()->getAll();
+
+        //Create a backup of old configuration
         if (!$this->saveConfigBackup()) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("config.updater.save-error"));
-            $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
-            return;
+            return false;
         }
 
-        $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("config.updater.outdated"));
+        $newConfigData = $this->plugin->getConfig()->getAll();
+        //Update the new configuration with the previous one.
+        $this->iterateConfigurations($oldConfigData, $newConfigData);
+
+        $this->plugin->getConfig()->setAll($newConfigData);
+
+        return $this->plugin->getConfig()->save();
     }
 
     private function saveConfigBackup(): bool
@@ -71,6 +82,40 @@ final class ConfigUpdater
             return false;
         }
 
-        return $this->plugin->saveDefaultConfig();
+        $this->plugin->reloadConfig();
+        return true;
+    }
+
+    private function iterateConfigurations(array $oldConfigData, array &$newConfigData): void
+    {
+        static $skipKeys = [
+            "config-version"
+        ];
+
+        foreach ($newConfigData as $key => &$value) {
+            if (in_array($key, $skipKeys)) {
+                continue;
+            }
+
+            //Check if the same key is present in both configuration to try to maintain the value.
+            if (isset($oldConfigData[$key])) {
+                $oldValue = $oldConfigData[$key];
+
+                /*
+                 * If the values types are different, it means that the structure is changed
+                 * so we need to ignore it.
+                 */
+                if (gettype($oldValue) !== gettype($value)) {
+                    continue;
+                }
+
+                //Nested values
+                if (is_array($value)) {
+                    $this->iterateConfigurations($oldConfigData[$key], $value);
+                } else {
+                    $value = $oldValue;
+                }
+            }
+        }
     }
 }
