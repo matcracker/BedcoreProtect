@@ -12,46 +12,46 @@ CREATE TABLE IF NOT EXISTS entities
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS log_history
 (
-    log_id     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    log_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
     who        VARCHAR(36)           NOT NULL,
-    x          BIGINT                NOT NULL,
-    y          TINYINT UNSIGNED      NOT NULL,
-    z          BIGINT                NOT NULL,
+    x          INTEGER               NOT NULL,
+    y          SMALLINT              NOT NULL,
+    z          INTEGER               NOT NULL,
     world_name VARCHAR(255)          NOT NULL,
     action     TINYINT UNSIGNED      NOT NULL,
-    time       INTEGER UNSIGNED      NOT NULL,
+    time       BIGINT                NOT NULL,
     rollback   BOOLEAN DEFAULT FALSE NOT NULL,
-    FOREIGN KEY (who) REFERENCES entities (uuid)
+    CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES entities (uuid)
 );
 -- #        }
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS blocks_log
 (
-    history_id BIGINT UNSIGNED PRIMARY KEY,
+    history_id BIGINT PRIMARY KEY,
     old_id     INTEGER UNSIGNED    NOT NULL,
     old_meta   TINYINT(2) UNSIGNED NOT NULL,
     old_nbt    LONGBLOB DEFAULT NULL,
     new_id     INTEGER UNSIGNED    NOT NULL,
     new_meta   TINYINT(2) UNSIGNED NOT NULL,
     new_nbt    LONGBLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS entities_log
 (
-    history_id      BIGINT UNSIGNED PRIMARY KEY,
+    history_id      BIGINT PRIMARY KEY,
     entityfrom_uuid VARCHAR(36)      NOT NULL,
     entityfrom_id   INTEGER UNSIGNED NOT NULL,
     entityfrom_nbt  LONGBLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
-    FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
+    CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
+    CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
 );
 -- #        }
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (
-    history_id BIGINT UNSIGNED PRIMARY KEY,
+    history_id BIGINT PRIMARY KEY,
     slot       TINYINT UNSIGNED              NOT NULL,
     old_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
     old_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS inventories_log
     new_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
     new_nbt    LONGBLOB            DEFAULT NULL,
     new_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
+    CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {db_status
