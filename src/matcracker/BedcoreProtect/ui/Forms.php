@@ -39,6 +39,9 @@ final class Forms
 {
     /** @var ConfigParser */
     private $configParser;
+    private const TYPE_LOOKUP = "lookup";
+    private const TYPE_ROLLBACK = "rollback";
+    private const TYPE_RESTORE = "restore";
 
     public function __construct(ConfigParser $configParser)
     {
@@ -58,7 +61,7 @@ final class Forms
                         $player->sendForm($this->getNearMenu());
                         break;
                     case 2: //Lookup
-                        $player->sendForm($this->getInputMenu('lookup'));
+                        $player->sendForm($this->getInputMenu(self::TYPE_LOOKUP));
                         break;
                     case 3: //Show
                         if (count(Inspector::getSavedLogs($player)) > 0) {
@@ -68,10 +71,10 @@ final class Forms
                         }
                         break;
                     case 4: //Rollback
-                        $player->sendForm($this->getInputMenu('rollback'));
+                        $player->sendForm($this->getInputMenu(self::TYPE_ROLLBACK));
                         break;
                     case 5: //Restore
-                        $player->sendForm($this->getInputMenu('restore'));
+                        $player->sendForm($this->getInputMenu(self::TYPE_RESTORE));
                         break;
                     case 6: //Undo
                         $player->chat('/bcp undo');
@@ -120,20 +123,33 @@ final class Forms
     private function getInputMenu(string $type): BaseForm
     {
         $lang = Main::getInstance()->getLanguage();
-        return (new CustomForm(
+        $form = new CustomForm(
             $this->parseForm($type),
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addLabel($lang->translateString('form.input-menu.required-fields'))
-            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s", null, "time")
-            ->addSlider($lang->translateString('form.input-menu.radius'), 0, $this->configParser->getMaxRadius(), null, null, "radius")
-            ->addLabel($lang->translateString('form.input-menu.optional-fields'))
-            ->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'), null, "user")
+        );
+
+        $form->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.required-fields'))
+            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s", null, "time");
+
+        if ($type !== self::TYPE_LOOKUP) {
+            $form->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius");
+        }
+
+        $form->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.optional-fields'));
+
+        if ($type === self::TYPE_LOOKUP) {
+            $form->addSlider($lang->translateString('form.input-menu.radius'), 0, $this->configParser->getMaxRadius(), null, null, "radius");
+        }
+
+        $form->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'), null, "user")
             ->addDropdown($lang->translateString('general.action'), array_keys(CommandParser::$ACTIONS), -1, "action")
             ->addInput($lang->translateString('form.input-menu.restrict-blocks'), 'stone,dirt,2:0', null, "inclusions")
             ->addInput($lang->translateString('form.input-menu.exclude-blocks'), 'stone,dirt,2:0', null, "exclusions")
             ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString("general.$type")));
+
+        return $form;
     }
 
     private function parseForm(string $subCmd): Closure
