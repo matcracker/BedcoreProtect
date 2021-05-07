@@ -449,7 +449,7 @@ final class CommandParser
         return $this->errorMessage;
     }
 
-    public function buildLookupQuery(string &$query, array &$args): void
+    public function buildLookupQuery(string &$query, array &$args, ?AxisAlignedBB $bb = null): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
@@ -502,7 +502,7 @@ final class CommandParser
         $variables = [];
         $parameters = [];
 
-        $this->buildConditionalQuery($query, $variables, $parameters, null);
+        $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
         $query .= ' ORDER BY time DESC;';
 
