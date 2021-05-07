@@ -169,7 +169,7 @@ final class Inspector
                     $to = "#{$id}:{$meta} ({$blockName})";
                 }
             } elseif (isset($log['entity_to'])) {
-                $to = "#{$log['entity_to']}";
+                $to = $log['entity_to'];
             } else {
                 $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString('inspector.corrupted-data')));
                 return;
@@ -177,7 +177,7 @@ final class Inspector
 
             //TODO: Use strikethrough (&m) when MC fix it.
             $inspector->sendMessage(TextFormat::colorize(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
-                . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+                . "&f - &3{$from} &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/{$worldName})&f."));
         }
         $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data')));
     }

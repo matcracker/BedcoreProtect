@@ -49,13 +49,13 @@ class EntitiesQueries extends Query
     public function addDefaultEntities(): void
     {
         static $map = [
-            "flow-uuid" => "#flow",
-            "water-uuid" => "#water",
-            "still water-uuid" => "#water",
-            "lava-uuid" => "#lava",
-            "still lava-uuid" => "#lava",
-            "fire block-uuid" => "#fire",
-            "leaves-uuid" => "#decay"
+            "flow-uuid" => "#Flow",
+            "water-uuid" => "#Water",
+            "still water-uuid" => "#Water",
+            "lava-uuid" => "#Lava",
+            "still lava-uuid" => "#Lava",
+            "fire block-uuid" => "#Fire",
+            "leaves-uuid" => "#Decay"
         ];
 
         Await::f2c(function () use ($map): Generator {
