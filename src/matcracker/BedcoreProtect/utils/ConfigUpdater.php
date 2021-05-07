@@ -22,13 +22,9 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use matcracker\BedcoreProtect\Main;
-use function date;
-use function gettype;
-use function in_array;
-use function is_array;
-use function is_string;
-use function rename;
-use const DIRECTORY_SEPARATOR;
+use function array_keys;
+use function count;
+use function ucfirst;
 
 final class ConfigUpdater
 {
@@ -62,9 +58,14 @@ final class ConfigUpdater
 
         $newConfigData = $this->plugin->getConfig()->getAll();
         //Update the new configuration with the previous one.
-        $this->iterateConfigurations($oldConfigData, $newConfigData);
+        $resultOptions = $this->iterateConfigurations($oldConfigData, $newConfigData);
 
         $this->plugin->getConfig()->setAll($newConfigData);
+
+        $this->plugin->getLogger()->info("The configuration file has been updated.");
+        $this->printOptions($resultOptions, "new");
+        $this->printOptions($resultOptions, "changed");
+        $this->printOptions($resultOptions, "removed");
 
         return $this->plugin->getConfig()->save();
     }
@@ -86,10 +87,34 @@ final class ConfigUpdater
         return true;
     }
 
-    private function iterateConfigurations(array $oldConfigData, array &$newConfigData): void
+    private function printOptions(array $resultOptions, string $type): void
+    {
+        if (isset($resultOptions[$type])) {
+            if (count($resultOptions[$type]) > 0) {
+                $this->plugin->getLogger()->info(ucfirst($type) . " options:");
+                foreach ($resultOptions[$type] as $option) {
+                    $this->plugin->getLogger()->info("- $option");
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the number of options changed between the old and the new configurations.
+     *
+     * @param array $oldConfigData
+     * @param array $newConfigData
+     * @return string[][]
+     */
+    private function iterateConfigurations(array $oldConfigData, array &$newConfigData): array
     {
         static $skipKeys = [
-            "config-version"
+            "config - version"
+        ];
+
+        $resultOptions = [
+            "new" => array_keys(array_diff_key($newConfigData, $oldConfigData)),
+            "removed" => array_keys(array_diff_key($oldConfigData, $newConfigData))
         ];
 
         foreach ($newConfigData as $key => &$value) {
@@ -106,16 +131,19 @@ final class ConfigUpdater
                  * so we need to ignore it.
                  */
                 if (gettype($oldValue) !== gettype($value)) {
+                    $resultOptions["changed"][] = $key;
                     continue;
                 }
 
                 //Nested values
                 if (is_array($value)) {
-                    $this->iterateConfigurations($oldConfigData[$key], $value);
+                    $resultOptions = array_merge_recursive($resultOptions, $this->iterateConfigurations($oldConfigData[$key], $value));
                 } else {
                     $value = $oldValue;
                 }
             }
         }
+
+        return $resultOptions;
     }
 }
