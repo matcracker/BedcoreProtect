@@ -544,6 +544,11 @@ final class CommandParser
         return $this->getData('radius');
     }
 
+    public function getDefaultRadius(): int
+    {
+        return $this->configParser->getDefaultRadius();
+    }
+
     /**
      * @return Action[]|null
      */

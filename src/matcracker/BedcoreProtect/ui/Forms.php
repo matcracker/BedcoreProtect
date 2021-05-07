@@ -131,16 +131,13 @@ final class Forms
         );
 
         $form->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.required-fields'))
-            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s", null, "time");
-
-        if ($type !== self::TYPE_LOOKUP) {
-            $form->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius");
-        }
-
-        $form->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.optional-fields'));
+            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s", null, "time")
+            ->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.optional-fields'));
 
         if ($type === self::TYPE_LOOKUP) {
             $form->addSlider($lang->translateString('form.input-menu.radius'), 0, $this->configParser->getMaxRadius(), null, null, "radius");
+        } else {
+            $form->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius");
         }
 
         $form->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'), null, "user")
