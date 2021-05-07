@@ -268,11 +268,11 @@ ALTER TABLE "temp"
 CREATE TABLE IF NOT EXISTS "temp"
 (
     history_id INTEGER PRIMARY KEY,
-    old_id     UNSIGNED INTEGER    NOT NULL,
-    old_meta   UNSIGNED TINYINT(2) NOT NULL,
+    old_id     INTEGER NOT NULL,
+    old_meta   INTEGER NOT NULL,
     old_nbt    BLOB DEFAULT NULL,
-    new_id     UNSIGNED INTEGER    NOT NULL,
-    new_meta   UNSIGNED TINYINT(2) NOT NULL,
+    new_id     INTEGER NOT NULL,
+    new_meta   INTEGER NOT NULL,
     new_nbt    BLOB DEFAULT NULL,
     CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
@@ -317,14 +317,14 @@ CREATE TABLE IF NOT EXISTS "temp"
 (
     history_id INTEGER PRIMARY KEY,
     slot       UNSIGNED TINYINT NOT NULL,
-    old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
-    old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
-    old_nbt    BLOB                DEFAULT NULL,
-    old_amount UNSIGNED TINYINT    DEFAULT 0 NOT NULL,
-    new_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
-    new_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
-    new_nbt    BLOB                DEFAULT NULL,
-    new_amount UNSIGNED TINYINT    DEFAULT 0 NOT NULL,
+    old_id     INTEGER          DEFAULT 0 NOT NULL,
+    old_meta   INTEGER          DEFAULT 0 NOT NULL,
+    old_nbt    BLOB             DEFAULT NULL,
+    old_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    new_id     INTEGER          DEFAULT 0 NOT NULL,
+    new_meta   INTEGER          DEFAULT 0 NOT NULL,
+    new_nbt    BLOB             DEFAULT NULL,
+    new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
     CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }

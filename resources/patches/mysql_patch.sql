@@ -148,11 +148,11 @@ CREATE TABLE IF NOT EXISTS log_history_temp
 CREATE TABLE IF NOT EXISTS blocks_log_temp
 (
     history_id BIGINT PRIMARY KEY,
-    old_id     INTEGER UNSIGNED    NOT NULL,
-    old_meta   TINYINT(2) UNSIGNED NOT NULL,
+    old_id     INTEGER NOT NULL,
+    old_meta   INTEGER NOT NULL,
     old_nbt    LONGBLOB DEFAULT NULL,
-    new_id     INTEGER UNSIGNED    NOT NULL,
-    new_meta   TINYINT(2) UNSIGNED NOT NULL,
+    new_id     INTEGER NOT NULL,
+    new_meta   INTEGER NOT NULL,
     new_nbt    LONGBLOB DEFAULT NULL
 );
 -- #        }
@@ -169,15 +169,15 @@ CREATE TABLE IF NOT EXISTS entities_log_temp
 CREATE TABLE IF NOT EXISTS inventories_log_temp
 (
     history_id BIGINT PRIMARY KEY,
-    slot       TINYINT UNSIGNED              NOT NULL,
-    old_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
-    old_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
-    old_nbt    LONGBLOB            DEFAULT NULL,
-    old_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
-    new_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
-    new_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
-    new_nbt    LONGBLOB            DEFAULT NULL,
-    new_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL
+    slot       TINYINT UNSIGNED           NOT NULL,
+    old_id     INTEGER          DEFAULT 0 NOT NULL,
+    old_meta   INTEGER          DEFAULT 0 NOT NULL,
+    old_nbt    LONGBLOB         DEFAULT NULL,
+    old_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+    new_id     INTEGER          DEFAULT 0 NOT NULL,
+    new_meta   INTEGER          DEFAULT 0 NOT NULL,
+    new_nbt    LONGBLOB         DEFAULT NULL,
+    new_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL
 );
 -- #        }
 -- #        {5
