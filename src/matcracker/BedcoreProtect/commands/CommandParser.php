@@ -107,10 +107,6 @@ final class CommandParser
         if ($shift) {
             array_shift($this->arguments);
         }
-
-        if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
-            $this->data['radius'] = $dr;
-        }
     }
 
     /**
