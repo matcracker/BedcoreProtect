@@ -27,7 +27,6 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
-use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
@@ -49,7 +48,6 @@ use function count;
 use function ctype_digit;
 use function explode;
 use function implode;
-use function in_array;
 use function intval;
 use function mb_strtolower;
 use function mb_substr;
@@ -154,18 +152,13 @@ final class CommandParser
                 case 'u':
                     $users = explode(',', $paramValues);
 
-                    foreach ($users as &$user) {
-                        if (mb_substr($user, 0, 1) === '#') { //Entity
-                            $user = mb_substr($user, 1);
-                            if (!in_array($user, EntityUtils::getSaveNames())) {
-                                $this->errorMessage = $lang->translateString('parser.no-entity', [$user]);
+                    foreach ($users as $user) {
+                        if (mb_substr($user, 0, 1) !== '#') { //Entity
+                            if (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
+                                $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
 
                                 return false;
                             }
-                        } elseif (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
-                            $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
-
-                            return false;
                         }
                     }
                     $this->data['user'] = array_unique($users);
