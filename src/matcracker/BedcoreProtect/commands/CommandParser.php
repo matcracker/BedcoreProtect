@@ -267,16 +267,18 @@ final class CommandParser
         return true;
     }
 
-    public function buildLogsSelectionQuery(bool $rollback, AxisAlignedBB $bb): string
+    public function buildLogsSelectionQuery(string &$query, array &$args, bool $rollback, AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
         }
 
-        /** @var GenericVariable[] $variables */
-        $variables["rollback"] = new GenericVariable("rollback", GenericVariable::TYPE_INT, null);
-        /** @var array $parameters */
-        $parameters["rollback"] = intval(!$rollback);
+        $variables = [
+            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_INT, null)
+        ];
+        $parameters = [
+            "rollback" => intval(!$rollback)
+        ];
 
         if ($this->getInclusions() !== null || $this->getExclusions() !== null) {
             $query = /**@lang text */
@@ -313,7 +315,7 @@ final class CommandParser
             0
         );
 
-        return $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $outArgs);
+        $query = $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $args);
     }
 
     /**
@@ -447,7 +449,7 @@ final class CommandParser
         return $this->errorMessage;
     }
 
-    public function buildLookupQuery(): string
+    public function buildLookupQuery(string &$query, array &$args): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
@@ -514,7 +516,7 @@ final class CommandParser
             0
         );
 
-        return $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $outArgs);
+        $query = $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $args);
     }
 
     /**

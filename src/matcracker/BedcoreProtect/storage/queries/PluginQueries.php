@@ -72,9 +72,14 @@ class PluginQueries extends Query
 
     public function requestLookup(CommandSender $sender, CommandParser $parser): void
     {
+        $query = "";
+        $args = [];
+
+        $parser->buildLookupQuery($query, $args);
+
         $this->connector->executeSelectRaw(
-            $parser->buildLookupQuery(),
-            [],
+            $query,
+            $args,
             static function (array $rows) use ($sender): void {
                 Inspector::saveLogs($sender, $rows);
                 Inspector::parseLogs($sender, $rows);

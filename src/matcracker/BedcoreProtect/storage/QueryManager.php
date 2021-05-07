@@ -208,7 +208,10 @@ final class QueryManager
 
     private function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
     {
-        $query = $commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox());
+        $query = "";
+        $args = [];
+        $commandParser->buildLogsSelectionQuery($query, $args, $rollback, $area->getBoundingBox());
+
         $onSuccess = yield;
         $wrapOnSuccess = function (array $rows) use ($onSuccess) {
             /** @var int[] $logIds */
@@ -219,7 +222,7 @@ final class QueryManager
             $onSuccess($logIds);
         };
 
-        $this->connector->executeSelectRaw($query, [], $wrapOnSuccess, yield Await::REJECT);
+        $this->connector->executeSelectRaw($query, $args, $wrapOnSuccess, yield Await::REJECT);
         return yield Await::ONCE;
     }
 
