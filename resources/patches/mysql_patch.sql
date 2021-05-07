@@ -238,11 +238,11 @@ ALTER TABLE log_history
 -- #        }
 -- #        {19
 ALTER TABLE blocks_log
-    ADD CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id);
+    ADD CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
 -- #        }
 -- #        {20
 ALTER TABLE entities_log
-    ADD CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id);
+    ADD CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
 -- #        }
 -- #        {21
 ALTER TABLE entities_log
@@ -250,7 +250,7 @@ ALTER TABLE entities_log
 -- #        }
 -- #        {22
 ALTER TABLE inventories_log
-    ADD CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id);
+    ADD CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
 -- #        }
 -- #    }
 -- #}
