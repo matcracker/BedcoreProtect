@@ -51,8 +51,8 @@ use SOFe\AwaitGenerator\Await;
 use function array_key_first;
 use function array_map;
 use function count;
-use function microtime;
 use function strlen;
+use function time;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -92,7 +92,7 @@ class BlocksQueries extends Query
         $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
         $worldName = $pos->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         Await::f2c(
             function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
@@ -102,7 +102,7 @@ class BlocksQueries extends Query
         );
     }
 
-    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, int $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -131,7 +131,7 @@ class BlocksQueries extends Query
             return;
         }
 
-        $time = microtime(true);
+        $time = time();
 
         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
             function (int $currentTick) use ($entity, $oldBlocks, $action, $onTaskRun, $time): void {
@@ -154,9 +154,9 @@ class BlocksQueries extends Query
      * @param Block[] $oldBlocks
      * @param Block[] $newBlocks
      * @param Action $action
-     * @param float $time
+     * @param int $time
      */
-    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time): void
+    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, int $time): void
     {
         $cntOldBlocks = count($oldBlocks);
         $cntNewBlocks = count($newBlocks);
@@ -222,7 +222,7 @@ class BlocksQueries extends Query
         );
     }
 
-    final protected function addRawSerialBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    final protected function addRawSerialBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Vector3 $position, string $worldName, Action $action, int $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -259,7 +259,7 @@ class BlocksQueries extends Query
         $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
         $worldName = $pos->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         Await::f2c(
             function () use ($name, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
@@ -298,7 +298,7 @@ class BlocksQueries extends Query
         $itemFrameBlock = $itemFrame->getBlock();
         $position = $itemFrame->asVector3();
         $worldName = $itemFrame->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         Await::g2c(
             $this->addRawBlockLog(
@@ -333,7 +333,7 @@ class BlocksQueries extends Query
             $oldBlocks,
             $newBlocks,
             $action,
-            microtime(true)
+            time()
         );
     }
 

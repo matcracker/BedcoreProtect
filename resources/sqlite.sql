@@ -14,54 +14,54 @@ CREATE TABLE IF NOT EXISTS "log_history"
 (
     log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     who        VARCHAR(36)      NOT NULL,
-    x          BIGINT           NOT NULL,
-    y          TINYINT UNSIGNED NOT NULL,
-    z          BIGINT           NOT NULL,
+    x          INTEGER          NOT NULL,
+    y          SMALLINT         NOT NULL,
+    z          INTEGER          NOT NULL,
     world_name VARCHAR(255)     NOT NULL,
     action     TINYINT UNSIGNED NOT NULL,
-    time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
+    time       BIGINT           NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
-    FOREIGN KEY (who) REFERENCES "entities" (uuid)
+    CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
 -- #        }
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
-    history_id UNSIGNED BIG INT PRIMARY KEY,
-    old_id     UNSIGNED INTEGER    NOT NULL,
-    old_meta   UNSIGNED TINYINT(2) NOT NULL,
+    history_id INTEGER PRIMARY KEY,
+    old_id     INTEGER NOT NULL,
+    old_meta   INTEGER NOT NULL,
     old_nbt    BLOB DEFAULT NULL,
-    new_id     UNSIGNED INTEGER    NOT NULL,
-    new_meta   UNSIGNED TINYINT(2) NOT NULL,
+    new_id     INTEGER NOT NULL,
+    new_meta   INTEGER NOT NULL,
     new_nbt    BLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS "entities_log"
 (
-    history_id      UNSIGNED BIG INT PRIMARY KEY,
+    history_id      INTEGER PRIMARY KEY,
     entityfrom_uuid VARCHAR(36)      NOT NULL,
     entityfrom_id   UNSIGNED INTEGER NOT NULL,
     entityfrom_nbt  BLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
-    FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
+    CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
+    CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
 );
 -- #        }
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
-    history_id UNSIGNED BIG INT PRIMARY KEY,
+    history_id INTEGER PRIMARY KEY,
     slot       UNSIGNED TINYINT NOT NULL,
-    old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
-    old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
-    old_nbt    BLOB                DEFAULT NULL,
-    old_amount UNSIGNED TINYINT    DEFAULT 0 NOT NULL,
-    new_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
-    new_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
-    new_nbt    BLOB                DEFAULT NULL,
-    new_amount UNSIGNED TINYINT    DEFAULT 0 NOT NULL,
-    FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+    old_id     INTEGER          DEFAULT 0 NOT NULL,
+    old_meta   INTEGER          DEFAULT 0 NOT NULL,
+    old_nbt    BLOB             DEFAULT NULL,
+    old_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    new_id     INTEGER          DEFAULT 0 NOT NULL,
+    new_meta   INTEGER          DEFAULT 0 NOT NULL,
+    new_nbt    BLOB             DEFAULT NULL,
+    new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {db_status
@@ -116,10 +116,9 @@ VALUES (:version);
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
--- #                :time float
+-- #                :time int
 INSERT INTO "log_history"(who, x, y, z, world_name, action, time)
-VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action,
-        STRFTIME('%Y-%m-%d %H:%M:%f', :time, 'unixepoch', 'localtime'));
+VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, :time);
 -- #            }
 -- #            {block
 -- #                :log_id int
@@ -171,7 +170,7 @@ WHERE history_id = :log_id;
 -- #             :version string
 UPDATE status
 SET version     = :version,
-    upgraded_on = (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime'));
+    upgraded_on = (STRFTIME('%Y-%m-%d %H:%M:%s', 'now', 'localtime'));
 -- #        }
 -- #        {rollback_status
 -- #             :rollback bool
@@ -401,6 +400,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < DATETIME(((SELECT strftime('%s', 'now')) - :time), 'unixepoch', 'localtime');
+WHERE time < (SELECT STRFTIME('%s', 'now')) - :time;
 -- #    }
 -- #}

@@ -226,12 +226,12 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'rollback':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ['time'], true);
                     if ($parser->parse()) {
                         $level = $sender->getLevelNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.rollback.started', [$level->getFolderName()])));
 
-                        $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? 0);
+                        $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius());
                         $this->queryManager->rollback(new Area($level, $bb), $parser);
                     } else {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
@@ -243,7 +243,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 return true;
             case 'restore':
                 if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $config, $args, ['time', 'radius'], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ['time'], true);
                     if ($parser->parse()) {
                         $level = $sender->getLevelNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.restore.started', [$level->getFolderName()])));

@@ -12,56 +12,56 @@ CREATE TABLE IF NOT EXISTS entities
 -- #        {log_history
 CREATE TABLE IF NOT EXISTS log_history
 (
-    log_id     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    who        VARCHAR(36)                            NOT NULL,
-    x          BIGINT                                 NOT NULL,
-    y          TINYINT UNSIGNED                       NOT NULL,
-    z          BIGINT                                 NOT NULL,
-    world_name VARCHAR(255)                           NOT NULL,
-    action     TINYINT UNSIGNED                       NOT NULL,
-    time       TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    rollback   BOOLEAN      DEFAULT FALSE             NOT NULL,
-    FOREIGN KEY (who) REFERENCES entities (uuid)
+    log_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
+    who        VARCHAR(36)           NOT NULL,
+    x          INTEGER               NOT NULL,
+    y          SMALLINT              NOT NULL,
+    z          INTEGER               NOT NULL,
+    world_name VARCHAR(255)          NOT NULL,
+    action     TINYINT UNSIGNED      NOT NULL,
+    time       BIGINT                NOT NULL,
+    rollback   BOOLEAN DEFAULT FALSE NOT NULL,
+    CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES entities (uuid)
 );
 -- #        }
 -- #        {blocks_log
 CREATE TABLE IF NOT EXISTS blocks_log
 (
-    history_id BIGINT UNSIGNED PRIMARY KEY,
-    old_id     INTEGER UNSIGNED    NOT NULL,
-    old_meta   TINYINT(2) UNSIGNED NOT NULL,
+    history_id BIGINT PRIMARY KEY,
+    old_id     INTEGER NOT NULL,
+    old_meta   INTEGER NOT NULL,
     old_nbt    LONGBLOB DEFAULT NULL,
-    new_id     INTEGER UNSIGNED    NOT NULL,
-    new_meta   TINYINT(2) UNSIGNED NOT NULL,
+    new_id     INTEGER NOT NULL,
+    new_meta   INTEGER NOT NULL,
     new_nbt    LONGBLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {entities_log
 CREATE TABLE IF NOT EXISTS entities_log
 (
-    history_id      BIGINT UNSIGNED PRIMARY KEY,
+    history_id      BIGINT PRIMARY KEY,
     entityfrom_uuid VARCHAR(36)      NOT NULL,
     entityfrom_id   INTEGER UNSIGNED NOT NULL,
     entityfrom_nbt  LONGBLOB DEFAULT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
-    FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
+    CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
+    CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
 );
 -- #        }
 -- #        {inventories_log
 CREATE TABLE IF NOT EXISTS inventories_log
 (
-    history_id BIGINT UNSIGNED PRIMARY KEY,
-    slot       TINYINT UNSIGNED              NOT NULL,
-    old_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
-    old_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
-    old_nbt    LONGBLOB            DEFAULT NULL,
-    old_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
-    new_id     INTEGER UNSIGNED    DEFAULT 0 NOT NULL,
-    new_meta   TINYINT(2) UNSIGNED DEFAULT 0 NOT NULL,
-    new_nbt    LONGBLOB            DEFAULT NULL,
-    new_amount TINYINT UNSIGNED    DEFAULT 0 NOT NULL,
-    FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
+    history_id BIGINT PRIMARY KEY,
+    slot       TINYINT UNSIGNED           NOT NULL,
+    old_id     INTEGER          DEFAULT 0 NOT NULL,
+    old_meta   INTEGER          DEFAULT 0 NOT NULL,
+    old_nbt    LONGBLOB         DEFAULT NULL,
+    old_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+    new_id     INTEGER          DEFAULT 0 NOT NULL,
+    new_meta   INTEGER          DEFAULT 0 NOT NULL,
+    new_nbt    LONGBLOB         DEFAULT NULL,
+    new_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- #        }
 -- #        {db_status
@@ -109,9 +109,9 @@ ON DUPLICATE KEY UPDATE version=version;
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
--- #                :time float
+-- #                :time int
 INSERT INTO log_history(who, x, y, z, world_name, action, time)
-VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, FROM_UNIXTIME(:time));
+VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, :time);
 -- #            }
 -- #            {block
 -- #                :log_id int
@@ -392,6 +392,6 @@ ORDER BY time DESC;
 -- #        :time int
 DELETE
 FROM log_history
-WHERE time < FROM_UNIXTIME(UNIX_TIMESTAMP() - :time);
+WHERE time < UNIX_TIMESTAMP() - :time;
 -- #    }
 -- #}

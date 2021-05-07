@@ -208,7 +208,10 @@ final class QueryManager
 
     private function getRollbackLogIds(bool $rollback, Area $area, CommandParser $commandParser): Generator
     {
-        $query = $commandParser->buildLogsSelectionQuery($rollback, $area->getBoundingBox());
+        $query = "";
+        $args = [];
+        $commandParser->buildLogsSelectionQuery($query, $args, $rollback, $area->getBoundingBox());
+
         $onSuccess = yield;
         $wrapOnSuccess = function (array $rows) use ($onSuccess) {
             /** @var int[] $logIds */
@@ -219,7 +222,7 @@ final class QueryManager
             $onSuccess($logIds);
         };
 
-        $this->connector->executeSelectRaw($query, [], $wrapOnSuccess, yield Await::REJECT);
+        $this->connector->executeSelectRaw($query, $args, $wrapOnSuccess, yield Await::REJECT);
         return yield Await::ONCE;
     }
 
@@ -237,7 +240,7 @@ final class QueryManager
             $sender->sendMessage(TextFormat::colorize('&f--- &3' . Main::PLUGIN_NAME . '&7 ' . $lang->translateString('rollback.report') . ' &f---'));
             $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$area->getWorldName()])));
             $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
-            $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.radius', [$commandParser->getRadius() ?? 0])));
+            $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.radius', [$commandParser->getRadius() ?? $commandParser->getDefaultRadius()])));
 
             if (count(self::$additionalReports[$senderName]['messages']) > 0) {
                 foreach (self::$additionalReports[$senderName]['messages'] as $message) {

@@ -32,8 +32,6 @@ use pocketmine\utils\TextFormat;
 use function array_chunk;
 use function array_key_exists;
 use function count;
-use function is_int;
-use function strtotime;
 
 final class Inspector
 {
@@ -154,7 +152,7 @@ final class Inspector
             $action = Action::fromType((int)$log['action']);
             $rollback = (bool)$log['rollback'];
 
-            $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
+            $timeStamp = (int)$log['time'];
 
             $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? 'old' : 'new';
 
@@ -171,7 +169,7 @@ final class Inspector
                     $to = "#{$id}:{$meta} ({$blockName})";
                 }
             } elseif (isset($log['entity_to'])) {
-                $to = "#{$log['entity_to']}";
+                $to = $log['entity_to'];
             } else {
                 $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString('inspector.corrupted-data')));
                 return;
@@ -179,7 +177,7 @@ final class Inspector
 
             //TODO: Use strikethrough (&m) when MC fix it.
             $inspector->sendMessage(TextFormat::colorize(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
-                . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+                . "&f - &3{$from} &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/{$worldName})&f."));
         }
         $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data')));
     }

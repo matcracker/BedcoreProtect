@@ -26,6 +26,7 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\math\Area;
+use matcracker\BedcoreProtect\math\MathUtils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
@@ -72,9 +73,20 @@ class PluginQueries extends Query
 
     public function requestLookup(CommandSender $sender, CommandParser $parser): void
     {
+        $query = "";
+        $args = [];
+
+        if ($sender instanceof Player && $parser->getRadius() !== null) {
+            $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
+        } else {
+            $bb = null;
+        }
+
+        $parser->buildLookupQuery($query, $args, $bb);
+
         $this->connector->executeSelectRaw(
-            $parser->buildLookupQuery(),
-            [],
+            $query,
+            $args,
             static function (array $rows) use ($sender): void {
                 Inspector::saveLogs($sender, $rows);
                 Inspector::parseLogs($sender, $rows);

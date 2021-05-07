@@ -22,15 +22,15 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use matcracker\BedcoreProtect\Main;
-use function date;
-use function is_string;
-use function rename;
-use const DIRECTORY_SEPARATOR;
+use function array_keys;
+use function count;
+use function ucfirst;
 
 final class ConfigUpdater
 {
+    public const LAST_VERSION = 2;
     private const KEY_NOT_PRESENT = -1;
-    public const LAST_VERSION = 1;
+
     /** @var Main */
     private $plugin;
 
@@ -39,22 +39,35 @@ final class ConfigUpdater
         $this->plugin = $plugin;
     }
 
-    public function checkUpdate(): void
+    public function checkUpdate(): bool
     {
-        $config = $this->plugin->getConfig();
-        $confVersion = (int)$config->get("config-version", self::KEY_NOT_PRESENT);
+        $confVersion = (int)$this->plugin->getConfig()->get("config-version", self::KEY_NOT_PRESENT);
 
-        if ($confVersion === self::LAST_VERSION) {
-            return;
-        }
+        return $confVersion !== self::LAST_VERSION;
+    }
 
+    public function update(): bool
+    {
+        //Get a copy of previous configuration
+        $oldConfigData = $this->plugin->getConfig()->getAll();
+
+        //Create a backup of old configuration
         if (!$this->saveConfigBackup()) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("config.updater.save-error"));
-            $this->plugin->getServer()->getPluginManager()->disablePlugin($this->plugin);
-            return;
+            return false;
         }
 
-        $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("config.updater.outdated"));
+        $newConfigData = $this->plugin->getConfig()->getAll();
+        //Update the new configuration with the previous one.
+        $resultOptions = $this->iterateConfigurations($oldConfigData, $newConfigData);
+
+        $this->plugin->getConfig()->setAll($newConfigData);
+
+        $this->plugin->getLogger()->info("The configuration file has been updated.");
+        $this->printOptions($resultOptions, "new");
+        $this->printOptions($resultOptions, "changed");
+        $this->printOptions($resultOptions, "removed");
+
+        return $this->plugin->getConfig()->save();
     }
 
     private function saveConfigBackup(): bool
@@ -70,6 +83,67 @@ final class ConfigUpdater
             return false;
         }
 
-        return $this->plugin->saveDefaultConfig();
+        $this->plugin->reloadConfig();
+        return true;
+    }
+
+    private function printOptions(array $resultOptions, string $type): void
+    {
+        if (isset($resultOptions[$type])) {
+            if (count($resultOptions[$type]) > 0) {
+                $this->plugin->getLogger()->info(ucfirst($type) . " options:");
+                foreach ($resultOptions[$type] as $option) {
+                    $this->plugin->getLogger()->info("- $option");
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the number of options changed between the old and the new configurations.
+     *
+     * @param array $oldConfigData
+     * @param array $newConfigData
+     * @return string[][]
+     */
+    private function iterateConfigurations(array $oldConfigData, array &$newConfigData): array
+    {
+        static $skipKeys = [
+            "config - version"
+        ];
+
+        $resultOptions = [
+            "new" => array_keys(array_diff_key($newConfigData, $oldConfigData)),
+            "removed" => array_keys(array_diff_key($oldConfigData, $newConfigData))
+        ];
+
+        foreach ($newConfigData as $key => &$value) {
+            if (in_array($key, $skipKeys)) {
+                continue;
+            }
+
+            //Check if the same key is present in both configuration to try to maintain the value.
+            if (isset($oldConfigData[$key])) {
+                $oldValue = $oldConfigData[$key];
+
+                /*
+                 * If the values types are different, it means that the structure is changed
+                 * so we need to ignore it.
+                 */
+                if (gettype($oldValue) !== gettype($value)) {
+                    $resultOptions["changed"][] = $key;
+                    continue;
+                }
+
+                //Nested values
+                if (is_array($value)) {
+                    $resultOptions = array_merge_recursive($resultOptions, $this->iterateConfigurations($oldConfigData[$key], $value));
+                } else {
+                    $value = $oldValue;
+                }
+            }
+        }
+
+        return $resultOptions;
     }
 }

@@ -25,6 +25,7 @@ use InvalidArgumentException;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
+use pocketmine\Player;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
@@ -68,10 +69,20 @@ final class EntityUtils
      */
     public static function getName(Entity $entity): string
     {
-        try {
-            return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
-        } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException('Invalid entity class.');
+        if ($entity instanceof Player) {
+            return $entity->getName();
+        } else {
+            if ($entity instanceof Living) {
+                $name = $entity->getName();
+            } else {
+                try {
+                    $name = (new ReflectionClass($entity))->getShortName();
+                } catch (ReflectionException $exception) {
+                    throw new InvalidArgumentException('Invalid entity class.');
+                }
+            }
+
+            return "#$name";
         }
     }
 

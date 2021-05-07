@@ -40,6 +40,7 @@ use function microtime;
 use function min;
 use function preg_match;
 use function preg_replace;
+use function strlen;
 use const PHP_INT_MAX;
 use const PREG_OFFSET_CAPTURE;
 
@@ -103,7 +104,7 @@ final class Utils
     {
         $date = new DateTime();
         $date->setTimestamp($timestamp);
-        $currentDate = DateTime::createFromFormat('0.u00 U', microtime());
+        $currentDate = DateTime::createFromFormat("0.u00 U", microtime());
         if (!($currentDate instanceof DateTime)) {
             throw new UnexpectedValueException("Unexpected date creation.");
         }
@@ -117,19 +118,23 @@ final class Utils
         $since = array_slice($since, 0, $level);
         // build string
         $last_key = key(array_slice($since, -1, 1, true));
-        $string = '';
+        $string = "";
         foreach ($since as $key => $val) {
             // separator
             if ($string) {
-                $string .= $key !== $last_key ? ', ' : ' and ';
+                $string .= $key !== $last_key ? ", " : " and ";
             }
             // set plural
-            $key .= $val > 1 ? 's' : '';
+            $key .= $val > 1 ? "s" : "";
             // add date value
-            $string .= $val . ' ' . $key;
+            $string .= $val . " " . $key;
         }
 
-        return $string . ' ago';
+        if (strlen($string) > 0) {
+            return "$string ago";
+        } else {
+            return "Just now";
+        }
     }
 
     /**

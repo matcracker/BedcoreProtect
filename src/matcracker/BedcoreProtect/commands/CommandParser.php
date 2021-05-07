@@ -27,7 +27,6 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\math\MathUtils;
 use matcracker\BedcoreProtect\utils\ConfigParser;
-use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
@@ -49,7 +48,6 @@ use function count;
 use function ctype_digit;
 use function explode;
 use function implode;
-use function in_array;
 use function intval;
 use function mb_strtolower;
 use function mb_substr;
@@ -107,10 +105,6 @@ final class CommandParser
         if ($shift) {
             array_shift($this->arguments);
         }
-
-        if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
-            $this->data['radius'] = $dr;
-        }
     }
 
     /**
@@ -158,18 +152,13 @@ final class CommandParser
                 case 'u':
                     $users = explode(',', $paramValues);
 
-                    foreach ($users as &$user) {
-                        if (mb_substr($user, 0, 1) === '#') { //Entity
-                            $user = mb_substr($user, 1);
-                            if (!in_array($user, EntityUtils::getSaveNames())) {
-                                $this->errorMessage = $lang->translateString('parser.no-entity', [$user]);
+                    foreach ($users as $user) {
+                        if (mb_substr($user, 0, 1) !== '#') { //Entity
+                            if (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
+                                $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
 
                                 return false;
                             }
-                        } elseif (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
-                            $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
-
-                            return false;
                         }
                     }
                     $this->data['user'] = array_unique($users);
@@ -220,6 +209,9 @@ final class CommandParser
 
                     /** @var int[] $itemIds */
                     $itemIds = [];
+                    /** @var int[] $itemMetas */
+                    $itemMetas = [];
+
                     foreach (explode(",", $paramValues) as $strItem) {
                         try {
                             /** @var Item $item */
@@ -231,9 +223,13 @@ final class CommandParser
                         }
 
                         $itemIds[] = $item->getId();
+                        $itemMetas[] = $item->getDamage();
                     }
 
-                    $this->data[$index] = $itemIds;
+                    $this->data[$index] = [
+                        "ids" => $itemIds,
+                        "metas" => $itemMetas
+                    ];
 
                     break;
                 default:
@@ -260,16 +256,24 @@ final class CommandParser
         return true;
     }
 
-    public function buildLogsSelectionQuery(bool $rollback, AxisAlignedBB $bb): string
+    public function buildLogsSelectionQuery(string &$query, array &$args, bool $rollback, AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
         }
 
-        $case = $innerJoin = "";
+        $variables = [
+            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_INT, null)
+        ];
+        $parameters = [
+            "rollback" => intval(!$rollback)
+        ];
 
         if ($this->getInclusions() !== null || $this->getExclusions() !== null) {
-            $case = ",
+            $query = /**@lang text */
+                "SELECT log_id, id, meta 
+                FROM 
+                (SELECT log_history.*,
                     CASE
                         WHEN old_id = 0 THEN new_id
                         WHEN new_id = 0 THEN old_id
@@ -277,21 +281,18 @@ final class CommandParser
                     CASE
                         WHEN old_id = 0 THEN new_meta
                         WHEN new_id = 0 THEN old_meta
-                    END AS meta";
-
-            $innerJoin = "INNER JOIN blocks_log ON log_history.log_id = history_id";
+                    END AS meta
+                FROM log_history INNER JOIN blocks_log ON log_history.log_id = history_id
+                ) AS tmp_logs
+                WHERE rollback = :rollback AND ";
+        } else {
+            $query = /**@lang text */
+                "SELECT log_id FROM log_history WHERE rollback = :rollback AND ";
         }
-
-        $query = /**@lang text */
-            "SELECT log_id $case FROM log_history $innerJoin WHERE rollback = '" . intval(!$rollback) . "' AND ";
-
-        /** @var GenericVariable[] $variables */
-        $variables = [];
-        $parameters = [];
 
         $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
-        $query .= ' ORDER BY time' . ($rollback ? ' DESC' : '') . ';';
+        $query .= " ORDER BY time" . ($rollback ? " DESC" : "") . ";";
 
         $statement = GenericStatementImpl::forDialect(
             $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
@@ -303,7 +304,7 @@ final class CommandParser
             0
         );
 
-        return $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $outArgs);
+        $query = $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $args);
     }
 
     /**
@@ -365,9 +366,9 @@ final class CommandParser
                     $params["time"] = time() - (int)$value;
 
                     if ($this->configParser->isSQLite()) {
-                        $query .= "(time BETWEEN DATETIME(:time, 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
+                        $query .= "(time BETWEEN :time AND STRFTIME('%s', 'now')) AND ";
                     } else {
-                        $query .= "(time BETWEEN FROM_UNIXTIME(:time) AND CURRENT_TIMESTAMP) AND ";
+                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP()) AND ";
                     }
                     break;
                 case 'radius':
@@ -402,17 +403,21 @@ final class CommandParser
                     break;
 
                 case 'exclusions':
-                    $variables["exclusions"] = new GenericVariable("exclusions", "list:int", null);
-                    $params["exclusions"] = $value;
+                    $variables["exclusions_ids"] = new GenericVariable("exclusions_ids", "list:int", null);
+                    $params["exclusions_ids"] = $value["ids"];
+                    $variables["exclusions_metas"] = new GenericVariable("exclusions_metas", "list:int", null);
+                    $params["exclusions_metas"] = $value["metas"];
 
-                    $query .= "(id NOT IN :exclusions) AND ";
+                    $query .= "(id NOT IN :exclusions_ids OR meta NOT IN :exclusions_metas) AND ";
                     break;
 
                 case 'inclusions':
-                    $variables["inclusions"] = new GenericVariable("inclusions", "list:int", null);
-                    $params["inclusions"] = $value;
+                    $variables["inclusions_ids"] = new GenericVariable("inclusions_ids", "list:int", null);
+                    $params["inclusions_ids"] = $value["ids"];
+                    $variables["inclusions_metas"] = new GenericVariable("inclusions_metas", "list:int", null);
+                    $params["inclusions_metas"] = $value["metas"];
 
-                    $query .= "(id IN :inclusions) AND ";
+                    $query .= "(id IN :inclusions_ids AND meta IN :inclusions_metas) AND ";
                     break;
 
                 default:
@@ -433,7 +438,7 @@ final class CommandParser
         return $this->errorMessage;
     }
 
-    public function buildLookupQuery(): string
+    public function buildLookupQuery(string &$query, array &$args, ?AxisAlignedBB $bb = null): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
@@ -486,7 +491,7 @@ final class CommandParser
         $variables = [];
         $parameters = [];
 
-        $this->buildConditionalQuery($query, $variables, $parameters, null);
+        $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
         $query .= ' ORDER BY time DESC;';
 
@@ -500,7 +505,7 @@ final class CommandParser
             0
         );
 
-        return $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $outArgs);
+        $query = $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $args);
     }
 
     /**
@@ -537,6 +542,11 @@ final class CommandParser
     public function getRadius(): ?int
     {
         return $this->getData('radius');
+    }
+
+    public function getDefaultRadius(): int
+    {
+        return $this->configParser->getDefaultRadius();
     }
 
     /**

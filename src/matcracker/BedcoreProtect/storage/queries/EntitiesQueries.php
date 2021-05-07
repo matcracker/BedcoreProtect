@@ -35,7 +35,8 @@ use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
 use function get_class;
-use function microtime;
+use function mb_strtolower;
+use function time;
 
 /**
  * It contains all the queries methods related to entities.
@@ -48,13 +49,13 @@ class EntitiesQueries extends Query
     public function addDefaultEntities(): void
     {
         static $map = [
-            "flow-uuid" => "#flow",
-            "water-uuid" => "#water",
-            "still water-uuid" => "#water",
-            "lava-uuid" => "#lava",
-            "still lava-uuid" => "#lava",
-            "fire block-uuid" => "#fire",
-            "leaves-uuid" => "#decay"
+            "flow-uuid" => "#Flow",
+            "water-uuid" => "#Water",
+            "still water-uuid" => "#Water",
+            "lava-uuid" => "#Lava",
+            "still lava-uuid" => "#Lava",
+            "fire block-uuid" => "#Fire",
+            "leaves-uuid" => "#Decay"
         ];
 
         Await::f2c(function () use ($map): Generator {
@@ -89,7 +90,7 @@ class EntitiesQueries extends Query
     {
         $entityNbt = EntityUtils::getSerializedNbt($entity);
         $worldName = $entity->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
                 yield $this->addEntity($damager);
@@ -130,15 +131,18 @@ class EntitiesQueries extends Query
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
         $worldName = $block->getLevelNonNull()->getName();
-        $time = microtime(true);
+        $time = time();
 
         Await::f2c(
             function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
                 yield $this->addEntity($entity);
 
-                $name = $block->getName();
+                $blockName = $block->getName();
+                $uuid = mb_strtolower("$blockName-uuid");
+                yield $this->addRawEntity($uuid, "#$blockName");
+
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog("{$name}-uuid", $block->asVector3(), $worldName, $action, $time);
+                $lastId = yield $this->addRawLog($uuid, $block->asVector3(), $worldName, $action, $time);
 
                 yield $this->addEntityLog($lastId, $entity, $serializedNbt);
             }

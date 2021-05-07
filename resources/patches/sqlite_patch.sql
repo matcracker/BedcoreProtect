@@ -232,4 +232,113 @@ ALTER TABLE "entities_new"
     RENAME TO "entities";
 -- #        }
 -- #    }
+-- #    {0.8.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    who        VARCHAR(36)      NOT NULL,
+    x          INTEGER          NOT NULL,
+    y          SMALLINT         NOT NULL,
+    z          INTEGER          NOT NULL,
+    world_name VARCHAR(255)     NOT NULL,
+    action     TINYINT UNSIGNED NOT NULL,
+    time       BIGINT           NOT NULL,
+    "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
+);
+-- #        }
+-- #        {2
+INSERT INTO "temp"
+SELECT *
+FROM "log_history";
+-- #        }
+-- #        {3
+UPDATE "temp"
+SET time = STRFTIME('%s', time);
+-- #        }
+-- #        {4
+DROP TABLE "log_history";
+-- #        }
+-- #        {5
+ALTER TABLE "temp"
+    RENAME TO "log_history";
+-- #        }
+-- #        {6
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    old_id     INTEGER NOT NULL,
+    old_meta   INTEGER NOT NULL,
+    old_nbt    BLOB DEFAULT NULL,
+    new_id     INTEGER NOT NULL,
+    new_meta   INTEGER NOT NULL,
+    new_nbt    BLOB DEFAULT NULL,
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {7
+INSERT INTO "temp"
+SELECT *
+FROM "blocks_log";
+-- #        }
+-- #        {8
+DROP TABLE "blocks_log";
+-- #        }
+-- #        {9
+ALTER TABLE "temp"
+    RENAME TO "blocks_log";
+-- #        }
+-- #        {10
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id      INTEGER PRIMARY KEY,
+    entityfrom_uuid VARCHAR(36)      NOT NULL,
+    entityfrom_id   UNSIGNED INTEGER NOT NULL,
+    entityfrom_nbt  BLOB DEFAULT NULL,
+    CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
+    CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
+);
+-- #        }
+-- #        {11
+INSERT INTO "temp"
+SELECT *
+FROM "entities_log";
+-- #        }
+-- #        {12
+DROP TABLE "entities_log";
+-- #        }
+-- #        {13
+ALTER TABLE "temp"
+    RENAME TO "entities_log";
+-- #        }
+-- #        {14
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    slot       UNSIGNED TINYINT NOT NULL,
+    old_id     INTEGER          DEFAULT 0 NOT NULL,
+    old_meta   INTEGER          DEFAULT 0 NOT NULL,
+    old_nbt    BLOB             DEFAULT NULL,
+    old_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    new_id     INTEGER          DEFAULT 0 NOT NULL,
+    new_meta   INTEGER          DEFAULT 0 NOT NULL,
+    new_nbt    BLOB             DEFAULT NULL,
+    new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {15
+INSERT INTO "temp"
+SELECT *
+FROM "inventories_log";
+-- #        }
+-- #        {16
+DROP TABLE "inventories_log";
+-- #        }
+-- #        {17
+ALTER TABLE "temp"
+    RENAME TO "inventories_log";
+-- #        }
+-- #    }
 -- #}

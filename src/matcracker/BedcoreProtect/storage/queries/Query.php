@@ -126,7 +126,7 @@ abstract class Query
         return yield Await::ONCE;
     }
 
-    final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, int $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
             'uuid' => mb_strtolower($uuid),

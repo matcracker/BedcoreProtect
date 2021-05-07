@@ -125,7 +125,132 @@ ALTER TABLE temp
 -- #    }
 -- #    {0.7.1
 -- #        {1
-ALTER TABLE entities DROP COLUMN address;
+ALTER TABLE entities
+    DROP COLUMN address;
+-- #        }
+-- #    }
+-- #    {0.8.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS log_history_temp
+(
+    log_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
+    who        VARCHAR(36)           NOT NULL,
+    x          INTEGER               NOT NULL,
+    y          SMALLINT              NOT NULL,
+    z          INTEGER               NOT NULL,
+    world_name VARCHAR(255)          NOT NULL,
+    action     TINYINT UNSIGNED      NOT NULL,
+    time       BIGINT                NOT NULL,
+    rollback   BOOLEAN DEFAULT FALSE NOT NULL
+);
+-- #        }
+-- #        {2
+CREATE TABLE IF NOT EXISTS blocks_log_temp
+(
+    history_id BIGINT PRIMARY KEY,
+    old_id     INTEGER NOT NULL,
+    old_meta   INTEGER NOT NULL,
+    old_nbt    LONGBLOB DEFAULT NULL,
+    new_id     INTEGER NOT NULL,
+    new_meta   INTEGER NOT NULL,
+    new_nbt    LONGBLOB DEFAULT NULL
+);
+-- #        }
+-- #        {3
+CREATE TABLE IF NOT EXISTS entities_log_temp
+(
+    history_id      BIGINT PRIMARY KEY,
+    entityfrom_uuid VARCHAR(36)      NOT NULL,
+    entityfrom_id   INTEGER UNSIGNED NOT NULL,
+    entityfrom_nbt  LONGBLOB DEFAULT NULL
+);
+-- #        }
+-- #        {4
+CREATE TABLE IF NOT EXISTS inventories_log_temp
+(
+    history_id BIGINT PRIMARY KEY,
+    slot       TINYINT UNSIGNED           NOT NULL,
+    old_id     INTEGER          DEFAULT 0 NOT NULL,
+    old_meta   INTEGER          DEFAULT 0 NOT NULL,
+    old_nbt    LONGBLOB         DEFAULT NULL,
+    old_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+    new_id     INTEGER          DEFAULT 0 NOT NULL,
+    new_meta   INTEGER          DEFAULT 0 NOT NULL,
+    new_nbt    LONGBLOB         DEFAULT NULL,
+    new_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL
+);
+-- #        }
+-- #        {5
+INSERT INTO log_history_temp
+SELECT *
+FROM log_history;
+-- #        }
+-- #        {6
+UPDATE log_history_temp
+SET time = (UNIX_TIMESTAMP(time));
+-- #        }
+-- #        {7
+INSERT INTO blocks_log_temp
+SELECT *
+FROM blocks_log;
+-- #        }
+-- #        {8
+INSERT INTO entities_log_temp
+SELECT *
+FROM entities_log;
+-- #        }
+-- #        {9
+INSERT INTO inventories_log_temp
+SELECT *
+FROM inventories_log;
+-- #        }
+-- #        {10
+DROP TABLE blocks_log;
+-- #        }
+-- #        {11
+DROP TABLE entities_log;
+-- #        }
+-- #        {12
+DROP TABLE inventories_log;
+-- #        }
+-- #        {13
+DROP TABLE log_history;
+-- #        }
+-- #        {14
+ALTER TABLE log_history_temp
+    RENAME TO log_history;
+-- #        }
+-- #        {15
+ALTER TABLE blocks_log_temp
+    RENAME TO blocks_log;
+-- #        }
+-- #        {16
+ALTER TABLE entities_log_temp
+    RENAME TO entities_log;
+-- #        }
+-- #        {17
+ALTER TABLE inventories_log_temp
+    RENAME TO inventories_log;
+-- #        }
+-- #        {18
+ALTER TABLE log_history
+    ADD CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES entities (uuid);
+-- #        }
+-- #        {19
+ALTER TABLE blocks_log
+    ADD CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
+-- #        }
+-- #        {20
+ALTER TABLE entities_log
+    ADD CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
+-- #        }
+-- #        {21
+ALTER TABLE entities_log
+    ADD CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid);
+-- #        }
+-- #        {22
+ALTER TABLE inventories_log
+    ADD CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
 -- #        }
 -- #    }
 -- #}
