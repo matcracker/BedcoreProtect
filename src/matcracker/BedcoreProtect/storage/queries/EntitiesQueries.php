@@ -35,6 +35,7 @@ use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
 use function get_class;
+use function mb_strtolower;
 use function time;
 
 /**
@@ -136,9 +137,12 @@ class EntitiesQueries extends Query
             function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
                 yield $this->addEntity($entity);
 
-                $name = $block->getName();
+                $blockName = $block->getName();
+                $uuid = mb_strtolower("$blockName-uuid");
+                yield $this->addRawEntity($uuid, "#$blockName");
+
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog("{$name}-uuid", $block->asVector3(), $worldName, $action, $time);
+                $lastId = yield $this->addRawLog($uuid, $block->asVector3(), $worldName, $action, $time);
 
                 yield $this->addEntityLog($lastId, $entity, $serializedNbt);
             }
