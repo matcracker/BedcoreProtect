@@ -109,7 +109,7 @@ final class ConfigUpdater
     private function iterateConfigurations(array $oldConfigData, array &$newConfigData): array
     {
         static $skipKeys = [
-            "config - version"
+            "config-version"
         ];
 
         $resultOptions = [
