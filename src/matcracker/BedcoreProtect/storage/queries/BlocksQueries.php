@@ -48,11 +48,11 @@ use pocketmine\tile\ItemFrame;
 use pocketmine\tile\Tile;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function array_key_first;
 use function array_map;
+use function array_values;
 use function count;
+use function microtime;
 use function strlen;
-use function time;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -92,7 +92,7 @@ class BlocksQueries extends Query
         $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
         $worldName = $pos->getLevelNonNull()->getName();
-        $time = time();
+        $time = microtime(true);
 
         Await::f2c(
             function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
@@ -102,7 +102,7 @@ class BlocksQueries extends Query
         );
     }
 
-    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, int $time): Generator
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -131,7 +131,7 @@ class BlocksQueries extends Query
             return;
         }
 
-        $time = time();
+        $time = microtime(true);
 
         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
             function (int $currentTick) use ($entity, $oldBlocks, $action, $onTaskRun, $time): void {
@@ -154,63 +154,55 @@ class BlocksQueries extends Query
      * @param Block[] $oldBlocks
      * @param Block[] $newBlocks
      * @param Action $action
-     * @param int $time
+     * @param float $time
      */
-    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, int $time): void
+    protected function addSerialBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time): void
     {
         $cntOldBlocks = count($oldBlocks);
         $cntNewBlocks = count($newBlocks);
 
         if ($cntOldBlocks === 0 || $cntNewBlocks === 0) {
             return;
-
-        } elseif ($cntNewBlocks === 1) {
-            $newSerBlocks = [SerializableBlock::serialize($newBlocks[array_key_first($newBlocks)])];
-
-        } elseif ($cntOldBlocks === $cntNewBlocks) {
-            $newSerBlocks = array_map(static function (Block $block): SerializableBlock {
-                return SerializableBlock::serialize($block);
-            }, $newBlocks);
-
-        } else {
+        } elseif ($cntNewBlocks !== 1 && $cntOldBlocks !== $cntNewBlocks) {
             throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
         }
 
-        $oldSerBlocks = array_map(static function (Block $block): SerializableBlock {
+        $oldBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
             return SerializableBlock::serialize($block);
-        }, $oldBlocks);
+        }, $oldBlocks));
+
+        $newBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
+            return SerializableBlock::serialize($block);
+        }, $newBlocks));
 
         $uuidEntity = EntityUtils::getUniqueId($entity);
-        $worldName = $entity->getLevelNonNull()->getName();
 
         $this->mutexBlock->putClosure(
-            function () use ($entity, $uuidEntity, $oldSerBlocks, $newSerBlocks, $cntNewBlocks, $worldName, $action, $time): Generator {
+            function () use ($entity, $uuidEntity, $oldBlocks, $newBlocks, $cntNewBlocks, $action, $time): Generator {
                 yield $this->entitiesQueries->addEntity($entity);
 
                 yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                 if ($cntNewBlocks === 1) {
-                    $newBlock = $newSerBlocks[0];
-
-                    foreach ($oldSerBlocks as $oldBlock) {
+                    foreach ($oldBlocks as $oldBlock) {
                         yield $this->addRawSerialBlockLog(
                             $uuidEntity,
                             $oldBlock,
-                            $newBlock,
+                            $newBlocks[0],
                             $oldBlock->asVector3(),
-                            $worldName,
+                            $oldBlock->getWorldName(),
                             $action,
                             $time
                         );
                     }
                 } else {
-                    foreach ($oldSerBlocks as $key => $oldBlock) {
+                    foreach ($oldBlocks as $key => $oldBlock) {
                         yield $this->addRawSerialBlockLog(
                             $uuidEntity,
                             $oldBlock,
-                            $newSerBlocks[$key],
+                            $newBlocks[$key],
                             $oldBlock->asVector3(),
-                            $worldName,
+                            $oldBlock->getWorldName(),
                             $action,
                             $time
                         );
@@ -222,7 +214,7 @@ class BlocksQueries extends Query
         );
     }
 
-    final protected function addRawSerialBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Vector3 $position, string $worldName, Action $action, int $time): Generator
+    final protected function addRawSerialBlockLog(string $uuid, SerializableBlock $oldBlock, SerializableBlock $newBlock, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -255,27 +247,19 @@ class BlocksQueries extends Query
             $name = 'leaves';
         }
         $name .= "-uuid";
-        $oldNbt = BlockUtils::serializeTileTag($oldBlock);
-        $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
-        $worldName = $pos->getLevelNonNull()->getName();
-        $time = time();
 
-        Await::f2c(
-            function () use ($name, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
-                yield $this->addRawBlockLog(
-                    $name,
-                    $oldBlock,
-                    $oldNbt,
-                    $newBlock,
-                    $newNbt,
-                    $pos->asVector3(),
-                    $worldName,
-                    $action,
-                    $time
-                );
-            }
-        );
+        Await::g2c($this->addRawBlockLog(
+            $name,
+            $oldBlock,
+            BlockUtils::serializeTileTag($oldBlock),
+            $newBlock,
+            BlockUtils::serializeTileTag($newBlock),
+            $pos->asVector3(),
+            $pos->getLevelNonNull()->getName(),
+            $action,
+            microtime(true)
+        ));
     }
 
     /**
@@ -298,7 +282,6 @@ class BlocksQueries extends Query
         $itemFrameBlock = $itemFrame->getBlock();
         $position = $itemFrame->asVector3();
         $worldName = $itemFrame->getLevelNonNull()->getName();
-        $time = time();
 
         Await::g2c(
             $this->addRawBlockLog(
@@ -310,7 +293,7 @@ class BlocksQueries extends Query
                 $position,
                 $worldName,
                 $action,
-                $time
+                microtime(true)
             ),
             function () use ($player, $item, $action, $position, $worldName): void {
                 if (!$action->equals(Action::CLICK())) {
@@ -333,7 +316,7 @@ class BlocksQueries extends Query
             $oldBlocks,
             $newBlocks,
             $action,
-            time()
+            microtime(true)
         );
     }
 

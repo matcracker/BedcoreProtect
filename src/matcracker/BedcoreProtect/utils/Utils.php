@@ -100,10 +100,10 @@ final class Utils
         return (int)min($time, PHP_INT_MAX);
     }
 
-    public static function timeAgo(int $timestamp, int $level = 6): string
+    public static function timeAgo(float $timestamp, int $level = 6): string
     {
         $date = new DateTime();
-        $date->setTimestamp($timestamp);
+        $date->setTimestamp((int)$timestamp);
         $currentDate = DateTime::createFromFormat("0.u00 U", microtime());
         if (!($currentDate instanceof DateTime)) {
             throw new UnexpectedValueException("Unexpected date creation.");

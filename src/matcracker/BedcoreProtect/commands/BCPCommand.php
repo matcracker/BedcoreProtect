@@ -41,7 +41,7 @@ use function explode;
 use function implode;
 use function mb_strtolower;
 use function version_compare;
-use const PHP_INT_MAX;
+use const PHP_FLOAT_MAX;
 
 final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
@@ -168,7 +168,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     if ($parser->parse()) {
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.started')));
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.no-restart')));
-                        $this->queryManager->getPluginQueries()->purge($parser->getTime() ?? PHP_INT_MAX, function (int $affectedRows) use ($sender, $lang): void {
+                        $this->queryManager->getPluginQueries()->purge($parser->getTime() ?? PHP_FLOAT_MAX, function (int $affectedRows) use ($sender, $lang): void {
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.success')));
                             $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('command.purge.deleted-rows', [$affectedRows])));
                         });

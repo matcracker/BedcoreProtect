@@ -104,7 +104,7 @@ class PluginQueries extends Query
         $this->requestLog(QueriesConst::GET_BLOCK_LOG, $inspector, $block->asPosition());
     }
 
-    public function purge(int $time, ?callable $onSuccess = null): void
+    public function purge(float $time, ?callable $onSuccess = null): void
     {
         $this->connector->executeChange(QueriesConst::PURGE, [
             'time' => $time

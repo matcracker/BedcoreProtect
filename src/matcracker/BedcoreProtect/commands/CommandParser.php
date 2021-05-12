@@ -51,7 +51,7 @@ use function implode;
 use function intval;
 use function mb_strtolower;
 use function mb_substr;
-use function time;
+use function microtime;
 
 final class CommandParser
 {
@@ -362,13 +362,13 @@ final class CommandParser
                     $query .= "(who IN (SELECT uuid FROM entities WHERE entity_name IN :users)) AND ";
                     break;
                 case 'time':
-                    $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_INT, null);
-                    $params["time"] = time() - (int)$value;
+                    $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_FLOAT, null);
+                    $params["time"] = microtime(true) - (float)$value;
 
                     if ($this->configParser->isSQLite()) {
-                        $query .= "(time BETWEEN :time AND STRFTIME('%s', 'now')) AND ";
+                        $query .= "(time BETWEEN :time AND (SELECT STRFTIME('%s', 'now') + STRFTIME('%f', 'now') - STRFTIME('%S', 'now'))) AND ";
                     } else {
-                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP()) AND ";
+                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP(NOW(4))) AND ";
                     }
                     break;
                 case 'radius':

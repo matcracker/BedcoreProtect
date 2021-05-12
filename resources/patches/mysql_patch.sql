@@ -253,4 +253,10 @@ ALTER TABLE inventories_log
     ADD CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
 -- #        }
 -- #    }
+-- #    {0.8.1
+-- #        {1
+ALTER TABLE log_history
+    MODIFY time DOUBLE PRECISION NOT NULL;
+-- #        }
+-- #    }
 -- #}

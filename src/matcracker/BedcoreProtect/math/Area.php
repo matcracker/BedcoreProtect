@@ -80,7 +80,7 @@ final class Area
     {
         $world = Server::getInstance()->getLevelByName($this->worldName);
         if ($world === null) {
-            throw new InvalidStateException("Position world is null");
+            throw new InvalidStateException("World \"$this->worldName\" does not exist.");
         }
 
         return $world;

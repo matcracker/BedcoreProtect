@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS log_history
     z          INTEGER               NOT NULL,
     world_name VARCHAR(255)          NOT NULL,
     action     TINYINT UNSIGNED      NOT NULL,
-    time       BIGINT                NOT NULL,
+    time       DOUBLE PRECISION      NOT NULL,
     rollback   BOOLEAN DEFAULT FALSE NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES entities (uuid)
 );
@@ -109,7 +109,7 @@ ON DUPLICATE KEY UPDATE version=version;
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
--- #                :time int
+-- #                :time float
 INSERT INTO log_history(who, x, y, z, world_name, action, time)
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, :time);
 -- #            }
@@ -389,7 +389,7 @@ ORDER BY time DESC;
 -- #        }
 -- #    }
 -- #    {purge
--- #        :time int
+-- #        :time float
 DELETE
 FROM log_history
 WHERE time < UNIX_TIMESTAMP() - :time;

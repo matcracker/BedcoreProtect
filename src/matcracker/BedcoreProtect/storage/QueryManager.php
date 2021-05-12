@@ -43,7 +43,6 @@ use function count;
 use function microtime;
 use function preg_match;
 use function round;
-use function time;
 
 final class QueryManager
 {
@@ -234,7 +233,7 @@ final class QueryManager
         }
 
         if (($sender = Server::getInstance()->getPlayer($senderName)) !== null) {
-            $date = Utils::timeAgo(time() - $commandParser->getTime());
+            $date = Utils::timeAgo(microtime(true) - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
             $sender->sendMessage(TextFormat::colorize('&f--- &3' . Main::PLUGIN_NAME . '&7 ' . $lang->translateString('rollback.report') . ' &f---'));

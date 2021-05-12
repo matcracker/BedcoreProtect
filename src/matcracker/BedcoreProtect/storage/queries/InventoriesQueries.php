@@ -45,7 +45,7 @@ use pocketmine\tile\Chest;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function count;
-use function time;
+use function microtime;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -84,7 +84,7 @@ class InventoriesQueries extends Query
 
         $playerUuid = EntityUtils::getUniqueId($player);
         $worldName = $player->getLevelNonNull()->getName();
-        $time = time();
+        $time = microtime(true);
 
         Await::f2c(
             function () use ($playerUuid, $slotAction, $holder, $worldName, $time): Generator {
@@ -116,7 +116,7 @@ class InventoriesQueries extends Query
         );
     }
 
-    final protected function addInventorySlotLog(string $uuid, int $slot, Item $oldItem, Item $newItem, Vector3 $position, string $worldName, Action $action, int $time): Generator
+    final protected function addInventorySlotLog(string $uuid, int $slot, Item $oldItem, Item $newItem, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
@@ -148,13 +148,13 @@ class InventoriesQueries extends Query
      */
     public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Vector3 $position, string $worldName): void
     {
-        Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, time()));
+        Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, microtime(true)));
     }
 
     public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
     {
         $worldName = $player->getLevelNonNull()->getName();
-        $time = time();
+        $time = microtime(true);
 
         $contents = $inventory->getContents();
 
