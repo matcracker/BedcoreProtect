@@ -18,6 +18,6 @@
   sqlite: 17
   mysql: 22
 0.8.1:
-  sqlite: 4
-  mysql: 1
+  sqlite: 8
+  mysql: 5
 ...

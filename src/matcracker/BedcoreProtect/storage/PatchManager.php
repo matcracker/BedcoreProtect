@@ -93,7 +93,7 @@ final class PatchManager
                         }
                         yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
-                        yield $this->executeChange(QueriesConst::UPDATE_DATABASE_VERSION, ['version' => $version]);
+                        yield $this->executeChange(QueriesConst::ADD_DATABASE_VERSION, ['version' => $version]);
                         $patchVersion = $version;
                     }
                 }

@@ -67,10 +67,8 @@ CREATE TABLE IF NOT EXISTS inventories_log
 -- #        {db_status
 CREATE TABLE IF NOT EXISTS status
 (
-    only_one_row BOOLEAN PRIMARY KEY DEFAULT TRUE,
-    version      VARCHAR(20)                                   NOT NULL,
-    upgraded_on  TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CHECK (only_one_row)
+    version     VARCHAR(20) PRIMARY KEY             NOT NULL,
+    upgraded_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 -- #        }
 -- #    }
@@ -157,13 +155,6 @@ UPDATE entities_log
 SET entityfrom_id = :entity_id
 WHERE history_id = :log_id;
 -- #        }
--- #        {db_version
--- #             :version string
-UPDATE status
-SET version     = :version,
-    upgraded_on = DEFAULT
-LIMIT 1;
--- #        }
 -- #        {rollback_status
 -- #             :rollback bool
 -- #             :log_ids list:int
@@ -174,8 +165,9 @@ WHERE log_id IN :log_ids;
 -- #    }
 -- #    {get
 -- #        {db_status
-SELECT *
+SELECT version, (SELECT version FROM status ORDER BY upgraded_on LIMIT 1) AS init_version
 FROM status
+ORDER BY upgraded_on DESC
 LIMIT 1;
 -- #        }
 -- #        {log

@@ -106,11 +106,13 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                     function () use ($sender, $config, $lang): Generator {
                         $description = $this->plugin->getDescription();
                         $pluginVersion = $description->getVersion();
-                        $dbVersion = (string)(yield $this->plugin->getDatabase()->getStatus())[0]["version"];
+                        $dbVersions = (yield $this->plugin->getDatabase()->getStatus())[0];
+                        $dbVersion = (string)$dbVersions["version"];
+                        $initDbVersion = (string)$dbVersions["init_version"];
 
-                        if (version_compare($pluginVersion, $dbVersion) > 0) {
+                        if ($dbVersion !== $initDbVersion) {
                             //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)
-                            $dbVersion .= ' (' . $lang->translateString("command.status.bc") . ')';
+                            $dbVersion .= " &7(" . $lang->translateString("command.status.initial-database-version", [$initDbVersion]) . ")";
                         }
                         $sender->sendMessage(TextFormat::colorize('&f----- &3' . Main::PLUGIN_NAME . ' &f-----'));
                         $sender->sendMessage(TextFormat::colorize('&3' . $lang->translateString('command.status.version', [$pluginVersion])));

@@ -48,7 +48,6 @@ final class QueriesConst
     public const ADD_INVENTORY_LOG = 'bcp.add.log.inventory';
     public const UPDATE_ENTITY_ID = 'bcp.update.entity_id';
     public const UPDATE_ROLLBACK_STATUS = 'bcp.update.rollback_status';
-    public const UPDATE_DATABASE_VERSION = 'bcp.update.db_version';
     public const GET_DATABASE_STATUS = 'bcp.get.db_status';
     public const GET_ROLLBACK_OLD_BLOCKS = 'bcp.get.log.old_blocks';
     public const GET_ROLLBACK_NEW_BLOCKS = 'bcp.get.log.new_blocks';
