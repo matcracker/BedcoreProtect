@@ -144,7 +144,7 @@ For example, **"/bcp show 1:10"** will return 10 lines of data, starting at the 
 
 > **/bcp purge t=\<time>**<br>
 _Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>
-For example, "/co purge t:30d" will delete all data older than one month, and only keep the last 30 days of data.
+For example, "/bcp purge t=30d" will delete all data older than one month, and only keep the last 30 days of data.
 
 # FAQ
 
