@@ -63,15 +63,15 @@ final class PatchManager
                 /** @var array $rows */
                 $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
 
-                $versions = $this->getVersionsToPatch($rows[0]['version']);
+                $versions = $this->getVersionsToPatch($rows[0]["version"]);
                 if (count($versions) > 0) { //This means the database is not updated.
                     $parsedConfig = $this->plugin->getParsedConfig();
                     $dbType = $parsedConfig->getDatabaseType();
 
                     if ($parsedConfig->isSQLite()) { //Backup
                         $dbFilePath = $this->plugin->getDataFolder() . $parsedConfig->getDatabaseFileName();
-                        if (!copy($dbFilePath, $dbFilePath . "." . $rows[0]['version'] . ".bak")) {
-                            $this->plugin->getLogger()->warning($this->plugin->getLanguage()->translateString('database.version.backup-failed'));
+                        if (!copy($dbFilePath, $dbFilePath . "." . $rows[0]["version"] . ".bak")) {
+                            $this->plugin->getLogger()->warning($this->plugin->getLanguage()->translateString("database.version.backup-failed"));
                         }
                     }
 
@@ -93,7 +93,7 @@ final class PatchManager
                         }
                         yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
-                        yield $this->executeChange(QueriesConst::ADD_DATABASE_VERSION, ['version' => $version]);
+                        yield $this->executeChange(QueriesConst::ADD_DATABASE_VERSION, ["version" => $version]);
                         $patchVersion = $version;
                     }
                 }
@@ -116,7 +116,7 @@ final class PatchManager
      */
     private function getVersionsToPatch(string $db_version): array
     {
-        $res = $this->plugin->getResource('patches/.patches');
+        $res = $this->plugin->getResource("patches/.patches");
         if (!is_resource($res)) {
             throw new InvalidStateException("Could not retrieve .patches file. Be sure to use the original PHAR plugin file.");
         }

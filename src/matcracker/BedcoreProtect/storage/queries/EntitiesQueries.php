@@ -61,7 +61,7 @@ class EntitiesQueries extends Query
         Await::f2c(function () use ($map): Generator {
             $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
 
-            yield $this->addRawEntity($serverUuid, '#console');
+            yield $this->addRawEntity($serverUuid, "#console");
             foreach ($map as $uuid => $name) {
                 yield $this->addRawEntity($uuid, $name);
             }
@@ -78,9 +78,9 @@ class EntitiesQueries extends Query
     final public function addRawEntity(string $uuid, string $name, string $classPath = ""): Generator
     {
         $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
-            'uuid' => $uuid,
-            'name' => $name,
-            'path' => $classPath
+            "uuid" => $uuid,
+            "name" => $name,
+            "path" => $classPath
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;
@@ -120,10 +120,10 @@ class EntitiesQueries extends Query
     final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
-            'log_id' => $logId,
-            'uuid' => EntityUtils::getUniqueId($entity),
-            'id' => $entity->getId(),
-            'nbt' => $serializedNbt
+            "log_id" => $logId,
+            "uuid" => EntityUtils::getUniqueId($entity),
+            "id" => $entity->getId(),
+            "nbt" => $serializedNbt
         ]);
     }
 
@@ -154,23 +154,23 @@ class EntitiesQueries extends Query
         $entityRows = [];
 
         if ($this->configParser->getRollbackEntities()) {
-            $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
+            $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds]);
 
             foreach ($entityRows as $row) {
-                $action = Action::fromType((int)$row['action']);
+                $action = Action::fromType((int)$row["action"]);
                 if (
                     ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
                     (!$rollback && $action->equals(Action::SPAWN()))
                 ) {
                     /** @var Entity $entityClass */
-                    $entityClass = (string)$row['entity_classpath'];
-                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row['entityfrom_nbt']));
+                    $entityClass = (string)$row["entity_classpath"];
+                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row["entityfrom_nbt"]));
                     if ($entity !== null) {
-                        yield $this->updateEntityId((int)$row['log_id'], $entity);
+                        yield $this->updateEntityId((int)$row["log_id"], $entity);
                         $entity->spawnToAll();
                     }
                 } else {
-                    $entity = $world->getEntity((int)$row['entityfrom_id']);
+                    $entity = $world->getEntity((int)$row["entityfrom_id"]);
                     if ($entity !== null) {
                         $entity->close();
                     }
@@ -179,7 +179,7 @@ class EntitiesQueries extends Query
         }
 
         if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage($commandParser->getSenderName(), 'rollback.entities', [$entities]);
+            QueryManager::addReportMessage($commandParser->getSenderName(), "rollback.entities", [$entities]);
         }
 
         $onComplete();
@@ -188,8 +188,8 @@ class EntitiesQueries extends Query
     final protected function updateEntityId(int $logId, Entity $entity): Generator
     {
         $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
-            'log_id' => $logId,
-            'entity_id' => $entity->getId()
+            "log_id" => $logId,
+            "entity_id" => $entity->getId()
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;

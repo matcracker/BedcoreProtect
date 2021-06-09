@@ -93,7 +93,7 @@ final class BlockUtils
     }
 
     /**
-     * Serializes a block (tile) compound tag into base64. Returns null if block doesn't contain NBT.
+     * Serializes a block (tile) compound tag into base64. Returns null if block doesn"t contain NBT.
      *
      * @param Block $block
      *
@@ -164,6 +164,6 @@ final class BlockUtils
             BlockIds::SKULL_BLOCK => Tile::SKULL
         ];
 
-        return $array[$blockId] ?? 'Unknown';
+        return $array[$blockId] ?? "Unknown";
     }
 }

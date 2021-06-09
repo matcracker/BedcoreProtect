@@ -43,7 +43,7 @@ trait EnumTrait
      */
     private function __construct(string $enumName)
     {
-        if (preg_match('/^\D[A-Za-z\d_]+$/u', $enumName, $matches) === 0) {
+        if (preg_match("/^\D[A-Za-z\d_]+$/u", $enumName, $matches) === 0) {
             throw new InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
         }
         $this->enumName = $enumName;

@@ -119,7 +119,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.version", [$pluginVersion])));
                         $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.database-connection", [$config->getPrintableDatabaseType()])));
                         $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.database-version", [$dbVersion])));
-                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.author", [implode(', ', $description->getAuthors())])));
+                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.author", [implode(", ", $description->getAuthors())])));
                         $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.website", [$description->getWebsite()])));
                     }
                 );
@@ -162,7 +162,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.show.no-logs")));
                     }
                 } else {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString('command.error.one-parameter')));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
                 }
                 return true;
             case "purge":
@@ -197,7 +197,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
             case "ui":
                 $sender->sendForm((new Forms($config))->getMainMenu());
                 return true;
-            case 'inspect':
+            case "inspect":
                 if (Inspector::isInspector($sender)) {
                     Inspector::removeInspector($sender);
                     $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.inspect.disabled")));

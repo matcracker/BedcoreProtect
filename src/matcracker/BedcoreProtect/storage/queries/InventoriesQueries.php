@@ -122,16 +122,16 @@ class InventoriesQueries extends Query
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
-            'log_id' => $lastId,
-            'slot' => $slot,
-            'old_id' => $oldItem->getId(),
-            'old_meta' => $oldItem->getDamage(),
-            'old_nbt' => Utils::serializeNBT($oldItem->getNamedTag()),
-            'old_amount' => $oldItem->getCount(),
-            'new_id' => $newItem->getId(),
-            'new_meta' => $newItem->getDamage(),
-            'new_nbt' => Utils::serializeNBT($newItem->getNamedTag()),
-            'new_amount' => $newItem->getCount()
+            "log_id" => $lastId,
+            "slot" => $slot,
+            "old_id" => $oldItem->getId(),
+            "old_meta" => $oldItem->getDamage(),
+            "old_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
+            "old_amount" => $oldItem->getCount(),
+            "new_id" => $newItem->getId(),
+            "new_meta" => $newItem->getDamage(),
+            "new_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
+            "new_amount" => $newItem->getCount()
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;

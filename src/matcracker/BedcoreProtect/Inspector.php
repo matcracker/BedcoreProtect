@@ -141,7 +141,7 @@ final class Inspector
             return;
         }
 
-        $inspector->sendMessage(TextFormat::colorize('&f-----&3 ' . Main::PLUGIN_NAME . ' &7(' . $lang->translateString('inspector.page', [$fakePage, $maxPages]) . ') &f-----'));
+        $inspector->sendMessage(TextFormat::colorize("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$fakePage, $maxPages]) . ") &f-----"));
         foreach ($chunkLogs[$page] as $log) {
             //Default
             $from = (string)$log["entity_from"];

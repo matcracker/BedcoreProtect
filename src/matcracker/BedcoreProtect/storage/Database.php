@@ -52,16 +52,16 @@ class Database
     final public function connect(): bool
     {
         try {
-            $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get('database'), [
-                'sqlite' => 'sqlite.sql',
-                'mysql' => 'mysql.sql'
+            $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
+                "sqlite" => "sqlite.sql",
+                "mysql" => "mysql.sql"
             ]);
         } catch (SqlError $error) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString('database.connection.fail'));
+            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
             return false;
         }
 
-        $patchResource = $this->plugin->getResource('patches/' . $this->plugin->getParsedConfig()->getDatabaseType() . '_patch.sql');
+        $patchResource = $this->plugin->getResource("patches/" . $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql");
         if ($patchResource !== null) {
             $this->connector->loadQueryFile($patchResource);
         }
@@ -82,7 +82,7 @@ class Database
 
     private function throwDatabaseException(): void
     {
-        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString('database.connection.fail'));
+        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString("database.connection.fail"));
     }
 
     final public function getPatchManager(): PatchManager
@@ -128,7 +128,7 @@ class Database
             QueriesConst::GET_DATABASE_STATUS,
             [],
             static function (array $rows) use (&$version): void {
-                $version = (string)$rows[0]['version'];
+                $version = (string)$rows[0]["version"];
             }
         );
         $this->connector->waitAll();

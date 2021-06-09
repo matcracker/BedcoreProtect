@@ -103,7 +103,7 @@ final class QueryManager
                     yield $this->executeGeneric($queryTable);
                 }
 
-                yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ['version' => $pluginVersion]);
+                yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
             }
         );
 
@@ -201,8 +201,8 @@ final class QueryManager
     private static function initAdditionReports(string $senderName): void
     {
         self::$additionalReports[$senderName] = [
-            'messages' => [],
-            'startTime' => microtime(true)
+            "messages" => [],
+            "startTime" => microtime(true)
         ];
     }
 
@@ -217,7 +217,7 @@ final class QueryManager
             /** @var int[] $logIds */
             $logIds = [];
             foreach ($rows as $row) {
-                $logIds[] = (int)$row['log_id'];
+                $logIds[] = (int)$row["log_id"];
             }
             $onSuccess($logIds);
         };
@@ -237,24 +237,24 @@ final class QueryManager
             $date = Utils::timeAgo(microtime(true) - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
-            $sender->sendMessage(TextFormat::colorize('&f--- &3' . Main::PLUGIN_NAME . '&7 ' . $lang->translateString('rollback.report') . ' &f---'));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.completed', [$world->getFolderName()])));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? 'rollback' : 'restore') . '.date', [$date])));
-            $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.radius', [$commandParser->getRadius() ?? $commandParser->getDefaultRadius()])));
+            $sender->sendMessage(TextFormat::colorize("&f--- &3" . Main::PLUGIN_NAME . "&7 " . $lang->translateString("rollback.report") . " &f---"));
+            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$world->getFolderName()])));
+            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date])));
+            $sender->sendMessage(TextFormat::colorize("&f- " . $lang->translateString("rollback.radius", [$commandParser->getRadius() ?? $commandParser->getDefaultRadius()])));
 
-            if (count(self::$additionalReports[$senderName]['messages']) > 0) {
-                foreach (self::$additionalReports[$senderName]['messages'] as $message) {
+            if (count(self::$additionalReports[$senderName]["messages"]) > 0) {
+                foreach (self::$additionalReports[$senderName]["messages"] as $message) {
                     $sender->sendMessage($message);
                 }
             } else {
-                $sender->sendMessage(TextFormat::colorize('&f- &b' . $lang->translateString('rollback.no-changes')));
+                $sender->sendMessage(TextFormat::colorize("&f- &b" . $lang->translateString("rollback.no-changes")));
             }
 
-            $diff = microtime(true) - self::$additionalReports[$senderName]['startTime'];
+            $diff = microtime(true) - self::$additionalReports[$senderName]["startTime"];
             $duration = round($diff, 2);
 
-            $sender->sendMessage(TextFormat::colorize('&f- ' . $lang->translateString('rollback.time-taken', [$duration])));
-            $sender->sendMessage(TextFormat::colorize('&f------'));
+            $sender->sendMessage(TextFormat::colorize("&f- " . $lang->translateString("rollback.time-taken", [$duration])));
+            $sender->sendMessage(TextFormat::colorize("&f------"));
         }
 
         unset(self::$additionalReports[$senderName]);

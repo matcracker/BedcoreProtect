@@ -58,13 +58,13 @@ class PluginQueries extends Query
         $maxV = $position->add($near, $near, $near)->floor();
 
         $this->connector->executeSelect($queryName, [
-            'min_x' => $minV->getX(),
-            'max_x' => $maxV->getX(),
-            'min_y' => $minV->getY(),
-            'max_y' => $maxV->getY(),
-            'min_z' => $minV->getZ(),
-            'max_z' => $maxV->getZ(),
-            'world_name' => $position->getLevelNonNull()->getName()
+            "min_x" => $minV->getX(),
+            "max_x" => $maxV->getX(),
+            "min_y" => $minV->getY(),
+            "max_y" => $maxV->getY(),
+            "min_z" => $minV->getZ(),
+            "max_z" => $maxV->getZ(),
+            "world_name" => $position->getLevelNonNull()->getName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::saveLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -107,7 +107,7 @@ class PluginQueries extends Query
     public function purge(float $time, ?callable $onSuccess = null): void
     {
         $this->connector->executeChange(QueriesConst::PURGE, [
-            'time' => $time
+            "time" => $time
         ], $onSuccess);
     }
 

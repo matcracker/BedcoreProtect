@@ -108,13 +108,13 @@ class BlocksQueries extends Query
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            'log_id' => $lastId,
-            'old_id' => $oldBlock->getId(),
-            'old_meta' => $oldBlock->getDamage(),
-            'old_nbt' => $oldNbt,
-            'new_id' => $newBlock->getId(),
-            'new_meta' => $newBlock->getDamage(),
-            'new_nbt' => $newNbt
+            "log_id" => $lastId,
+            "old_id" => $oldBlock->getId(),
+            "old_meta" => $oldBlock->getDamage(),
+            "old_nbt" => $oldNbt,
+            "new_id" => $newBlock->getId(),
+            "new_meta" => $newBlock->getDamage(),
+            "new_nbt" => $newNbt
         ]);
     }
 
@@ -222,13 +222,13 @@ class BlocksQueries extends Query
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
-            'log_id' => $lastId,
-            'old_id' => $oldBlock->getId(),
-            'old_meta' => $oldBlock->getMeta(),
-            'old_nbt' => $oldBlock->getSerializedNbt(),
-            'new_id' => $newBlock->getId(),
-            'new_meta' => $newBlock->getMeta(),
-            'new_nbt' => $newBlock->getSerializedNbt()
+            "log_id" => $lastId,
+            "old_id" => $oldBlock->getId(),
+            "old_meta" => $oldBlock->getMeta(),
+            "old_nbt" => $oldBlock->getSerializedNbt(),
+            "new_id" => $newBlock->getId(),
+            "new_meta" => $newBlock->getMeta(),
+            "new_nbt" => $newBlock->getSerializedNbt()
         ]);
     }
 
@@ -246,7 +246,7 @@ class BlocksQueries extends Query
         $name = $who->getName();
         //Particular blocks
         if ($who instanceof Leaves) {
-            $name = 'leaves';
+            $name = "leaves";
         }
         $name .= "-uuid";
         $pos = $position ?? $newBlock->asPosition();
@@ -328,16 +328,16 @@ class BlocksQueries extends Query
         $blocks = [];
 
         if ($rollback) {
-            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ['log_ids' => $logIds]);
-            $prefix = 'old';
+            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ["log_ids" => $logIds]);
+            $prefix = "old";
         } else {
-            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ['log_ids' => $logIds]);
-            $prefix = 'new';
+            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ["log_ids" => $logIds]);
+            $prefix = "new";
         }
 
         foreach ($blockRows as $row) {
             $serializedNBT = (string)$row["{$prefix}_nbt"];
-            $blocks[] = $block = new SerializableBlock("", (int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row['x'], (int)$row['y'], (int)$row['z'], (string)$row['world_name'], $serializedNBT);
+            $blocks[] = $block = new SerializableBlock("", (int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"], $serializedNBT);
 
             if (strlen($serializedNBT) > 0) {
                 $nbt = Utils::deserializeNBT($serializedNBT);

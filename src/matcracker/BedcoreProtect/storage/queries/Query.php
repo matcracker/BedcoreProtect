@@ -104,8 +104,8 @@ abstract class Query
     final protected function updateRollbackStatus(bool $rollback, array $logIds): void
     {
         $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            'rollback' => $rollback,
-            'log_ids' => $logIds
+            "rollback" => $rollback,
+            "log_ids" => $logIds
         ]);
     }
 
@@ -129,13 +129,13 @@ abstract class Query
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => mb_strtolower($uuid),
-            'x' => $position->getFloorX(),
-            'y' => $position->getFloorY(),
-            'z' => $position->getFloorZ(),
-            'world_name' => $worldName,
-            'action' => $action->getType(),
-            'time' => $time
+            "uuid" => mb_strtolower($uuid),
+            "x" => $position->getFloorX(),
+            "y" => $position->getFloorY(),
+            "z" => $position->getFloorZ(),
+            "world_name" => $worldName,
+            "action" => $action->getType(),
+            "time" => $time
         ]);
     }
 

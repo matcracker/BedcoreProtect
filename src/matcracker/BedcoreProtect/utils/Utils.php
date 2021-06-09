@@ -51,7 +51,7 @@ final class Utils
     }
 
     /**
-     * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
+     * It parses a string type like "XwXdXhXmXs" where X is a number indicating the time.
      *
      * @param string $strDate the date to parse.
      *
@@ -173,7 +173,7 @@ final class Utils
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
         if (!($tag instanceof CompoundTag)) {
-            throw new UnexpectedValueException('Value must return CompoundTag, got ' . $tag->__toString());
+            throw new UnexpectedValueException("Value must return CompoundTag, got " . $tag->__toString());
         }
 
         return $tag;
