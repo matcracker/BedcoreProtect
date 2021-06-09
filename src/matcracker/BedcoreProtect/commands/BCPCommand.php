@@ -91,12 +91,15 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
 
                 return true;
             case "reload":
-                if ($this->plugin->reloadPlugin()) {
+                $this->plugin->reloadPlugin();
+                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.reload.success")));
+
+                /*if ($this->plugin->reloadPlugin()) {
                     $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.reload.success")));
                 } else {
                     $this->plugin->restoreParsedConfig();
                     $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.reload.no-success")));
-                }
+                }*/
 
                 return true;
             case "status":
