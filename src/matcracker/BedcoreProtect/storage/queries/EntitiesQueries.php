@@ -25,12 +25,12 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\entity\Entity;
+use pocketmine\level\Level;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function count;
@@ -63,7 +63,7 @@ class EntitiesQueries extends Query
 
             yield $this->addRawEntity($serverUuid, '#console');
             foreach ($map as $uuid => $name) {
-                yield $this->addRawEntity($uuid, $name, "");
+                yield $this->addRawEntity($uuid, $name);
             }
         });
     }
@@ -149,13 +149,11 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $entityRows = [];
 
         if ($this->configParser->getRollbackEntities()) {
-            $world = $area->getWorld();
-
             $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ['log_ids' => $logIds]);
 
             foreach ($entityRows as $row) {

@@ -23,9 +23,9 @@ namespace matcracker\BedcoreProtect\ui;
 
 use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\FormLib\BaseForm;
 use matcracker\FormLib\CustomForm;
 use matcracker\FormLib\Form;

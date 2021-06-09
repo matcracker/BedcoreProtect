@@ -59,7 +59,7 @@ final class Utils
      */
     public static function parseTime(string $strDate): int
     {
-        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE, 0);
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE);
 
         if (count($matches) === 0) {
             return 0;
@@ -100,7 +100,7 @@ final class Utils
         return (int)min($time, PHP_INT_MAX);
     }
 
-    public static function timeAgo(float $timestamp, int $level = 6): string
+    public static function timeAgo(float $timestamp, int $world = 6): string
     {
         $date = new DateTime();
         $date->setTimestamp((int)$timestamp);
@@ -115,7 +115,7 @@ final class Utils
         // remove empty date values
         $since = array_filter($since);
         // output only the first x date values
-        $since = array_slice($since, 0, $level);
+        $since = array_slice($since, 0, $world);
         // build string
         $last_key = key(array_slice($since, -1, 1, true));
         $string = "";

@@ -27,7 +27,6 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
@@ -39,6 +38,7 @@ use pocketmine\block\Leaves;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\item\Item;
+use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
@@ -167,10 +167,12 @@ class BlocksQueries extends Query
             throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
         }
 
+        /** @var SerializableBlock[] $oldBlocks */
         $oldBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
             return SerializableBlock::serialize($block);
         }, $oldBlocks));
 
+        /** @var SerializableBlock[] $newBlocks */
         $newBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
             return SerializableBlock::serialize($block);
         }, $newBlocks));
@@ -320,7 +322,7 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
@@ -339,21 +341,21 @@ class BlocksQueries extends Query
 
             if (strlen($serializedNBT) > 0) {
                 $nbt = Utils::deserializeNBT($serializedNBT);
-                $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $area->getWorld(), $nbt);
+                $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $world, $nbt);
                 if ($tile !== null) {
                     if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                         $tile->getInventory()->clearAll();
                     }
-                    $area->getWorld()->addTile($tile);
+                    $world->addTile($tile);
                 }
             } else {
                 $tile = BlockUtils::asTile($block->unserialize());
                 if ($tile !== null) {
-                    $area->getWorld()->removeTile($tile);
+                    $world->removeTile($tile);
                 }
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $area, $commandParser->getSenderName(), $blocks, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $world->getFolderName(), $commandParser->getSenderName(), $blocks, $onComplete));
     }
 }

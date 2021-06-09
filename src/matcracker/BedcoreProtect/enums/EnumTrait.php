@@ -31,21 +31,26 @@ trait EnumTrait
 {
     use RegistryTrait;
 
+    /** @var int|null */
+    private static $nextId = null;
+    /** @var string */
+    private $enumName;
+    /** @var int */
+    private $runtimeId;
+
     /**
-     * Registers the given object as an enum member.
-     *
      * @throws InvalidArgumentException
      */
-    protected static function register(self $member): void
+    private function __construct(string $enumName)
     {
-        self::_registryRegister($member->name(), $member);
-    }
-
-    protected static function registerAll(self ...$members): void
-    {
-        foreach ($members as $member) {
-            self::register($member);
+        if (preg_match('/^\D[A-Za-z\d_]+$/u', $enumName, $matches) === 0) {
+            throw new InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
         }
+        $this->enumName = $enumName;
+        if (self::$nextId === null) {
+            self::$nextId = getmypid(); //this provides enough base entropy to prevent hardcoding
+        }
+        $this->runtimeId = self::$nextId++;
     }
 
     /**
@@ -76,33 +81,26 @@ trait EnumTrait
         return $result;
     }
 
-    /** @var int|null */
-    private static $nextId = null;
-
-    /** @var string */
-    private $enumName;
-    /** @var int */
-    private $runtimeId;
-
     /**
+     * Registers the given object as an enum member.
+     *
      * @throws InvalidArgumentException
      */
-    private function __construct(string $enumName)
+    protected static function register(self $member): void
     {
-        static $pattern = '/^\D[A-Za-z\d_]+$/u';
-        if (preg_match($pattern, $enumName, $matches) === 0) {
-            throw new InvalidArgumentException("Invalid enum member name \"$enumName\", should only contain letters, numbers and underscores, and must not start with a number");
-        }
-        $this->enumName = $enumName;
-        if (self::$nextId === null) {
-            self::$nextId = getmypid(); //this provides enough base entropy to prevent hardcoding
-        }
-        $this->runtimeId = self::$nextId++;
+        self::_registryRegister($member->name(), $member);
     }
 
     public function name(): string
     {
         return $this->enumName;
+    }
+
+    protected static function registerAll(self ...$members): void
+    {
+        foreach ($members as $member) {
+            self::register($member);
+        }
     }
 
     /**
@@ -117,8 +115,6 @@ trait EnumTrait
 
     /**
      * Returns whether the two objects are equivalent.
-     * @param self $other
-     * @return bool
      */
     public function equals(self $other): bool
     {

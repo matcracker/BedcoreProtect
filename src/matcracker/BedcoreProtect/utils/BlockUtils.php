@@ -134,11 +134,11 @@ final class BlockUtils
      */
     public static function asTile(Block $block): ?Tile
     {
-        if (($level = $block->getLevel()) === null) {
+        if (($world = $block->getLevel()) === null) {
             return null;
         }
 
-        return $level->getTile($block->asVector3());
+        return $world->getTile($block->asVector3());
     }
 
     /**

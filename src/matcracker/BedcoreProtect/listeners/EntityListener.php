@@ -45,6 +45,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->config->isEnabledWorld($entity->getLevelNonNull()) && $this->config->getExplosions()) {
+            $this->air->setLevel($entity->getLevelNonNull());
             $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), [$this->air], Action::BREAK());
         }
     }
@@ -63,8 +64,8 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        $level = $entity->getLevelNonNull();
-        if ($this->config->isEnabledWorld($level)) {
+        $world = $entity->getLevelNonNull();
+        if ($this->config->isEnabledWorld($world)) {
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
                 $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getDamage()), $this->air, Action::BREAK(), $entity->asPosition());
 

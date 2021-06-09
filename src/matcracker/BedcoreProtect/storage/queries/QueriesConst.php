@@ -67,6 +67,6 @@ final class QueriesConst
 
     public static function VERSION_PATCH(string $version, int $patchNumber): string
     {
-        return "patch.{$version}.{$patchNumber}";
+        return "patch.$version.$patchNumber";
     }
 }

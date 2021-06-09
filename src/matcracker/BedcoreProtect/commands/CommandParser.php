@@ -23,10 +23,10 @@ namespace matcracker\BedcoreProtect\commands;
 
 use BadMethodCallException;
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\math\MathUtils;
-use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
@@ -421,7 +421,7 @@ final class CommandParser
                     break;
 
                 default:
-                    throw new UnexpectedValueException("\"{$key}\" is not a expected data key.");
+                    throw new UnexpectedValueException("\"$key\" is not a expected data key.");
             }
         }
 
@@ -441,7 +441,7 @@ final class CommandParser
     public function buildLookupQuery(string &$query, array &$args, ?AxisAlignedBB $bb = null): void
     {
         if (!$this->parsed) {
-            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $query = /**@lang text */

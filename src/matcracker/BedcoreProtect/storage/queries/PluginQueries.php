@@ -25,10 +25,10 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\math\MathUtils;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
+use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\plugin\PluginException;
@@ -111,7 +111,7 @@ class PluginQueries extends Query
         ], $onSuccess);
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }

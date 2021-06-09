@@ -66,7 +66,7 @@ final class Action
     {
         self::checkInit();
         if (!array_key_exists($type, self::$numericIdMap)) {
-            throw new InvalidArgumentException("Unknown action type {$type}");
+            throw new InvalidArgumentException("Unknown action type $type");
         }
 
         return self::$numericIdMap[$type];
@@ -76,22 +76,22 @@ final class Action
     {
         $lang = Main::getInstance()->getLanguage();
         self::registerAll(
-            new self('place', 0, $lang->translateString('action.place')),
-            new self('break', 1, $lang->translateString('action.break')),
-            new self('click', 2, $lang->translateString('action.click')),
-            new self('spawn', 3, $lang->translateString('action.place')),
-            new self('despawn', 4, $lang->translateString('action.break')),
-            new self('kill', 5, $lang->translateString('action.kill')),
-            new self('add', 6, $lang->translateString('action.add')),
-            new self('remove', 7, $lang->translateString('action.remove')),
-            new self('update', 255, "update")
+            new self("place", 0, $lang->translateString("action.place")),
+            new self("break", 1, $lang->translateString("action.break")),
+            new self("click", 2, $lang->translateString("action.click")),
+            new self("spawn", 3, $lang->translateString("action.place")),
+            new self("despawn", 4, $lang->translateString("action.break")),
+            new self("kill", 5, $lang->translateString("action.kill")),
+            new self("add", 6, $lang->translateString("action.add")),
+            new self("remove", 7, $lang->translateString("action.remove")),
+            new self("update", 255, "update")
         );
     }
 
-    protected static function register(Action $action): void
+    protected static function register(Action $member): void
     {
-        self::Enum_register($action);
-        self::$numericIdMap[$action->getType()] = $action;
+        self::Enum_register($member);
+        self::$numericIdMap[$member->getType()] = $member;
     }
 
     /**

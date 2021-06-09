@@ -90,10 +90,10 @@ final class PlayerListener extends BedcoreListener
                 $face = $event->getBlockFace();
                 switch ($face) {
                     case Vector3::SIDE_DOWN:
-                        $liquidPos = $block->add(0, 1, 0);
+                        $liquidPos = $block->add(0, 1);
                         break;
                     case Vector3::SIDE_UP:
-                        $liquidPos = $block->add(0, -1, 0);
+                        $liquidPos = $block->add(0, -1);
                         break;
                     case Vector3::SIDE_NORTH:
                         $liquidPos = $block->add(0, 0, 1);
@@ -102,13 +102,13 @@ final class PlayerListener extends BedcoreListener
                         $liquidPos = $block->add(0, 0, -1);
                         break;
                     case Vector3::SIDE_WEST:
-                        $liquidPos = $block->add(1, 0, 0);
+                        $liquidPos = $block->add(1);
                         break;
                     case Vector3::SIDE_EAST:
-                        $liquidPos = $block->add(-1, 0, 0);
+                        $liquidPos = $block->add(-1);
                         break;
                     default:
-                        throw new UnexpectedValueException("Unrecognized block face (Value: {$face}).");
+                        throw new UnexpectedValueException("Unrecognized block face (Value: $face).");
                 }
 
                 $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $block->getLevel()));
@@ -125,9 +125,9 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = $player->getLevelNonNull();
+        $world = $player->getLevelNonNull();
 
-        if ($this->config->isEnabledWorld($level)) {
+        if ($this->config->isEnabledWorld($world)) {
             $itemInHand = $event->getItem();
             $face = $event->getFace();
             $clickedBlock = $event->getBlock();
@@ -156,8 +156,8 @@ final class PlayerListener extends BedcoreListener
                         }
                     } elseif ($itemInHand instanceof PaintingItem) {
                         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-                            function (int $currentTick) use ($player, $level, $replacedBlock): void {
-                                $entity = $level->getNearestEntity($replacedBlock, 1, Painting::class);
+                            function (int $currentTick) use ($player, $world, $replacedBlock): void {
+                                $entity = $world->getNearestEntity($replacedBlock, 1, Painting::class);
                                 if ($entity !== null) {
                                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
                                 }

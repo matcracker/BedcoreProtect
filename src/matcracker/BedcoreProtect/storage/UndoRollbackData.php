@@ -19,17 +19,17 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\commands\CommandParser;
-use matcracker\BedcoreProtect\math\Area;
+use pocketmine\math\AxisAlignedBB;
 
 final class UndoRollbackData
 {
     /** @var bool */
     private $rollback;
-    /** @var Area */
-    private $area;
+    /** @var AxisAlignedBB */
+    private $bb;
     /** @var CommandParser */
     private $commandParser;
     /** @var int[] */
@@ -38,14 +38,14 @@ final class UndoRollbackData
     /**
      * UndoRollbackData constructor.
      * @param bool $rollback
-     * @param Area $area
+     * @param AxisAlignedBB $bb
      * @param CommandParser $commandParser
      * @param int[] $logIds
      */
-    public function __construct(bool $rollback, Area $area, CommandParser $commandParser, array $logIds)
+    public function __construct(bool $rollback, AxisAlignedBB $bb, CommandParser $commandParser, array $logIds)
     {
         $this->rollback = !$rollback;
-        $this->area = $area;
+        $this->bb = $bb;
         $this->commandParser = $commandParser;
         $this->logIds = $logIds;
     }
@@ -55,9 +55,9 @@ final class UndoRollbackData
         return $this->rollback;
     }
 
-    public function getArea(): Area
+    public function getBoundingBox(): AxisAlignedBB
     {
-        return $this->area;
+        return $this->bb;
     }
 
     public function getCommandParser(): CommandParser

@@ -50,7 +50,7 @@ final class EntityUtils
     {
         if ($entity instanceof Human) {
             if (($uuid = $entity->getUniqueId()) === null) {
-                throw new UnexpectedValueException($entity->getName() . " has an invalid UUID.");
+                throw new UnexpectedValueException("{$entity->getName()} has an invalid UUID.");
             }
 
             return $uuid->toString();
@@ -78,7 +78,7 @@ final class EntityUtils
                 try {
                     $name = (new ReflectionClass($entity))->getShortName();
                 } catch (ReflectionException $exception) {
-                    throw new InvalidArgumentException('Invalid entity class.');
+                    throw new InvalidArgumentException("Invalid entity class.");
                 }
             }
 
@@ -111,7 +111,7 @@ final class EntityUtils
     {
         $names = [];
 
-        $values = (array)self::getEntityProperty('saveNames');
+        $values = (array)self::getEntityProperty("saveNames");
         foreach ($values as $value) {
             $names = array_merge($names, $value);
         }
@@ -133,7 +133,7 @@ final class EntityUtils
 
             return $property->getValue();
         } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException("Could not get \"{$property}\" entity property.");
+            throw new InvalidArgumentException("Could not get \"$property\" entity property.");
         }
     }
 
@@ -143,6 +143,6 @@ final class EntityUtils
      */
     public static function getKnownEntities(): array
     {
-        return (array)self::getEntityProperty('knownEntities');
+        return (array)self::getEntityProperty("knownEntities");
     }
 }

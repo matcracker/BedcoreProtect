@@ -21,12 +21,12 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use pocketmine\block\Air;
 use pocketmine\event\Listener;
 

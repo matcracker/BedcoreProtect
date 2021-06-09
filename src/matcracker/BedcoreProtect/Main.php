@@ -24,6 +24,8 @@ namespace matcracker\BedcoreProtect;
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\config\ConfigParser;
+use matcracker\BedcoreProtect\config\ConfigUpdater;
 use matcracker\BedcoreProtect\listeners\BedcoreListener;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
@@ -31,8 +33,6 @@ use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\Database;
-use matcracker\BedcoreProtect\utils\ConfigParser;
-use matcracker\BedcoreProtect\utils\ConfigUpdater;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
 use function mkdir;
@@ -86,24 +86,18 @@ final class Main extends PluginBase
     }
 
     /**
-     * Reloads the plugin configuration and returns true if config is valid.
-     * @return bool
+     * Reloads the plugin configuration.
      */
-    public function reloadPlugin(): bool
+    public function reloadPlugin(): void
     {
         $this->oldConfigParser = $this->configParser;
         $this->reloadConfig();
-        $this->configParser = (new ConfigParser($this->getConfig()))->validate();
+        $this->configParser = new ConfigParser($this->getConfig());
 
-        if ($this->configParser->isValidConfig()) {
-            foreach ($this->events as $event) {
-                $event->config = $this->configParser;
-            }
-            $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
-            return true;
+        foreach ($this->events as $event) {
+            $event->config = $this->configParser;
         }
-
-        return false;
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
     }
 
     public function onLoad(): void
@@ -120,14 +114,8 @@ final class Main extends PluginBase
             }
         }
 
-        $this->configParser = (new ConfigParser($this->getConfig()))->validate();
-        if (!$this->configParser->isValidConfig()) {
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-
-            return;
-        }
-
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . 'resources/languages/');
+        $this->configParser = new ConfigParser($this->getConfig());
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
 
         $this->saveResource($this->configParser->getDatabaseFileName());
 
@@ -153,20 +141,20 @@ final class Main extends PluginBase
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning($this->baseLang->translateString('database.version.higher'));
+            $this->getLogger()->warning($this->baseLang->translateString("database.version.higher"));
             $pluginManager->disablePlugin($this);
             return;
         }
 
         if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
-            $this->getLogger()->info($this->baseLang->translateString('database.version.updated', [$dbVersion, $lastPatch]));
+            $this->getLogger()->info($this->baseLang->translateString("database.version.updated", [$dbVersion, $lastPatch]));
         }
 
         $queryManager->setupDefaultData();
 
         CommandParser::initActions();
 
-        $this->getServer()->getCommandMap()->register('bedcoreprotect', new BCPCommand($this));
+        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
         //Registering events
         $this->events = [

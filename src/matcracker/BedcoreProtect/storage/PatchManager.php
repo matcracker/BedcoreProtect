@@ -81,7 +81,7 @@ final class PatchManager
                     foreach ($versions as $version => $dbTypes) {
                         $patchNumbers = $dbTypes[$dbType] ?? 0;
                         if ($patchNumbers <= 0) {
-                            $this->plugin->getLogger()->debug("Skipped patch update v{$version} of {$dbType}.");
+                            $this->plugin->getLogger()->debug("Skipped patch update v$version of $dbType.");
                             continue;
                         }
 

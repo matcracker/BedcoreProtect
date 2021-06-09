@@ -26,17 +26,9 @@ namespace matcracker\BedcoreProtect\enums;
 use ArgumentCountError;
 use Error;
 use InvalidArgumentException;
-use ReflectionClass;
-use ReflectionMethod;
 use function array_map;
 use function count;
-use function get_class;
-use function implode;
-use function sprintf;
-use function strlen;
-use function strpos;
-use function strtoupper;
-use function substr;
+use function mb_strtoupper;
 
 trait RegistryTrait
 {
@@ -44,25 +36,36 @@ trait RegistryTrait
     private static $members = null;
 
     /**
-     * Adds the given object to the registry.
+     * @param string $name
+     * @param array $arguments
+     * @phpstan-param list<mixed> $arguments
      *
-     * @throws InvalidArgumentException
+     * @return object
      */
-    private static function _registryRegister(string $name, object $member): void
+    public static function __callStatic(string $name, array $arguments)
     {
-        $name = strtoupper($name);
-        if (isset(self::$members[$name])) {
-            throw new InvalidArgumentException("\"$name\" is already reserved");
+        if (count($arguments) > 0) {
+            throw new ArgumentCountError("Expected exactly 0 arguments, " . count($arguments) . " passed");
         }
-        self::$members[strtoupper($name)] = $member;
+        try {
+            return self::_registryFromString($name);
+        } catch (InvalidArgumentException $e) {
+            throw new Error($e->getMessage(), 0, $e);
+        }
     }
 
     /**
-     * Inserts default entries into the registry.
-     *
-     * (This ought to be private, but traits suck too much for that.)
+     * @throws InvalidArgumentException
      */
-    abstract protected static function setup(): void;
+    private static function _registryFromString(string $name): object
+    {
+        self::checkInit();
+        $name = mb_strtoupper($name);
+        if (!isset(self::$members[$name])) {
+            throw new InvalidArgumentException("No such registry member: " . self::class . "::" . $name);
+        }
+        return self::preprocessMember(self::$members[$name]);
+    }
 
     /**
      * @throws InvalidArgumentException
@@ -78,17 +81,11 @@ trait RegistryTrait
     }
 
     /**
-     * @throws InvalidArgumentException
+     * Inserts default entries into the registry.
+     *
+     * (This ought to be private, but traits suck too much for that.)
      */
-    private static function _registryFromString(string $name): object
-    {
-        self::checkInit();
-        $name = strtoupper($name);
-        if (!isset(self::$members[$name])) {
-            throw new InvalidArgumentException("No such registry member: " . self::class . "::" . $name);
-        }
-        return self::preprocessMember(self::$members[$name]);
-    }
+    abstract protected static function setup(): void;
 
     protected static function preprocessMember(object $member): object
     {
@@ -96,22 +93,17 @@ trait RegistryTrait
     }
 
     /**
-     * @param string $name
-     * @param mixed[] $arguments
-     * @phpstan-param list<mixed> $arguments
+     * Adds the given object to the registry.
      *
-     * @return object
+     * @throws InvalidArgumentException
      */
-    public static function __callStatic($name, $arguments)
+    private static function _registryRegister(string $name, object $member): void
     {
-        if (count($arguments) > 0) {
-            throw new ArgumentCountError("Expected exactly 0 arguments, " . count($arguments) . " passed");
+        $name = mb_strtoupper($name);
+        if (isset(self::$members[$name])) {
+            throw new InvalidArgumentException("\"$name\" is already reserved");
         }
-        try {
-            return self::_registryFromString($name);
-        } catch (InvalidArgumentException $e) {
-            throw new Error($e->getMessage(), 0, $e);
-        }
+        self::$members[mb_strtoupper($name)] = $member;
     }
 
     /**
@@ -123,58 +115,5 @@ trait RegistryTrait
         return array_map(function (object $o): object {
             return self::preprocessMember($o);
         }, self::$members);
-    }
-
-    /**
-     * Generates code for static methods for all known registry members.
-     */
-    public static function _generateGetters(): string
-    {
-        $lines = [];
-
-        static $fnTmpl = '
-public static function %1$s() : %2$s{
-	return self::fromString("%1$s");
-}';
-
-        foreach (self::getAll() as $name => $member) {
-            $lines[] = sprintf($fnTmpl, $name, '\\' . get_class($member));
-        }
-        return "//region auto-generated code\n" . implode("\n", $lines) . "\n\n//endregion\n";
-    }
-
-    /**
-     * Generates a block of @ method annotations for accessors for this registry's known members.
-     */
-    public static function _generateMethodAnnotations(): string
-    {
-        $traitName = (new ReflectionClass(__TRAIT__))->getShortName();
-        $fnName = (new ReflectionMethod(__METHOD__))->getShortName();
-        $lines = ["/**"];
-        $lines[] = " * This doc-block is generated automatically, do not modify it manually.";
-        $lines[] = " * This must be regenerated whenever registry members are added, removed or changed.";
-        $lines[] = " * @see $traitName::$fnName()";
-        $lines[] = " *";
-        static $lineTmpl = " * @method static %2\$s %s()";
-
-        $thisNamespace = (new ReflectionClass(__CLASS__))->getNamespaceName();
-        foreach (self::getAll() as $name => $member) {
-            $reflect = new ReflectionClass($member);
-            while ($reflect !== false and $reflect->isAnonymous()) {
-                $reflect = $reflect->getParentClass();
-            }
-            if ($reflect === false) {
-                $typehint = "object";
-            } elseif ($reflect->getName() === __CLASS__) {
-                $typehint = "self";
-            } elseif (strpos($reflect->getName(), $thisNamespace) === 0) {
-                $typehint = substr($reflect->getName(), strlen($thisNamespace . '\\'));
-            } else {
-                $typehint = '\\' . $reflect->getName();
-            }
-            $lines[] = sprintf($lineTmpl, $name, $typehint);
-        }
-        $lines[] = " */\n";
-        return implode("\n", $lines);
     }
 }

@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\config;
 
 use matcracker\BedcoreProtect\Main;
 use function array_keys;
@@ -87,18 +87,6 @@ final class ConfigUpdater
         return true;
     }
 
-    private function printOptions(array $resultOptions, string $type): void
-    {
-        if (isset($resultOptions[$type])) {
-            if (count($resultOptions[$type]) > 0) {
-                $this->plugin->getLogger()->info(ucfirst($type) . " options:");
-                foreach ($resultOptions[$type] as $option) {
-                    $this->plugin->getLogger()->info("- $option");
-                }
-            }
-        }
-    }
-
     /**
      * Return the number of options changed between the old and the new configurations.
      *
@@ -145,5 +133,17 @@ final class ConfigUpdater
         }
 
         return $resultOptions;
+    }
+
+    private function printOptions(array $resultOptions, string $type): void
+    {
+        if (isset($resultOptions[$type])) {
+            if (count($resultOptions[$type]) > 0) {
+                $this->plugin->getLogger()->info(ucfirst($type) . " options:");
+                foreach ($resultOptions[$type] as $option) {
+                    $this->plugin->getLogger()->info("- $option");
+                }
+            }
+        }
     }
 }

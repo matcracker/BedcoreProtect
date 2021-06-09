@@ -26,7 +26,6 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\EntityUtils;
@@ -37,6 +36,7 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
+use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
@@ -186,17 +186,17 @@ class InventoriesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $inventoryRows = [];
 
         if ($this->configParser->getRollbackItems()) {
             if ($rollback) {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
-                $prefix = 'old';
+                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ["log_ids" => $logIds]);
+                $prefix = "old";
             } else {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds]);
-                $prefix = 'new';
+                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ["log_ids" => $logIds]);
+                $prefix = "new";
             }
 
             foreach ($inventoryRows as $row) {
@@ -206,18 +206,17 @@ class InventoriesQueries extends Query
                     $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
                 }
                 $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
-                $vector = new Vector3((int)$row['x'], (int)$row['y'], (int)$row['z']);
-                $tile = $area->getWorld()->getTile($vector);
+                $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
                 if ($tile instanceof InventoryHolder) {
                     $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
-                    $inv->setItem((int)$row['slot'], $item);
+                    $inv->setItem((int)$row["slot"], $item);
                 }
             }
         }
 
         if (($items = count($inventoryRows)) > 0) {
-            QueryManager::addReportMessage($commandParser->getSenderName(), 'rollback.items', [$items]);
+            QueryManager::addReportMessage($commandParser->getSenderName(), "rollback.items", [$items]);
         }
 
         $onComplete();
