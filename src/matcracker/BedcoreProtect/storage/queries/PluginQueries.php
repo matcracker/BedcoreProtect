@@ -64,7 +64,7 @@ class PluginQueries extends Query
             "max_y" => $maxV->getY(),
             "min_z" => $minV->getZ(),
             "max_z" => $maxV->getZ(),
-            "world_name" => $position->getLevelNonNull()->getName()
+            "world_name" => $position->getLevelNonNull()->getFolderName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::saveLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);

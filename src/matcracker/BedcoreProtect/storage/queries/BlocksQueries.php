@@ -91,7 +91,7 @@ class BlocksQueries extends Query
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
         $pos = $position ?? $newBlock->asPosition();
-        $worldName = $pos->getLevelNonNull()->getName();
+        $worldName = $pos->getLevelNonNull()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -258,7 +258,7 @@ class BlocksQueries extends Query
             $newBlock,
             BlockUtils::serializeTileTag($newBlock),
             $pos->asVector3(),
-            $pos->getLevelNonNull()->getName(),
+            $pos->getLevelNonNull()->getFolderName(),
             $action,
             microtime(true)
         ));
@@ -283,7 +283,7 @@ class BlocksQueries extends Query
 
         $itemFrameBlock = $itemFrame->getBlock();
         $position = $itemFrame->asVector3();
-        $worldName = $itemFrame->getLevelNonNull()->getName();
+        $worldName = $itemFrame->getLevelNonNull()->getFolderName();
 
         Await::g2c(
             $this->addRawBlockLog(

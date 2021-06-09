@@ -83,7 +83,7 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $worldName = $player->getLevelNonNull()->getName();
+        $worldName = $player->getLevelNonNull()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -153,7 +153,7 @@ class InventoriesQueries extends Query
 
     public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
     {
-        $worldName = $player->getLevelNonNull()->getName();
+        $worldName = $player->getLevelNonNull()->getFolderName();
         $time = microtime(true);
 
         $contents = $inventory->getContents();
