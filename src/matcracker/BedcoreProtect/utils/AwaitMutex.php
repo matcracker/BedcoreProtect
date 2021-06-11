@@ -47,7 +47,7 @@ final class AwaitMutex
         $this->queue[] = function () use ($promise, $onSuccess, $onError): void {
             Await::g2c(
                 $promise,
-                function () use ($onSuccess) {
+                function () use ($onSuccess): void {
                     $this->running = false;
                     if ($onSuccess !== null) {
                         $onSuccess();

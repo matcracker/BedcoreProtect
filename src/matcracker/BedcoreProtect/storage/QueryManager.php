@@ -187,7 +187,7 @@ final class QueryManager
                             $world,
                             $commandParser,
                             $logIds,
-                            static function () use ($commandParser) {
+                            static function () use ($commandParser): void {
                                 unset(self::$activeRollbacks[$commandParser->getSenderName()]);
                             }
                         );
@@ -213,7 +213,7 @@ final class QueryManager
         $commandParser->buildLogsSelectionQuery($query, $args, $rollback, $bb);
 
         $onSuccess = yield;
-        $wrapOnSuccess = function (array $rows) use ($onSuccess) {
+        $wrapOnSuccess = function (array $rows) use ($onSuccess): void {
             /** @var int[] $logIds */
             $logIds = [];
             foreach ($rows as $row) {
