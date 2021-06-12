@@ -115,4 +115,12 @@ class RollbackTask extends AsyncTask
         $onComplete();
     }
 
+    /**
+     * @return string[]
+     */
+    protected function getSerializedChunks(): array
+    {
+        return $this->serializedChunks;
+    }
+
 }
