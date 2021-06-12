@@ -216,7 +216,10 @@ class InventoriesQueries extends Query
         }
 
         if (($items = count($inventoryRows)) > 0) {
-            QueryManager::addReportMessage($commandParser->getSenderName(), "rollback.items", [$items]);
+            QueryManager::addReportMessage(
+                $commandParser->getSenderName(),
+                $this->plugin->getLanguage()->translateString("rollback.items", [$items])
+            );
         }
 
         $onComplete();

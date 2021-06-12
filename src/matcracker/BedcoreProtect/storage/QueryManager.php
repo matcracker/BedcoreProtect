@@ -77,11 +77,9 @@ final class QueryManager
         $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
-    public static function addReportMessage(string $senderName, string $reportMessage, array $params = []): void
+    public static function addReportMessage(string $senderName, string $reportMessage): void
     {
-        $lang = Main::getInstance()->getLanguage();
-
-        self::$additionalReports[$senderName]["messages"][] = TextFormat::colorize("&f- " . $lang->translateString($reportMessage, $params));
+        self::$additionalReports[$senderName]["messages"][] = TextFormat::colorize("&f- $reportMessage");
     }
 
     public function init(string $pluginVersion): void

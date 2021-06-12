@@ -179,7 +179,10 @@ class EntitiesQueries extends Query
         }
 
         if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage($commandParser->getSenderName(), "rollback.entities", [$entities]);
+            QueryManager::addReportMessage(
+                $commandParser->getSenderName(),
+                $this->plugin->getLanguage()->translateString("rollback.entities", [$entities])
+            );
         }
 
         $onComplete();

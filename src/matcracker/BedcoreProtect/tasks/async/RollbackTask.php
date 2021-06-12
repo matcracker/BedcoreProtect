@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -106,9 +107,10 @@ class RollbackTask extends AsyncTask
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal();
 
-        QueryManager::addReportMessage($this->senderName, "rollback.blocks", [count($this->blocks)]);
+        $lang = Main::getInstance()->getLanguage();
+        QueryManager::addReportMessage($this->senderName, $lang->translateString("rollback.blocks", [count($this->blocks)]));
         //Set the execution time to 0 to avoid duplication of time in the same operation.
-        QueryManager::addReportMessage($this->senderName, "rollback.modified-chunks", [count($chunks)]);
+        QueryManager::addReportMessage($this->senderName, $lang->translateString("rollback.modified-chunks", [count($chunks)]));
 
         $onComplete();
     }
