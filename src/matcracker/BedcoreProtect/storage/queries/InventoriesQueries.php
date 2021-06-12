@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,6 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\EntityUtils;
@@ -37,6 +36,7 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
+use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
@@ -45,7 +45,7 @@ use pocketmine\tile\Chest;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function count;
-use function time;
+use function microtime;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -83,8 +83,8 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $worldName = $player->getLevelNonNull()->getName();
-        $time = time();
+        $worldName = $player->getLevelNonNull()->getFolderName();
+        $time = microtime(true);
 
         Await::f2c(
             function () use ($playerUuid, $slotAction, $holder, $worldName, $time): Generator {
@@ -116,22 +116,22 @@ class InventoriesQueries extends Query
         );
     }
 
-    final protected function addInventorySlotLog(string $uuid, int $slot, Item $oldItem, Item $newItem, Vector3 $position, string $worldName, Action $action, int $time): Generator
+    final protected function addInventorySlotLog(string $uuid, int $slot, Item $oldItem, Item $newItem, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
         $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
-            'log_id' => $lastId,
-            'slot' => $slot,
-            'old_id' => $oldItem->getId(),
-            'old_meta' => $oldItem->getDamage(),
-            'old_nbt' => Utils::serializeNBT($oldItem->getNamedTag()),
-            'old_amount' => $oldItem->getCount(),
-            'new_id' => $newItem->getId(),
-            'new_meta' => $newItem->getDamage(),
-            'new_nbt' => Utils::serializeNBT($newItem->getNamedTag()),
-            'new_amount' => $newItem->getCount()
+            "log_id" => $lastId,
+            "slot" => $slot,
+            "old_id" => $oldItem->getId(),
+            "old_meta" => $oldItem->getDamage(),
+            "old_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
+            "old_amount" => $oldItem->getCount(),
+            "new_id" => $newItem->getId(),
+            "new_meta" => $newItem->getDamage(),
+            "new_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
+            "new_amount" => $newItem->getCount()
         ], yield, yield Await::REJECT);
 
         return yield Await::ONCE;
@@ -148,13 +148,13 @@ class InventoriesQueries extends Query
      */
     public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Vector3 $position, string $worldName): void
     {
-        Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, time()));
+        Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, microtime(true)));
     }
 
     public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
     {
-        $worldName = $player->getLevelNonNull()->getName();
-        $time = time();
+        $worldName = $player->getLevelNonNull()->getFolderName();
+        $time = microtime(true);
 
         $contents = $inventory->getContents();
 
@@ -186,17 +186,17 @@ class InventoriesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $inventoryRows = [];
 
         if ($this->configParser->getRollbackItems()) {
             if ($rollback) {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ['log_ids' => $logIds]);
-                $prefix = 'old';
+                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ["log_ids" => $logIds]);
+                $prefix = "old";
             } else {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ['log_ids' => $logIds]);
-                $prefix = 'new';
+                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ["log_ids" => $logIds]);
+                $prefix = "new";
             }
 
             foreach ($inventoryRows as $row) {
@@ -206,18 +206,17 @@ class InventoriesQueries extends Query
                     $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
                 }
                 $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
-                $vector = new Vector3((int)$row['x'], (int)$row['y'], (int)$row['z']);
-                $tile = $area->getWorld()->getTile($vector);
+                $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
                 if ($tile instanceof InventoryHolder) {
                     $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
-                    $inv->setItem((int)$row['slot'], $item);
+                    $inv->setItem((int)$row["slot"], $item);
                 }
             }
         }
 
         if (($items = count($inventoryRows)) > 0) {
-            QueryManager::addReportMessage($commandParser->getSenderName(), 'rollback.items', [$items]);
+            QueryManager::addReportMessage($commandParser->getSenderName(), "rollback.items", [$items]);
         }
 
         $onComplete();

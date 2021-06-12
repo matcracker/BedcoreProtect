@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ use function count;
 final class Inspector
 {
     /**
-     * @var mixed[][]
+     * @var array[]
      */
     private static $inspectors = [];
 
@@ -86,12 +86,12 @@ final class Inspector
      */
     public static function isInspector(CommandSender $inspector): bool
     {
-        return self::$inspectors[self::getSenderUUID($inspector)]['enabled'] ?? false;
+        return self::$inspectors[self::getSenderUUID($inspector)]["enabled"] ?? false;
     }
 
     public static function saveLogs(CommandSender $inspector, array $logs = []): void
     {
-        self::$inspectors[self::getSenderUUID($inspector)]['logs'] = $logs;
+        self::$inspectors[self::getSenderUUID($inspector)]["logs"] = $logs;
     }
 
     /**
@@ -101,7 +101,7 @@ final class Inspector
      */
     public static function getSavedLogs(CommandSender $inspector): array
     {
-        return self::$inspectors[self::getSenderUUID($inspector)]['logs'] ?? [];
+        return self::$inspectors[self::getSenderUUID($inspector)]["logs"] ?? [];
     }
 
     public static function removeAll(): void
@@ -121,13 +121,13 @@ final class Inspector
     {
         $lang = Main::getInstance()->getLanguage();
         if (count($logs) === 0) {
-            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.no-data')));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.no-data")));
 
             return;
         }
 
         if ($lines < 1) {
-            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.more-lines')));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.more-lines")));
 
             return;
         }
@@ -136,25 +136,25 @@ final class Inspector
         $maxPages = count($chunkLogs);
         $fakePage = $page + 1;
         if (!array_key_exists($page, $chunkLogs)) {
-            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('inspector.page-not-exist', [$fakePage])));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.page-not-exist", [$fakePage])));
 
             return;
         }
 
-        $inspector->sendMessage(TextFormat::colorize('&f-----&3 ' . Main::PLUGIN_NAME . ' &7(' . $lang->translateString('inspector.page', [$fakePage, $maxPages]) . ') &f-----'));
+        $inspector->sendMessage(TextFormat::colorize("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$fakePage, $maxPages]) . ") &f-----"));
         foreach ($chunkLogs[$page] as $log) {
             //Default
-            $from = (string)$log['entity_from'];
-            $x = (int)$log['x'];
-            $y = (int)$log['y'];
-            $z = (int)$log['z'];
-            $worldName = (string)$log['world_name'];
-            $action = Action::fromType((int)$log['action']);
-            $rollback = (bool)$log['rollback'];
+            $from = (string)$log["entity_from"];
+            $x = (int)$log["x"];
+            $y = (int)$log["y"];
+            $z = (int)$log["z"];
+            $worldName = (string)$log["world_name"];
+            $action = Action::fromType((int)$log["action"]);
+            $rollback = (bool)$log["rollback"];
 
-            $timeStamp = (int)$log['time'];
+            $timeStamp = (int)$log["time"];
 
-            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? 'old' : 'new';
+            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
 
             if (isset($log["{$typeColumn}_id"], $log["{$typeColumn}_meta"])) {
                 $id = (int)$log["{$typeColumn}_id"];
@@ -163,22 +163,22 @@ final class Inspector
                     $amount = (int)$log["{$typeColumn}_amount"];
 
                     $itemName = ItemFactory::get($id, $meta)->getVanillaName();
-                    $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
+                    $to = "$amount x #$id:$meta ($itemName)";
                 } else {
                     $blockName = BlockFactory::get($id, $meta)->getName();
-                    $to = "#{$id}:{$meta} ({$blockName})";
+                    $to = "#$id:$meta ($blockName)";
                 }
-            } elseif (isset($log['entity_to'])) {
-                $to = $log['entity_to'];
+            } elseif (isset($log["entity_to"])) {
+                $to = $log["entity_to"];
             } else {
-                $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString('inspector.corrupted-data')));
+                $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.corrupted-data")));
                 return;
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
-            $inspector->sendMessage(TextFormat::colorize(($rollback ? '&o' : '') . '&7' . Utils::timeAgo($timeStamp)
-                . "&f - &3{$from} &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/{$worldName})&f."));
+            $inspector->sendMessage(TextFormat::colorize(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
+                . "&f - &3$from &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/$worldName)&f."));
         }
-        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString('inspector.view-old-data')));
+        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("inspector.view-old-data")));
     }
 }

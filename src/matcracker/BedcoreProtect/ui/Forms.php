@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -23,9 +23,9 @@ namespace matcracker\BedcoreProtect\ui;
 
 use Closure;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\utils\ConfigParser;
 use matcracker\FormLib\BaseForm;
 use matcracker\FormLib\CustomForm;
 use matcracker\FormLib\Form;
@@ -55,7 +55,7 @@ final class Forms
             function (Player $player, $data) use ($lang): void {
                 switch ((int)$data) { //Clicked button
                     case 0: //Inspector
-                        $player->chat('/bcp inspect');
+                        $player->chat("/bcp inspect");
                         break;
                     case 1: //Near
                         $player->sendForm($this->getNearMenu());
@@ -67,7 +67,7 @@ final class Forms
                         if (count(Inspector::getSavedLogs($player)) > 0) {
                             $player->sendForm($this->getShowMenu());
                         } else {
-                            $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . '&c' . $lang->translateString('command.show.no-logs')));
+                            $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.show.no-logs")));
                         }
                         break;
                     case 4: //Rollback
@@ -77,31 +77,31 @@ final class Forms
                         $player->sendForm($this->getInputMenu(self::TYPE_RESTORE));
                         break;
                     case 6: //Undo
-                        $player->chat('/bcp undo');
+                        $player->chat("/bcp undo");
                         break;
                     case 7: //Purge
                         $player->sendForm($this->getPurgeMenu());
                         break;
                     case 8: //Reload
-                        $player->chat('/bcp reload');
+                        $player->chat("/bcp reload");
                         break;
                     case 9: //Status
-                        $player->chat('/bcp status');
+                        $player->chat("/bcp status");
                         break;
                 }
             }
-        ))->setMessage($lang->translateString('form.menu.option'))
-            ->addClassicButton($lang->translateString('form.menu.inspector'))
-            ->addClassicButton($lang->translateString('form.menu.near'))
-            ->addClassicButton($lang->translateString('form.menu.lookup'))
-            ->addClassicButton($lang->translateString('form.menu.show'))
-            ->addClassicButton($lang->translateString('general.rollback'))
-            ->addClassicButton($lang->translateString('general.restore'))
-            ->addClassicButton($lang->translateString('general.undo'))
-            ->addClassicButton($lang->translateString('form.menu.purge'))
-            ->addClassicButton($lang->translateString('form.menu.reload'))
-            ->addClassicButton($lang->translateString('form.menu.status'))
-            ->setTitle(TextFormat::colorize('&3&l' . Main::PLUGIN_NAME . " " . $lang->translateString('form.menu.title')));
+        ))->setMessage($lang->translateString("form.menu.option"))
+            ->addClassicButton($lang->translateString("form.menu.inspector"))
+            ->addClassicButton($lang->translateString("form.menu.near"))
+            ->addClassicButton($lang->translateString("form.menu.lookup"))
+            ->addClassicButton($lang->translateString("form.menu.show"))
+            ->addClassicButton($lang->translateString("general.rollback"))
+            ->addClassicButton($lang->translateString("general.restore"))
+            ->addClassicButton($lang->translateString("general.undo"))
+            ->addClassicButton($lang->translateString("form.menu.purge"))
+            ->addClassicButton($lang->translateString("form.menu.reload"))
+            ->addClassicButton($lang->translateString("form.menu.status"))
+            ->setTitle(TextFormat::colorize("&3&l" . Main::PLUGIN_NAME . " " . $lang->translateString("form.menu.title")));
     }
 
     private function getNearMenu(): BaseForm
@@ -116,8 +116,8 @@ final class Forms
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius")
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.near')));
+        ))->addSlider($lang->translateString("form.input-menu.radius"), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius")
+            ->setTitle(TextFormat::colorize("&3&l" . $lang->translateString("form.menu.near")));
     }
 
     private function getInputMenu(string $type): BaseForm
@@ -130,21 +130,21 @@ final class Forms
             }
         );
 
-        $form->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.required-fields'))
-            ->addInput($lang->translateString('form.input-menu.time'), "1h3m10s", null, "time")
-            ->addLabel(TextFormat::BOLD . $lang->translateString('form.input-menu.optional-fields'));
+        $form->addLabel(TextFormat::BOLD . $lang->translateString("form.input-menu.required-fields"))
+            ->addInput($lang->translateString("form.input-menu.time"), "1h3m10s", null, "time")
+            ->addLabel(TextFormat::BOLD . $lang->translateString("form.input-menu.optional-fields"));
 
         if ($type === self::TYPE_LOOKUP) {
-            $form->addSlider($lang->translateString('form.input-menu.radius'), 0, $this->configParser->getMaxRadius(), null, null, "radius");
+            $form->addSlider($lang->translateString("form.input-menu.radius"), 0, $this->configParser->getMaxRadius(), null, null, "radius");
         } else {
-            $form->addSlider($lang->translateString('form.input-menu.radius'), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius");
+            $form->addSlider($lang->translateString("form.input-menu.radius"), 1, $this->configParser->getMaxRadius(), null, $this->configParser->getDefaultRadius(), "radius");
         }
 
-        $form->addInput($lang->translateString('form.input-menu.user-entity'), $lang->translateString('form.input-menu.user-entity-placeholder'), null, "user")
-            ->addDropdown($lang->translateString('general.action'), array_keys(CommandParser::$ACTIONS), -1, "action")
-            ->addInput($lang->translateString('form.input-menu.restrict-blocks'), 'stone,dirt,2:0', null, "inclusions")
-            ->addInput($lang->translateString('form.input-menu.exclude-blocks'), 'stone,dirt,2:0', null, "exclusions")
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString("general.$type")));
+        $form->addInput($lang->translateString("form.input-menu.user-entity"), $lang->translateString("form.input-menu.user-entity-placeholder"), null, "user")
+            ->addDropdown($lang->translateString("general.action"), array_keys(CommandParser::$ACTIONS), -1, "action")
+            ->addInput($lang->translateString("form.input-menu.restrict-blocks"), "stone,dirt,2:0", null, "inclusions")
+            ->addInput($lang->translateString("form.input-menu.exclude-blocks"), "stone,dirt,2:0", null, "exclusions")
+            ->setTitle(TextFormat::colorize("&3&l" . $lang->translateString("general.$type")));
 
         return $form;
     }
@@ -182,9 +182,9 @@ final class Forms
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addInput($lang->translateString('form.input-menu.page-number'), "1", "1", "page")
-            ->addInput($lang->translateString('form.input-menu.lines-number'), "4", "4", "lines")
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.show')));
+        ))->addInput($lang->translateString("form.input-menu.page-number"), "1", "1", "page")
+            ->addInput($lang->translateString("form.input-menu.lines-number"), "4", "4", "lines")
+            ->setTitle(TextFormat::colorize("&3&l" . $lang->translateString("form.menu.show")));
     }
 
     private function getPurgeMenu(): BaseForm
@@ -199,7 +199,7 @@ final class Forms
             function (Player $player): void {
                 $player->sendForm($this->getMainMenu());
             }
-        ))->addInput($lang->translateString('form.purge-menu.time'), '1h3m10s', null, "time")
-            ->setTitle(TextFormat::colorize('&3&l' . $lang->translateString('form.menu.purge')));
+        ))->addInput($lang->translateString("form.purge-menu.time"), "1h3m10s", null, "time")
+            ->setTitle(TextFormat::colorize("&3&l" . $lang->translateString("form.menu.purge")));
     }
 }

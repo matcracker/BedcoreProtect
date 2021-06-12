@@ -253,4 +253,29 @@ ALTER TABLE inventories_log
     ADD CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
 -- #        }
 -- #    }
+-- #    {0.8.1
+-- #        {1
+ALTER TABLE log_history
+    MODIFY time DOUBLE PRECISION NOT NULL;
+-- #        }
+-- #        {2
+CREATE TABLE IF NOT EXISTS temp
+(
+    version     VARCHAR(20) PRIMARY KEY             NOT NULL,
+    upgraded_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+-- #        }
+-- #        {3
+INSERT INTO temp(version, upgraded_on)
+SELECT version, upgraded_on
+FROM status;
+-- #        }
+-- #        {4
+DROP TABLE status;
+-- #        }
+-- #        {5
+ALTER TABLE temp
+    RENAME TO status;
+-- #        }
+-- #    }
 -- #}

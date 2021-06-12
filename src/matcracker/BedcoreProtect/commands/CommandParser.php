@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -23,10 +23,10 @@ namespace matcracker\BedcoreProtect\commands;
 
 use BadMethodCallException;
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\math\MathUtils;
-use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
@@ -51,13 +51,13 @@ use function implode;
 use function intval;
 use function mb_strtolower;
 use function mb_substr;
-use function time;
+use function microtime;
 
 final class CommandParser
 {
     public const MAX_PARAMETERS = 6;
     public const PARAMETERS = [
-        'user', 'time', 'radius', 'action', 'include', 'exclude'
+        "user", "time", "radius", "action", "include", "exclude"
     ];
 
     /** @var Action[][] */
@@ -80,12 +80,12 @@ final class CommandParser
     //Default data values
     /** @var array */
     private $data = [
-        'user' => null,
-        'time' => null,
-        'radius' => null,
-        'action' => null,
-        'inclusions' => null,
-        'exclusions' => null
+        "user" => null,
+        "time" => null,
+        "radius" => null,
+        "action" => null,
+        "inclusions" => null,
+        "exclusions" => null
     ];
 
     /**
@@ -114,14 +114,14 @@ final class CommandParser
     {
         if (self::$ACTIONS === null) {
             self::$ACTIONS = [
-                'block' => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
-                '+block' => [Action::PLACE()],
-                '-block' => [Action::BREAK()],
-                'click' => [Action::CLICK()],
-                'container' => [Action::ADD(), Action::REMOVE()],
-                '+container' => [Action::ADD()],
-                '-container' => [Action::REMOVE()],
-                'kill' => [Action::KILL()]
+                "block" => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
+                "+block" => [Action::PLACE()],
+                "-block" => [Action::BREAK()],
+                "click" => [Action::CLICK()],
+                "container" => [Action::ADD(), Action::REMOVE()],
+                "+container" => [Action::ADD()],
+                "-container" => [Action::REMOVE()],
+                "kill" => [Action::KILL()]
             ];
         }
     }
@@ -131,7 +131,7 @@ final class CommandParser
         $lang = Main::getInstance()->getLanguage();
 
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) {
-            $this->errorMessage = $lang->translateString('parser.few-many-parameters', [self::MAX_PARAMETERS]);
+            $this->errorMessage = $lang->translateString("parser.few-many-parameters", [self::MAX_PARAMETERS]);
 
             return false;
         }
@@ -139,7 +139,7 @@ final class CommandParser
         foreach ($this->arguments as $argument) {
             $arrayData = explode("=", $argument);
             if (count($arrayData) !== 2) {
-                $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
+                $this->errorMessage = $lang->translateString("parser.invalid-parameter", [implode(", ", self::PARAMETERS)]);
                 return false;
             }
 
@@ -147,65 +147,65 @@ final class CommandParser
             $paramValues = (string)$arrayData[1];
 
             switch ($param) {
-                case 'users':
-                case 'user':
-                case 'u':
-                    $users = explode(',', $paramValues);
+                case "users":
+                case "user":
+                case "u":
+                    $users = explode(",", $paramValues);
 
                     foreach ($users as $user) {
-                        if (mb_substr($user, 0, 1) !== '#') { //Entity
+                        if (mb_substr($user, 0, 1) !== "#") { //Entity
                             if (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
-                                $this->errorMessage = $lang->translateString('parser.no-player', [$user]);
+                                $this->errorMessage = $lang->translateString("parser.no-player", [$user]);
 
                                 return false;
                             }
                         }
                     }
-                    $this->data['user'] = array_unique($users);
+                    $this->data["user"] = array_unique($users);
                     break;
-                case 'time':
-                case 't':
+                case "time":
+                case "t":
                     $time = Utils::parseTime($paramValues);
                     if ($time === 0) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-amount-time');
+                        $this->errorMessage = $lang->translateString("parser.invalid-amount-time");
 
                         return false;
                     }
-                    $this->data['time'] = $time;
+                    $this->data["time"] = $time;
                     break;
-                case 'radius':
-                case 'r':
+                case "radius":
+                case "r":
                     if (!ctype_digit($paramValues)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-amount-radius');
+                        $this->errorMessage = $lang->translateString("parser.invalid-amount-radius");
 
                         return false;
                     }
                     $paramValues = (int)$paramValues;
                     $maxRadius = $this->configParser->getMaxRadius();
                     if ($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-radius');
+                        $this->errorMessage = $lang->translateString("parser.invalid-radius");
 
                         return false;
                     }
 
-                    $this->data['radius'] = $paramValues;
+                    $this->data["radius"] = $paramValues;
                     break;
-                case 'action':
-                case 'a':
+                case "action":
+                case "a":
                     $paramValues = mb_strtolower($paramValues);
                     if (!array_key_exists($paramValues, self::$ACTIONS)) {
-                        $this->errorMessage = $lang->translateString('parser.invalid-action', [$paramValues, implode(', ', array_keys(self::$ACTIONS))]);
+                        $this->errorMessage = $lang->translateString("parser.invalid-action", [$paramValues, implode(", ", array_keys(self::$ACTIONS))]);
 
                         return false;
                     }
 
-                    $this->data['action'] = self::$ACTIONS[$paramValues];
+                    $this->data["action"] = self::$ACTIONS[$paramValues];
                     break;
-                case 'include':
-                case 'i':
-                case 'exclude':
-                case 'e':
-                    $index = mb_substr($param, 0, 1) === 'i' ? 'inclusions' : 'exclusions';
+                case "include":
+                case "i":
+                case "exclude":
+                case "e":
+                    $index = mb_substr($param, 0, 1) === "i" ? "inclusions" : "exclusions";
 
                     /** @var int[] $itemIds */
                     $itemIds = [];
@@ -217,7 +217,7 @@ final class CommandParser
                             /** @var Item $item */
                             $item = ItemFactory::fromString($strItem);
                         } catch (InvalidArgumentException $exception) {
-                            $this->errorMessage = $lang->translateString('parser.invalid-block-' . ($index === 'inclusions' ? 'include' : 'exclude'), [$strItem]);
+                            $this->errorMessage = $lang->translateString("parser.invalid-block-" . ($index === "inclusions" ? "include" : "exclude"), [$strItem]);
 
                             return false;
                         }
@@ -233,7 +233,7 @@ final class CommandParser
 
                     break;
                 default:
-                    $this->errorMessage = $lang->translateString('parser.invalid-parameter', [implode(', ', self::PARAMETERS)]);
+                    $this->errorMessage = $lang->translateString("parser.invalid-parameter", [implode(", ", self::PARAMETERS)]);
                     return false;
             }
         }
@@ -246,7 +246,7 @@ final class CommandParser
         }
 
         if (count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)) {
-            $this->errorMessage = $lang->translateString('parser.missing-parameters', [implode(',', $this->requiredParams)]);
+            $this->errorMessage = $lang->translateString("parser.missing-parameters", [implode(",", $this->requiredParams)]);
 
             return false;
         }
@@ -259,7 +259,7 @@ final class CommandParser
     public function buildLogsSelectionQuery(string &$query, array &$args, bool $rollback, AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
-            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $variables = [
@@ -312,7 +312,7 @@ final class CommandParser
      */
     public function getInclusions(): ?array
     {
-        return $this->getData('inclusions');
+        return $this->getData("inclusions");
     }
 
     /**
@@ -323,7 +323,7 @@ final class CommandParser
     private function getData(string $key)
     {
         if (!$this->parsed) {
-            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         return $this->data[$key];
@@ -334,7 +334,7 @@ final class CommandParser
      */
     public function getExclusions(): ?array
     {
-        return $this->getData('exclusions');
+        return $this->getData("exclusions");
     }
 
     /**
@@ -346,7 +346,7 @@ final class CommandParser
     protected function buildConditionalQuery(string &$query, array &$variables, array &$params, ?AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
-            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         foreach ($this->data as $key => $value) {
@@ -355,23 +355,23 @@ final class CommandParser
             }
 
             switch ($key) {
-                case 'user':
+                case "user":
                     $variables["users"] = new GenericVariable("users", "list:string", null);
                     $params["users"] = $value;
 
                     $query .= "(who IN (SELECT uuid FROM entities WHERE entity_name IN :users)) AND ";
                     break;
-                case 'time':
-                    $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_INT, null);
-                    $params["time"] = time() - (int)$value;
+                case "time":
+                    $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_FLOAT, null);
+                    $params["time"] = microtime(true) - (float)$value;
 
                     if ($this->configParser->isSQLite()) {
-                        $query .= "(time BETWEEN :time AND STRFTIME('%s', 'now')) AND ";
+                        $query .= "(time BETWEEN :time AND (SELECT STRFTIME(\"%s\", \"now\") + STRFTIME(\"%f\", \"now\") - STRFTIME(\"%S\", \"now\"))) AND ";
                     } else {
-                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP()) AND ";
+                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP(NOW(4))) AND ";
                     }
                     break;
-                case 'radius':
+                case "radius":
                     if ($bb !== null) {
                         $bb = MathUtils::floorBoundingBox($bb);
 
@@ -393,7 +393,7 @@ final class CommandParser
                     }
 
                     break;
-                case 'action':
+                case "action":
                     $variables["actions"] = new GenericVariable("actions", "list:int", null);
                     $params["actions"] = array_map(static function (Action $action): int {
                         return $action->getType();
@@ -402,7 +402,7 @@ final class CommandParser
                     $query .= "(action IN :actions) AND ";
                     break;
 
-                case 'exclusions':
+                case "exclusions":
                     $variables["exclusions_ids"] = new GenericVariable("exclusions_ids", "list:int", null);
                     $params["exclusions_ids"] = $value["ids"];
                     $variables["exclusions_metas"] = new GenericVariable("exclusions_metas", "list:int", null);
@@ -411,7 +411,7 @@ final class CommandParser
                     $query .= "(id NOT IN :exclusions_ids OR meta NOT IN :exclusions_metas) AND ";
                     break;
 
-                case 'inclusions':
+                case "inclusions":
                     $variables["inclusions_ids"] = new GenericVariable("inclusions_ids", "list:int", null);
                     $params["inclusions_ids"] = $value["ids"];
                     $variables["inclusions_metas"] = new GenericVariable("inclusions_metas", "list:int", null);
@@ -421,7 +421,7 @@ final class CommandParser
                     break;
 
                 default:
-                    throw new UnexpectedValueException("\"{$key}\" is not a expected data key.");
+                    throw new UnexpectedValueException("\"$key\" is not a expected data key.");
             }
         }
 
@@ -441,11 +441,11 @@ final class CommandParser
     public function buildLookupQuery(string &$query, array &$args, ?AxisAlignedBB $bb = null): void
     {
         if (!$this->parsed) {
-            throw new BadMethodCallException('Before invoking this method, you need to invoke CommandParser::parse()');
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $query = /**@lang text */
-            'SELECT tmp_ids.*, e1.entity_name AS entity_from, e2.entity_name AS entity_to                
+            "SELECT tmp_ids.*, e1.entity_name AS entity_from, e2.entity_name AS entity_to                
             FROM
             (SELECT tmp_logs.*,
                  CASE
@@ -485,7 +485,7 @@ final class CommandParser
             ) AS tmp_ids
             LEFT JOIN entities_log el ON tmp_ids.log_id = el.history_id
             LEFT JOIN entities e1 ON tmp_ids.who = e1.uuid
-            LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ';
+            LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ";
 
         /** @var GenericVariable[] $variables */
         $variables = [];
@@ -493,7 +493,7 @@ final class CommandParser
 
         $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
-        $query .= ' ORDER BY time DESC;';
+        $query .= " ORDER BY time DESC;";
 
         $statement = GenericStatementImpl::forDialect(
             $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
@@ -518,7 +518,7 @@ final class CommandParser
 
     public function getTime(): ?int
     {
-        return $this->getData('time');
+        return $this->getData("time");
     }
 
     /**
@@ -536,12 +536,12 @@ final class CommandParser
      */
     public function getUsers(): ?array
     {
-        return $this->getData('user');
+        return $this->getData("user");
     }
 
     public function getRadius(): ?int
     {
-        return $this->getData('radius');
+        return $this->getData("radius");
     }
 
     public function getDefaultRadius(): int
@@ -554,6 +554,6 @@ final class CommandParser
      */
     public function getAction(): ?array
     {
-        return $this->getData('action');
+        return $this->getData("action");
     }
 }

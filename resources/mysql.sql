@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS log_history
     z          INTEGER               NOT NULL,
     world_name VARCHAR(255)          NOT NULL,
     action     TINYINT UNSIGNED      NOT NULL,
-    time       BIGINT                NOT NULL,
+    time       DOUBLE PRECISION      NOT NULL,
     rollback   BOOLEAN DEFAULT FALSE NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES entities (uuid)
 );
@@ -67,10 +67,8 @@ CREATE TABLE IF NOT EXISTS inventories_log
 -- #        {db_status
 CREATE TABLE IF NOT EXISTS status
 (
-    only_one_row BOOLEAN PRIMARY KEY DEFAULT TRUE,
-    version      VARCHAR(20)                                   NOT NULL,
-    upgraded_on  TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CHECK (only_one_row)
+    version     VARCHAR(20) PRIMARY KEY             NOT NULL,
+    upgraded_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 -- #        }
 -- #    }
@@ -109,7 +107,7 @@ ON DUPLICATE KEY UPDATE version=version;
 -- #                :z int
 -- #                :world_name string
 -- #                :action int
--- #                :time int
+-- #                :time float
 INSERT INTO log_history(who, x, y, z, world_name, action, time)
 VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name, :action, :time);
 -- #            }
@@ -157,13 +155,6 @@ UPDATE entities_log
 SET entityfrom_id = :entity_id
 WHERE history_id = :log_id;
 -- #        }
--- #        {db_version
--- #             :version string
-UPDATE status
-SET version     = :version,
-    upgraded_on = DEFAULT
-LIMIT 1;
--- #        }
 -- #        {rollback_status
 -- #             :rollback bool
 -- #             :log_ids list:int
@@ -174,8 +165,9 @@ WHERE log_id IN :log_ids;
 -- #    }
 -- #    {get
 -- #        {db_status
-SELECT *
+SELECT version, (SELECT version FROM status ORDER BY upgraded_on LIMIT 1) AS init_version
 FROM status
+ORDER BY upgraded_on DESC
 LIMIT 1;
 -- #        }
 -- #        {log
@@ -389,7 +381,7 @@ ORDER BY time DESC;
 -- #        }
 -- #    }
 -- #    {purge
--- #        :time int
+-- #        :time float
 DELETE
 FROM log_history
 WHERE time < UNIX_TIMESTAMP() - :time;

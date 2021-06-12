@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -93,7 +93,7 @@ final class BlockUtils
     }
 
     /**
-     * Serializes a block (tile) compound tag into base64. Returns null if block doesn't contain NBT.
+     * Serializes a block (tile) compound tag into base64. Returns null if block doesn"t contain NBT.
      *
      * @param Block $block
      *
@@ -134,11 +134,11 @@ final class BlockUtils
      */
     public static function asTile(Block $block): ?Tile
     {
-        if (($level = $block->getLevel()) === null) {
+        if (($world = $block->getLevel()) === null) {
             return null;
         }
 
-        return $level->getTile($block->asVector3());
+        return $world->getTile($block->asVector3());
     }
 
     /**
@@ -164,6 +164,6 @@ final class BlockUtils
             BlockIds::SKULL_BLOCK => Tile::SKULL
         ];
 
-        return $array[$blockId] ?? 'Unknown';
+        return $array[$blockId] ?? "Unknown";
     }
 }

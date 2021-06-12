@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -57,9 +57,9 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = $player->getLevelNonNull();
+        $world = $player->getLevelNonNull();
 
-        if ($this->config->isEnabledWorld($level) && $this->config->getBlockBreak()) {
+        if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
             if ($block instanceof Chest) {
@@ -86,10 +86,10 @@ final class BlockListener extends BedcoreListener
                     $player,
                     $sides,
                     Action::BREAK(),
-                    function (array &$oldBlocks) use ($level, $sides): array {
+                    function (array &$oldBlocks) use ($world, $sides): array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
-                            $updSide = $level->getBlock($side->asVector3());
+                            $updSide = $world->getBlock($side->asVector3());
                             if ($updSide instanceof $side) {
                                 unset($oldBlocks[$key]);
                             } else {
@@ -114,9 +114,9 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        $level = $player->getLevelNonNull();
+        $world = $player->getLevelNonNull();
 
-        if ($this->config->isEnabledWorld($level) && $this->config->getBlockPlace()) {
+        if ($this->config->isEnabledWorld($world) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
             $block = $event->getBlock();
 
@@ -131,9 +131,9 @@ final class BlockListener extends BedcoreListener
                 //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
                 $this->plugin->getScheduler()->scheduleDelayedTask(
                     new ClosureTask(
-                        function (int $currentTick) use ($replacedBlock, $block, $player, $level): void {
+                        function (int $currentTick) use ($replacedBlock, $block, $player, $world): void {
                             //Update the block instance to get the real placed block data.
-                            $updBlock = $level->getBlock($block->asVector3());
+                            $updBlock = $world->getBlock($block->asVector3());
 
                             /** @var Block|null $otherHalfBlock */
                             $otherHalfBlock = null;

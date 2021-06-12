@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -24,11 +24,11 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\storage\QueryManager;
-use matcracker\BedcoreProtect\utils\ConfigParser;
+use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
@@ -50,36 +50,36 @@ abstract class Query
         $this->configParser = $plugin->getParsedConfig();
     }
 
-    public function rollback(Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    public function rollback(Level $world, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
-        $this->rawRollback(true, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback);
+        $this->rawRollback(true, $world, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
     /**
      * @param bool $rollback
-     * @param Area $area
+     * @param Level $world
      * @param CommandParser $commandParser
      * @param int[] $logIds
      * @param Closure|null $onPreComplete
      * @param bool $isLastRollback
      */
-    public function rawRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    public function rawRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
         Await::f2c(
-            function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): Generator {
+            function () use ($rollback, $world, $commandParser, $logIds, $onPreComplete, $isLastRollback): Generator {
                 yield $this->onRollback(
                     $rollback,
-                    $area,
+                    $world,
                     $commandParser,
                     $logIds,
-                    function () use ($rollback, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
+                    function () use ($rollback, $world, $commandParser, $logIds, $onPreComplete, $isLastRollback): void {
                         if ($onPreComplete) {
                             $onPreComplete();
                         }
 
                         if ($isLastRollback) {
                             $this->updateRollbackStatus($rollback, $logIds);
-                            QueryManager::sendRollbackReport($rollback, $area, $commandParser);
+                            QueryManager::sendRollbackReport($rollback, $world, $commandParser);
                         }
                     }
                 );
@@ -89,13 +89,13 @@ abstract class Query
 
     /**
      * @param bool $rollback
-     * @param Area $area
+     * @param Level $world
      * @param CommandParser $commandParser
      * @param int[] $logIds
      * @param Closure $onComplete
      * @return Generator
      */
-    abstract protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator;
+    abstract protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator;
 
     /**
      * @param bool $rollback
@@ -104,14 +104,14 @@ abstract class Query
     final protected function updateRollbackStatus(bool $rollback, array $logIds): void
     {
         $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            'rollback' => $rollback,
-            'log_ids' => $logIds
+            "rollback" => $rollback,
+            "log_ids" => $logIds
         ]);
     }
 
-    public function restore(Area $area, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
+    public function restore(Level $world, CommandParser $commandParser, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
     {
-        $this->rawRollback(false, $area, $commandParser, $logIds, $onPreComplete, $isLastRollback);
+        $this->rawRollback(false, $world, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
     /**
@@ -129,13 +129,13 @@ abstract class Query
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, int $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
-            'uuid' => mb_strtolower($uuid),
-            'x' => $position->getFloorX(),
-            'y' => $position->getFloorY(),
-            'z' => $position->getFloorZ(),
-            'world_name' => $worldName,
-            'action' => $action->getType(),
-            'time' => $time
+            "uuid" => mb_strtolower($uuid),
+            "x" => $position->getFloorX(),
+            "y" => $position->getFloorY(),
+            "z" => $position->getFloorZ(),
+            "world_name" => $worldName,
+            "action" => $action->getType(),
+            "time" => $time
         ]);
     }
 

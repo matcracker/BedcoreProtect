@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -90,7 +90,7 @@ final class BCPHelpCommand
                 } elseif ($subCmd === "rb") {
                     $subCmd = "rollback";
                 }
-                $this->sender->sendMessage(TextFormat::colorize("&3/bcp {$subCmd} &7<params> &f- " . $this->lang->translateString("command.help.parameters1", [$subCmd])));
+                $this->sender->sendMessage(TextFormat::colorize("&3/bcp $subCmd &7<params> &f- " . $this->lang->translateString("command.help.parameters1", [$subCmd])));
                 $this->sender->sendMessage(TextFormat::colorize("&3| &7u=<users> &f- " . $this->lang->translateString("command.help.parameters2", [$subCmd])));
                 $this->sender->sendMessage(TextFormat::colorize("&3| &7t=<time> &f- " . $this->lang->translateString("command.help.parameters3", [$subCmd])));
                 $this->sender->sendMessage(TextFormat::colorize("&3| &7r=<radius> &f- " . $this->lang->translateString("command.help.parameters4", [$subCmd])));

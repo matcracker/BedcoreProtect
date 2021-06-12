@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -51,7 +51,7 @@ final class Utils
     }
 
     /**
-     * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
+     * It parses a string type like "XwXdXhXmXs" where X is a number indicating the time.
      *
      * @param string $strDate the date to parse.
      *
@@ -59,7 +59,7 @@ final class Utils
      */
     public static function parseTime(string $strDate): int
     {
-        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE, 0);
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE);
 
         if (count($matches) === 0) {
             return 0;
@@ -100,10 +100,10 @@ final class Utils
         return (int)min($time, PHP_INT_MAX);
     }
 
-    public static function timeAgo(int $timestamp, int $level = 6): string
+    public static function timeAgo(float $timestamp, int $world = 6): string
     {
         $date = new DateTime();
-        $date->setTimestamp($timestamp);
+        $date->setTimestamp((int)$timestamp);
         $currentDate = DateTime::createFromFormat("0.u00 U", microtime());
         if (!($currentDate instanceof DateTime)) {
             throw new UnexpectedValueException("Unexpected date creation.");
@@ -115,7 +115,7 @@ final class Utils
         // remove empty date values
         $since = array_filter($since);
         // output only the first x date values
-        $since = array_slice($since, 0, $level);
+        $since = array_slice($since, 0, $world);
         // build string
         $last_key = key(array_slice($since, -1, 1, true));
         $string = "";
@@ -173,7 +173,7 @@ final class Utils
         $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
         if (!($tag instanceof CompoundTag)) {
-            throw new UnexpectedValueException('Value must return CompoundTag, got ' . $tag->__toString());
+            throw new UnexpectedValueException("Value must return CompoundTag, got " . $tag->__toString());
         }
 
         return $tag;

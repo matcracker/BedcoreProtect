@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,24 +22,23 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
-use matcracker\BedcoreProtect\math\Area;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\Utils;
+use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
-use pocketmine\math\Vector3;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use function count;
 
-final class RollbackTask extends AsyncTask
+class RollbackTask extends AsyncTask
 {
     /** @var bool */
     protected $rollback;
-    /** @var Area */
-    protected $area;
+    /** @var string */
+    protected $worldName;
     /** @var string */
     protected $senderName;
     /** @var SerializableBlock[] */
@@ -50,19 +49,19 @@ final class RollbackTask extends AsyncTask
     /**
      * RollbackTask constructor.
      * @param bool $rollback
-     * @param Area $area
+     * @param string $worldName
      * @param string $senderName
      * @param SerializableBlock[] $blocks
      * @param Closure $onComplete
      */
-    public function __construct(bool $rollback, Area $area, string $senderName, array $blocks, Closure $onComplete)
+    public function __construct(bool $rollback, string $worldName, string $senderName, array $blocks, Closure $onComplete)
     {
         $this->rollback = $rollback;
-        $this->area = $area;
+        $this->worldName = $worldName;
         $this->senderName = $senderName;
         $this->blocks = $blocks;
 
-        $this->serializedChunks = Utils::serializeChunks($area->getTouchedChunks($blocks));
+        $this->serializedChunks = Utils::serializeChunks(WorldUtils::getChunks(WorldUtils::getNonNullWorldByName($worldName), $blocks));
         $this->storeLocal($onComplete);
     }
 
@@ -78,7 +77,7 @@ final class RollbackTask extends AsyncTask
         foreach ($this->blocks as $block) {
             $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
-                $chunks[$index]->setBlock((int)$block->getX() & 0x0f, (int)$block->getY(), (int)$block->getZ() & 0x0f, $block->getId(), $block->getMeta());
+                $chunks[$index]->setBlock($block->getX() & 0x0f, $block->getY(), $block->getZ() & 0x0f, $block->getId(), $block->getMeta());
             }
         }
 
@@ -87,35 +86,31 @@ final class RollbackTask extends AsyncTask
 
     public function onCompletion(Server $server): void
     {
-        $world = $this->area->getWorld();
-        if ($world !== null) {
-            /** @var Chunk[] $chunks */
-            $chunks = $this->getResult();
-            foreach ($chunks as $chunk) {
-                $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
-            }
+        $world = WorldUtils::getNonNullWorldByName($this->worldName);
 
-            foreach ($this->blocks as $block) {
-                $this->updatePosition($world, $block->asVector3()->floor());
-            }
-
-            /**@var Closure|null $onComplete */
-            $onComplete = $this->fetchLocal();
-
-            QueryManager::addReportMessage($this->senderName, 'rollback.blocks', [count($this->blocks)]);
-            //Set the execution time to 0 to avoid duplication of time in the same operation.
-            QueryManager::addReportMessage($this->senderName, 'rollback.modified-chunks', [count($chunks)]);
-
-            $onComplete();
+        /** @var Chunk[] $chunks */
+        $chunks = $this->getResult();
+        foreach ($chunks as $chunk) {
+            $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
         }
+
+        foreach ($this->blocks as $block) {
+            $pos = $block->asVector3();
+            $world->updateAllLight($pos);
+            foreach ($world->getNearbyEntities(new AxisAlignedBB($pos->x - 1, $pos->y - 1, $pos->z - 1, $pos->x + 2, $pos->y + 2, $pos->z + 2)) as $entity) {
+                $entity->onNearbyBlockChange();
+            }
+            $world->scheduleNeighbourBlockUpdates($pos);
+        }
+
+        /**@var Closure $onComplete */
+        $onComplete = $this->fetchLocal();
+
+        QueryManager::addReportMessage($this->senderName, "rollback.blocks", [count($this->blocks)]);
+        //Set the execution time to 0 to avoid duplication of time in the same operation.
+        QueryManager::addReportMessage($this->senderName, "rollback.modified-chunks", [count($chunks)]);
+
+        $onComplete();
     }
 
-    private function updatePosition(Level $world, Vector3 $vector3): void
-    {
-        $world->updateAllLight($vector3);
-        foreach ($world->getNearbyEntities(new AxisAlignedBB($vector3->x - 1, $vector3->y - 1, $vector3->z - 1, $vector3->x + 2, $vector3->y + 2, $vector3->z + 2)) as $entity) {
-            $entity->onNearbyBlockChange();
-        }
-        $world->scheduleNeighbourBlockUpdates($vector3);
-    }
 }

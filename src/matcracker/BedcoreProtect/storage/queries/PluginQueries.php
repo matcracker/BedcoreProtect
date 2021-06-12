@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -25,10 +25,10 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Inspector;
-use matcracker\BedcoreProtect\math\Area;
-use matcracker\BedcoreProtect\math\MathUtils;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
+use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\Player;
 use pocketmine\plugin\PluginException;
@@ -58,13 +58,13 @@ class PluginQueries extends Query
         $maxV = $position->add($near, $near, $near)->floor();
 
         $this->connector->executeSelect($queryName, [
-            'min_x' => $minV->getX(),
-            'max_x' => $maxV->getX(),
-            'min_y' => $minV->getY(),
-            'max_y' => $maxV->getY(),
-            'min_z' => $minV->getZ(),
-            'max_z' => $maxV->getZ(),
-            'world_name' => $position->getLevelNonNull()->getName()
+            "min_x" => $minV->getX(),
+            "max_x" => $maxV->getX(),
+            "min_y" => $minV->getY(),
+            "max_y" => $maxV->getY(),
+            "min_z" => $minV->getZ(),
+            "max_z" => $maxV->getZ(),
+            "world_name" => $position->getLevelNonNull()->getFolderName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::saveLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -104,14 +104,14 @@ class PluginQueries extends Query
         $this->requestLog(QueriesConst::GET_BLOCK_LOG, $inspector, $block->asPosition());
     }
 
-    public function purge(int $time, ?callable $onSuccess = null): void
+    public function purge(float $time, ?callable $onSuccess = null): void
     {
         $this->connector->executeChange(QueriesConst::PURGE, [
-            'time' => $time
+            "time" => $time
         ], $onSuccess);
     }
 
-    protected function onRollback(bool $rollback, Area $area, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }

@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\config;
 
 use matcracker\BedcoreProtect\Main;
 use function array_keys;
@@ -87,18 +87,6 @@ final class ConfigUpdater
         return true;
     }
 
-    private function printOptions(array $resultOptions, string $type): void
-    {
-        if (isset($resultOptions[$type])) {
-            if (count($resultOptions[$type]) > 0) {
-                $this->plugin->getLogger()->info(ucfirst($type) . " options:");
-                foreach ($resultOptions[$type] as $option) {
-                    $this->plugin->getLogger()->info("- $option");
-                }
-            }
-        }
-    }
-
     /**
      * Return the number of options changed between the old and the new configurations.
      *
@@ -109,7 +97,7 @@ final class ConfigUpdater
     private function iterateConfigurations(array $oldConfigData, array &$newConfigData): array
     {
         static $skipKeys = [
-            "config - version"
+            "config-version"
         ];
 
         $resultOptions = [
@@ -145,5 +133,17 @@ final class ConfigUpdater
         }
 
         return $resultOptions;
+    }
+
+    private function printOptions(array $resultOptions, string $type): void
+    {
+        if (isset($resultOptions[$type])) {
+            if (count($resultOptions[$type]) > 0) {
+                $this->plugin->getLogger()->info(ucfirst($type) . " options:");
+                foreach ($resultOptions[$type] as $option) {
+                    $this->plugin->getLogger()->info("- $option");
+                }
+            }
+        }
     }
 }

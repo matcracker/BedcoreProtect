@@ -27,17 +27,27 @@ final class AwaitMutex
     /** @var Closure[] */
     private $queue = [];
 
-    public function putClosure(Closure $promise, ?Closure $onSuccess = null, ?Closure $onError = null): void
+    /**
+     * @param Closure $promise
+     * @param callable|null $onSuccess
+     * @param callable[]|callable $onError
+     */
+    public function putClosure(Closure $promise, ?callable $onSuccess = null, $onError = []): void
     {
         $this->put($promise(), $onSuccess, $onError);
     }
 
-    public function put(Generator $promise, ?Closure $onSuccess = null, ?Closure $onError = null): void
+    /**
+     * @param Generator $promise
+     * @param callable|null $onSuccess
+     * @param callable[]|callable $onError
+     */
+    public function put(Generator $promise, ?callable $onSuccess = null, $onError = []): void
     {
         $this->queue[] = function () use ($promise, $onSuccess, $onError): void {
             Await::g2c(
                 $promise,
-                function () use ($onSuccess) {
+                function () use ($onSuccess): void {
                     $this->running = false;
                     if ($onSuccess !== null) {
                         $onSuccess();

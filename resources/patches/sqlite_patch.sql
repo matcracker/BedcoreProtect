@@ -341,4 +341,52 @@ ALTER TABLE "temp"
     RENAME TO "inventories_log";
 -- #        }
 -- #    }
+-- #    {0.8.1
+-- #        {1
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    who        VARCHAR(36)      NOT NULL,
+    x          INTEGER          NOT NULL,
+    y          SMALLINT         NOT NULL,
+    z          INTEGER          NOT NULL,
+    world_name VARCHAR(255)     NOT NULL,
+    action     TINYINT UNSIGNED NOT NULL,
+    time       DOUBLE PRECISION NOT NULL,
+    "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
+);
+-- #        }
+-- #        {2
+INSERT INTO "temp"
+SELECT *
+FROM "log_history";
+-- #        }
+-- #        {3
+DROP TABLE "log_history";
+-- #        }
+-- #        {4
+ALTER TABLE "temp"
+    RENAME TO "log_history";
+-- #        }
+-- #        {5
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    version     VARCHAR(20) PRIMARY KEY NOT NULL,
+    upgraded_on TIMESTAMP DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%S', 'now', 'localtime')) NOT NULL
+);
+-- #        }
+-- #        {6
+INSERT INTO "temp" (version, upgraded_on)
+SELECT version, upgraded_on
+FROM "status";
+-- #        }
+-- #        {7
+DROP TABLE "status";
+-- #        }
+-- #        {8
+ALTER TABLE "temp"
+    RENAME TO "status";
+-- #        }
+-- #    }
 -- #}
