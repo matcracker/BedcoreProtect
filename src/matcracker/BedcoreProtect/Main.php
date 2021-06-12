@@ -32,7 +32,7 @@ use matcracker\BedcoreProtect\listeners\EntityListener;
 use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
-use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\storage\DatabaseManager;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
 use function mkdir;
@@ -48,7 +48,7 @@ final class Main extends PluginBase
     private static $instance;
     /** @var BaseLang */
     private $baseLang;
-    /** @var Database */
+    /** @var DatabaseManager */
     private $database;
     /** @var ConfigParser */
     private $configParser;
@@ -67,7 +67,7 @@ final class Main extends PluginBase
         return $this->baseLang;
     }
 
-    public function getDatabase(): Database
+    public function getDatabase(): DatabaseManager
     {
         return $this->database;
     }
@@ -126,7 +126,7 @@ final class Main extends PluginBase
 
     public function onEnable(): void
     {
-        $this->database = new Database($this);
+        $this->database = new DatabaseManager($this);
 
         $pluginManager = $this->getServer()->getPluginManager();
         //Database connection

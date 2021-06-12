@@ -29,7 +29,7 @@ use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
 use SOFe\AwaitGenerator\Await;
 
-class Database
+class DatabaseManager
 {
     /** @var Main */
     protected $plugin;
