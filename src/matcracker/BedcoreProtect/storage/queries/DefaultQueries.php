@@ -27,8 +27,7 @@ use SOFe\AwaitGenerator\Await;
 
 abstract class DefaultQueries
 {
-    /** @var DataConnector */
-    protected $connector;
+    protected DataConnector $connector;
 
     public function __construct(DataConnector $connector)
     {

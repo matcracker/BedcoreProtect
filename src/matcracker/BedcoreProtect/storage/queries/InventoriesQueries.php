@@ -55,8 +55,7 @@ use function microtime;
  */
 class InventoriesQueries extends Query
 {
-    /** @var AwaitMutex */
-    private $mutexInventory;
+    private AwaitMutex $mutexInventory;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {

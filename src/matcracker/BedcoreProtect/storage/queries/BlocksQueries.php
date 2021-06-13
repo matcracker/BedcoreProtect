@@ -62,12 +62,9 @@ use function strlen;
  */
 class BlocksQueries extends Query
 {
-    /** @var EntitiesQueries */
-    protected $entitiesQueries;
-    /** @var InventoriesQueries */
-    protected $inventoriesQueries;
-    /** @var AwaitMutex */
-    private $mutexBlock;
+    protected EntitiesQueries $entitiesQueries;
+    protected InventoriesQueries $inventoriesQueries;
+    private AwaitMutex $mutexBlock;
 
     public function __construct(Main $plugin, DataConnector $connector, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {

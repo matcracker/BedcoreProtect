@@ -41,8 +41,7 @@ use function yaml_parse;
 
 final class PatchManager extends DefaultQueries
 {
-    /** @var Main */
-    private $plugin;
+    private Main $plugin;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {

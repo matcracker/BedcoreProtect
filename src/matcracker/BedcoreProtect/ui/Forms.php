@@ -40,8 +40,8 @@ final class Forms
     private const TYPE_LOOKUP = "lookup";
     private const TYPE_ROLLBACK = "rollback";
     private const TYPE_RESTORE = "restore";
-    /** @var ConfigParser */
-    private $configParser;
+
+    private ConfigParser $configParser;
 
     public function __construct(ConfigParser $configParser)
     {

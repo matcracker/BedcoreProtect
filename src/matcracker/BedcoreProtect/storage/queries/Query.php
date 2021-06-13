@@ -36,10 +36,8 @@ use function mb_strtolower;
 
 abstract class Query extends DefaultQueries
 {
-    /** @var Main */
-    protected $plugin;
-    /** @var ConfigParser */
-    protected $configParser;
+    protected Main $plugin;
+    protected ConfigParser $configParser;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {

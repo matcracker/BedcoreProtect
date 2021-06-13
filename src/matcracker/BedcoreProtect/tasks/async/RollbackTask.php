@@ -36,16 +36,13 @@ use function count;
 
 class RollbackTask extends AsyncTask
 {
-    /** @var bool */
-    protected $rollback;
-    /** @var string */
-    protected $worldName;
-    /** @var string */
-    protected $senderName;
+    protected bool $rollback;
+    protected string $worldName;
+    protected string $senderName;
     /** @var SerializableBlock[] */
-    protected $blocks;
+    protected array $blocks;
     /** @var string[] */
-    private $serializedChunks;
+    private array $serializedChunks;
 
     /**
      * RollbackTask constructor.

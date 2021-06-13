@@ -26,14 +26,11 @@ use pocketmine\math\AxisAlignedBB;
 
 final class UndoRollbackData
 {
-    /** @var bool */
-    private $rollback;
-    /** @var AxisAlignedBB */
-    private $bb;
-    /** @var CommandParser */
-    private $commandParser;
+    private bool $rollback;
+    private AxisAlignedBB $bb;
+    private CommandParser $commandParser;
     /** @var int[] */
-    private $logIds;
+    private array $logIds;
 
     /**
      * UndoRollbackData constructor.

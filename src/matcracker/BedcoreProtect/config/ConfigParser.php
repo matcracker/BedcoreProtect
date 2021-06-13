@@ -35,8 +35,7 @@ use function in_array;
  */
 final class ConfigParser
 {
-    /** @var array */
-    private $data;
+    private array $data;
 
     public function __construct(Config $config)
     {

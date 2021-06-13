@@ -61,25 +61,20 @@ final class CommandParser
     ];
 
     /** @var Action[][] */
-    public static $ACTIONS;
+    public static array $ACTIONS;
 
-    /** @var string */
-    private $senderName;
-    /** @var ConfigParser */
-    private $configParser;
+    private string $senderName;
+    private ConfigParser $configParser;
     /** @var string[] */
-    private $arguments;
+    private array $arguments;
     /** @var string[] */
-    private $requiredParams;
-    /** @var bool */
-    private $parsed = false;
+    private array $requiredParams;
+    private bool $parsed;
 
-    /** @var string */
-    private $errorMessage;
+    private string $errorMessage;
 
     //Default data values
-    /** @var array */
-    private $data = [
+    private array $data = [
         "user" => null,
         "time" => null,
         "radius" => null,

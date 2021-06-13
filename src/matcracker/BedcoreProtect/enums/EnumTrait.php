@@ -33,8 +33,7 @@ trait EnumTrait
 
     /** @var int|null */
     private static $nextId = null;
-    /** @var string */
-    private $enumName;
+    private string $enumName;
     /** @var int */
     private $runtimeId;
 

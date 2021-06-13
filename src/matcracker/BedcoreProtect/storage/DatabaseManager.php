@@ -31,14 +31,10 @@ use SOFe\AwaitGenerator\Await;
 
 class DatabaseManager
 {
-    /** @var Main */
-    protected $plugin;
-    /** @var DataConnector */
-    private $connector;
-    /** @var PatchManager */
-    private $patchManager;
-    /** @var QueryManager */
-    private $queryManager;
+    protected Main $plugin;
+    private DataConnector $connector;
+    private PatchManager $patchManager;
+    private QueryManager $queryManager;
 
     public function __construct(Main $plugin)
     {

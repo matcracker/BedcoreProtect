@@ -29,10 +29,8 @@ use function mb_strtolower;
 
 final class BCPHelpCommand
 {
-    /** @var CommandSender */
-    private $sender;
-    /** @var BaseLang */
-    private $lang;
+    private CommandSender $sender;
+    private BaseLang $lang;
 
     public function __construct(CommandSender $sender, BaseLang $lang)
     {

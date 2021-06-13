@@ -32,22 +32,14 @@ use function get_class;
 
 final class SerializableBlock extends AbstractSerializable
 {
-    /** @var string */
-    private $name;
-    /** @var int */
-    private $id;
-    /** @var int */
-    private $meta;
-    /** @var int */
-    private $x;
-    /** @var int */
-    private $y;
-    /** @var int */
-    private $z;
-    /** @var string */
-    private $worldName;
-    /** @var string|null */
-    private $serializedNbt;
+    private string $name;
+    private int $id;
+    private int $meta;
+    private int $x;
+    private int $y;
+    private int $z;
+    private string $worldName;
+    private ?string $serializedNbt;
 
     public function __construct(string $name, int $id, int $meta, int $x, int $y, int $z, string $worldName, ?string $serializedNbt = null)
     {

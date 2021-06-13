@@ -44,18 +44,13 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /** @var Main */
-    private static $instance;
-    /** @var BaseLang */
-    private $baseLang;
-    /** @var DatabaseManager */
-    private $database;
-    /** @var ConfigParser */
-    private $configParser;
-    /** @var ConfigParser */
-    private $oldConfigParser;
+    private static Main $instance;
+    private BaseLang $baseLang;
+    private DatabaseManager $database;
+    private ConfigParser $configParser;
+    private ConfigParser $oldConfigParser;
     /** @var BedcoreListener[] */
-    private $events;
+    private array $events;
 
     public static function getInstance(): Main
     {
@@ -172,7 +167,6 @@ final class Main extends PluginBase
 
     /**
      * Returns the plugin version.
-     * @return string
      */
     public function getVersion(): string
     {

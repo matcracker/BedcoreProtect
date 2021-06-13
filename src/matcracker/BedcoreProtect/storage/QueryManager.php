@@ -48,22 +48,17 @@ use function round;
 final class QueryManager extends DefaultQueries
 {
     /** @var array[] */
-    private static $additionalReports = [];
+    private static array $additionalReports = [];
     /** @var AxisAlignedBB[] */
-    private static $activeRollbacks = [];
+    private static array $activeRollbacks = [];
 
-    /** @var Main */
-    private $plugin;
-    /** @var PluginQueries */
-    private $pluginQueries;
-    /** @var BlocksQueries */
-    private $blocksQueries;
-    /** @var EntitiesQueries */
-    private $entitiesQueries;
-    /** @var InventoriesQueries */
-    private $inventoriesQueries;
+    private Main $plugin;
+    private PluginQueries $pluginQueries;
+    private BlocksQueries $blocksQueries;
+    private EntitiesQueries $entitiesQueries;
+    private InventoriesQueries $inventoriesQueries;
     /** @var UndoRollbackData[] */
-    private $undoData = [];
+    private array $undoData = [];
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
