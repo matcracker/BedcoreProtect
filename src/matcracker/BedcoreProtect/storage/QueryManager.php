@@ -25,6 +25,7 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
+use matcracker\BedcoreProtect\storage\queries\DefaultQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
@@ -44,7 +45,7 @@ use function microtime;
 use function preg_match;
 use function round;
 
-final class QueryManager
+final class QueryManager extends DefaultQueries
 {
     /** @var array[] */
     private static $additionalReports = [];
@@ -53,8 +54,6 @@ final class QueryManager
 
     /** @var Main */
     private $plugin;
-    /** @var DataConnector */
-    private $connector;
     /** @var PluginQueries */
     private $pluginQueries;
     /** @var BlocksQueries */
@@ -68,8 +67,8 @@ final class QueryManager
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
+        parent::__construct($connector);
         $this->plugin = $plugin;
-        $this->connector = $connector;
 
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
@@ -106,18 +105,6 @@ final class QueryManager
         );
 
         $this->connector->waitAll();
-    }
-
-    private function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    private function executeInsert(string $query, array $args = []): Generator
-    {
-        $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 
     public function setupDefaultData(): void
