@@ -61,7 +61,7 @@ final class CommandParser
     ];
 
     /** @var Action[][] */
-    public static array $ACTIONS;
+    public static array $ACTIONS = [];
 
     private string $senderName;
     private ConfigParser $configParser;
@@ -107,18 +107,16 @@ final class CommandParser
      */
     final public static function initActions(): void
     {
-        if (self::$ACTIONS === null) {
-            self::$ACTIONS = [
-                "block" => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
-                "+block" => [Action::PLACE()],
-                "-block" => [Action::BREAK()],
-                "click" => [Action::CLICK()],
-                "container" => [Action::ADD(), Action::REMOVE()],
-                "+container" => [Action::ADD()],
-                "-container" => [Action::REMOVE()],
-                "kill" => [Action::KILL()]
-            ];
-        }
+        self::$ACTIONS = [
+            "block" => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
+            "+block" => [Action::PLACE()],
+            "-block" => [Action::BREAK()],
+            "click" => [Action::CLICK()],
+            "container" => [Action::ADD(), Action::REMOVE()],
+            "+container" => [Action::ADD()],
+            "-container" => [Action::REMOVE()],
+            "kill" => [Action::KILL()]
+        ];
     }
 
     public function parse(): bool

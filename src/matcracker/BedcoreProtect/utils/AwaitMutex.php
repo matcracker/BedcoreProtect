@@ -22,7 +22,7 @@ use function count;
 
 final class AwaitMutex
 {
-    private bool $running;
+    private bool $running = false;
     /** @var Closure[] */
     private array $queue = [];
 
