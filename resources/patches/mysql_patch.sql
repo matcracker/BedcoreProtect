@@ -278,4 +278,11 @@ ALTER TABLE temp
     RENAME TO status;
 -- #        }
 -- #    }
+-- #    {0.8.3
+-- #        {1
+DELETE
+FROM status
+WHERE version = '0.8.2';
+-- #        }
+-- #    }
 -- #}
