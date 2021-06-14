@@ -95,7 +95,12 @@ final class QueryManager extends DefaultQueries
                     yield $this->executeGeneric($queryTable);
                 }
 
-                yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
+                /** @var array $rows */
+                $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
+
+                if (count($rows) === 0) {
+                    yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
+                }
             }
         );
 

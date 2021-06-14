@@ -51,7 +51,6 @@ final class PatchManager extends DefaultQueries
 
     /**
      * Returns the last applied patch version or null if the patch is not applied.
-     * @return string|null
      */
     public function patch(): ?string
     {
