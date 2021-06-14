@@ -103,7 +103,12 @@ final class QueryManager
                     yield $this->executeGeneric($queryTable);
                 }
 
-                yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
+                /** @var array $rows */
+                $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
+
+                if (count($rows) === 0) {
+                    yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
+                }
             }
         );
 
@@ -113,6 +118,12 @@ final class QueryManager
     private function executeGeneric(string $query, array $args = []): Generator
     {
         $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
+        return yield Await::ONCE;
+    }
+
+    private function executeSelect(string $query, array $args = []): Generator
+    {
+        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
         return yield Await::ONCE;
     }
 
