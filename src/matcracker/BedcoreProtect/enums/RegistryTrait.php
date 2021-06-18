@@ -33,7 +33,7 @@ use function mb_strtoupper;
 trait RegistryTrait
 {
     /** @var object[] */
-    private static array $members;
+    private static ?array $members = null;
 
     /**
      * @param string $name
