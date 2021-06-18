@@ -28,7 +28,7 @@ use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
 
-class DatabaseManager
+final class DatabaseManager
 {
     use DefaultQueriesTrait {
         __construct as DefQueriesConstr;
@@ -47,7 +47,7 @@ class DatabaseManager
      * Attempts to connect and initialize the database. Returns true if success.
      * @return bool
      */
-    final public function connect(): bool
+    public function connect(): bool
     {
         try {
             $this->connector = libasynql::create($this->plugin, $this->plugin->getConfig()->get("database"), [
@@ -71,43 +71,24 @@ class DatabaseManager
         return true;
     }
 
-    final public function getQueryManager(): QueryManager
+    public function getQueryManager(): QueryManager
     {
-        if (!isset($this->queryManager)) {
-            $this->throwDatabaseException();
-        }
-
         return $this->queryManager;
     }
 
-    private function throwDatabaseException(): void
+    public function getPatchManager(): PatchManager
     {
-        throw new SqlError(SqlError::STAGE_CONNECT, $this->plugin->getLanguage()->translateString("database.connection.fail"));
-    }
-
-    final public function getPatchManager(): PatchManager
-    {
-        if (!isset($this->patchManager)) {
-            $this->throwDatabaseException();
-        }
-
         return $this->patchManager;
     }
 
-    final public function disconnect(): void
+    public function disconnect(): void
     {
-        if ($this->connector instanceof DataConnector) {
-            $this->connector->waitAll();
-            $this->connector->close();
-        }
+        $this->connector->waitAll();
+        $this->connector->close();
     }
 
-    final public function getStatus(): Generator
+    public function getStatus(): Generator
     {
-        if (!isset($this->connector)) {
-            $this->throwDatabaseException();
-        }
-
         return $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
     }
 
@@ -118,11 +99,8 @@ class DatabaseManager
      */
     public function getVersion(): string
     {
-        if (!isset($this->connector)) {
-            $this->throwDatabaseException();
-        }
-
         $version = "";
+
         $this->connector->executeSelect(
             QueriesConst::GET_DATABASE_STATUS,
             [],
