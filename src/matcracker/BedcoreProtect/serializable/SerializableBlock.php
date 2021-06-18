@@ -21,16 +21,14 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\serializable;
 
-use InvalidArgumentException;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
-use function get_class;
 
-final class SerializableBlock extends AbstractSerializable
+final class SerializableBlock
 {
     private string $name;
     private int $id;
@@ -53,29 +51,21 @@ final class SerializableBlock extends AbstractSerializable
         $this->serializedNbt = $serializedNbt;
     }
 
-    /**
-     * @param Block $object
-     * @return SerializableBlock
-     */
-    public static function serialize($object): AbstractSerializable
+    public static function fromBlock(Block $block): self
     {
-        if (!$object instanceof Block) {
-            throw new InvalidArgumentException("Expected Block instance, got " . get_class($object));
-        }
-
         return new self(
-            $object->getName(),
-            $object->getId(),
-            $object->getDamage(),
-            (int)$object->getX(),
-            (int)$object->getY(),
-            (int)$object->getZ(),
-            $object->getLevelNonNull()->getFolderName(),
-            BlockUtils::serializeTileTag($object)
+            $block->getName(),
+            $block->getId(),
+            $block->getDamage(),
+            (int)$block->getX(),
+            (int)$block->getY(),
+            (int)$block->getZ(),
+            $block->getLevelNonNull()->getFolderName(),
+            BlockUtils::serializeTileTag($block)
         );
     }
 
-    public function unserialize(): Block
+    public function toBlock(): Block
     {
         return BlockFactory::get($this->id, $this->meta, $this->asPosition());
     }

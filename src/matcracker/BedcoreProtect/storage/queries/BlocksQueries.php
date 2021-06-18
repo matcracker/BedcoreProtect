@@ -166,12 +166,12 @@ class BlocksQueries extends Query
 
         /** @var SerializableBlock[] $oldBlocks */
         $oldBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
+            return SerializableBlock::fromBlock($block);
         }, $oldBlocks));
 
         /** @var SerializableBlock[] $newBlocks */
         $newBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
+            return SerializableBlock::fromBlock($block);
         }, $newBlocks));
 
         $uuidEntity = EntityUtils::getUniqueId($entity);
@@ -346,7 +346,7 @@ class BlocksQueries extends Query
                     $world->addTile($tile);
                 }
             } else {
-                $tile = BlockUtils::asTile($block->unserialize());
+                $tile = BlockUtils::asTile($block->toBlock());
                 if ($tile !== null) {
                     $world->removeTile($tile);
                 }
