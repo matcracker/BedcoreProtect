@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\storage;
 use Generator;
 use InvalidStateException;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueries;
+use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
@@ -39,13 +39,17 @@ use function stream_get_contents;
 use function version_compare;
 use function yaml_parse;
 
-final class PatchManager extends DefaultQueries
+final class PatchManager
 {
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
+
     private Main $plugin;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
-        parent::__construct($connector);
+        $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
     }
 

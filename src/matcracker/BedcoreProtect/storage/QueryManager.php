@@ -25,7 +25,7 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueries;
+use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
@@ -45,8 +45,12 @@ use function microtime;
 use function preg_match;
 use function round;
 
-final class QueryManager extends DefaultQueries
+final class QueryManager
 {
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
+
     /** @var array[] */
     private static array $additionalReports = [];
     /** @var AxisAlignedBB[] */
@@ -62,7 +66,7 @@ final class QueryManager extends DefaultQueries
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
-        parent::__construct($connector);
+        $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
 
         $this->pluginQueries = new PluginQueries($plugin, $connector);

@@ -25,7 +25,7 @@ use Generator;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 
-abstract class DefaultQueries
+trait DefaultQueriesTrait
 {
     protected DataConnector $connector;
 

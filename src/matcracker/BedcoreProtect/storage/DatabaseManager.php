@@ -23,16 +23,18 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
-use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
-use SOFe\AwaitGenerator\Await;
 
 class DatabaseManager
 {
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
+
     protected Main $plugin;
-    private DataConnector $connector;
     private PatchManager $patchManager;
     private QueryManager $queryManager;
 
@@ -56,6 +58,8 @@ class DatabaseManager
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
             return false;
         }
+
+        $this->DefQueriesConstr($this->connector);
 
         $patchResource = $this->plugin->getResource("patches/" . $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql");
         if ($patchResource !== null) {
@@ -104,8 +108,7 @@ class DatabaseManager
             $this->throwDatabaseException();
         }
 
-        $this->connector->executeSelect(QueriesConst::GET_DATABASE_STATUS, [], yield, yield Await::REJECT);
-        return yield Await::ONCE;
+        return $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
     }
 
     /**

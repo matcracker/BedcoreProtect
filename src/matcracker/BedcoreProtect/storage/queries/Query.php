@@ -34,14 +34,18 @@ use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function mb_strtolower;
 
-abstract class Query extends DefaultQueries
+abstract class Query
 {
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
+
     protected Main $plugin;
     protected ConfigParser $configParser;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
-        parent::__construct($connector);
+        $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
         $this->configParser = $plugin->getParsedConfig();
     }
