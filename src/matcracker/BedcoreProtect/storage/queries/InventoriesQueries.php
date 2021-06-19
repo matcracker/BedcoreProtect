@@ -120,7 +120,7 @@ class InventoriesQueries extends Query
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
-        $this->connector->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
+        return yield $this->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
             "log_id" => $lastId,
             "slot" => $slot,
             "old_id" => $oldItem->getId(),
@@ -131,9 +131,7 @@ class InventoriesQueries extends Query
             "new_meta" => $newItem->getDamage(),
             "new_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
             "new_amount" => $newItem->getCount()
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 
     /**
@@ -199,16 +197,15 @@ class InventoriesQueries extends Query
             }
 
             foreach ($inventoryRows as $row) {
-                $amount = (int)$row["{$prefix}_amount"];
                 /** @var CompoundTag|null $nbt */
                 if (($nbt = $row["{$prefix}_nbt"]) !== null) {
                     $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
                 }
-                $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $amount, $nbt);
+                $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
                 $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
                 if ($tile instanceof InventoryHolder) {
-                    $inv = ($tile instanceof Chest) ? $tile->getRealInventory() : $tile->getInventory();
+                    $inv = $tile instanceof Chest ? $tile->getRealInventory() : $tile->getInventory();
                     $inv->setItem((int)$row["slot"], $item);
                 }
             }
