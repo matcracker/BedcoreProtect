@@ -29,7 +29,6 @@ use pocketmine\Player;
 use ReflectionClass;
 use ReflectionException;
 use UnexpectedValueException;
-use function array_merge;
 use function strval;
 
 final class EntityUtils
@@ -101,48 +100,5 @@ final class EntityUtils
         }
 
         return Utils::serializeNBT($namedTag);
-    }
-
-    /**
-     * Returns an array with all registered entities save names
-     * @return string[]
-     */
-    public static function getSaveNames(): array
-    {
-        $names = [];
-
-        $values = (array)self::getEntityProperty("saveNames");
-        foreach ($values as $value) {
-            $names = array_merge($names, $value);
-        }
-
-        return $names;
-    }
-
-    /**
-     * @param string $property
-     * @return mixed
-     */
-    private static function getEntityProperty(string $property)
-    {
-        //HACK ^-^
-        try {
-            $r = new ReflectionClass(Entity::class);
-            $property = $r->getProperty($property);
-            $property->setAccessible(true);
-
-            return $property->getValue();
-        } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException("Could not get \"$property\" entity property.");
-        }
-    }
-
-    /**
-     * Returns an array with all registered entities.
-     * @return string[]
-     */
-    public static function getKnownEntities(): array
-    {
-        return (array)self::getEntityProperty("knownEntities");
     }
 }

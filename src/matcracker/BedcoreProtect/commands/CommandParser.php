@@ -366,7 +366,7 @@ final class CommandParser
                     break;
                 case "radius":
                     if ($bb !== null) {
-                        $bb = MathUtils::floorBoundingBox($bb);
+                        MathUtils::floorBoundingBox($bb);
 
                         $variables["min_x"] = new GenericVariable("min_x", GenericVariable::TYPE_FLOAT, null);
                         $params["min_x"] = $bb->minX;
