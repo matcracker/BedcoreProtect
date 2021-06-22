@@ -1,7 +1,5 @@
 /.idea
-/src/poggit
-/src/JackMD
-/vendor
-composer.json
-composer.lock
-/vendor/pocketmine
+/libs
+/scripts
+/.php_cs.cache
+TODO

@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,60 +22,59 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
-use InvalidArgumentException;
-use pocketmine\entity\Entity;
-use pocketmine\entity\EntityFactory;
-use pocketmine\entity\Human;
-use pocketmine\entity\Living;
-use pocketmine\nbt\BigEndianNbtSerializer;
+use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\nbt\TreeRoot;
-use pocketmine\utils\TextFormat;
-use ReflectionClass;
-use ReflectionException;
+use pocketmine\nbt\tag\NamedTag;
+use UnexpectedValueException;
+use function array_filter;
+use function array_slice;
+use function base64_decode;
+use function base64_encode;
+use function count;
+use function is_string;
+use function json_decode;
+use function key;
+use function microtime;
+use function min;
+use function preg_match;
+use function preg_replace;
+use function strlen;
+use const PHP_INT_MAX;
+use const PREG_OFFSET_CAPTURE;
 
 final class Utils
 {
-
     private function __construct()
     {
     }
 
     /**
-     * It translates chat colors from format "§" to "&"
-     *
-     * @param string $message
-     *
-     * @return string
-     */
-    public static function translateColors(string $message): string
-    {
-        return preg_replace_callback("/(\\\&|\&)[0-9a-fk-or]/", static function (array $matches): string {
-            return str_replace(TextFormat::RESET, TextFormat::RESET . TextFormat::WHITE, str_replace("\\" . TextFormat::ESCAPE, '&', str_replace('&', TextFormat::ESCAPE, $matches[0])));
-        }, $message);
-    }
-
-    /**
-     * It parses a string type like 'XwXdXhXmXs' where X is a number indicating the time.
+     * It parses a string type like "XwXdXhXmXs" where X is a number indicating the time.
      *
      * @param string $strDate the date to parse.
      *
-     * @return int|null how many seconds are in the string. Return null if string can't be parsed.
+     * @return int
      */
-    public static function parseTime(string $strDate): ?int
+    public static function parseTime(string $strDate): int
     {
-        if (empty($strDate)) return null;
-        $strDate = strtolower($strDate);
-        $strDate = preg_replace("/[^0-9smhdw]/", "", $strDate);
-        if (empty($strDate)) return null;
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE);
 
-        $time = null;
-        $matches = [];
-        preg_match_all("/([0-9]{1,})([smhdw]{1})/", $strDate, $matches);
+        if (count($matches) === 0) {
+            return 0;
+        }
 
+        $time = 0;
         foreach ($matches[0] as $match) {
-            $value = (int)preg_replace("/[^0-9]/", "", $match);
-            $dateType = (string)preg_replace("/[^smhdw]/", "", $match);
+            $value = preg_replace("/[^0-9]/", "", $match);
+            if (!is_string($value)) {
+                throw new UnexpectedValueException("Invalid time parsed, expected string.");
+            }
+            $value = (int)$value;
+
+            $dateType = preg_replace("/[^smhdw]/", "", $match);
+            if (!is_string($dateType)) {
+                throw new UnexpectedValueException("Invalid date type parsed, expected string.");
+            }
 
             switch ($dateType) {
                 case "w":
@@ -96,64 +95,43 @@ final class Utils
             }
         }
 
-        return $time;
+        return (int)min($time, PHP_INT_MAX);
     }
 
-    public static function timeAgo(int $timestamp, int $level = 6): string
+    public static function timeAgo(float $timestamp, int $world = 6): string
     {
         $date = new DateTime();
-        $date->setTimestamp($timestamp);
-        $date = $date->diff(DateTime::createFromFormat('0.u00 U', microtime()));
+        $date->setTimestamp((int)$timestamp);
+        $currentDate = DateTime::createFromFormat("0.u00 U", microtime());
+        if (!($currentDate instanceof DateTime)) {
+            throw new UnexpectedValueException("Unexpected date creation.");
+        }
+
+        $date = $date->diff($currentDate);
         // build array
-        $since = json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
+        $since = (array)json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
         // remove empty date values
         $since = array_filter($since);
         // output only the first x date values
-        $since = array_slice($since, 0, $level);
+        $since = array_slice($since, 0, $world);
         // build string
         $last_key = key(array_slice($since, -1, 1, true));
-        $string = '';
+        $string = "";
         foreach ($since as $key => $val) {
             // separator
             if ($string) {
-                $string .= $key != $last_key ? ', ' : ' and ';
+                $string .= $key !== $last_key ? ", " : " and ";
             }
             // set plural
-            $key .= $val > 1 ? 's' : '';
+            $key .= $val > 1 ? "s" : "";
             // add date value
-            $string .= $val . ' ' . $key;
+            $string .= $val . " " . $key;
         }
 
-        return $string . ' ago';
-    }
-
-    /**
-     * Returns the entity UUID or the network ID.
-     *
-     * @param Entity $entity
-     *
-     * @return string
-     * @internal
-     */
-    public static function getEntityUniqueId(Entity $entity): string
-    {
-        return ($entity instanceof Human) ? $entity->getUniqueId()->toString() : strval($entity::NETWORK_ID);
-    }
-
-    /**
-     * Returns the entity name if is a Living instance else the entity class name.
-     *
-     * @param Entity $entity
-     *
-     * @return string
-     * @internal
-     */
-    public static function getEntityName(Entity $entity): string
-    {
-        try {
-            return ($entity instanceof Living) ? $entity->getName() : (new ReflectionClass($entity))->getShortName();
-        } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException("Invalid entity class.");
+        if (strlen($string) > 0) {
+            return "$string ago";
+        } else {
+            return "Just now";
         }
     }
 
@@ -166,10 +144,16 @@ final class Utils
      */
     public static function serializeNBT(CompoundTag $tag): string
     {
-        $nbtSerializer = new BigEndianNbtSerializer();
+        $nbtSerializer = new BigEndianNBTStream();
+
+        $compressedData = $nbtSerializer->writeCompressed($tag);
+
+        if (!is_string($compressedData)) {
+            throw new UnexpectedValueException("Invalid compression of NBT data.");
+        }
 
         //Encoding to Base64 for more safe storing.
-        return base64_encode($nbtSerializer->writeCompressed(new TreeRoot($tag)));
+        return base64_encode($compressedData);
     }
 
     /**
@@ -181,32 +165,15 @@ final class Utils
      */
     public static function deserializeNBT(string $encodedData): CompoundTag
     {
-        $nbtSerializer = new BigEndianNbtSerializer();
+        $nbtSerializer = new BigEndianNBTStream();
 
-        return $nbtSerializer->readCompressed(base64_decode($encodedData))->getTag();
-    }
+        /** @var NamedTag $tag */
+        $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
 
-    /**
-     * Returns an array with all registered entities save names
-     * @return array
-     */
-    public static function getEntitySaveNames(): array
-    { //HACK ^-^
-        try {
-            $r = new ReflectionClass(EntityFactory::class);
-            $property = $r->getProperty("saveNames");
-            $property->setAccessible(true);
-            $names = [];
-
-            $values = array_values((array)$property->getValue());
-            foreach ($values as $value) {
-                $names = array_merge($names, $value);
-            }
-
-            return $names;
-        } catch (ReflectionException $exception) {
-            throw new InvalidArgumentException("Could not get entities names.");
+        if (!($tag instanceof CompoundTag)) {
+            throw new UnexpectedValueException("Value must return CompoundTag, got " . $tag->__toString());
         }
-    }
 
+        return $tag;
+    }
 }

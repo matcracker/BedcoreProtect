@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,91 +21,110 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
-use ArrayOutOfBoundsException;
 use BadMethodCallException;
 use InvalidArgumentException;
-use matcracker\BedcoreProtect\utils\Action;
-use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\config\ConfigParser;
+use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
-use pocketmine\math\Vector3;
+use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
-
-CommandParser::initActions();
+use poggit\libasynql\generic\GenericStatementImpl;
+use poggit\libasynql\generic\GenericVariable;
+use poggit\libasynql\SqlDialect;
+use UnexpectedValueException;
+use function array_filter;
+use function array_flip;
+use function array_intersect_key;
+use function array_key_exists;
+use function array_keys;
+use function array_map;
+use function array_shift;
+use function array_unique;
+use function count;
+use function ctype_digit;
+use function explode;
+use function implode;
+use function intval;
+use function mb_strtolower;
+use function mb_substr;
+use function microtime;
 
 final class CommandParser
 {
     public const MAX_PARAMETERS = 6;
+    public const PARAMETERS = [
+        "user", "time", "radius", "action", "include", "exclude"
+    ];
 
-    /**@var Action[][] */
-    private static $ACTIONS = null;
+    /** @var Action[][] */
+    public static array $ACTIONS = [];
 
-    /**@var ConfigParser $configParser */
-    private $configParser;
-    /**@var string[] $arguments */
-    private $arguments;
-    /**@var string[] $requiredParams */
-    private $requiredParams;
-    /**@var bool $parsed */
-    private $parsed = false;
-    /**@var string $errorMessage */
-    private $errorMessage;
+    private string $senderName;
+    private ConfigParser $configParser;
+    /** @var string[] */
+    private array $arguments;
+    /** @var string[] */
+    private array $requiredParams;
+    private bool $parsed;
+
+    private string $errorMessage;
 
     //Default data values
-    private $data = [
+    private array $data = [
         "user" => null,
         "time" => null,
         "radius" => null,
         "action" => null,
-        "blocks" => null,
+        "inclusions" => null,
         "exclusions" => null
     ];
 
     /**
      * CommandParser constructor.
-     *
+     * @param string $senderName
      * @param ConfigParser $configParser
      * @param string[] $arguments
      * @param string[] $requiredParams
      * @param bool $shift It shift the first element of array used internally for command arguments. Default false.
      */
-    public function __construct(ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
+    public function __construct(string $senderName, ConfigParser $configParser, array $arguments, array $requiredParams = [], bool $shift = false)
     {
+        $this->senderName = $senderName;
         $this->configParser = $configParser;
         $this->arguments = $arguments;
         $this->requiredParams = $requiredParams;
         if ($shift) {
             array_shift($this->arguments);
         }
-
-        if (($dr = $this->configParser->getDefaultRadius()) !== 0) {
-            $this->data["radius"] = $dr;
-        }
     }
 
     /**
      * @internal
      */
-    public static function initActions(): void
+    final public static function initActions(): void
     {
-        if (self::$ACTIONS === null) {
-            self::$ACTIONS = [
-                "block" => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
-                "+block" => [Action::PLACE()],
-                "-block" => [Action::BREAK()],
-                "click" => [Action::CLICK()],
-                "container" => [Action::ADD(), Action::REMOVE()],
-                "+container" => [Action::ADD()],
-                "-container" => [Action::REMOVE()],
-                "kill" => [Action::KILL()]
-            ];
-        }
+        self::$ACTIONS = [
+            "block" => [Action::PLACE(), Action::BREAK(), Action::SPAWN(), Action::DESPAWN()],
+            "+block" => [Action::PLACE()],
+            "-block" => [Action::BREAK()],
+            "click" => [Action::CLICK()],
+            "container" => [Action::ADD(), Action::REMOVE()],
+            "+container" => [Action::ADD()],
+            "-container" => [Action::REMOVE()],
+            "kill" => [Action::KILL()]
+        ];
     }
 
     public function parse(): bool
     {
+        $lang = Main::getInstance()->getLanguage();
+
         if (($c = count($this->arguments)) < 1 || $c > self::MAX_PARAMETERS) {
-            $this->errorMessage = "You are using too few or too many parameters (Max: " . self::MAX_PARAMETERS . ")";
+            $this->errorMessage = $lang->translateString("parser.few-many-parameters", [self::MAX_PARAMETERS]);
 
             return false;
         }
@@ -113,45 +132,35 @@ final class CommandParser
         foreach ($this->arguments as $argument) {
             $arrayData = explode("=", $argument);
             if (count($arrayData) !== 2) {
-                $this->errorMessage = "Please specify a valid parameter. (" . implode(",", array_keys(self::$ACTIONS)) . ").";
-
+                $this->errorMessage = $lang->translateString("parser.invalid-parameter", [implode(", ", self::PARAMETERS)]);
                 return false;
             }
-            $param = strtolower($arrayData[0]);
-            $paramValues = $arrayData[1];
 
-            if (!is_string($paramValues)) {
-                return false;
-            }
+            $param = mb_strtolower($arrayData[0]);
+            $paramValues = (string)$arrayData[1];
 
             switch ($param) {
                 case "users":
                 case "user":
                 case "u":
                     $users = explode(",", $paramValues);
-                    if (count($users) < 1) return false;
 
-                    foreach ($users as &$user) {
-                        if (mb_substr($user, 0, 1) === "#") {
-                            $user = mb_substr($user, 1);
-                            if (!in_array($user, Utils::getEntitySaveNames())) {
-                                $this->errorMessage = "The entity \"{$user}\" does not exist. (The name is case-sensitive)";
+                    foreach ($users as $user) {
+                        if (mb_substr($user, 0, 1) !== "#") { //Entity
+                            if (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
+                                $this->errorMessage = $lang->translateString("parser.no-player", [$user]);
 
                                 return false;
                             }
-                        } else if (!Server::getInstance()->getOfflinePlayer($user)->hasPlayedBefore()) {
-                            $this->errorMessage = "The player \"{$user}\" does not exist.";
-
-                            return false;
                         }
                     }
-                    $this->data["user"] = $users;
+                    $this->data["user"] = array_unique($users);
                     break;
                 case "time":
                 case "t":
                     $time = Utils::parseTime($paramValues);
-                    if ($time === null) {
-                        $this->errorMessage = "Please specify the amount of time.";
+                    if ($time === 0) {
+                        $this->errorMessage = $lang->translateString("parser.invalid-amount-time");
 
                         return false;
                     }
@@ -160,14 +169,14 @@ final class CommandParser
                 case "radius":
                 case "r":
                     if (!ctype_digit($paramValues)) {
-                        $this->errorMessage = "Please specify the amount of radius.";
+                        $this->errorMessage = $lang->translateString("parser.invalid-amount-radius");
 
                         return false;
                     }
                     $paramValues = (int)$paramValues;
                     $maxRadius = $this->configParser->getMaxRadius();
                     if ($paramValues < 0 || ($maxRadius !== 0 && $paramValues > $maxRadius)) {
-                        $this->errorMessage = "Please specify a valid radius.";
+                        $this->errorMessage = $lang->translateString("parser.invalid-radius");
 
                         return false;
                     }
@@ -176,51 +185,61 @@ final class CommandParser
                     break;
                 case "action":
                 case "a":
-                    $paramValues = strtolower($paramValues);
+                    $paramValues = mb_strtolower($paramValues);
                     if (!array_key_exists($paramValues, self::$ACTIONS)) {
-                        $this->errorMessage = "Please specify a valid action.";
+                        $this->errorMessage = $lang->translateString("parser.invalid-action", [$paramValues, implode(", ", array_keys(self::$ACTIONS))]);
 
                         return false;
                     }
 
-                    $this->data["action"] = $paramValues;
+                    $this->data["action"] = self::$ACTIONS[$paramValues];
                     break;
-                case "blocks":
-                case "b":
+                case "include":
+                case "i":
                 case "exclude":
                 case "e":
-                    $blocks = explode(",", $paramValues);
-                    if (count($blocks) < 1) return false;
+                    $index = mb_substr($param, 0, 1) === "i" ? "inclusions" : "exclusions";
 
-                    $index = mb_substr($param, 0, 1) === "b" ? "blocks" : "exclusions";
-                    foreach ($blocks as $block) {
+                    /** @var int[] $itemIds */
+                    $itemIds = [];
+                    /** @var int[] $itemMetas */
+                    $itemMetas = [];
+
+                    foreach (explode(",", $paramValues) as $strItem) {
                         try {
-                            $block = ItemFactory::fromString($block)->getBlock();
-
-                            $this->data[$index][] = [
-                                "id" => $block->getId(),
-                                "meta" => $block->getMeta()
-                            ];
+                            /** @var Item $item */
+                            $item = ItemFactory::fromString($strItem);
                         } catch (InvalidArgumentException $exception) {
-                            $this->errorMessage = "Invalid block \"{$block}\" to " . ($index === "blocks" ? "include" : "exclude") . ".";
+                            $this->errorMessage = $lang->translateString("parser.invalid-block-" . ($index === "inclusions" ? "include" : "exclude"), [$strItem]);
 
                             return false;
                         }
+
+                        $itemIds[] = $item->getId();
+                        $itemMetas[] = $item->getDamage();
                     }
+
+                    $this->data[$index] = [
+                        "ids" => $itemIds,
+                        "metas" => $itemMetas
+                    ];
+
                     break;
                 default:
+                    $this->errorMessage = $lang->translateString("parser.invalid-parameter", [implode(", ", self::PARAMETERS)]);
                     return false;
             }
         }
-        $filter = array_filter($this->data, static function ($value) {
+        $filter = array_filter($this->data, static function ($value): bool {
             return $value !== null;
         });
 
-        if (empty($filter))
+        if (count($filter) === 0) {
             return false;
+        }
 
         if (count(array_intersect_key(array_flip($this->requiredParams), $filter)) !== count($this->requiredParams)) {
-            $this->errorMessage = "You are missing one of the following parameters: " . implode(",", $this->requiredParams);
+            $this->errorMessage = $lang->translateString("parser.missing-parameters", [implode(",", $this->requiredParams)]);
 
             return false;
         }
@@ -230,134 +249,63 @@ final class CommandParser
         return true;
     }
 
-    /**
-     * It returns a 'select' query to get all optional data from log table
-     *
-     * @param Vector3 $vector3
-     * @param bool $restore
-     *
-     * @return string
-     */
-    public function buildBlocksLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
+    public function buildLogsSelectionQuery(string &$query, array &$args, bool $rollback, AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
-        $prefix = $restore ? "new" : "old";
-        $clickAction = Action::CLICK()->getType();
-        $query = /**@lang text */
-            "SELECT log_id, bl.{$prefix}_block_id, bl.{$prefix}_block_meta, bl.{$prefix}_block_nbt, x, y, z FROM log_history 
-            INNER JOIN blocks_log bl ON log_history.log_id = bl.history_id WHERE rollback = '" . (int)$restore . "' AND action <> '{$clickAction}' AND ";
+        $variables = [
+            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_INT, null)
+        ];
+        $parameters = [
+            "rollback" => intval(!$rollback)
+        ];
 
-        $this->buildConditionalQuery($query, $vector3, ["bl.{$prefix}_block_id", "bl.{$prefix}_block_meta"]);
-
-        $query .= " ORDER BY time DESC;";
-
-        return $query;
-    }
-
-    private function buildConditionalQuery(string &$query, ?Vector3 $vector3, ?array $args): void
-    {
-        $cArgs = -1;
-        if ($args !== null && (($cArgs = count($args)) % 2 !== 0 || $cArgs < 1)) {
-            throw new ArrayOutOfBoundsException("Arguments must be of length equals to 2.");
+        if ($this->getInclusions() !== null || $this->getExclusions() !== null) {
+            $query = /**@lang text */
+                "SELECT log_id, id, meta 
+                FROM 
+                (SELECT log_history.*,
+                    CASE
+                        WHEN old_id = 0 THEN new_id
+                        WHEN new_id = 0 THEN old_id
+                    END AS id,
+                    CASE
+                        WHEN old_id = 0 THEN new_meta
+                        WHEN new_id = 0 THEN old_meta
+                    END AS meta
+                FROM log_history INNER JOIN blocks_log ON log_history.log_id = history_id
+                ) AS tmp_logs
+                WHERE rollback = :rollback AND ";
+        } else {
+            $query = /**@lang text */
+                "SELECT log_id FROM log_history WHERE rollback = :rollback AND ";
         }
 
-        foreach ($this->data as $key => $value) {
-            if ($value !== null) {
-                if ($key === "user") {
-                    foreach ($value as $user) {
-                        $query .= "who = (SELECT uuid FROM entities WHERE entity_name = '$user') OR ";
-                    }
-                    $query = mb_substr($query, 0, -4) . " AND "; //Remove excessive " OR " string.
-                } else if ($key === "time") {
-                    $diffTime = time() - (int)$value;
-                    if ($this->configParser->isSQLite()) {
-                        $query .= "(time BETWEEN DATETIME('{$diffTime}', 'unixepoch', 'localtime') AND (DATETIME('now', 'localtime'))) AND ";
-                    } else {
-                        $query .= "(time BETWEEN FROM_UNIXTIME($diffTime) AND CURRENT_TIMESTAMP) AND ";
-                    }
-                } else if ($key === "radius" && $vector3 !== null) {
-                    $minV = $vector3->subtract($value, $value, $value)->floor();
-                    $maxV = $vector3->add($value, $value, $value)->floor();
-                    $query .= "(x BETWEEN '{$minV->getX()}' AND '{$maxV->getX()}') AND ";
-                    $query .= "(y BETWEEN '{$minV->getY()}' AND '{$maxV->getY()}') AND ";
-                    $query .= "(z BETWEEN '{$minV->getZ()}' AND '{$maxV->getZ()}') AND ";
-                } else if ($key === "action") {
-                    $actions = CommandParser::toActions($value);
-                    foreach ($actions as $action) {
-                        $query .= "action = {$action->getType()} OR ";
-                    }
-                    $query = mb_substr($query, 0, -4) . " AND "; //Remove excessive " OR " string.
-                } else if (($key === "blocks" || $key === "exclusions") && $cArgs > 0) {
-                    $operator = $key === "exclusions" ? "<>" : "=";
-                    for ($i = 0; $i < $cArgs; $i += 2) {
-                        foreach ($value as $blockArray) {
-                            $id = (int)$blockArray["id"];
-                            $meta = (int)$blockArray["meta"];
-                            $query .= "({$args[$i]} $operator '$id' AND {$args[$i+1]} $operator '$meta') AND ";
-                        }
-                    }
+        $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
-                }
-            }
-        }
+        $query .= " ORDER BY time" . ($rollback ? " DESC" : "") . ";";
 
-        $query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
+        $statement = GenericStatementImpl::forDialect(
+            $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
+            "dyn-log-selection-query",
+            $query,
+            "",
+            $variables,
+            null,
+            0
+        );
+
+        $query = $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $args);
     }
 
     /**
-     * @param string $cmdAction
-     *
-     * @return Action[]
+     * @return int[][]|null
      */
-    public static function toActions(string $cmdAction): array
+    public function getInclusions(): ?array
     {
-        if (!isset(self::$ACTIONS[$cmdAction]))
-            throw new ArrayOutOfBoundsException("The $cmdAction is not a valid action.");
-
-        return self::$ACTIONS[$cmdAction];
-    }
-
-    /**
-     * Return string error message when a required parameter is missing.
-     * Return null if any parameter is required or all required parameter are present.
-     * @return string|null
-     */
-    public function getErrorMessage(): ?string
-    {
-        return $this->errorMessage;
-    }
-
-    public function buildLookupQuery(): string
-    {
-        if (!$this->parsed) {
-            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-
-        $query = /**@lang text */
-            "SELECT *,
-            bl.old_block_id, bl.old_block_meta, bl.new_block_id, bl.new_block_meta, 
-            il.old_item_id, il.old_item_meta, il.old_item_amount, il.new_item_id, il.new_item_meta, il.new_item_amount, 
-            e.entity_name AS entity_from FROM log_history 
-            LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id 
-            LEFT JOIN entities e ON log_history.who = e.uuid 
-            LEFT JOIN inventories_log il ON log_history.log_id = il.history_id WHERE ";
-
-        $this->buildConditionalQuery($query, null, [
-            "bl.old_block_id", "bl.old_block_meta",
-            "bl.new_block_id", "bl.new_block_meta"
-        ]);
-
-        $query .= " ORDER BY time DESC;";
-
-        return $query;
-    }
-
-    public function getTime(): ?int
-    {
-        return $this->getData("time");
+        return $this->getData("inclusions");
     }
 
     /**
@@ -374,42 +322,196 @@ final class CommandParser
         return $this->data[$key];
     }
 
-    public function buildInventoriesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
+    /**
+     * @return int[][]|null
+     */
+    public function getExclusions(): ?array
     {
-        if (!$this->parsed) {
-            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-
-        $prefix = $restore ? "new" : "old";
-
-        $query = /**@lang text */
-            "SELECT log_id, il.slot, il.{$prefix}_item_id, il.{$prefix}_item_meta, il.{$prefix}_item_nbt, il.{$prefix}_item_amount, x, y, z FROM log_history 
-            INNER JOIN inventories_log il ON log_history.log_id = il.history_id WHERE rollback = '{$restore}' AND ";
-
-        $this->buildConditionalQuery($query, $vector3, ["il.{$prefix}_item_id", "il.{$prefix}_item_meta"]);
-
-        $query .= " ORDER BY time DESC;";
-
-        return $query;
+        return $this->getData("exclusions");
     }
 
-    public function buildEntitiesLogSelectionQuery(Vector3 $vector3, bool $restore = false): string
+    /**
+     * @param string $query
+     * @param GenericVariable[] $variables
+     * @param array $params
+     * @param AxisAlignedBB|null $bb
+     */
+    protected function buildConditionalQuery(string &$query, array &$variables, array &$params, ?AxisAlignedBB $bb): void
+    {
+        if (!$this->parsed) {
+            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
+        }
+
+        foreach ($this->data as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            switch ($key) {
+                case "user":
+                    $variables["users"] = new GenericVariable("users", "list:string", null);
+                    $params["users"] = $value;
+
+                    $query .= "(who IN (SELECT uuid FROM entities WHERE entity_name IN :users)) AND ";
+                    break;
+                case "time":
+                    $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_FLOAT, null);
+                    $params["time"] = microtime(true) - (float)$value;
+
+                    if ($this->configParser->isSQLite()) {
+                        $query .= "(time BETWEEN :time AND (SELECT STRFTIME(\"%s\", \"now\") + STRFTIME(\"%f\", \"now\") - STRFTIME(\"%S\", \"now\"))) AND ";
+                    } else {
+                        $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP(NOW(4))) AND ";
+                    }
+                    break;
+                case "radius":
+                    if ($bb !== null) {
+                        MathUtils::floorBoundingBox($bb);
+
+                        $variables["min_x"] = new GenericVariable("min_x", GenericVariable::TYPE_FLOAT, null);
+                        $params["min_x"] = $bb->minX;
+                        $variables["min_y"] = new GenericVariable("min_y", GenericVariable::TYPE_FLOAT, null);
+                        $params["min_y"] = $bb->minY;
+                        $variables["min_z"] = new GenericVariable("min_z", GenericVariable::TYPE_FLOAT, null);
+                        $params["min_z"] = $bb->minZ;
+
+                        $variables["max_x"] = new GenericVariable("max_x", GenericVariable::TYPE_FLOAT, null);
+                        $params["max_x"] = $bb->maxX;
+                        $variables["max_y"] = new GenericVariable("max_y", GenericVariable::TYPE_FLOAT, null);
+                        $params["max_y"] = $bb->maxY;
+                        $variables["max_z"] = new GenericVariable("max_z", GenericVariable::TYPE_FLOAT, null);
+                        $params["max_z"] = $bb->maxZ;
+
+                        $query .= "(x BETWEEN :min_x AND :max_x) AND (y BETWEEN :min_y AND :max_y) AND (z BETWEEN :min_z AND :max_z) AND ";
+                    }
+
+                    break;
+                case "action":
+                    $variables["actions"] = new GenericVariable("actions", "list:int", null);
+                    $params["actions"] = array_map(static function (Action $action): int {
+                        return $action->getType();
+                    }, $value);
+
+                    $query .= "(action IN :actions) AND ";
+                    break;
+
+                case "exclusions":
+                    $variables["exclusions_ids"] = new GenericVariable("exclusions_ids", "list:int", null);
+                    $params["exclusions_ids"] = $value["ids"];
+                    $variables["exclusions_metas"] = new GenericVariable("exclusions_metas", "list:int", null);
+                    $params["exclusions_metas"] = $value["metas"];
+
+                    $query .= "(id NOT IN :exclusions_ids OR meta NOT IN :exclusions_metas) AND ";
+                    break;
+
+                case "inclusions":
+                    $variables["inclusions_ids"] = new GenericVariable("inclusions_ids", "list:int", null);
+                    $params["inclusions_ids"] = $value["ids"];
+                    $variables["inclusions_metas"] = new GenericVariable("inclusions_metas", "list:int", null);
+                    $params["inclusions_metas"] = $value["metas"];
+
+                    $query .= "(id IN :inclusions_ids AND meta IN :inclusions_metas) AND ";
+                    break;
+
+                default:
+                    throw new UnexpectedValueException("\"$key\" is not a expected data key.");
+            }
+        }
+
+        $query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
+    }
+
+    /**
+     * Return string error message when a required parameter is missing.
+     * Return null if any parameter is required or all required parameter are present.
+     * @return string|null
+     */
+    public function getErrorMessage(): ?string
+    {
+        return $this->errorMessage;
+    }
+
+    public function buildLookupQuery(string &$query, array &$args, ?AxisAlignedBB $bb = null): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $query = /**@lang text */
-            "SELECT log_id, e.entity_classpath, el.entityfrom_id, el.entityfrom_nbt, x, y, z, action FROM log_history 
-            INNER JOIN entities_log el ON log_history.log_id = el.history_id
-            INNER JOIN entities e ON e.uuid = el.entityfrom_uuid
-            WHERE rollback = '{$restore}' AND ";
+            "SELECT tmp_ids.*, e1.entity_name AS entity_from, e2.entity_name AS entity_to                
+            FROM
+            (SELECT tmp_logs.*,
+                 CASE
+                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_id
+                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_id
+                    ELSE
+                        new_id
+                END AS id,
+                CASE
+                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_meta
+                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_meta
+                    ELSE
+                        new_meta
+                END AS meta
+                FROM
+                (SELECT log_history.*, old_amount, new_amount,
+                    CASE
+                        WHEN il.old_id IS NULL THEN bl.old_id
+                        WHEN bl.old_id IS NULL THEN il.old_id
+                    END AS old_id,
+                    CASE
+                        WHEN il.old_meta IS NULL THEN bl.old_meta
+                        WHEN bl.old_meta IS NULL THEN il.old_meta
+                    END AS old_meta,
+                    CASE
+                        WHEN il.new_id IS NULL THEN bl.new_id
+                        WHEN bl.new_id IS NULL THEN il.new_id
+                    END AS new_id,
+                    CASE
+                        WHEN il.new_meta IS NULL THEN bl.new_meta
+                        WHEN bl.new_meta IS NULL THEN il.new_meta
+                    END AS new_meta
+                FROM log_history
+                LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
+                LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
+                ) AS tmp_logs
+            ) AS tmp_ids
+            LEFT JOIN entities_log el ON tmp_ids.log_id = el.history_id
+            LEFT JOIN entities e1 ON tmp_ids.who = e1.uuid
+            LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ";
 
-        $this->buildConditionalQuery($query, $vector3, null);
+        /** @var GenericVariable[] $variables */
+        $variables = [];
+        $parameters = [];
+
+        $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
         $query .= " ORDER BY time DESC;";
 
-        return $query;
+        $statement = GenericStatementImpl::forDialect(
+            $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
+            "dyn-lookup-query",
+            $query,
+            "",
+            $variables,
+            null,
+            0
+        );
+
+        $query = $statement->format($parameters, $this->configParser->isSQLite() ? "" : "?", $args);
+    }
+
+    /**
+     * @return string
+     */
+    public function getSenderName(): string
+    {
+        return $this->senderName;
+    }
+
+    public function getTime(): ?int
+    {
+        return $this->getData("time");
     }
 
     /**
@@ -419,14 +521,13 @@ final class CommandParser
      */
     public function getAllData(): array
     {
-        if (!$this->parsed) {
-            throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
-        }
-
         return $this->data;
     }
 
-    public function getUsers(): ?string
+    /**
+     * @return string[]|null
+     */
+    public function getUsers(): ?array
     {
         return $this->getData("user");
     }
@@ -436,18 +537,16 @@ final class CommandParser
         return $this->getData("radius");
     }
 
-    public function getAction(): ?string
+    public function getDefaultRadius(): int
+    {
+        return $this->configParser->getDefaultRadius();
+    }
+
+    /**
+     * @return Action[]|null
+     */
+    public function getAction(): ?array
     {
         return $this->getData("action");
-    }
-
-    public function getBlocks(): ?array
-    {
-        return $this->getData("blocks");
-    }
-
-    public function getExclusions(): ?array
-    {
-        return $this->getData("exclusions");
     }
 }

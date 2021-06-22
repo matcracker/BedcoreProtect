@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,24 +22,21 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\block\Anvil;
-use pocketmine\block\Bed;
 use pocketmine\block\Block;
+use pocketmine\block\BlockIds;
 use pocketmine\block\BrewingStand;
+use pocketmine\block\BurningFurnace;
+use pocketmine\block\Button;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
 use pocketmine\block\EnchantingTable;
-use pocketmine\block\EnderChest;
-use pocketmine\block\Furnace;
-use pocketmine\block\Hopper;
+use pocketmine\block\FenceGate;
 use pocketmine\block\ItemFrame;
-use pocketmine\block\StoneButton;
-use pocketmine\block\tile\Tile;
+use pocketmine\block\Lever;
 use pocketmine\block\Trapdoor;
-use pocketmine\block\TrappedChest;
-use pocketmine\block\WoodenButton;
-use pocketmine\block\WoodenDoor;
-use pocketmine\block\WoodenTrapdoor;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\tile\Tile;
+use function is_a;
 
 final class BlockUtils
 {
@@ -56,14 +53,19 @@ final class BlockUtils
      */
     public static function canBeClicked(Block $block): bool
     {
-        $blocks = [
-            WoodenDoor::class, Door::class,
-            WoodenTrapdoor::class, Trapdoor::class,//Remove Trapdoor and Door classes when PM-MP supports redstone.
-            Bed::class, ItemFrame::class,
-            WoodenButton::class, StoneButton::class
+        static $blockClasses = [
+            Door::class, Trapdoor::class,//Remove Iron Trapdoor and Door classes when PM-MP supports redstone.
+            ItemFrame::class, Button::class,
+            Lever::class, FenceGate::class
         ];
 
-        return in_array(get_class($block), $blocks) || self::hasInventory($block);
+        foreach ($blockClasses as $blockClass) {
+            if (is_a($block, $blockClass)) {
+                return true;
+            }
+        }
+
+        return self::hasInventory($block);
     }
 
     /**
@@ -75,23 +77,29 @@ final class BlockUtils
      */
     public static function hasInventory(Block $block): bool
     {
-        $blocks = [
-            EnderChest::class, TrappedChest::class,
-            Chest::class, Furnace::class, EnchantingTable::class,
-            Anvil::class, BrewingStand::class, Hopper::class
+        static $blockClasses = [
+            Chest::class, BurningFurnace::class,
+            EnchantingTable::class, Anvil::class,
+            BrewingStand::class
         ];
 
-        return in_array(get_class($block), $blocks);
+        foreach ($blockClasses as $blockClass) {
+            if (is_a($block, $blockClass)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Serialize a block (tile) NBT into base64. Returns null if block doesn't contain NBT.
+     * Serializes a block (tile) compound tag into base64. Returns null if block doesn"t contain NBT.
      *
      * @param Block $block
      *
      * @return string|null
      */
-    public static function serializeBlockTileNBT(Block $block): ?string
+    public static function serializeTileTag(Block $block): ?string
     {
         if (($tag = self::getCompoundTag($block)) !== null) {
             return Utils::serializeNBT($tag);
@@ -110,7 +118,7 @@ final class BlockUtils
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
         if (($tile = self::asTile($block)) !== null) {
-            return $tile->getCleanedNBT();
+            return clone $tile->saveNBT();
         }
 
         return null;
@@ -126,8 +134,36 @@ final class BlockUtils
      */
     public static function asTile(Block $block): ?Tile
     {
-        if ($block->getWorld() === null) return null;
+        if (($world = $block->getLevel()) === null) {
+            return null;
+        }
 
-        return $block->getWorld()->getTile($block->asPosition());
+        return $world->getTile($block->asVector3());
+    }
+
+    /**
+     * @param int $blockId
+     * @return string
+     */
+    public static function getTileName(int $blockId): string //TODO: Remove on API 4.0
+    {
+        static $array = [
+            BlockIds::STANDING_BANNER => Tile::BANNER,
+            BlockIds::WALL_BANNER => Tile::BANNER,
+            BlockIds::BED_BLOCK => Tile::BED,
+            BlockIds::BREWING_STAND_BLOCK => Tile::BREWING_STAND,
+            BlockIds::CHEST => Tile::CHEST,
+            BlockIds::TRAPPED_CHEST => Tile::CHEST,
+            BlockIds::ENCHANTING_TABLE => Tile::ENCHANT_TABLE,
+            BlockIds::ENDER_CHEST => Tile::ENDER_CHEST,
+            BlockIds::FLOWER_POT_BLOCK => Tile::FLOWER_POT,
+            BlockIds::FURNACE => Tile::FURNACE,
+            BlockIds::ITEM_FRAME_BLOCK => Tile::ITEM_FRAME,
+            BlockIds::SIGN_POST => Tile::SIGN,
+            BlockIds::WALL_SIGN => Tile::SIGN,
+            BlockIds::SKULL_BLOCK => Tile::SKULL
+        ];
+
+        return $array[$blockId] ?? "Unknown";
     }
 }

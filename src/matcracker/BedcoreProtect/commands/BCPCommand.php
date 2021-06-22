@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,270 +21,284 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
+use Generator;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\utils\Utils;
+use matcracker\BedcoreProtect\storage\QueryManager;
+use matcracker\BedcoreProtect\ui\Forms;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\player\Player;
-use poggit\libasynql\SqlError;
+use pocketmine\command\PluginIdentifiableCommand;
+use pocketmine\Player;
+use pocketmine\plugin\Plugin;
+use pocketmine\utils\TextFormat;
+use SOFe\AwaitGenerator\Await;
+use function count;
+use function ctype_digit;
+use function explode;
+use function implode;
+use function mb_strtolower;
+use const PHP_FLOAT_MAX;
 
-final class BCPCommand extends Command
+final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
-
-    private $plugin;
-    private $queries;
+    private Main $plugin;
+    private QueryManager $queryManager;
 
     public function __construct(Main $plugin)
     {
         parent::__construct(
             "bedcoreprotect",
-            "It runs the BedcoreProtect commands.",
-            "Usage: /bcp help to display commands list",
+            $plugin->getLanguage()->translateString("command.description"),
+            $plugin->getLanguage()->translateString("command.usage"),
             ["core", "co", "bcp"]
         );
         $this->plugin = $plugin;
-        $this->queries = $plugin->getDatabase()->getQueries();
+        $this->queryManager = $plugin->getDatabase()->getQueryManager();
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
     {
-        if (empty($args)) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
+        $lang = $this->plugin->getLanguage();
+
+        if (count($args) === 0) {
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
 
             return false;
         }
 
-        $subCmd = $this->removeAbbreviation(strtolower($args[0]));
-        if (!$sender->hasPermission("bcp.command.bedcoreprotect") || !$sender->hasPermission("bcp.subcommand.{$subCmd}")) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou don't have permission to run this command."));
+        $subCmd = $this->removeAbbreviation(mb_strtolower($args[0]));
+        if (!$sender->hasPermission("bcp.subcommand.$subCmd") || !$sender->hasPermission("bcp.command.bedcoreprotect")) {
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.no-permission")));
 
             return false;
         }
+
+        $config = $this->plugin->getParsedConfig();
 
         //Shared commands between player and console.
         switch ($subCmd) {
             case "help":
-                isset($args[1]) ? BCPHelpCommand::showSpecificHelp($sender, $args[1]) : BCPHelpCommand::showGenericHelp($sender);
+                $helpCmd = new BCPHelpCommand($sender, $lang);
+                if (isset($args[1])) {
+                    $helpCmd->showCommandHelp($args[1]);
+                } else {
+                    $helpCmd->showGenericHelp();
+                }
 
                 return true;
             case "reload":
-                if ($this->plugin->reloadPlugin()) {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Plugin configuration reloaded."));
+                $this->plugin->reloadPlugin();
+                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.reload.success")));
+
+                /*if ($this->plugin->reloadPlugin()) {
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.reload.success")));
                 } else {
                     $this->plugin->restoreParsedConfig();
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cPlugin configuration not reloaded due to some errors. Check your console to see the errors."));
-                    $sender->sendMessage(Utils::translateColors("&cUntil you fix them, it will be used the old configuration."));
-                }
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.reload.no-success")));
+                }*/
 
                 return true;
             case "status":
-                $description = $this->plugin->getDescription();
-                $sender->sendMessage(Utils::translateColors("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
-                $sender->sendMessage(Utils::translateColors("&3Version:&f " . $description->getVersion()));
-                $sender->sendMessage(Utils::translateColors("&3Database connection:&f " . $this->plugin->getParsedConfig()->getPrintableDatabaseType()));
-                $sender->sendMessage(Utils::translateColors("&3Author:&f " . implode(",", $description->getAuthors())));
-                $sender->sendMessage(Utils::translateColors("&3Website:&f " . $description->getWebsite()));
+                Await::f2c(
+                    function () use ($sender, $config, $lang): Generator {
+                        $description = $this->plugin->getDescription();
+                        $pluginVersion = $description->getVersion();
+                        $dbVersions = (yield $this->plugin->getDatabase()->getStatus())[0];
+                        $dbVersion = (string)$dbVersions["version"];
+                        $initDbVersion = (string)$dbVersions["init_version"];
 
+                        if ($dbVersion !== $initDbVersion) {
+                            //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)
+                            $dbVersion .= " &7(" . $lang->translateString("command.status.initial-database-version", [$initDbVersion]) . ")";
+                        }
+                        $sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
+                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.version", [$pluginVersion])));
+                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.database-connection", [$config->getPrintableDatabaseType()])));
+                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.database-version", [$dbVersion])));
+                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.author", [implode(", ", $description->getAuthors())])));
+                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.website", [$description->getWebsite()])));
+                    }
+                );
                 return true;
             case "lookup":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
                     if ($parser->parse()) {
-                        $this->queries->requestLookup($sender, $parser);
+                        $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
                     } else {
-                        if (count($logs = Inspector::getCachedLogs($sender)) > 0) {
-                            $page = 0;
-                            $lines = 4;
-                            if (isset($args[1])) {
-                                $split = explode(":", $args[1]);
-                                if ($ctype = ctype_digit($split[0])) {
-                                    $page = (int)$split[0];
-                                }
-
-                                if (isset($split[1]) && $ctype = ctype_digit($split[1])) {
-                                    $lines = (int)$split[1];
-                                }
-
-                                if (!$ctype) {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cWrong page/line value inserted!"));
-
-                                    return true;
-                                }
-                            }
-                            Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
-                        } else {
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
-                        }
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
                 }
+                return true;
+            case "show":
+                if (isset($args[1])) {
+                    if (count($logs = Inspector::getSavedLogs($sender)) > 0) {
+                        $page = 0;
+                        $lines = 4;
+                        $split = explode(":", $args[1]);
+                        if ($pageType = ctype_digit($split[0])) {
+                            $page = (int)$split[0];
+                        }
 
+                        $lineType = true;
+                        if (isset($split[1]) && $lineType = ctype_digit($split[1])) {
+                            $lines = (int)$split[1];
+                        }
+
+                        if (!$pageType || !$lineType) {
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.no-numeric-value")));
+
+                            return true;
+                        }
+
+                        Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
+                    } else {
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.show.no-logs")));
+                    }
+                } else {
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
+                }
                 return true;
             case "purge":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time"], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge started. This may take some time."));
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Do not restart your server until completed."));
-                        $this->queries->purge($parser->getTime(), static function (int $affectedRows) use ($sender) {
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Data purge successful."));
-                            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "{$affectedRows} rows of data deleted."));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.started")));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.no-restart")));
+                        $this->queryManager->getPluginQueries()->purge($parser->getTime() ?? PHP_FLOAT_MAX, function (int $affectedRows) use ($sender, $lang): void {
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.success")));
+                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.deleted-rows", [$affectedRows])));
                         });
-
-                        return true;
                     } else {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
                 }
 
                 return true;
         }
 
         if (!($sender instanceof Player)) {
-            $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou can't run this command from console."));
+            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.no-console")));
 
             return false;
         }
 
         //Only players commands.
         switch ($subCmd) {
+            case "menu":
+            case "ui":
+                $sender->sendForm((new Forms($config))->getMainMenu());
+                return true;
             case "inspect":
-                $b = Inspector::isInspector($sender);
-                $b ? Inspector::removeInspector($sender) : Inspector::addInspector($sender);
-                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . ($b ? "Disabled" : "Enabled") . " inspector mode."));
-
+                if (Inspector::isInspector($sender)) {
+                    Inspector::removeInspector($sender);
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.inspect.disabled")));
+                } else {
+                    Inspector::addInspector($sender);
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.inspect.enabled")));
+                }
                 return true;
             case "near":
                 $near = 5;
 
                 if (isset($args[1])) {
                     if (!ctype_digit($args[1])) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe near value must be numeric!"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.no-numeric-value")));
 
                         return true;
                     }
                     $near = (int)$args[1];
-                    $maxRadius = $this->plugin->getParsedConfig()->getMaxRadius();
+                    $maxRadius = $config->getMaxRadius();
                     if ($near < 1 || $near > $maxRadius) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe near value must be between 1 and {$maxRadius}!"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.near.range-value")));
 
                         return true;
                     }
                 }
 
-                $this->queries->requestNearLog($sender, $sender, $near);
+                $this->queryManager->getPluginQueries()->requestNearLog($sender, $sender, $near);
 
                 return true;
             case "rollback":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Starting rollback on \"{$sender->getWorld()->getFolderName()}\"."));
-                        $sender->sendMessage(Utils::translateColors("&f------"));
-                        $start = microtime(true);
+                        $world = $sender->getLevelNonNull();
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.rollback.started", [$world->getFolderName()])));
 
-                        $this->queries->rollback($sender->asPosition(), $parser,
-                            static function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
-                                if (($blocks + $items + $entities) > 0) {
-                                    $diff = microtime(true) - $start;
-                                    $time = time() - $parser->getTime();
-                                    $radius = $parser->getRadius();
-                                    $date = Utils::timeAgo($time);
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rollback completed for \"{$sender->getWorld()->getFolderName()}\"."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Rolled back {$date}."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$blocks} block(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
-                                    $sender->sendMessage(Utils::translateColors("&f------"));
-                                    $y = $sender->getWorld()->getHighestBlockAt((int)$sender->getX(), (int)$sender->getZ()) + 1;
-                                    if ((int)$sender->getY() < $y) {
-                                        $sender->teleport($sender->setComponents($sender->getX(), $y, $sender->getZ()), $sender->getYaw(), $sender->getPitch());
-                                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Teleported to the top."));
-                                    }
-                                } else {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to rollback."));
-                                }
-                            },
-                            static function (SqlError $error) use ($sender) { //onError
-                                $this->plugin->getLogger()->alert($error->getErrorMessage());
-                                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
-                                $sender->sendMessage(Utils::translateColors("&f------"));
-                            }
+                        $this->queryManager->rollback(
+                            $world,
+                            MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius()),
+                            $parser
                         );
                     } else {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
                 }
 
                 return true;
             case "restore":
                 if (isset($args[1])) {
-                    $parser = new CommandParser($this->plugin->getParsedConfig(), $args, ["time", "radius"], true);
+                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
                     if ($parser->parse()) {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore started on \"{$sender->getWorld()->getFolderName()}\"."));
-                        $sender->sendMessage(Utils::translateColors("&f------"));
-                        $start = microtime(true);
+                        $world = $sender->getLevelNonNull();
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.restore.started", [$world->getFolderName()])));
 
-                        $this->queries->restore($sender->asPosition(), $parser,
-                            static function (int $blocks, int $items, int $entities) use ($sender, $start, $parser) { //onSuccess
-                                if (($blocks + $items + $entities) > 0) {
-                                    $diff = microtime(true) - $start;
-                                    $time = time() - $parser->getTime();
-                                    $radius = $parser->getRadius();
-                                    $date = Utils::timeAgo($time);
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restore completed for \"{$sender->getWorld()->getFolderName()}\"."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Restored {$date}."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Radius: {$radius} block(s)."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$blocks} block(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$items} item(s) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Approx. {$entities} entity(ies) changed."));
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "Time taken: " . round($diff, 1) . " second(s)."));
-                                    $sender->sendMessage(Utils::translateColors("&f------"));
-                                } else {
-                                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo data to restore."));
-                                }
-                            },
-                            static function (SqlError $error) use ($sender) { //onError
-                                $this->plugin->getLogger()->alert($error->getErrorMessage());
-                                $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cAn error occurred while restoring. Check the console."));
-                                $sender->sendMessage(Utils::translateColors("&f------"));
-                            }
+                        $this->queryManager->restore(
+                            $world,
+                            MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius()),
+                            $parser
                         );
                     } else {
-                        $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
+                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
                     }
                 } else {
-                    $sender->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cYou must add at least one parameter."));
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
                 }
 
                 return true;
-        }
+            case "undo":
+                if (!$this->queryManager->undoRollback($sender)) {
+                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.undo.not-found")));
+                }
 
-        return false;
+                return true;
+            default:
+                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
+                return false;
+        }
     }
 
     private function removeAbbreviation(string $subCmd): string
     {
         if ($subCmd === "l") {
             $subCmd = "lookup";
-        } else if ($subCmd === "i") {
+        } elseif ($subCmd === "i") {
             $subCmd = "inspect";
-        } else if ($subCmd === "rb") {
+        } elseif ($subCmd === "rb") {
             $subCmd = "rollback";
-        } else if ($subCmd === "rs") {
+        } elseif ($subCmd === "rs") {
             $subCmd = "restore";
+        } elseif ($subCmd === "ui") {
+            $subCmd = "menu";
         }
 
         return $subCmd;
     }
 
-
+    /**
+     * @return Main
+     */
+    public function getPlugin(): Plugin
+    {
+        return $this->plugin;
+    }
 }

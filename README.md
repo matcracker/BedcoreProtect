@@ -1,3 +1,8 @@
+[![](https://poggit.pmmp.io/shield.dl.total/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
+[![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
+[![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
+[![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Uf6U78g)
+
 # BedcoreProtect
 BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
@@ -5,6 +10,8 @@ BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for Poc
 - Fast efficient data logging.
 - Fast rollbacks.
 - No configuration required. Put the plugin on your server, and you're good to go.
+- Multi-language support.
+- User interface (UI) support.
 - SQLite based data storage.
 - Optional MySQL support.
 - Easy to use commands.
@@ -24,10 +31,10 @@ BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for Poc
 - Able to track blocks that fall off of other blocks. If a player breaks a block that had a sign on it, both the block and the sign can be rolled back.
 - Easily delete old log data.
 - Safe default parameters.
-Rollback or restore multiple players at once.ì
+Rollback or restore multiple players at once.
 - Lookup, rollback, or restore by a specific action.
 - Exclude multiple blocks.
-Preview rollbacks or restores.
+
 ...and much more!!
 
 ## What does it log?
@@ -46,23 +53,34 @@ Preview rollbacks or restores.
 - Log items taken or placed in chests, furnaces, dispensers, etc.
 - Log paintings and item frames. (With rollback support!)
 - Log entities killed by players (animals/monsters)
+
 ...and the list is still expanding!
 
-## Commands
+# Database Minimum Requirements
+- **SQLite** version must be >= **3.28.0** (not tested with older versions)
+
+OR
+
+- **MySQL** version must be >= **5.6.4**
+
+# Commands
 The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co** (**Main permission:** _bcp.command.bedcoreprotect_)
 
 **Quick command overview:**
 - **/bcp help - _Display a list of commands_** (**Permission:** _bcp.subcommand.help_)
 - **/bcp inspect - _Toggle the inspector mode_** (**Permission:** _bcp.subcommand.inspect_)
+- **/bcp menu - _Display a graphic interface to use the plugin (UI)._** (**Permission:** _bcp.subcommand.menu_)
 - **/bcp rollback \<params> - _Rollback block data_** (**Permission:** _bcp.subcommand.rollback_)
 - **/bcp restore \<params> - _Restore block data_** (**Permission:** _bcp.subcommand.restore_)
 - **/bcp lookup \<params> - _Advanced block data lookup_** (**Permission:** _bcp.subcommand.lookup_)
+- **/bcp show \<params> - _Allows to show a specific page of logs._** (**Permission:** _bcp.subcommand.show_)
 - **/bcp purge \<params> - _Delete old block data_** (**Permission:** _bcp.subcommand.purge_)
 - **/bcp reload - _Reload the configuration file_** (**Permission:** _bcp.subcommand.reload_)
 - **/bcp status - _View the plugin status_** (**Permission:** _bcp.subcommand.status_)
 
 **Shortcut commands:**
 - **/bcp near \[value]**: _Performs a lookup with radius (default 5)_ (**Permission:** _bcp.subcommand.near_)
+- **/bcp undo**: _Revert a rollback/restore via the opposite action_ (**Permission:** _bcp.subcommand.undo_)
 ---
 **Advanced command overview:**
 > **/bcp help**<br>
@@ -70,6 +88,9 @@ _Diplay a list of commands in-game_
 
 > **/bpc inspect**<br>
 _Enable the inspector. Type the command again to disable it. You can also use just **"/bcp i"**_
+
+> **/bpc menu**<br>
+_Display a graphic interface to simplify the plugin commands usage. You can also use just **"/bcp ui"**_
 
 > **/bcp rollback u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
 _Nearly all of the parameters are optional. Shortcut: **"/bcp rb"**._
@@ -113,14 +134,22 @@ _Same parameters as /bcp rollback. Shortcut: **"/bcp rs"**._<br><br>
 Restoring can be used to undo rollbacks.
 
 > **/bcp lookup u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
-_Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br><br>
-If multiple pages are returned, use the command **"/bcp lookup \<page>"** to switch pages.<br>
-To change the number of lines displayed on a page, use the command **"/bcp lookup \<page>:\<lines>"**.<br><br>
-For example, **"/bcp l 1:10"** will return 10 lines of data, starting at the first page.
+_Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br>
+
+> **/bcp show \<page>:\[lines]**<br>
+_Allow to switch pages of /bcp lookup command. Shortcut: **"/bcp s"**._<br><br>
+When multiple pages returned from lookup command, use the command **"/bcp show \<page>"** to switch pages.<br>
+To change the number of lines displayed on a page, use the command **"/bcp show \<page>:\<lines>"**.<br><br>
+For example, **"/bcp show 1:10"** will return 10 lines of data, starting at the first page.
 
 > **/bcp purge t=\<time>**<br>
 _Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>
-For example, "/co purge t:30d" will delete all data older than one month, and only keep the last 30 days of data.
+For example, "/bcp purge t=30d" will delete all data older than one month, and only keep the last 30 days of data.
 
-### Examples
-Soon
+# FAQ
+
+**I found a bug, where can I report it?**
+- > You can report [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Bug report**.
+
+**Where can I request a new feature?**
+- > You can ask a new feature [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Feature request**.

@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,20 +21,35 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
+use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
+use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
+use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
+use matcracker\BedcoreProtect\storage\queries\PluginQueries;
+use pocketmine\block\Air;
 use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
 {
-    /**@var Main */
-    protected $plugin;
-    /**@var Database */
-    protected $database;
+    public ConfigParser $config;
+    protected Main $plugin;
+    protected Air $air;
+    protected PluginQueries $pluginQueries;
+    protected BlocksQueries $blocksQueries;
+    protected EntitiesQueries $entitiesQueries;
+    protected InventoriesQueries $inventoriesQueries;
 
     public function __construct(Main $plugin)
     {
         $this->plugin = $plugin;
-        $this->database = $plugin->getDatabase();
+        $this->config = $plugin->getParsedConfig();
+
+        $this->air = new Air();
+
+        $this->pluginQueries = $plugin->getDatabase()->getQueryManager()->getPluginQueries();
+        $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();
+        $this->entitiesQueries = $plugin->getDatabase()->getQueryManager()->getEntitiesQueries();
+        $this->inventoriesQueries = $plugin->getDatabase()->getQueryManager()->getInventoriesQueries();
     }
 }

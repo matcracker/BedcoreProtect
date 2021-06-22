@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -19,9 +19,11 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\utils;
+namespace matcracker\BedcoreProtect\enums;
 
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\Main;
+use function array_key_exists;
 
 /**
  * This doc-block is generated automatically, do not modify it manually.
@@ -37,6 +39,7 @@ use InvalidArgumentException;
  * @method static self KILL()
  * @method static self ADD()
  * @method static self REMOVE()
+ * @method static self UPDATE()
  */
 final class Action
 {
@@ -46,11 +49,9 @@ final class Action
     }
 
     /** @var Action[] */
-    private static $numericIdMap = [];
-    /**@var int */
-    private $type;
-    /**@var string */
-    private $message;
+    private static array $numericIdMap = [];
+    private int $type;
+    private string $message;
 
     public function __construct(string $enumName, int $type, string $message)
     {
@@ -62,35 +63,33 @@ final class Action
     public static function fromType(int $type): Action
     {
         self::checkInit();
-        if (!isset(self::$numericIdMap[$type])) {
+        if (!array_key_exists($type, self::$numericIdMap)) {
             throw new InvalidArgumentException("Unknown action type $type");
         }
 
         return self::$numericIdMap[$type];
     }
 
-    protected static function setup(): array
+    protected static function setup(): void
     {
-        return [
-            new self("none", -1, "none"),
-            //Blocks actions
-            new self("place", 0, "placed"),
-            new self("break", 1, "broke"),
-            new self("click", 2, "clicked"),
-            //Entities actions
-            new self("spawn", 3, "placed"),
-            new self("despawn", 4, "broke"),
-            new self("kill", 5, "killed"),
-            //Inventories actions
-            new self("add", 6, "added"),
-            new self("remove", 7, "removed")
-        ];
+        $lang = Main::getInstance()->getLanguage();
+        self::registerAll(
+            new self("place", 0, $lang->translateString("action.place")),
+            new self("break", 1, $lang->translateString("action.break")),
+            new self("click", 2, $lang->translateString("action.click")),
+            new self("spawn", 3, $lang->translateString("action.place")),
+            new self("despawn", 4, $lang->translateString("action.break")),
+            new self("kill", 5, $lang->translateString("action.kill")),
+            new self("add", 6, $lang->translateString("action.add")),
+            new self("remove", 7, $lang->translateString("action.remove")),
+            new self("update", 255, "update")
+        );
     }
 
-    protected static function register(Action $action): void
+    protected static function register(Action $member): void
     {
-        self::Enum_register($action);
-        self::$numericIdMap[$action->getType()] = $action;
+        self::Enum_register($member);
+        self::$numericIdMap[$member->getType()] = $member;
     }
 
     /**
@@ -109,9 +108,6 @@ final class Action
         return $this->message;
     }
 
-    /**
-     * @return bool
-     */
     public function isBlockAction(): bool
     {
         return $this->equals(self::PLACE()) || $this->equals(self::BREAK()) || $this->equals(self::CLICK());

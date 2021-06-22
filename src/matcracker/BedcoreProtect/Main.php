@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -23,14 +23,20 @@ namespace matcracker\BedcoreProtect;
 
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
+use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\config\ConfigParser;
+use matcracker\BedcoreProtect\config\ConfigUpdater;
+use matcracker\BedcoreProtect\listeners\BedcoreListener;
 use matcracker\BedcoreProtect\listeners\BlockListener;
 use matcracker\BedcoreProtect\listeners\EntityListener;
+use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
-use matcracker\BedcoreProtect\storage\Database;
-use matcracker\BedcoreProtect\tasks\SQLiteTransactionTask;
-use matcracker\BedcoreProtect\utils\ConfigParser;
+use matcracker\BedcoreProtect\storage\DatabaseManager;
+use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use function mkdir;
+use function version_compare;
 
 final class Main extends PluginBase
 {
@@ -38,18 +44,25 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /**@var Database $database */
-    private $database;
+    private static Main $instance;
+    private BaseLang $baseLang;
+    private DatabaseManager $database;
+    private ConfigParser $configParser;
+    private ConfigParser $oldConfigParser;
+    /** @var BedcoreListener[] */
+    private array $events;
 
-    /**@var ConfigParser $configParser */
-    private $configParser;
-    /**@var ConfigParser $oldConfigParser */
-    private $oldConfigParser;
+    public static function getInstance(): Main
+    {
+        return self::$instance;
+    }
 
-    /**
-     * @return Database
-     */
-    public function getDatabase(): Database
+    public function getLanguage(): BaseLang
+    {
+        return $this->baseLang;
+    }
+
+    public function getDatabase(): DatabaseManager
     {
         return $this->database;
     }
@@ -68,70 +81,103 @@ final class Main extends PluginBase
     }
 
     /**
-     * Reloads the plugin configuration and returns true if config is valid.
-     * @return bool
+     * Reloads the plugin configuration.
      */
-    public function reloadPlugin(): bool
+    public function reloadPlugin(): void
     {
-        $this->oldConfigParser = clone $this->configParser;
+        $this->oldConfigParser = $this->configParser;
         $this->reloadConfig();
+        $this->configParser = new ConfigParser($this->getConfig());
 
-        return $this->configParser->validate()->isValidConfig();
+        foreach ($this->events as $event) {
+            $event->config = $this->configParser;
+        }
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
     }
 
-    protected function onEnable(): void
+    public function onLoad(): void
     {
-        $this->database = new Database($this);
+        self::$instance = $this;
 
         @mkdir($this->getDataFolder());
-        $this->saveResource("bedcore_database.db");
 
-        $this->configParser = (new ConfigParser($this))->validate();
-        if (!$this->configParser->isValidConfig()) {
-            $this->getServer()->getPluginManager()->disablePlugin($this);
+        $confUpdater = new ConfigUpdater($this);
 
-            return;
+        if ($confUpdater->checkUpdate()) {
+            if (!$confUpdater->update()) {
+                $this->getLogger()->critical("Could not save the new configuration file.");
+            }
         }
 
+        $this->configParser = new ConfigParser($this->getConfig());
+        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+
+        $this->saveResource($this->configParser->getDatabaseFileName());
+
+        if ($this->configParser->getCheckUpdates()) {
+            UpdateNotifier::checkUpdate($this->getName(), $this->getDescription()->getVersion());
+        }
+    }
+
+    public function onEnable(): void
+    {
+        $this->database = new DatabaseManager($this);
+
+        $pluginManager = $this->getServer()->getPluginManager();
         //Database connection
-        $this->getLogger()->info("Trying to establishing connection with {$this->configParser->getPrintableDatabaseType()} database...");
         if (!$this->database->connect()) {
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-
+            $pluginManager->disablePlugin($this);
             return;
         }
-        $this->getLogger()->info("Connection successfully established.");
 
-        $this->database->getQueries()->init();
+        $queryManager = $this->database->getQueryManager();
 
-        if ($this->configParser->isSQLite()) {
-            $this->getScheduler()->scheduleDelayedRepeatingTask(new SQLiteTransactionTask($this->database), SQLiteTransactionTask::getTicks(), SQLiteTransactionTask::getTicks());
+        $version = $this->getVersion();
+        $queryManager->init($version);
+        $dbVersion = $this->database->getVersion();
+        if (version_compare($version, $dbVersion) < 0) {
+            $this->getLogger()->warning($this->baseLang->translateString("database.version.higher"));
+            $pluginManager->disablePlugin($this);
+            return;
         }
+
+        if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
+            $this->getLogger()->info($this->baseLang->translateString("database.version.updated", [$dbVersion, $lastPatch]));
+        }
+
+        $queryManager->setupDefaultData();
+
+        CommandParser::initActions();
 
         $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
 
         //Registering events
-        $events = [
+        $this->events = [
             new BlockListener($this),
             new EntityListener($this),
             new PlayerListener($this),
-            new WorldListener($this)
+            new WorldListener($this),
+            new InspectorListener($this)
         ];
 
-        foreach ($events as $event) {
-            $this->getServer()->getPluginManager()->registerEvents($event, $this);
-        }
-
-        if ($this->configParser->getCheckUpdates()) {
-            UpdateNotifier::checkUpdate($this);
+        foreach ($this->events as $event) {
+            $pluginManager->registerEvents($event, $this);
         }
     }
 
-    protected function onDisable(): void
+    /**
+     * Returns the plugin version.
+     */
+    public function getVersion(): string
+    {
+        return $this->getDescription()->getVersion();
+    }
+
+    public function onDisable(): void
     {
         $this->getScheduler()->cancelAllTasks();
         $this->database->disconnect();
 
-        Inspector::clearCache();
+        Inspector::removeAll();
     }
 }

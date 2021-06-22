@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019
+ * Copyright (C) 2019-2021
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,17 +21,22 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use matcracker\BedcoreProtect\utils\Action;
+use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
-use pocketmine\player\Player;
-use UnexpectedValueException;
+use pocketmine\Player;
+use pocketmine\utils\TextFormat;
+use function array_chunk;
+use function array_key_exists;
+use function count;
 
 final class Inspector
 {
-    private static $inspectors = [];
+    /** @var array[] */
+    private static array $inspectors = [];
 
     private function __construct()
     {
@@ -49,7 +54,7 @@ final class Inspector
 
     private static function getSenderUUID(CommandSender $sender): string
     {
-        return ($sender instanceof Player ? $sender->getUniqueId() : $sender->getServer()->getServerUniqueId())->toString();
+        return $sender instanceof Player ? EntityUtils::getUniqueId($sender) : $sender->getServer()->getServerUniqueId()->toString();
     }
 
     /**
@@ -61,7 +66,9 @@ final class Inspector
      */
     public static function removeInspector(CommandSender $inspector): bool
     {
-        if (!self::isInspector($inspector)) return false;
+        if (!self::isInspector($inspector)) {
+            return false;
+        }
 
         unset(self::$inspectors[self::getSenderUUID($inspector)]);
 
@@ -80,7 +87,7 @@ final class Inspector
         return self::$inspectors[self::getSenderUUID($inspector)]["enabled"] ?? false;
     }
 
-    public static function cacheLogs(CommandSender $inspector, array $logs = []): void
+    public static function saveLogs(CommandSender $inspector, array $logs = []): void
     {
         self::$inspectors[self::getSenderUUID($inspector)]["logs"] = $logs;
     }
@@ -90,12 +97,12 @@ final class Inspector
      *
      * @return array
      */
-    public static function getCachedLogs(CommandSender $inspector): array
+    public static function getSavedLogs(CommandSender $inspector): array
     {
         return self::$inspectors[self::getSenderUUID($inspector)]["logs"] ?? [];
     }
 
-    public static function clearCache(): void
+    public static function removeAll(): void
     {
         self::$inspectors = [];
     }
@@ -110,14 +117,15 @@ final class Inspector
      */
     public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
     {
-        if (empty($logs)) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cNo block data found for this location."));
+        $lang = Main::getInstance()->getLanguage();
+        if (count($logs) === 0) {
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.no-data")));
 
             return;
         }
 
         if ($lines < 1) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe lines number must be greater than 1."));
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.more-lines")));
 
             return;
         }
@@ -125,50 +133,50 @@ final class Inspector
         $chunkLogs = array_chunk($logs, $lines);
         $maxPages = count($chunkLogs);
         $fakePage = $page + 1;
-        if (!isset($chunkLogs[$page])) {
-            $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "&cThe page &6{$fakePage}&c does not exist!"));
+        if (!array_key_exists($page, $chunkLogs)) {
+            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.page-not-exist", [$fakePage])));
 
             return;
         }
 
-        $inspector->sendMessage(Utils::translateColors("&f-----&3 " . Main::PLUGIN_NAME . " &7(Page {$fakePage}/{$maxPages}) &f-----"));
+        $inspector->sendMessage(TextFormat::colorize("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$fakePage, $maxPages]) . ") &f-----"));
         foreach ($chunkLogs[$page] as $log) {
             //Default
-            $from = (string)$log['entity_from'];
-            $x = (int)$log['x'];
-            $y = (int)$log['y'];
-            $z = (int)$log['z'];
-            $worldName = (string)$log['world_name'];
-            $action = Action::fromType((int)$log['action']);
-            $rollback = (bool)$log['rollback'];
+            $from = (string)$log["entity_from"];
+            $x = (int)$log["x"];
+            $y = (int)$log["y"];
+            $z = (int)$log["z"];
+            $worldName = (string)$log["world_name"];
+            $action = Action::fromType((int)$log["action"]);
+            $rollback = (bool)$log["rollback"];
 
-            $timeStamp = (is_int($log['time']) ? (int)$log['time'] : strtotime($log['time']));
+            $timeStamp = (int)$log["time"];
 
             $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
-            if (isset($log["{$typeColumn}_block_id"], $log["{$typeColumn}_block_meta"])) {
-                $id = (int)$log["{$typeColumn}_block_id"];
-                $meta = (int)$log["{$typeColumn}_block_meta"];
-                $blockName = BlockFactory::get($id, $meta)->getName();
 
-                $to = "#{$id}:{$meta} ({$blockName})";
-            } elseif (isset($log['entity_to'])) {
-                $to = "#{$log['entity_to']}";
-            } elseif (isset($log["{$typeColumn}_item_meta"], $log["{$typeColumn}_item_amount"])) {
-                $id = (int)$log["{$typeColumn}_item_id"];
-                $meta = (int)$log["{$typeColumn}_item_meta"];
-                $amount = (int)$log["{$typeColumn}_item_amount"];
-                $itemName = ItemFactory::get($id, $meta)->getName();
-                $to = "{$amount} x #{$id}:{$meta} ({$itemName})";
+            if (isset($log["{$typeColumn}_id"], $log["{$typeColumn}_meta"])) {
+                $id = (int)$log["{$typeColumn}_id"];
+                $meta = (int)$log["{$typeColumn}_meta"];
+                if (isset($log["{$typeColumn}_amount"])) {
+                    $amount = (int)$log["{$typeColumn}_amount"];
+
+                    $itemName = ItemFactory::get($id, $meta)->getVanillaName();
+                    $to = "$amount x #$id:$meta ($itemName)";
+                } else {
+                    $blockName = BlockFactory::get($id, $meta)->getName();
+                    $to = "#$id:$meta ($blockName)";
+                }
+            } elseif (isset($log["entity_to"])) {
+                $to = $log["entity_to"];
             } else {
-                throw new UnexpectedValueException("Invalid action parsed: {$action->name()}");
+                $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.corrupted-data")));
+                return;
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
-            $inspector->sendMessage(Utils::translateColors(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
-                . "&f - &3{$from} &f{$action->getMessage()} &3{$to} &f - &7(x{$x}/y{$y}/z{$z}/{$worldName})&f."));
+            $inspector->sendMessage(TextFormat::colorize(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
+                . "&f - &3$from &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/$worldName)&f."));
         }
-        $inspector->sendMessage(Utils::translateColors(Main::MESSAGE_PREFIX . "View older data by typing /bcp l <page>:<lines>."));
-
+        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("inspector.view-old-data")));
     }
-
 }
