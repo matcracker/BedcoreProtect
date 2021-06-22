@@ -36,17 +36,17 @@ use function mb_strtolower;
 
 abstract class Query
 {
-    /** @var Main */
-    protected $plugin;
-    /** @var DataConnector */
-    protected $connector;
-    /** @var ConfigParser */
-    protected $configParser;
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
+
+    protected Main $plugin;
+    protected ConfigParser $configParser;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
+        $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
-        $this->connector = $connector;
         $this->configParser = $plugin->getParsedConfig();
     }
 
@@ -114,18 +114,6 @@ abstract class Query
         $this->rawRollback(false, $world, $commandParser, $logIds, $onPreComplete, $isLastRollback);
     }
 
-    /**
-     * @param string $query
-     * @param array $args
-     * @param bool $multiParams if true, returns all parameters of callable 'onInserted(int $insertId, int $affectedRows)' instead of only $insertId.
-     * @return Generator
-     */
-    final protected function executeInsertRaw(string $query, array $args = [], bool $multiParams = false): Generator
-    {
-        $this->connector->executeInsertRaw($query, $args, yield ($multiParams ? Await::RESOLVE_MULTI : Await::RESOLVE), yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
@@ -137,23 +125,5 @@ abstract class Query
             "action" => $action->getType(),
             "time" => $time
         ]);
-    }
-
-    final protected function executeInsert(string $query, array $args = []): Generator
-    {
-        $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    final protected function executeSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    final protected function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 }

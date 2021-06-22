@@ -43,10 +43,8 @@ use const PHP_FLOAT_MAX;
 
 final class BCPCommand extends Command implements PluginIdentifiableCommand
 {
-    /** @var Main */
-    private $plugin;
-    /** @var QueryManager */
-    private $queryManager;
+    private Main $plugin;
+    private QueryManager $queryManager;
 
     public function __construct(Main $plugin)
     {

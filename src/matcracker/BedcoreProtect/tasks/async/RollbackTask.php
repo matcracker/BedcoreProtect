@@ -22,29 +22,29 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
+use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\storage\QueryManager;
-use matcracker\BedcoreProtect\utils\Utils;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+use Threaded;
 use function count;
+use function serialize;
+use function unserialize;
 
 class RollbackTask extends AsyncTask
 {
-    /** @var bool */
-    protected $rollback;
-    /** @var string */
-    protected $worldName;
-    /** @var string */
-    protected $senderName;
+    protected bool $rollback;
+    protected string $worldName;
+    protected string $senderName;
     /** @var SerializableBlock[] */
-    protected $blocks;
-    /** @var string[] */
-    private $serializedChunks;
+    private array $blocks;
+    private string $serializedBlocks;
+    private Threaded $serializedChunks;
 
     /**
      * RollbackTask constructor.
@@ -60,8 +60,13 @@ class RollbackTask extends AsyncTask
         $this->worldName = $worldName;
         $this->senderName = $senderName;
         $this->blocks = $blocks;
+        $this->serializedBlocks = serialize($blocks);
 
-        $this->serializedChunks = Utils::serializeChunks(WorldUtils::getChunks(WorldUtils::getNonNullWorldByName($worldName), $blocks));
+        $this->serializedChunks = new Threaded();
+        foreach (WorldUtils::getChunks(WorldUtils::getNonNullWorldByName($worldName), $blocks) as $hash => $chunk) {
+            $this->serializedChunks[] = serialize([$hash, $chunk->fastSerialize()]);
+        }
+
         $this->storeLocal($onComplete);
     }
 
@@ -70,11 +75,12 @@ class RollbackTask extends AsyncTask
         /** @var Chunk[] $chunks */
         $chunks = [];
 
-        foreach ($this->serializedChunks as $hash => $chunkData) {
-            $chunks[$hash] = Chunk::fastDeserialize($chunkData);
+        foreach ($this->serializedChunks as $serializedChunk) {
+            [$hash, $serialChunk] = unserialize($serializedChunk);
+            $chunks[$hash] = Chunk::fastDeserialize($serialChunk);
         }
 
-        foreach ($this->blocks as $block) {
+        foreach (unserialize($this->serializedBlocks) as $block) {
             $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
                 $chunks[$index]->setBlock($block->getX() & 0x0f, $block->getY(), $block->getZ() & 0x0f, $block->getId(), $block->getMeta());
@@ -106,11 +112,19 @@ class RollbackTask extends AsyncTask
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal();
 
-        QueryManager::addReportMessage($this->senderName, "rollback.blocks", [count($this->blocks)]);
+        $lang = Main::getInstance()->getLanguage();
+        QueryManager::addReportMessage($this->senderName, $lang->translateString("rollback.blocks", [count($this->blocks)]));
         //Set the execution time to 0 to avoid duplication of time in the same operation.
-        QueryManager::addReportMessage($this->senderName, "rollback.modified-chunks", [count($chunks)]);
+        QueryManager::addReportMessage($this->senderName, $lang->translateString("rollback.modified-chunks", [count($chunks)]));
 
         $onComplete();
     }
 
+    /**
+     * @return SerializableBlock[]
+     */
+    public function getBlocks(): array
+    {
+        return $this->blocks;
+    }
 }

@@ -35,10 +35,8 @@ use function count;
 
 final class Inspector
 {
-    /**
-     * @var array[]
-     */
-    private static $inspectors = [];
+    /** @var array[] */
+    private static array $inspectors = [];
 
     private function __construct()
     {

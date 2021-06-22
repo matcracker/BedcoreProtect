@@ -145,7 +145,7 @@ final class BlockUtils
      * @param int $blockId
      * @return string
      */
-    public static function getTileName(int $blockId): string //Remove on 4.0
+    public static function getTileName(int $blockId): string //TODO: Remove on API 4.0
     {
         static $array = [
             BlockIds::STANDING_BANNER => Tile::BANNER,

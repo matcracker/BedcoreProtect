@@ -25,6 +25,7 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
+use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
@@ -46,30 +47,27 @@ use function round;
 
 final class QueryManager
 {
-    /** @var array[] */
-    private static $additionalReports = [];
-    /** @var AxisAlignedBB[] */
-    private static $activeRollbacks = [];
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
 
-    /** @var Main */
-    private $plugin;
-    /** @var DataConnector */
-    private $connector;
-    /** @var PluginQueries */
-    private $pluginQueries;
-    /** @var BlocksQueries */
-    private $blocksQueries;
-    /** @var EntitiesQueries */
-    private $entitiesQueries;
-    /** @var InventoriesQueries */
-    private $inventoriesQueries;
+    /** @var array[] */
+    private static array $additionalReports = [];
+    /** @var AxisAlignedBB[] */
+    private static array $activeRollbacks = [];
+
+    private Main $plugin;
+    private PluginQueries $pluginQueries;
+    private BlocksQueries $blocksQueries;
+    private EntitiesQueries $entitiesQueries;
+    private InventoriesQueries $inventoriesQueries;
     /** @var UndoRollbackData[] */
-    private $undoData = [];
+    private array $undoData = [];
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
+        $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
-        $this->connector = $connector;
 
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
@@ -77,11 +75,9 @@ final class QueryManager
         $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
-    public static function addReportMessage(string $senderName, string $reportMessage, array $params = []): void
+    public static function addReportMessage(string $senderName, string $reportMessage): void
     {
-        $lang = Main::getInstance()->getLanguage();
-
-        self::$additionalReports[$senderName]["messages"][] = TextFormat::colorize("&f- " . $lang->translateString($reportMessage, $params));
+        self::$additionalReports[$senderName]["messages"][] = TextFormat::colorize("&f- $reportMessage");
     }
 
     public function init(string $pluginVersion): void
@@ -113,24 +109,6 @@ final class QueryManager
         );
 
         $this->connector->waitAll();
-    }
-
-    private function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    private function executeSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    private function executeInsert(string $query, array $args = []): Generator
-    {
-        $this->connector->executeInsert($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 
     public function setupDefaultData(): void

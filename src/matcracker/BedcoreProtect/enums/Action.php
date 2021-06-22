@@ -49,11 +49,9 @@ final class Action
     }
 
     /** @var Action[] */
-    private static $numericIdMap = [];
-    /** @var int */
-    private $type;
-    /** @var string */
-    private $message;
+    private static array $numericIdMap = [];
+    private int $type;
+    private string $message;
 
     public function __construct(string $enumName, int $type, string $message)
     {

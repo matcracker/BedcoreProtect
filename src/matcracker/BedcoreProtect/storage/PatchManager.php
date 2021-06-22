@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\storage;
 use Generator;
 use InvalidStateException;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
@@ -40,15 +41,16 @@ use function yaml_parse;
 
 final class PatchManager
 {
-    /** @var DataConnector */
-    private $connector;
-    /** @var Main */
-    private $plugin;
+    use DefaultQueriesTrait {
+        __construct as DefQueriesConstr;
+    }
+
+    private Main $plugin;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
+        $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
-        $this->connector = $connector;
     }
 
     /**
@@ -103,12 +105,6 @@ final class PatchManager
         return $patchVersion;
     }
 
-    private function executeSelect(string $query, array $args = []): Generator
-    {
-        $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
     /**
      * @param string $db_version
      * @return int[][]
@@ -132,17 +128,5 @@ final class PatchManager
             return version_compare($this->plugin->getVersion(), $db_version) > 0
                 && version_compare($patchVersion, $db_version) > 0;
         }, ARRAY_FILTER_USE_KEY);
-    }
-
-    private function executeGeneric(string $query, array $args = []): Generator
-    {
-        $this->connector->executeGeneric($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    private function executeChange(string $query, array $args = []): Generator
-    {
-        $this->connector->executeChange($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
     }
 }

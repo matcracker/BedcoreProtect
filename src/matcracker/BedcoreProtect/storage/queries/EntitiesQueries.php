@@ -48,17 +48,17 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
-        static $map = [
-            "flow-uuid" => "#Flow",
-            "water-uuid" => "#Water",
-            "still water-uuid" => "#Water",
-            "lava-uuid" => "#Lava",
-            "still lava-uuid" => "#Lava",
-            "fire block-uuid" => "#Fire",
-            "leaves-uuid" => "#Decay"
-        ];
+        Await::f2c(function () : Generator {
+            static $map = [
+                "flow-uuid" => "#Flow",
+                "water-uuid" => "#Water",
+                "still water-uuid" => "#Water",
+                "lava-uuid" => "#Lava",
+                "still lava-uuid" => "#Lava",
+                "fire block-uuid" => "#Fire",
+                "leaves-uuid" => "#Decay"
+            ];
 
-        Await::f2c(function () use ($map): Generator {
             $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
 
             yield $this->addRawEntity($serverUuid, "#console");
@@ -77,13 +77,11 @@ class EntitiesQueries extends Query
      */
     final public function addRawEntity(string $uuid, string $name, string $classPath = ""): Generator
     {
-        $this->connector->executeInsert(QueriesConst::ADD_ENTITY, [
+        return yield $this->executeInsert(QueriesConst::ADD_ENTITY, [
             "uuid" => $uuid,
             "name" => $name,
             "path" => $classPath
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
@@ -110,7 +108,7 @@ class EntitiesQueries extends Query
      */
     final public function addEntity(Entity $entity): Generator
     {
-        return $this->addRawEntity(
+        return yield $this->addRawEntity(
             EntityUtils::getUniqueId($entity),
             EntityUtils::getName($entity),
             get_class($entity)
@@ -119,7 +117,7 @@ class EntitiesQueries extends Query
 
     final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
-        return $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+        return yield $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
             "log_id" => $logId,
             "uuid" => EntityUtils::getUniqueId($entity),
             "id" => $entity->getId(),
@@ -179,7 +177,10 @@ class EntitiesQueries extends Query
         }
 
         if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage($commandParser->getSenderName(), "rollback.entities", [$entities]);
+            QueryManager::addReportMessage(
+                $commandParser->getSenderName(),
+                $this->plugin->getLanguage()->translateString("rollback.entities", [$entities])
+            );
         }
 
         $onComplete();
@@ -187,11 +188,9 @@ class EntitiesQueries extends Query
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator
     {
-        $this->connector->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
+        return yield $this->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
             "log_id" => $logId,
             "entity_id" => $entity->getId()
-        ], yield, yield Await::REJECT);
-
-        return yield Await::ONCE;
+        ]);
     }
 }

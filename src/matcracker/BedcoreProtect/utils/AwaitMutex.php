@@ -22,10 +22,9 @@ use function count;
 
 final class AwaitMutex
 {
-    /** @var bool */
-    private $running;
+    private bool $running = false;
     /** @var Closure[] */
-    private $queue = [];
+    private array $queue = [];
 
     /**
      * @param Closure $promise

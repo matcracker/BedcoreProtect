@@ -32,7 +32,7 @@ use matcracker\BedcoreProtect\listeners\EntityListener;
 use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
-use matcracker\BedcoreProtect\storage\Database;
+use matcracker\BedcoreProtect\storage\DatabaseManager;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
 use function mkdir;
@@ -44,18 +44,13 @@ final class Main extends PluginBase
     public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
-    /** @var Main */
-    private static $instance;
-    /** @var BaseLang */
-    private $baseLang;
-    /** @var Database */
-    private $database;
-    /** @var ConfigParser */
-    private $configParser;
-    /** @var ConfigParser */
-    private $oldConfigParser;
+    private static Main $instance;
+    private BaseLang $baseLang;
+    private DatabaseManager $database;
+    private ConfigParser $configParser;
+    private ConfigParser $oldConfigParser;
     /** @var BedcoreListener[] */
-    private $events;
+    private array $events;
 
     public static function getInstance(): Main
     {
@@ -67,7 +62,7 @@ final class Main extends PluginBase
         return $this->baseLang;
     }
 
-    public function getDatabase(): Database
+    public function getDatabase(): DatabaseManager
     {
         return $this->database;
     }
@@ -126,7 +121,7 @@ final class Main extends PluginBase
 
     public function onEnable(): void
     {
-        $this->database = new Database($this);
+        $this->database = new DatabaseManager($this);
 
         $pluginManager = $this->getServer()->getPluginManager();
         //Database connection
@@ -172,7 +167,6 @@ final class Main extends PluginBase
 
     /**
      * Returns the plugin version.
-     * @return string
      */
     public function getVersion(): string
     {

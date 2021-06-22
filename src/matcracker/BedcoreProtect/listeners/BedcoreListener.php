@@ -32,20 +32,13 @@ use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
 {
-    /** @var ConfigParser */
-    public $config;
-    /** @var Main */
-    protected $plugin;
-    /** @var Air */
-    protected $air;
-    /** @var PluginQueries */
-    protected $pluginQueries;
-    /** @var BlocksQueries */
-    protected $blocksQueries;
-    /** @var EntitiesQueries */
-    protected $entitiesQueries;
-    /** @var InventoriesQueries */
-    protected $inventoriesQueries;
+    public ConfigParser $config;
+    protected Main $plugin;
+    protected Air $air;
+    protected PluginQueries $pluginQueries;
+    protected BlocksQueries $blocksQueries;
+    protected EntitiesQueries $entitiesQueries;
+    protected InventoriesQueries $inventoriesQueries;
 
     public function __construct(Main $plugin)
     {

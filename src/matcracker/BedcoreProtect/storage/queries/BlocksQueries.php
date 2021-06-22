@@ -62,12 +62,9 @@ use function strlen;
  */
 class BlocksQueries extends Query
 {
-    /** @var EntitiesQueries */
-    protected $entitiesQueries;
-    /** @var InventoriesQueries */
-    protected $inventoriesQueries;
-    /** @var AwaitMutex */
-    private $mutexBlock;
+    protected EntitiesQueries $entitiesQueries;
+    protected InventoriesQueries $inventoriesQueries;
+    private AwaitMutex $mutexBlock;
 
     public function __construct(Main $plugin, DataConnector $connector, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {
@@ -169,12 +166,12 @@ class BlocksQueries extends Query
 
         /** @var SerializableBlock[] $oldBlocks */
         $oldBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
+            return SerializableBlock::fromBlock($block);
         }, $oldBlocks));
 
         /** @var SerializableBlock[] $newBlocks */
         $newBlocks = array_values(array_map(static function (Block $block): SerializableBlock {
-            return SerializableBlock::serialize($block);
+            return SerializableBlock::fromBlock($block);
         }, $newBlocks));
 
         $uuidEntity = EntityUtils::getUniqueId($entity);
@@ -349,7 +346,7 @@ class BlocksQueries extends Query
                     $world->addTile($tile);
                 }
             } else {
-                $tile = BlockUtils::asTile($block->unserialize());
+                $tile = BlockUtils::asTile($block->toBlock());
                 if ($tile !== null) {
                     $world->removeTile($tile);
                 }

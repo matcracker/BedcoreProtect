@@ -22,13 +22,11 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
-use pocketmine\level\format\Chunk;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\NamedTag;
 use UnexpectedValueException;
 use function array_filter;
-use function array_map;
 use function array_slice;
 use function base64_decode;
 use function base64_encode;
@@ -177,16 +175,5 @@ final class Utils
         }
 
         return $tag;
-    }
-
-    /**
-     * @param Chunk[] $chunks
-     * @return string[]
-     */
-    public static function serializeChunks(array $chunks): array
-    {
-        return array_map(static function (Chunk $chunk): string {
-            return $chunk->fastSerialize();
-        }, $chunks);
     }
 }
