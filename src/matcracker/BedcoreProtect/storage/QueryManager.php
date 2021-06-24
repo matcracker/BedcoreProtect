@@ -31,11 +31,11 @@ use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
+use pocketmine\world\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
@@ -117,38 +117,38 @@ final class QueryManager
         $this->connector->waitAll();
     }
 
-    public function rollback(Level $world, AxisAlignedBB $bb, CommandParser $commandParser): void
+    public function rollback(World $world, AxisAlignedBB $bb, CommandParser $commandParser): void
     {
         $this->rawRollback(true, $world, $bb, $commandParser);
     }
 
     /**
      * @param bool $rollback
-     * @param Level $world
+     * @param World $world
      * @param AxisAlignedBB $bb
      * @param CommandParser $commandParser
      * @param int[]|null $logIds
      */
-    private function rawRollback(bool $rollback, Level $world, AxisAlignedBB $bb, CommandParser $commandParser, ?array $logIds = null): void
+    private function rawRollback(bool $rollback, World $world, AxisAlignedBB $bb, CommandParser $commandParser, ?array $logIds = null): void
     {
         $senderName = $commandParser->getSenderName();
-        $player = Server::getInstance()->getPlayer($senderName);
 
-        if (array_key_exists($senderName, self::$activeRollbacks)) {
-            if ($player !== null) {
+        if (($player = Server::getInstance()->getPlayerExact($senderName)) !== null) {
+            if (array_key_exists($senderName, self::$activeRollbacks)) {
                 $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "It is not possible to perform more than one rollback at a time."));
-            }
-            return;
-        }
 
-        foreach (self::$activeRollbacks as $rbSender => $activeRollback) {
-            if ($activeRollback->intersectsWith($bb)) {
-                if ($player !== null) {
-                    $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "$rbSender is already operating in this area. Try again."));
-                }
                 return;
             }
+
+            foreach (self::$activeRollbacks as $rbSender => $activeRollback) {
+                if ($activeRollback->intersectsWith($bb)) {
+                    $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "$rbSender is already operating in this area. Try again."));
+
+                    return;
+                }
+            }
         }
+
 
         self::initAdditionReports($senderName);
 
@@ -215,14 +215,14 @@ final class QueryManager
         return yield Await::ONCE;
     }
 
-    public static function sendRollbackReport(bool $rollback, Level $world, CommandParser $commandParser): void
+    public static function sendRollbackReport(bool $rollback, World $world, CommandParser $commandParser): void
     {
         $senderName = $commandParser->getSenderName();
         if (!array_key_exists($senderName, self::$additionalReports)) {
             return;
         }
 
-        if (($sender = Server::getInstance()->getPlayer($senderName)) !== null) {
+        if (($sender = Server::getInstance()->getPlayerExact($senderName)) !== null) {
             $date = Utils::timeAgo(microtime(true) - $commandParser->getTime());
             $lang = Main::getInstance()->getLanguage();
 
@@ -272,11 +272,11 @@ final class QueryManager
 
         $data = $this->undoData[$player->getName()];
 
-        $this->rawRollback($data->isRollback(), $player->getLevelNonNull(), $data->getBoundingBox(), $data->getCommandParser(), $data->getLogIds());
+        $this->rawRollback($data->isRollback(), $player->getWorld(), $data->getBoundingBox(), $data->getCommandParser(), $data->getLogIds());
         return true;
     }
 
-    public function restore(Level $world, AxisAlignedBB $bb, CommandParser $commandParser): void
+    public function restore(World $world, AxisAlignedBB $bb, CommandParser $commandParser): void
     {
         $this->rawRollback(false, $world, $bb, $commandParser);
     }

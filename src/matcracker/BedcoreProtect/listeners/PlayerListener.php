@@ -27,29 +27,28 @@ use pocketmine\block\Air;
 use pocketmine\block\BlockFactory;
 use pocketmine\block\Cake;
 use pocketmine\block\Dirt;
-use pocketmine\block\Farmland;
 use pocketmine\block\Fire;
 use pocketmine\block\Grass;
-use pocketmine\block\GrassPath;
+use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Liquid;
 use pocketmine\block\TNT;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
 use pocketmine\item\PaintingItem;
 use pocketmine\item\Shovel;
-use pocketmine\level\Position;
-use pocketmine\math\Vector3;
+use pocketmine\math\Facing;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\tile\ItemFrame as TileItemFrame;
+use pocketmine\World\Position;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 
@@ -74,44 +73,33 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->config->isEnabledWorld($player->getLevelNonNull()) && $this->config->getBuckets()) {
+        if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getBuckets()) {
             $block = $event->getBlockClicked();
+            $blockPos = $block->getPos();
+
             $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
-            $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getDamage() : $event->getItem()->getDamage();
+            $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getMeta() : $event->getItem()->getMeta();
             /** @var Liquid $liquid */
-            $liquid = BlockFactory::get($bucketMeta);
+            $liquid = BlockFactory::getInstance()->get($bucketMeta);
 
             if ($fireEmptyEvent) {
                 if (!$block instanceof $liquid) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->asPosition());
+                    $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $blockPos);
                 }
             } else {
                 $face = $event->getBlockFace();
-                switch ($face) {
-                    case Vector3::SIDE_DOWN:
-                        $liquidPos = $block->add(0, 1);
-                        break;
-                    case Vector3::SIDE_UP:
-                        $liquidPos = $block->add(0, -1);
-                        break;
-                    case Vector3::SIDE_NORTH:
-                        $liquidPos = $block->add(0, 0, 1);
-                        break;
-                    case Vector3::SIDE_SOUTH:
-                        $liquidPos = $block->add(0, 0, -1);
-                        break;
-                    case Vector3::SIDE_WEST:
-                        $liquidPos = $block->add(1);
-                        break;
-                    case Vector3::SIDE_EAST:
-                        $liquidPos = $block->add(-1);
-                        break;
-                    default:
-                        throw new UnexpectedValueException("Unrecognized block face (Value: $face).");
-                }
+                $liquidPos = match ($face) {
+                    Facing::DOWN => $blockPos->add(0, 1, 0),
+                    Facing::UP => $blockPos->add(0, -1, 0),
+                    Facing::NORTH => $blockPos->add(0, 0, 1),
+                    Facing::SOUTH => $blockPos->add(0, 0, -1),
+                    Facing::WEST => $blockPos->add(1, 0, 0),
+                    Facing::EAST => $blockPos->add(-1, 0, 0),
+                    default => throw new UnexpectedValueException("Unrecognized block face (Value: $face)."),
+                };
 
-                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $block->getLevel()));
+                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $block->getPos()->getWorld()));
             }
         }
     }
@@ -125,7 +113,7 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
         $player = $event->getPlayer();
-        $world = $player->getLevelNonNull();
+        $world = $player->getWorld();
 
         if ($this->config->isEnabledWorld($world)) {
             $itemInHand = $event->getItem();
@@ -135,7 +123,7 @@ final class PlayerListener extends BedcoreListener
 
             if ($event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                 if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
+                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->getPos());
 
                 } elseif ($this->config->getPlayerInteractions() && $clickedBlock instanceof ItemFrame) {
                     $tile = BlockUtils::asTile($clickedBlock);
@@ -157,7 +145,7 @@ final class PlayerListener extends BedcoreListener
                     } elseif ($itemInHand instanceof PaintingItem) {
                         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
                             function (int $currentTick) use ($player, $world, $replacedBlock): void {
-                                $entity = $world->getNearestEntity($replacedBlock, 1, Painting::class);
+                                $entity = $world->getNearestEntity($replacedBlock->getPos(), 1, Painting::class);
                                 if ($entity !== null) {
                                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
                                 }
@@ -170,17 +158,17 @@ final class PlayerListener extends BedcoreListener
                 if ($this->config->getPlayerInteractions()) {
                     if ($itemInHand instanceof Hoe) {
                         if ($clickedBlock instanceof Grass || $clickedBlock instanceof Dirt) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new Farmland(), Action::PLACE(), $clickedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::FARMLAND(), Action::PLACE(), $clickedBlock->asPosition());
                             return;
                         }
                     } elseif ($itemInHand instanceof Shovel) {
                         if ($clickedBlock instanceof Grass) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new GrassPath(), Action::PLACE(), $clickedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::GRASS_PATH(), Action::PLACE(), $clickedBlock->getPos());
                             return;
                         }
                     } elseif ($clickedBlock instanceof Cake) {
-                        if ($player->isSurvival() && $clickedBlock->getDamage() > 5) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                        if ($player->isSurvival() && $clickedBlock->getMeta() > 5) {
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->getPos());
                             return;
                         }
                     }
@@ -216,11 +204,11 @@ final class PlayerListener extends BedcoreListener
         $transaction = $event->getTransaction();
         $player = $transaction->getSource();
 
-        if ($this->config->isEnabledWorld($player->getLevelNonNull()) && $this->config->getItemTransactions()) {
+        if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getItemTransactions()) {
             $actions = $transaction->getActions();
 
             foreach ($actions as $action) {
-                if ($action instanceof SlotChangeAction && $action->getInventory() instanceof ContainerInventory) {
+                if ($action instanceof SlotChangeAction && $action->getInventory() instanceof BlockInventory) {
                     $this->inventoriesQueries->addInventorySlotLogByPlayer($player, $action);
                     break;
                 }

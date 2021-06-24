@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\config;
 
-use pocketmine\level\Level;
+use pocketmine\World\World;
 use pocketmine\utils\Config;
 use poggit\libasynql\SqlDialect;
 use function count;
@@ -73,7 +73,7 @@ final class ConfigParser
         return (string)$this->data["database"]["sqlite"]["file"];
     }
 
-    public function isEnabledWorld(Level $world): bool
+    public function isEnabledWorld(World $world): bool
     {
         return in_array($world->getFolderName(), $this->getEnabledWorlds()) || count($this->getEnabledWorlds()) === 0;
     }

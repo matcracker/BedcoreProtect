@@ -57,7 +57,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
         $player = $event->getPlayer();
-        $world = $player->getLevelNonNull();
+        $world = $player->getWorldNonNull();
 
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
@@ -114,7 +114,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
-        $world = $player->getLevelNonNull();
+        $world = $player->getWorldNonNull();
 
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockPlace()) {
             $replacedBlock = $event->getBlockReplaced();
@@ -169,7 +169,7 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
         $source = $event->getSource();
 
-        if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
+        if ($this->config->isEnabledWorld($block->getWorldNonNull())) {
             if ($source instanceof Liquid) {
                 $action = !$block instanceof Air ? Action::BREAK() : Action::PLACE();
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, $action, $block->asPosition());
@@ -186,7 +186,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        if ($this->config->isEnabledWorld($block->getLevelNonNull()) && $this->config->getBlockBurn()) {
+        if ($this->config->isEnabledWorld($block->getWorldNonNull()) && $this->config->getBlockBurn()) {
             $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, $this->air, Action::BREAK(), $block->asPosition());
         }
     }
@@ -201,7 +201,7 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
 
-        if ($this->config->isEnabledWorld($block->getLevelNonNull())) {
+        if ($this->config->isEnabledWorld($block->getWorldNonNull())) {
             if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
                 $result = $event->getNewState();
 
@@ -221,7 +221,7 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
 
-        if ($this->config->isEnabledWorld($block->getLevelNonNull()) && $this->config->getSignText()) {
+        if ($this->config->isEnabledWorld($block->getWorldNonNull()) && $this->config->getSignText()) {
             $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, Action::UPDATE());
         }
     }

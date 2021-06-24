@@ -28,9 +28,9 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
-use pocketmine\Player;
+use pocketmine\player\Player;
+use pocketmine\World\World;
+use pocketmine\World\Position;
 use pocketmine\plugin\PluginException;
 
 /**
@@ -64,7 +64,7 @@ class PluginQueries extends Query
             "max_y" => $maxV->getY(),
             "min_z" => $minV->getZ(),
             "max_z" => $maxV->getZ(),
-            "world_name" => $position->getLevelNonNull()->getFolderName()
+            "world_name" => $position->getWorld()->getFolderName()
         ], static function (array $rows) use ($inspector): void {
             Inspector::saveLogs($inspector, $rows);
             Inspector::parseLogs($inspector, $rows);
@@ -77,7 +77,7 @@ class PluginQueries extends Query
         $args = [];
 
         if ($sender instanceof Player && $parser->getRadius() !== null) {
-            $bb = MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius());
+            $bb = MathUtils::getRangedVector($sender->getPosition(), $parser->getRadius());
         } else {
             $bb = null;
         }
@@ -101,7 +101,7 @@ class PluginQueries extends Query
 
     public function requestBlockLog(Player $inspector, Block $block): void
     {
-        $this->requestLog(QueriesConst::GET_BLOCK_LOG, $inspector, $block->asPosition());
+        $this->requestLog(QueriesConst::GET_BLOCK_LOG, $inspector, $block->getPos());
     }
 
     public function purge(float $time, ?callable $onSuccess = null): void
@@ -111,7 +111,7 @@ class PluginQueries extends Query
         ], $onSuccess);
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, World $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }

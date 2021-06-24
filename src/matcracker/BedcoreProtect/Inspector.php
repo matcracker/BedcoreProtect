@@ -27,7 +27,7 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function array_chunk;
 use function array_key_exists;
@@ -160,10 +160,10 @@ final class Inspector
                 if (isset($log["{$typeColumn}_amount"])) {
                     $amount = (int)$log["{$typeColumn}_amount"];
 
-                    $itemName = ItemFactory::get($id, $meta)->getVanillaName();
+                    $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
                     $to = "$amount x #$id:$meta ($itemName)";
                 } else {
-                    $blockName = BlockFactory::get($id, $meta)->getName();
+                    $blockName = BlockFactory::getInstance()->get($id, $meta)->getName();
                     $to = "#$id:$meta ($blockName)";
                 }
             } elseif (isset($log["entity_to"])) {

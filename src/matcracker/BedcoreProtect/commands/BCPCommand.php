@@ -229,7 +229,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
                     if ($parser->parse()) {
-                        $world = $sender->getLevelNonNull();
+                        $world = $sender->getWorldNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.rollback.started", [$world->getFolderName()])));
 
                         $this->queryManager->rollback(
@@ -249,7 +249,7 @@ final class BCPCommand extends Command implements PluginIdentifiableCommand
                 if (isset($args[1])) {
                     $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
                     if ($parser->parse()) {
-                        $world = $sender->getLevelNonNull();
+                        $world = $sender->getWorldNonNull();
                         $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.restore.started", [$world->getFolderName()])));
 
                         $this->queryManager->restore(

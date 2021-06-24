@@ -29,7 +29,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\FormLib\BaseForm;
 use matcracker\FormLib\CustomForm;
 use matcracker\FormLib\Form;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function array_keys;
 use function is_array;

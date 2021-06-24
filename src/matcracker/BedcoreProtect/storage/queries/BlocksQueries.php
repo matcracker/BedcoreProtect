@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use ArrayOutOfBoundsException;
 use Closure;
 use Generator;
 use matcracker\BedcoreProtect\commands\CommandParser;
@@ -33,19 +32,20 @@ use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
+use OutOfBoundsException;
 use pocketmine\block\Block;
+use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
+use pocketmine\block\tile\Tile;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\item\Item;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
 use pocketmine\math\Vector3;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
-use pocketmine\tile\ItemFrame;
-use pocketmine\tile\Tile;
+use pocketmine\World\Position;
+use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
@@ -87,8 +87,8 @@ class BlocksQueries extends Query
     {
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
-        $pos = $position ?? $newBlock->asPosition();
-        $worldName = $pos->getLevelNonNull()->getFolderName();
+        $pos = $position ?? $newBlock->getPos();
+        $worldName = $pos->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -107,10 +107,10 @@ class BlocksQueries extends Query
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
             "log_id" => $lastId,
             "old_id" => $oldBlock->getId(),
-            "old_meta" => $oldBlock->getDamage(),
+            "old_meta" => $oldBlock->getMeta(),
             "old_nbt" => $oldNbt,
             "new_id" => $newBlock->getId(),
-            "new_meta" => $newBlock->getDamage(),
+            "new_meta" => $newBlock->getMeta(),
             "new_nbt" => $newNbt
         ]);
     }
@@ -131,7 +131,7 @@ class BlocksQueries extends Query
         $time = microtime(true);
 
         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-            function (int $currentTick) use ($entity, $oldBlocks, $action, $onTaskRun, $time): void {
+            function () use ($entity, $oldBlocks, $action, $onTaskRun, $time): void {
                 /** @var Block[] $newBlocks */
                 $newBlocks = $onTaskRun($oldBlocks);
 
@@ -161,7 +161,7 @@ class BlocksQueries extends Query
         if ($cntOldBlocks === 0 || $cntNewBlocks === 0) {
             return;
         } elseif ($cntNewBlocks !== 1 && $cntOldBlocks !== $cntNewBlocks) {
-            throw new ArrayOutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
+            throw new OutOfBoundsException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
         }
 
         /** @var SerializableBlock[] $oldBlocks */
@@ -246,7 +246,7 @@ class BlocksQueries extends Query
             $name = "leaves";
         }
         $name .= "-uuid";
-        $pos = $position ?? $newBlock->asPosition();
+        $pos = $position ?? $newBlock->getPos();
 
         Await::g2c($this->addRawBlockLog(
             $name,
@@ -255,7 +255,7 @@ class BlocksQueries extends Query
             $newBlock,
             BlockUtils::serializeTileTag($newBlock),
             $pos->asVector3(),
-            $pos->getLevelNonNull()->getFolderName(),
+            $pos->getWorld()->getFolderName(),
             $action,
             microtime(true)
         ));
@@ -280,7 +280,7 @@ class BlocksQueries extends Query
 
         $itemFrameBlock = $itemFrame->getBlock();
         $position = $itemFrame->asVector3();
-        $worldName = $itemFrame->getLevelNonNull()->getFolderName();
+        $worldName = $itemFrame->getWorldNonNull()->getFolderName();
 
         Await::g2c(
             $this->addRawBlockLog(
@@ -319,7 +319,7 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, World $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         /** @var SerializableBlock[] $blocks */
         $blocks = [];

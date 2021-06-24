@@ -23,10 +23,10 @@ namespace matcracker\BedcoreProtect\utils;
 
 use InvalidStateException;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use pocketmine\level\format\Chunk;
-use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
+use pocketmine\world\format\Chunk;
+use pocketmine\world\World;
 
 final class WorldUtils
 {
@@ -36,11 +36,11 @@ final class WorldUtils
     }
 
     /**
-     * @param Level $world
+     * @param World $world
      * @param SerializableBlock[]|Vector3[] $positions
      * @return Chunk[]
      */
-    public static function getChunks(Level $world, array $positions): array
+    public static function getChunks(World $world, array $positions): array
     {
         $touchedChunks = [];
         foreach ($positions as $position) {
@@ -50,15 +50,15 @@ final class WorldUtils
             if ($chunk === null) {
                 continue;
             }
-            $touchedChunks[Level::chunkHash($x, $z)] = $chunk;
+            $touchedChunks[World::chunkHash($x, $z)] = $chunk;
         }
 
         return $touchedChunks;
     }
 
-    public static function getNonNullWorldByName(string $worldName): Level
+    public static function getNonNullWorldByName(string $worldName): World
     {
-        $world = Server::getInstance()->getLevelByName($worldName);
+        $world = Server::getInstance()->getWorldManager()->getWorldByName($worldName);
         if ($world === null) {
             throw new InvalidStateException("World \"$worldName\" does not exist.");
         }

@@ -30,18 +30,17 @@ use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\inventory\ContainerInventory;
+use pocketmine\block\inventory\BlockInventory;
+use pocketmine\block\tile\Chest;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\Player;
-use pocketmine\tile\Chest;
+use pocketmine\player\Player;
+use pocketmine\World\Position;
+use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function count;
@@ -67,7 +66,7 @@ class InventoriesQueries extends Query
     {
         $inventory = $slotAction->getInventory();
 
-        if (!$inventory instanceof ContainerInventory) {
+        if (!$inventory instanceof BlockInventory) {
             return;
         }
 
@@ -77,12 +76,9 @@ class InventoriesQueries extends Query
          * @see DoubleChestInventory::getHolder()
          */
         $holder = $inventory->getHolder();
-        if (!($holder instanceof Vector3)) {
-            return;
-        }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $worldName = $player->getLevelNonNull()->getFolderName();
+        $worldName = $player->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -124,11 +120,11 @@ class InventoriesQueries extends Query
             "log_id" => $lastId,
             "slot" => $slot,
             "old_id" => $oldItem->getId(),
-            "old_meta" => $oldItem->getDamage(),
+            "old_meta" => $oldItem->getMeta(),
             "old_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
             "old_amount" => $oldItem->getCount(),
             "new_id" => $newItem->getId(),
-            "new_meta" => $newItem->getDamage(),
+            "new_meta" => $newItem->getMeta(),
             "new_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
             "new_amount" => $newItem->getCount()
         ]);
@@ -148,17 +144,15 @@ class InventoriesQueries extends Query
         Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, microtime(true)));
     }
 
-    public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
+    public function addInventoryLogByPlayer(Player $player, BlockInventory $inventory, Position $inventoryPosition): void
     {
-        $worldName = $player->getLevelNonNull()->getFolderName();
+        $worldName = $player->getWorld()->getFolderName();
         $time = microtime(true);
 
         $contents = $inventory->getContents();
 
-        $airItem = ItemFactory::get(ItemIds::AIR);
-
         $this->mutexInventory->putClosure(
-            function () use ($player, $worldName, $time, $contents, $inventoryPosition, $airItem): Generator {
+            function () use ($player, $worldName, $time, $contents, $inventoryPosition): Generator {
                 yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                 /**
@@ -170,7 +164,7 @@ class InventoriesQueries extends Query
                         EntityUtils::getUniqueId($player),
                         $slot,
                         $content,
-                        $airItem,
+                        ItemFactory::air(),
                         $inventoryPosition,
                         $worldName,
                         Action::REMOVE(),
@@ -183,7 +177,7 @@ class InventoriesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(bool $rollback, World $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
     {
         $inventoryRows = [];
 
@@ -201,7 +195,7 @@ class InventoriesQueries extends Query
                 if (($nbt = $row["{$prefix}_nbt"]) !== null) {
                     $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
                 }
-                $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
+                $item = ItemFactory::getInstance()->get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
                 $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
                 if ($tile instanceof InventoryHolder) {

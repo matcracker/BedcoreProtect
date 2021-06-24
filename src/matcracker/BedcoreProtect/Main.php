@@ -33,7 +33,7 @@ use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\DatabaseManager;
-use pocketmine\lang\BaseLang;
+use pocketmine\lang\Language;
 use pocketmine\plugin\PluginBase;
 use function mkdir;
 use function version_compare;
@@ -45,7 +45,7 @@ final class Main extends PluginBase
     public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
 
     private static Main $instance;
-    private BaseLang $baseLang;
+    private Language $lang;
     private DatabaseManager $database;
     private ConfigParser $configParser;
     private ConfigParser $oldConfigParser;
@@ -57,9 +57,9 @@ final class Main extends PluginBase
         return self::$instance;
     }
 
-    public function getLanguage(): BaseLang
+    public function getLanguage(): Language
     {
-        return $this->baseLang;
+        return $this->lang;
     }
 
     public function getDatabase(): DatabaseManager
@@ -92,7 +92,7 @@ final class Main extends PluginBase
         foreach ($this->events as $event) {
             $event->config = $this->configParser;
         }
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+        $this->lang = new Language($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
     }
 
     public function onLoad(): void
@@ -110,7 +110,7 @@ final class Main extends PluginBase
         }
 
         $this->configParser = new ConfigParser($this->getConfig());
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+        $this->lang = new Language($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
 
         $this->saveResource($this->configParser->getDatabaseFileName());
 
@@ -136,13 +136,13 @@ final class Main extends PluginBase
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning($this->baseLang->translateString("database.version.higher"));
+            $this->getLogger()->warning($this->lang->translateString("database.version.higher"));
             $pluginManager->disablePlugin($this);
             return;
         }
 
         if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
-            $this->getLogger()->info($this->baseLang->translateString("database.version.updated", [$dbVersion, $lastPatch]));
+            $this->getLogger()->info($this->lang->translateString("database.version.updated", [$dbVersion, $lastPatch]));
         }
 
         $queryManager->setupDefaultData();

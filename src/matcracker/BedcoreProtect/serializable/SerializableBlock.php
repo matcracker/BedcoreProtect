@@ -25,7 +25,7 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
-use pocketmine\level\Position;
+use pocketmine\World\Position;
 use pocketmine\math\Vector3;
 
 final class SerializableBlock
@@ -53,21 +53,22 @@ final class SerializableBlock
 
     public static function fromBlock(Block $block): self
     {
+        $pos = $block->getPos();
         return new self(
             $block->getName(),
             $block->getId(),
-            $block->getDamage(),
-            (int)$block->getX(),
-            (int)$block->getY(),
-            (int)$block->getZ(),
-            $block->getLevelNonNull()->getFolderName(),
+            $block->getMeta(),
+            (int)$pos->getX(),
+            (int)$pos->getY(),
+            (int)$pos->getZ(),
+            $pos->getWorld()->getFolderName(),
             BlockUtils::serializeTileTag($block)
         );
     }
 
     public function toBlock(): Block
     {
-        return BlockFactory::get($this->id, $this->meta, $this->asPosition());
+        return BlockFactory::getInstance()->get($this->id, $this->meta, $this->asPosition());
     }
 
     public function asPosition(): Position

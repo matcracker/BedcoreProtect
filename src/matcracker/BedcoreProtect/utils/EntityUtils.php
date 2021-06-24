@@ -21,15 +21,12 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
-use InvalidArgumentException;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Human;
 use pocketmine\entity\Living;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use ReflectionClass;
-use ReflectionException;
 use UnexpectedValueException;
-use function strval;
 
 final class EntityUtils
 {
@@ -55,7 +52,7 @@ final class EntityUtils
             return $uuid->toString();
         }
 
-        return strval($entity::NETWORK_ID);
+        return $entity::getNetworkTypeId();
     }
 
     /**
@@ -74,11 +71,7 @@ final class EntityUtils
             if ($entity instanceof Living) {
                 $name = $entity->getName();
             } else {
-                try {
-                    $name = (new ReflectionClass($entity))->getShortName();
-                } catch (ReflectionException $exception) {
-                    throw new InvalidArgumentException("Invalid entity class.");
-                }
+                $name = (new ReflectionClass($entity))->getShortName();
             }
 
             return "#$name";
@@ -91,14 +84,10 @@ final class EntityUtils
      */
     public static function getSerializedNbt(Entity $entity): string
     {
-        $entity->saveNBT();
-        $namedTag = clone $entity->namedtag;
-        $namedTag->setShort("Fire", 0);
+        $nbt = $entity->saveNBT();
+        $nbt->setShort("Fire", 0);
+        $nbt->setFloat("Health", $entity->getMaxHealth());
 
-        if ($entity instanceof Living) {
-            $namedTag->setFloat("Health", $entity->getMaxHealth());
-        }
-
-        return Utils::serializeNBT($namedTag);
+        return Utils::serializeNBT($nbt);
     }
 }

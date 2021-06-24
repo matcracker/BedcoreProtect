@@ -34,15 +34,15 @@ final class MathUtils
         return $bb->expand($range, $range, $range);
     }
 
-    public static function floorBoundingBox(AxisAlignedBB $bb): void
+    public static function floorBoundingBox(AxisAlignedBB &$bb): void
     {
-        $bb->setBounds(
-            (int)floor($bb->minX),
-            (int)floor($bb->minY),
-            (int)floor($bb->minZ),
-            (int)floor($bb->maxX),
-            (int)floor($bb->maxY),
-            (int)floor($bb->maxZ)
+        $bb = new AxisAlignedBB(
+            floor($bb->minY),
+            floor($bb->minZ),
+            floor($bb->minX),
+            floor($bb->maxX),
+            floor($bb->maxY),
+            floor($bb->maxZ)
         );
     }
 }

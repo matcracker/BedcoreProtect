@@ -23,9 +23,7 @@ namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\block\Anvil;
 use pocketmine\block\Block;
-use pocketmine\block\BlockIds;
 use pocketmine\block\BrewingStand;
-use pocketmine\block\BurningFurnace;
 use pocketmine\block\Button;
 use pocketmine\block\Chest;
 use pocketmine\block\Door;
@@ -33,9 +31,9 @@ use pocketmine\block\EnchantingTable;
 use pocketmine\block\FenceGate;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Lever;
+use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\tile\Tile;
 use function is_a;
 
 final class BlockUtils
@@ -134,36 +132,6 @@ final class BlockUtils
      */
     public static function asTile(Block $block): ?Tile
     {
-        if (($world = $block->getLevel()) === null) {
-            return null;
-        }
-
-        return $world->getTile($block->asVector3());
-    }
-
-    /**
-     * @param int $blockId
-     * @return string
-     */
-    public static function getTileName(int $blockId): string //TODO: Remove on API 4.0
-    {
-        static $array = [
-            BlockIds::STANDING_BANNER => Tile::BANNER,
-            BlockIds::WALL_BANNER => Tile::BANNER,
-            BlockIds::BED_BLOCK => Tile::BED,
-            BlockIds::BREWING_STAND_BLOCK => Tile::BREWING_STAND,
-            BlockIds::CHEST => Tile::CHEST,
-            BlockIds::TRAPPED_CHEST => Tile::CHEST,
-            BlockIds::ENCHANTING_TABLE => Tile::ENCHANT_TABLE,
-            BlockIds::ENDER_CHEST => Tile::ENDER_CHEST,
-            BlockIds::FLOWER_POT_BLOCK => Tile::FLOWER_POT,
-            BlockIds::FURNACE => Tile::FURNACE,
-            BlockIds::ITEM_FRAME_BLOCK => Tile::ITEM_FRAME,
-            BlockIds::SIGN_POST => Tile::SIGN,
-            BlockIds::WALL_SIGN => Tile::SIGN,
-            BlockIds::SKULL_BLOCK => Tile::SKULL
-        ];
-
-        return $array[$blockId] ?? "Unknown";
+        return $block->getPos()->getWorld()->getTile($block->getPos());
     }
 }

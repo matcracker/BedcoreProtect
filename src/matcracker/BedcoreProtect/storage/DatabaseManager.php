@@ -54,7 +54,7 @@ final class DatabaseManager
                 "sqlite" => "sqlite.sql",
                 "mysql" => "mysql.sql"
             ]);
-        } catch (SqlError $error) {
+        } catch (SqlError) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
             return false;
         }

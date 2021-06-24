@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\enums;
 
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\Main;
+use pocketmine\utils\EnumTrait;
 use function array_key_exists;
 
 /**
