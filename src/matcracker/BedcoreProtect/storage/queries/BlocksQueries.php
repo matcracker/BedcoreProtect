@@ -333,17 +333,28 @@ class BlocksQueries extends Query
         }
 
         foreach ($blockRows as $row) {
+            $blockId = (int)$row["{$prefix}_id"];
+            $blockMeta = (int)$row["{$prefix}_meta"];
+            $x = (int)$row["x"];
+            $z = (int)$row["z"];
             $serializedNBT = (string)$row["{$prefix}_nbt"];
-            $blocks[] = $block = new SerializableBlock("", (int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"], $serializedNBT);
+            $blocks[] = $block = new SerializableBlock("", $blockId, $blockMeta, $x, (int)$row["y"], $z, (string)$row["world_name"], $serializedNBT);
 
             if (strlen($serializedNBT) > 0) {
                 $nbt = Utils::deserializeNBT($serializedNBT);
-                $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $world, $nbt);
-                if ($tile !== null) {
-                    if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
-                        $tile->getInventory()->clearAll();
+
+                $chunkX = $x >> 4;
+                $chunkZ = $z >> 4;
+                if ($world->loadChunk($chunkX, $chunkZ, false)) {
+                    $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $world, $nbt);
+
+                    if ($tile !== null) {
+                        if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
+                            $tile->getInventory()->clearAll();
+                        }
                     }
-                    $world->addTile($tile);
+                } else {
+                    $this->plugin->getLogger()->debug("Could not load chunk ($chunkX;$chunkZ) for block $blockId:$blockMeta");
                 }
             } else {
                 $tile = BlockUtils::asTile($block->toBlock());
