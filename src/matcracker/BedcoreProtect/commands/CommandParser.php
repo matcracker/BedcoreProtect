@@ -30,6 +30,7 @@ use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
+use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Server;
 use poggit\libasynql\generic\GenericStatementImpl;
@@ -249,17 +250,19 @@ final class CommandParser
         return true;
     }
 
-    public function buildLogsSelectionQuery(string &$query, array &$args, bool $rollback, AxisAlignedBB $bb): void
+    public function buildLogsSelectionQuery(string &$query, array &$args, bool $rollback, Level $world, AxisAlignedBB $bb): void
     {
         if (!$this->parsed) {
             throw new BadMethodCallException("Before invoking this method, you need to invoke CommandParser::parse()");
         }
 
         $variables = [
-            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_INT, null)
+            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_INT, null),
+            "world_name" => new GenericVariable("world_name", GenericVariable::TYPE_STRING, null)
         ];
         $parameters = [
-            "rollback" => intval(!$rollback)
+            "rollback" => intval(!$rollback),
+            "world_name" => $world->getFolderName()
         ];
 
         if ($this->getInclusions() !== null || $this->getExclusions() !== null) {
@@ -285,7 +288,7 @@ final class CommandParser
 
         $this->buildConditionalQuery($query, $variables, $parameters, $bb);
 
-        $query .= " ORDER BY time" . ($rollback ? " DESC" : "") . ";";
+        $query .= " AND world_name = :world_name ORDER BY time" . ($rollback ? " DESC" : "") . ";";
 
         $statement = GenericStatementImpl::forDialect(
             $this->configParser->isSQLite() ? SqlDialect::SQLITE : SqlDialect::MYSQL,
