@@ -57,10 +57,6 @@ Rollback or restore multiple players at once.
 ...and the list is still expanding!
 
 # Database Minimum Requirements
-- **SQLite** version must be >= **3.28.0** (not tested with older versions)
-
-OR
-
 - **MySQL** version must be >= **5.6.4**
 
 # Commands
