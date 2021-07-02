@@ -155,7 +155,7 @@ final class QueryManager
         Await::f2c(
             function () use ($rollback, $world, $bb, $commandParser, $senderName, $logIds): Generator {
                 /** @var int[] $logIds */
-                $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $bb, $commandParser);
+                $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $world, $bb, $commandParser);
                 if (count($logIds) === 0) { //No changes.
                     self::sendRollbackReport($rollback, $world, $commandParser);
                     return;
@@ -195,11 +195,11 @@ final class QueryManager
         ];
     }
 
-    private function getRollbackLogIds(bool $rollback, AxisAlignedBB $bb, CommandParser $commandParser): Generator
+    private function getRollbackLogIds(bool $rollback, Level $world, AxisAlignedBB $bb, CommandParser $commandParser): Generator
     {
         $query = "";
         $args = [];
-        $commandParser->buildLogsSelectionQuery($query, $args, $rollback, $bb);
+        $commandParser->buildLogsSelectionQuery($query, $args, $rollback, $world, $bb);
 
         $onSuccess = yield;
         $wrapOnSuccess = function (array $rows) use ($onSuccess): void {

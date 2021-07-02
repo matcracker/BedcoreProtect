@@ -27,13 +27,11 @@ use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\NamedTag;
 use UnexpectedValueException;
 use function array_filter;
-use function array_slice;
 use function base64_decode;
 use function base64_encode;
 use function count;
 use function is_string;
 use function json_decode;
-use function key;
 use function microtime;
 use function min;
 use function preg_match;
@@ -98,34 +96,24 @@ final class Utils
         return (int)min($time, PHP_INT_MAX);
     }
 
-    public static function timeAgo(float $timestamp, int $world = 6): string
+    public static function timeAgo(int $timestamp): string
     {
-        $date = new DateTime();
-        $date->setTimestamp((int)$timestamp);
         $currentDate = DateTime::createFromFormat("0.u00 U", microtime());
         if (!($currentDate instanceof DateTime)) {
             throw new UnexpectedValueException("Unexpected date creation.");
         }
 
-        $date = $date->diff($currentDate);
-        // build array
-        $since = (array)json_decode($date->format('{"year":%y,"month":%m,"day":%d,"hour":%h,"minute":%i,"second":%s}'), true);
-        // remove empty date values
-        $since = array_filter($since);
-        // output only the first x date values
-        $since = array_slice($since, 0, $world);
-        // build string
-        $last_key = key(array_slice($since, -1, 1, true));
+        $json = (new DateTime())
+            ->setTimestamp($timestamp)
+            ->diff($currentDate)
+            ->format("{\"y\":%y,\"mon\":%m,\"d\":%d,\"h\":%h,\"m\":%i,\"s\":%s}");
+
+        //Format date and time object by creating a JSON string
+        $jsonArr = array_filter((array)json_decode($json, true));
+
         $string = "";
-        foreach ($since as $key => $val) {
-            // separator
-            if ($string) {
-                $string .= $key !== $last_key ? ", " : " and ";
-            }
-            // set plural
-            $key .= $val > 1 ? "s" : "";
-            // add date value
-            $string .= $val . " " . $key;
+        foreach ($jsonArr as $key => $val) {
+            $string .= "$val$key";
         }
 
         if (strlen($string) > 0) {

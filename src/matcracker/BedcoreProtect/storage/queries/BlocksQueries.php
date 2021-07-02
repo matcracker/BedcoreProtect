@@ -343,7 +343,6 @@ class BlocksQueries extends Query
                     if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                         $tile->getInventory()->clearAll();
                     }
-                    $world->addTile($tile);
                 }
             } else {
                 $tile = BlockUtils::asTile($block->toBlock());
