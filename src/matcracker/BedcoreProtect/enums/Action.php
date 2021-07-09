@@ -48,16 +48,39 @@ final class Action
         __construct as Enum___construct;
     }
 
+    public const COMMAND_ARGUMENTS = [
+        "all",
+        "block",
+        "+block",
+        "-block",
+        "click",
+        "container",
+        "+container",
+        "-container",
+        "kill"
+    ];
+
     /** @var Action[] */
     private static array $numericIdMap = [];
+    /** @var Action[][] */
+    private static array $commandArgumentsMap;
     private int $type;
     private string $message;
+    private array $commandArguments;
 
-    public function __construct(string $enumName, int $type, string $message)
+    /**
+     * Action constructor.
+     * @param string $enumName
+     * @param int $type
+     * @param string $message
+     * @param string[] $commandArguments
+     */
+    public function __construct(string $enumName, int $type, string $message, array $commandArguments)
     {
         $this->Enum___construct($enumName);
         $this->type = $type;
         $this->message = $message;
+        $this->commandArguments = $commandArguments;
     }
 
     public static function fromType(int $type): Action
@@ -70,19 +93,30 @@ final class Action
         return self::$numericIdMap[$type];
     }
 
+    /**
+     * Returns an array of Action of the specific command argument.
+     * @param string $argument
+     * @return Action[]|null
+     */
+    public static function fromCommandArgument(string $argument): ?array
+    {
+        self::checkInit();
+        return self::$commandArgumentsMap[$argument] ?? null;
+    }
+
     protected static function setup(): void
     {
         $lang = Main::getInstance()->getLanguage();
         self::registerAll(
-            new self("place", 0, $lang->translateString("action.place")),
-            new self("break", 1, $lang->translateString("action.break")),
-            new self("click", 2, $lang->translateString("action.click")),
-            new self("spawn", 3, $lang->translateString("action.place")),
-            new self("despawn", 4, $lang->translateString("action.break")),
-            new self("kill", 5, $lang->translateString("action.kill")),
-            new self("add", 6, $lang->translateString("action.add")),
-            new self("remove", 7, $lang->translateString("action.remove")),
-            new self("update", 255, "update")
+            new self("place", 0, $lang->translateString("action.place"), ["all", "block", "+block"]),
+            new self("break", 1, $lang->translateString("action.break"), ["all", "block", "-block"]),
+            new self("click", 2, $lang->translateString("action.click"), ["all", "click"]),
+            new self("spawn", 3, $lang->translateString("action.place"), ["all", "block"]),
+            new self("despawn", 4, $lang->translateString("action.break"), ["all", "block"]),
+            new self("kill", 5, $lang->translateString("action.kill"), ["all", "kill"]),
+            new self("add", 6, $lang->translateString("action.add"), ["all", "container, +container"]),
+            new self("remove", 7, $lang->translateString("action.remove"), ["all", "container, -container"]),
+            new self("update", 255, "update", [])
         );
     }
 
@@ -90,6 +124,9 @@ final class Action
     {
         self::Enum_register($member);
         self::$numericIdMap[$member->getType()] = $member;
+        foreach ($member->getCommandArguments() as $commandArgument) {
+            self::$commandArgumentsMap[$commandArgument][] = $member;
+        }
     }
 
     /**
@@ -98,6 +135,14 @@ final class Action
     public function getType(): int
     {
         return $this->type;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getCommandArguments(): array
+    {
+        return $this->commandArguments;
     }
 
     /**

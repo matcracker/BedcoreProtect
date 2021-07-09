@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use ArrayOutOfBoundsException;
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
@@ -35,6 +34,7 @@ use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\Leaves;
+use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\item\Item;
@@ -319,7 +319,7 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
     {
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
@@ -352,6 +352,6 @@ class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $world->getFolderName(), $commandParser->getSenderName(), $blocks, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($sender->getName(), $world->getFolderName(), $blocks, $rollback, $onComplete));
     }
 }

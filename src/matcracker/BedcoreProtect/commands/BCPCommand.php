@@ -21,284 +21,111 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\commands;
 
-use Generator;
-use matcracker\BedcoreProtect\Inspector;
+use matcracker\BedcoreProtect\commands\subcommands\HelpSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\InspectSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\LookupSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\NearSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\PurgeSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\ReloadSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\RestoreSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\RollbackSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\ShowSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\StatusSubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\SubCommand;
+use matcracker\BedcoreProtect\commands\subcommands\UndoSubCommand;
+use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\QueryManager;
-use matcracker\BedcoreProtect\ui\Forms;
-use matcracker\BedcoreProtect\utils\MathUtils;
-use pocketmine\command\Command;
+use matcracker\BedcoreProtect\ui\MainMenuForm;
 use pocketmine\command\CommandSender;
-use pocketmine\command\PluginIdentifiableCommand;
+use pocketmine\command\PluginCommand;
 use pocketmine\Player;
-use pocketmine\plugin\Plugin;
 use pocketmine\utils\TextFormat;
-use SOFe\AwaitGenerator\Await;
+use function array_shift;
 use function count;
-use function ctype_digit;
-use function explode;
-use function implode;
 use function mb_strtolower;
-use const PHP_FLOAT_MAX;
+use function strlen;
 
-final class BCPCommand extends Command implements PluginIdentifiableCommand
+final class BCPCommand extends PluginCommand
 {
-    private Main $plugin;
-    private QueryManager $queryManager;
+    /** @var SubCommand[] */
+    private static array $subCommands = [];
+    /** @var SubCommand[] */
+    private static array $subCommandsAlias = [];
 
     public function __construct(Main $plugin)
     {
         parent::__construct(
             "bedcoreprotect",
-            $plugin->getLanguage()->translateString("command.description"),
-            $plugin->getLanguage()->translateString("command.usage"),
-            ["core", "co", "bcp"]
+            $plugin
         );
-        $this->plugin = $plugin;
-        $this->queryManager = $plugin->getDatabase()->getQueryManager();
+        //TODO: update language messages when it changes
+        $this->setPermission("bcp.command.bedcoreprotect");
+        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.no-permission"));
+        $this->setAliases(["core", "co", "bcp"]);
+        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.usage"));
+        $this->setDescription($plugin->getLanguage()->translateString("command.description"));
+
+        $this->loadSubCommand(new HelpSubCommand($plugin));
+        $this->loadSubCommand(new InspectSubCommand($plugin));
+        $this->loadSubCommand(new LookupSubCommand($plugin, [CommandParameter::TIME()]));
+        $this->loadSubCommand(new NearSubCommand($plugin));
+        $this->loadSubCommand(new PurgeSubCommand($plugin, [CommandParameter::TIME()]));
+        $this->loadSubCommand(new ReloadSubCommand($plugin));
+        $this->loadSubCommand(new RestoreSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::RADIUS()]));
+        $this->loadSubCommand(new RollbackSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::RADIUS()]));
+        $this->loadSubCommand(new ShowSubCommand($plugin));
+        $this->loadSubCommand(new StatusSubCommand($plugin));
+        $this->loadSubCommand(new UndoSubCommand($plugin));
+    }
+
+    private function loadSubCommand(SubCommand $subCommand): void
+    {
+        self::$subCommands[$subCommand->getName()] = $subCommand;
+        if (strlen($subCommand->getAlias()) > 0) {
+            self::$subCommandsAlias[$subCommand->getAlias()] = $subCommand;
+        }
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
     {
-        $lang = $this->plugin->getLanguage();
+        /** @var Main $plugin */
+        $plugin = $this->getPlugin();
+        if (!$this->getPlugin()->isEnabled()) {
+            return true;
+        }
+
+        if (!$this->testPermission($sender)) {
+            return true;
+        }
+
+        if (!isset($args[0]) && $sender instanceof Player && $plugin->getParsedConfig()->isEnabledUI()) {
+            $sender->sendForm(self::getForm($plugin, $sender));
+            return true;
+        }
 
         if (count($args) === 0) {
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
-
-            return false;
+            $sender->sendMessage($this->getUsage());
+            return true;
         }
 
-        $subCmd = $this->removeAbbreviation(mb_strtolower($args[0]));
-        if (!$sender->hasPermission("bcp.subcommand.$subCmd") || !$sender->hasPermission("bcp.command.bedcoreprotect")) {
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.no-permission")));
+        $subCommandName = mb_strtolower(array_shift($args));
 
-            return false;
+        if (isset(self::$subCommands[$subCommandName])) {
+            $subCommand = self::$subCommands[$subCommandName];
+        } elseif (isset(self::$subCommandsAlias[$subCommandName])) {
+            $subCommand = self::$subCommandsAlias[$subCommandName];
+        } else {
+            $sender->sendMessage($this->getUsage());
+            return true;
         }
 
-        $config = $this->plugin->getParsedConfig();
+        $subCommand->execute($sender, $args);
 
-        //Shared commands between player and console.
-        switch ($subCmd) {
-            case "help":
-                $helpCmd = new BCPHelpCommand($sender, $lang);
-                if (isset($args[1])) {
-                    $helpCmd->showCommandHelp($args[1]);
-                } else {
-                    $helpCmd->showGenericHelp();
-                }
-
-                return true;
-            case "reload":
-                $this->plugin->reloadPlugin();
-                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.reload.success")));
-
-                /*if ($this->plugin->reloadPlugin()) {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.reload.success")));
-                } else {
-                    $this->plugin->restoreParsedConfig();
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.reload.no-success")));
-                }*/
-
-                return true;
-            case "status":
-                Await::f2c(
-                    function () use ($sender, $config, $lang): Generator {
-                        $description = $this->plugin->getDescription();
-                        $pluginVersion = $description->getVersion();
-                        $dbVersions = (yield $this->plugin->getDatabase()->getStatus())[0];
-                        $dbVersion = (string)$dbVersions["version"];
-                        $initDbVersion = (string)$dbVersions["init_version"];
-
-                        if ($dbVersion !== $initDbVersion) {
-                            //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)
-                            $dbVersion .= " &7(" . $lang->translateString("command.status.initial-database-version", [$initDbVersion]) . ")";
-                        }
-                        $sender->sendMessage(TextFormat::colorize("&f----- &3" . Main::PLUGIN_NAME . " &f-----"));
-                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.version", [$pluginVersion])));
-                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.database-connection", [$config->getPrintableDatabaseType()])));
-                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.database-version", [$dbVersion])));
-                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.author", [implode(", ", $description->getAuthors())])));
-                        $sender->sendMessage(TextFormat::colorize("&3" . $lang->translateString("command.status.website", [$description->getWebsite()])));
-                    }
-                );
-                return true;
-            case "lookup":
-                if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
-                    if ($parser->parse()) {
-                        $this->queryManager->getPluginQueries()->requestLookup($sender, $parser);
-                    } else {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
-                    }
-                } else {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
-                }
-                return true;
-            case "show":
-                if (isset($args[1])) {
-                    if (count($logs = Inspector::getSavedLogs($sender)) > 0) {
-                        $page = 0;
-                        $lines = 4;
-                        $split = explode(":", $args[1]);
-                        if ($pageType = ctype_digit($split[0])) {
-                            $page = (int)$split[0];
-                        }
-
-                        $lineType = true;
-                        if (isset($split[1]) && $lineType = ctype_digit($split[1])) {
-                            $lines = (int)$split[1];
-                        }
-
-                        if (!$pageType || !$lineType) {
-                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.no-numeric-value")));
-
-                            return true;
-                        }
-
-                        Inspector::parseLogs($sender, $logs, ($page - 1), $lines);
-                    } else {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.show.no-logs")));
-                    }
-                } else {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
-                }
-                return true;
-            case "purge":
-                if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
-                    if ($parser->parse()) {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.started")));
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.no-restart")));
-                        $this->queryManager->getPluginQueries()->purge($parser->getTime() ?? PHP_FLOAT_MAX, function (int $affectedRows) use ($sender, $lang): void {
-                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.success")));
-                            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.purge.deleted-rows", [$affectedRows])));
-                        });
-                    } else {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
-                    }
-                } else {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
-                }
-
-                return true;
-        }
-
-        if (!($sender instanceof Player)) {
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.no-console")));
-
-            return false;
-        }
-
-        //Only players commands.
-        switch ($subCmd) {
-            case "menu":
-            case "ui":
-                $sender->sendForm((new Forms($config))->getMainMenu());
-                return true;
-            case "inspect":
-                if (Inspector::isInspector($sender)) {
-                    Inspector::removeInspector($sender);
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.inspect.disabled")));
-                } else {
-                    Inspector::addInspector($sender);
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.inspect.enabled")));
-                }
-                return true;
-            case "near":
-                $near = 5;
-
-                if (isset($args[1])) {
-                    if (!ctype_digit($args[1])) {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.no-numeric-value")));
-
-                        return true;
-                    }
-                    $near = (int)$args[1];
-                    $maxRadius = $config->getMaxRadius();
-                    if ($near < 1 || $near > $maxRadius) {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.near.range-value")));
-
-                        return true;
-                    }
-                }
-
-                $this->queryManager->getPluginQueries()->requestNearLog($sender, $sender, $near);
-
-                return true;
-            case "rollback":
-                if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
-                    if ($parser->parse()) {
-                        $world = $sender->getLevelNonNull();
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.rollback.started", [$world->getFolderName()])));
-
-                        $this->queryManager->rollback(
-                            $world,
-                            MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius()),
-                            $parser
-                        );
-                    } else {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
-                    }
-                } else {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
-                }
-
-                return true;
-            case "restore":
-                if (isset($args[1])) {
-                    $parser = new CommandParser($sender->getName(), $config, $args, ["time"], true);
-                    if ($parser->parse()) {
-                        $world = $sender->getLevelNonNull();
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.restore.started", [$world->getFolderName()])));
-
-                        $this->queryManager->restore(
-                            $world,
-                            MathUtils::getRangedVector($sender->asVector3(), $parser->getRadius() ?? $config->getDefaultRadius()),
-                            $parser
-                        );
-                    } else {
-                        $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$parser->getErrorMessage()}"));
-                    }
-                } else {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("command.error.one-parameter")));
-                }
-
-                return true;
-            case "undo":
-                if (!$this->queryManager->undoRollback($sender)) {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("command.undo.not-found")));
-                }
-
-                return true;
-            default:
-                $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c{$this->getUsage()}"));
-                return false;
-        }
+        return true;
     }
 
-    private function removeAbbreviation(string $subCmd): string
+    public static function getForm(Main $plugin, Player $player): MainMenuForm
     {
-        if ($subCmd === "l") {
-            $subCmd = "lookup";
-        } elseif ($subCmd === "i") {
-            $subCmd = "inspect";
-        } elseif ($subCmd === "rb") {
-            $subCmd = "rollback";
-        } elseif ($subCmd === "rs") {
-            $subCmd = "restore";
-        } elseif ($subCmd === "ui") {
-            $subCmd = "menu";
-        }
-
-        return $subCmd;
-    }
-
-    /**
-     * @return Main
-     */
-    public function getPlugin(): Plugin
-    {
-        return $this->plugin;
+        return new MainMenuForm($plugin, $player, self::$subCommands);
     }
 }

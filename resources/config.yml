@@ -1,6 +1,6 @@
 ---
 # Configuration file version. DON'T EDIT!
-config-version: 2
+config-version: 3
 
 # Plugin language
 language: eng
@@ -26,6 +26,10 @@ database:
   # The maximum number of simultaneous SQL queries
   # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
   worker-limit: 1
+
+# Allow to use plugin commands through an user interface.
+# To use the UI, you need to type in-game the command "/bedcoreprotect" or its aliases.
+enable-ui-menu: true
 
 # A list of worlds where the plugin can track logs
 enabled-worlds: []

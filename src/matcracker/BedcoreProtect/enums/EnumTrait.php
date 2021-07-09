@@ -119,4 +119,9 @@ trait EnumTrait
     {
         return $this->enumName === $other->enumName;
     }
+
+    public function __toString()
+    {
+        return $this->enumName;
+    }
 }

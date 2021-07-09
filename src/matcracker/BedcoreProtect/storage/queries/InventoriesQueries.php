@@ -23,13 +23,13 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\command\CommandSender;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
@@ -183,7 +183,7 @@ class InventoriesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
     {
         $inventoryRows = [];
 
@@ -213,7 +213,7 @@ class InventoriesQueries extends Query
 
         if (($items = count($inventoryRows)) > 0) {
             QueryManager::addReportMessage(
-                $commandParser->getSenderName(),
+                $sender->getName(),
                 $this->plugin->getLanguage()->translateString("rollback.items", [$items])
             );
         }

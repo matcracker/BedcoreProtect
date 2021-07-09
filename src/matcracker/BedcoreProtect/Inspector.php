@@ -22,55 +22,49 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
-use function array_chunk;
-use function array_key_exists;
 use function count;
+use function intdiv;
 
 final class Inspector
 {
-    /** @var array[] */
+    /** @var bool[] */
     private static array $inspectors = [];
 
     private function __construct()
     {
+        //NOOP
     }
 
     /**
      * It adds a player into the inspector mode. It returns the success of operation.
      *
-     * @param CommandSender $inspector
+     * @param Player $inspector
      */
-    public static function addInspector(CommandSender $inspector): void
+    public static function addInspector(Player $inspector): void
     {
-        self::$inspectors[self::getSenderUUID($inspector)]["enabled"] = true;
-    }
-
-    private static function getSenderUUID(CommandSender $sender): string
-    {
-        return $sender instanceof Player ? EntityUtils::getUniqueId($sender) : $sender->getServer()->getServerUniqueId()->toString();
+        self::$inspectors[Utils::getSenderUUID($inspector)] = true;
     }
 
     /**
      * It removes a player from the inspector mode. It returns the success of operation.
      *
-     * @param CommandSender $inspector
+     * @param Player $inspector
      *
      * @return bool
      */
-    public static function removeInspector(CommandSender $inspector): bool
+    public static function removeInspector(Player $inspector): bool
     {
         if (!self::isInspector($inspector)) {
             return false;
         }
 
-        unset(self::$inspectors[self::getSenderUUID($inspector)]);
+        unset(self::$inspectors[Utils::getSenderUUID($inspector)]);
 
         return true;
     }
@@ -78,28 +72,13 @@ final class Inspector
     /**
      * It checks if a player is an inspector.
      *
-     * @param CommandSender $inspector
+     * @param Player $inspector
      *
      * @return bool
      */
-    public static function isInspector(CommandSender $inspector): bool
+    public static function isInspector(Player $inspector): bool
     {
-        return self::$inspectors[self::getSenderUUID($inspector)]["enabled"] ?? false;
-    }
-
-    public static function saveLogs(CommandSender $inspector, array $logs = []): void
-    {
-        self::$inspectors[self::getSenderUUID($inspector)]["logs"] = $logs;
-    }
-
-    /**
-     * @param CommandSender $inspector
-     *
-     * @return array
-     */
-    public static function getSavedLogs(CommandSender $inspector): array
-    {
-        return self::$inspectors[self::getSenderUUID($inspector)]["logs"] ?? [];
+        return isset(self::$inspectors[Utils::getSenderUUID($inspector)]);
     }
 
     public static function removeAll(): void
@@ -107,15 +86,16 @@ final class Inspector
         self::$inspectors = [];
     }
 
+
     /**
      * It sends a message to the inspector with all the log's info.
      *
      * @param CommandSender $inspector
      * @param array $logs
-     * @param int $page
-     * @param int $lines
+     * @param int $limit
+     * @param int $offset
      */
-    public static function parseLogs(CommandSender $inspector, array $logs, int $page = 0, int $lines = 4): void
+    public static function sendLogReport(CommandSender $inspector, array $logs, int $limit, int $offset): void
     {
         $lang = Main::getInstance()->getLanguage();
         if (count($logs) === 0) {
@@ -124,24 +104,25 @@ final class Inspector
             return;
         }
 
-        if ($lines < 1) {
+        if ($limit <= 0) {
             $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.more-lines")));
 
             return;
         }
 
-        $chunkLogs = array_chunk($logs, $lines);
-        $maxPages = count($chunkLogs);
-        $fakePage = $page + 1;
-        if (!array_key_exists($page, $chunkLogs)) {
-            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.page-not-exist", [$fakePage])));
+        //Default
+        $rows = (int)$logs[0]["cnt_rows"];
 
-            return;
+        $page = intdiv($offset, $limit) + 1;
+        $pages = intdiv($rows, $limit);
+
+        if ($rows % $limit !== 0) {
+            $pages++;
         }
 
-        $inspector->sendMessage(TextFormat::colorize("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$fakePage, $maxPages]) . ") &f-----"));
-        foreach ($chunkLogs[$page] as $log) {
-            //Default
+        $inspector->sendMessage(TextFormat::colorize("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$page, $pages]) . ") &f-----"));
+
+        foreach ($logs as $log) {
             $from = (string)$log["entity_from"];
             $x = (int)$log["x"];
             $y = (int)$log["y"];
@@ -177,6 +158,7 @@ final class Inspector
             $inspector->sendMessage(TextFormat::colorize(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
                 . "&f - &3$from &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/$worldName)&f."));
         }
+
         $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("inspector.view-old-data")));
     }
 }

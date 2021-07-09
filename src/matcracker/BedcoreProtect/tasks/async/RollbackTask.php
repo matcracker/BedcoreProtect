@@ -48,17 +48,17 @@ class RollbackTask extends AsyncTask
 
     /**
      * RollbackTask constructor.
-     * @param bool $rollback
-     * @param string $worldName
      * @param string $senderName
+     * @param string $worldName
      * @param SerializableBlock[] $blocks
+     * @param bool $rollback
      * @param Closure $onComplete
      */
-    public function __construct(bool $rollback, string $worldName, string $senderName, array $blocks, Closure $onComplete)
+    public function __construct(string $senderName, string $worldName, array $blocks, bool $rollback, Closure $onComplete)
     {
-        $this->rollback = $rollback;
-        $this->worldName = $worldName;
         $this->senderName = $senderName;
+        $this->worldName = $worldName;
+        $this->rollback = $rollback;
         $this->blocks = $blocks;
         $this->serializedBlocks = serialize($blocks);
 

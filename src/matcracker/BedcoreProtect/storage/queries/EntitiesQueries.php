@@ -23,12 +23,12 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
+use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
 use pocketmine\level\Level;
 use pocketmine\Server;
@@ -48,7 +48,7 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
-        Await::f2c(function () : Generator {
+        Await::f2c(function (): Generator {
             static $map = [
                 "flow-uuid" => "#Flow",
                 "water-uuid" => "#Water",
@@ -147,7 +147,7 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
     {
         $entityRows = [];
 
@@ -178,7 +178,7 @@ class EntitiesQueries extends Query
 
         if (($entities = count($entityRows)) > 0) {
             QueryManager::addReportMessage(
-                $commandParser->getSenderName(),
+                $sender->getName(),
                 $this->plugin->getLanguage()->translateString("rollback.entities", [$entities])
             );
         }

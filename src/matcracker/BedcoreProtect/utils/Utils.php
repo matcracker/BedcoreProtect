@@ -22,9 +22,11 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
+use pocketmine\command\CommandSender;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\NamedTag;
+use pocketmine\Player;
 use UnexpectedValueException;
 use function array_filter;
 use function base64_decode;
@@ -96,10 +98,15 @@ final class Utils
         return (int)min($time, PHP_INT_MAX);
     }
 
+    public static function getSenderUUID(CommandSender $sender): string
+    {
+        return $sender instanceof Player ? EntityUtils::getUniqueId($sender) : $sender->getServer()->getServerUniqueId()->toString();
+    }
+
     public static function timeAgo(int $timestamp): string
     {
         $currentDate = DateTime::createFromFormat("0.u00 U", microtime());
-        if (!($currentDate instanceof DateTime)) {
+        if ($currentDate === false) {
             throw new UnexpectedValueException("Unexpected date creation.");
         }
 
