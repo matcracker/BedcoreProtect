@@ -28,6 +28,7 @@ use pocketmine\command\PluginIdentifiableCommand;
 use pocketmine\lang\BaseLang;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
+use function strlen;
 
 abstract class SubCommand implements PluginIdentifiableCommand
 {
@@ -43,7 +44,7 @@ abstract class SubCommand implements PluginIdentifiableCommand
     public function execute(CommandSender $sender, array $args): void
     {
         if (!$this->testPermission($sender)) {
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.no-permission")));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
             return;
         }
 
@@ -53,7 +54,7 @@ abstract class SubCommand implements PluginIdentifiableCommand
         }
 
         if ($this instanceof ParsableSubCommand && !isset($args[0])) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.error.one-parameter"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("subcommand.error.one-parameter"));
             return;
         }
 
@@ -86,14 +87,27 @@ abstract class SubCommand implements PluginIdentifiableCommand
      */
     abstract public function onExecute(CommandSender $sender, array $args): void;
 
-    public function getAlias(): string
+    public function getDescription(): string
     {
-        return "";
+        return $this->getLang()->translateString("subcommand.{$this->getName()}.description");
     }
 
     final protected function getLang(): BaseLang
     {
         return $this->plugin->getLanguage();
+    }
+
+    public function sendCommandHelp(CommandSender $sender): void
+    {
+        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . $this->getName() . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.{$this->getName()}.description"));
+        if (strlen($this->getAlias()) > 0) {
+            $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . $this->getAlias() . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.bcp.help.shortcut"));
+        }
+    }
+
+    public function getAlias(): string
+    {
+        return "";
     }
 
 }

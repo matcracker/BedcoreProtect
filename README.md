@@ -75,7 +75,7 @@ The main command is **/bedcoreprotect** but it accepts the folllowing aliases: *
 - **/bcp status - _View the plugin status_** (**Permission:** _bcp.subcommand.status_)
 
 **Shortcut commands:**
-- **/bcp near \[value]**: _Performs a lookup with radius (default 5)_ (**Permission:** _bcp.subcommand.near_)
+- **/bcp near \[value]**: _Performs a lookup with radius (default 10)_ (**Permission:** _bcp.subcommand.near_)
 - **/bcp undo**: _Revert a rollback/restore via the opposite action_ (**Permission:** _bcp.subcommand.undo_)
 ---
 **Advanced command overview:**

@@ -36,11 +36,11 @@ final class NearSubCommand extends SubCommand
     public function getForm(Player $player): ?BaseForm
     {
         return (new CustomForm(
-            TextFormat::DARK_BLUE . TextFormat::BOLD . $this->getLang()->translateString("form.menu.near"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getLang()->translateString("form.menu.near"),
             [
                 new Slider(
                     "radius",
-                    $this->getLang()->translateString("form.input-menu.radius"),
+                    $this->getLang()->translateString("form.params.radius"),
                     1,
                     $this->getPlugin()->getParsedConfig()->getMaxRadius(),
                     1.0,
@@ -65,15 +65,15 @@ final class NearSubCommand extends SubCommand
     {
         if (isset($args[0])) {
             if (!ctype_digit($args[0])) {
-                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("command.error.no-numeric-value"));
+                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.error.no-numeric-value"));
                 return;
             }
 
             $near = (int)$args[0];
             $maxRadius = $this->getPlugin()->getParsedConfig()->getMaxRadius();
-            if ($near < 1 || $near > $maxRadius) {
-                $sender->sendMessage(Main::MESSAGE_PREFIX . "&c" . $this->getLang()->translateString("command.near.range-value"));
-
+            if ($near < 0 || $near > $maxRadius) {
+                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.near.out-of-range", [0, $maxRadius]));
+                return;
             }
         } else {
             $near = $this->getPlugin()->getParsedConfig()->getDefaultRadius();

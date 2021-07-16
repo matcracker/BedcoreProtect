@@ -38,13 +38,8 @@ final class UndoSubCommand extends SubCommand
     public function onExecute(CommandSender $sender, array $args): void
     {
         if (!$this->getPlugin()->getDatabase()->getQueryManager()->undoRollback($sender)) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("command.undo.not-found"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.undo.no-data"));
         }
-    }
-
-    public function isPlayerCommand(): bool
-    {
-        return true;
     }
 
     public function getName(): string

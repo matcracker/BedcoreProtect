@@ -33,6 +33,7 @@ use pocketmine\entity\Entity;
 use pocketmine\level\Level;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
+use function class_exists;
 use function count;
 use function get_class;
 use function mb_strtolower;
@@ -160,12 +161,15 @@ class EntitiesQueries extends Query
                     ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
                     (!$rollback && $action->equals(Action::SPAWN()))
                 ) {
-                    /** @var Entity $entityClass */
                     $entityClass = (string)$row["entity_classpath"];
-                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row["entityfrom_nbt"]));
-                    if ($entity !== null) {
-                        yield $this->updateEntityId((int)$row["log_id"], $entity);
-                        $entity->spawnToAll();
+                    if (class_exists($entityClass)) {
+                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row["entityfrom_nbt"]));
+                        if ($entity !== null) {
+                            yield $this->updateEntityId((int)$row["log_id"], $entity);
+                            $entity->spawnToAll();
+                        }
+                    } else {
+                        $this->plugin->getLogger()->debug("Could not find entity \"$entityClass\".");
                     }
                 } else {
                     $entity = $world->getEntity((int)$row["entityfrom_id"]);

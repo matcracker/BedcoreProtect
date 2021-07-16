@@ -31,7 +31,7 @@ final class ReloadSubCommand extends SubCommand
     public function onExecute(CommandSender $sender, array $args): void
     {
         $this->getPlugin()->reloadPlugin();
-        $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.reload.success"));
+        $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.reload.success"));
     }
 
     public function getForm(Player $player): ?BaseForm

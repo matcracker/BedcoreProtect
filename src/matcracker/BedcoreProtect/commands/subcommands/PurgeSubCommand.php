@@ -38,13 +38,13 @@ final class PurgeSubCommand extends ParsableSubCommand
     {
         $cmdData = $this->parseArguments($sender, $args);
         if ($cmdData !== null) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.purge.started"));
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.purge.no-restart"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.started"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.no-restart"));
             $this->getPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->purge(
                 (float)$cmdData->getTime() ?? PHP_FLOAT_MAX,
                 function (int $affectedRows) use ($sender): void {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.purge.success")));
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.purge.deleted-rows", [$affectedRows])));
+                    $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.success"));
+                    $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.deleted-rows", [$affectedRows]));
                 }
             );
         }
@@ -53,11 +53,11 @@ final class PurgeSubCommand extends ParsableSubCommand
     public function getForm(Player $player): ?BaseForm
     {
         return (new CustomForm(
-            TextFormat::DARK_BLUE . TextFormat::BOLD . $this->getLang()->translateString("form.menu.purge"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getLang()->translateString("form.menu.purge"),
             [
                 new Input(
                     "time",
-                    $this->getLang()->translateString("form.purge-menu.time"),
+                    $this->getLang()->translateString("form.purge.delete-data"),
                     "1h3m10s"
                 )
             ],
@@ -68,6 +68,12 @@ final class PurgeSubCommand extends ParsableSubCommand
                 $player->sendForm(BCPCommand::getForm($this->getPlugin(), $player));
             }
         ));
+    }
+
+    public function sendCommandHelp(CommandSender $sender): void
+    {
+        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp purge t=<time>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.purge.help.description"));
+        $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("subcommand.purge.help.example"));
     }
 
     public function getName(): string

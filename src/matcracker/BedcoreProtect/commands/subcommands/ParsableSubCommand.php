@@ -50,7 +50,6 @@ use function in_array;
 use function mb_strtolower;
 use function mb_substr;
 use function strlen;
-use function var_dump;
 
 abstract class ParsableSubCommand extends SubCommand
 {
@@ -70,13 +69,13 @@ abstract class ParsableSubCommand extends SubCommand
         if (count($this->requiredParams) > 0) {
             $elements["required-fields"] = new Label(
                 "required-fields",
-                TextFormat::BOLD . $this->getLang()->translateString("form.input-menu.required-fields")
+                TextFormat::BOLD . $this->getLang()->translateString("form.params.required-fields")
             );
             foreach ($this->requiredParams as $requiredParam) {
                 if ($requiredParam->equals(CommandParameter::RADIUS())) {
                     $elements["global-radius"] = new Toggle(
                         "global-radius",
-                        $this->getLang()->translateString("form.input-menu.radius-global")
+                        $this->getLang()->translateString("form.params.global-radius")
                     );
                 }
                 $elements[$requiredParam->name()] = $requiredParam->getFormElement();
@@ -87,20 +86,20 @@ abstract class ParsableSubCommand extends SubCommand
 
         $elements["optional-fields"] = new Label(
             "optional-fields",
-            TextFormat::BOLD . $this->getLang()->translateString("form.input-menu.optional-fields")
+            TextFormat::BOLD . $this->getLang()->translateString("form.params.optional-fields")
         );
         foreach ($optionalParams as $optionalParam) {
             if ($optionalParam->equals(CommandParameter::RADIUS())) {
                 $elements["global-radius"] = new Toggle(
                     "global-radius",
-                    $this->getLang()->translateString("form.input-menu.radius-global")
+                    $this->getLang()->translateString("form.params.global-radius")
                 );
             }
             $elements[$optionalParam->name()] = $optionalParam->getFormElement();
         }
 
         return (new CustomForm(
-            TextFormat::DARK_BLUE . TextFormat::BOLD . $this->getPlugin()->getLanguage()->translateString("form.menu.{$this->getName()}"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getPlugin()->getLanguage()->translateString("form.menu.{$this->getName()}"),
             $elements,
             function (Player $player, CustomFormResponse $response) use ($elements): void {
                 $command = "/bcp {$this->getName()}";
@@ -134,7 +133,7 @@ abstract class ParsableSubCommand extends SubCommand
                 if (strlen($exclusions = $response->getString("exclusions")) > 0) {
                     $command .= " e=$exclusions";
                 }
-                var_dump($command);
+
                 $player->chat($command);
             },
             function (Player $player): void {
@@ -143,7 +142,25 @@ abstract class ParsableSubCommand extends SubCommand
         ));
     }
 
-    final protected function parseArguments(CommandSender $sender, array $args, ?CommandData $defaultCmdData = null): ?CommandData
+    public function sendCommandHelp(CommandSender $sender): void
+    {
+        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . $this->getName() . TextFormat::GRAY . " <params>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.{$this->getName()}.description"));
+        if (strlen($this->getAlias()) > 0) {
+            $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . $this->getAlias() . TextFormat::GRAY . " <params>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.bcp.help.shortcut"));
+        }
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::WHITE . $this->getLang()->translateString("command.params.generic.help.parameters"));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "u=<users> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.users.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "t=<time> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.time.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "w=<world_name> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.world.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "r=<radius> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.radius.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "a=<action> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.actions.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "i=<include> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.include.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "e=<exclude> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.exclude.help", [$this->getName()]));
+        $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.extra", [TextFormat::DARK_AQUA . "/bcp help <param>" . TextFormat::GRAY]));
+
+    }
+
+    final protected function parseArguments(CommandSender $sender, array $args): ?CommandData
     {
         $countParams = count($args);
         $countReqParams = count($this->requiredParams);
@@ -162,16 +179,12 @@ abstract class ParsableSubCommand extends SubCommand
 
         $parsedConfig = $this->getPlugin()->getParsedConfig();
 
-        if ($defaultCmdData !== null) {
-            $users = $defaultCmdData->getUsers();
-            $time = $defaultCmdData->getTime();
-            $radius = $defaultCmdData->getRadius();
-            $world = $defaultCmdData->getWorld();
-            $actions = $defaultCmdData->getActions();
-            $inclusions = $defaultCmdData->getInclusions();
-            $exclusions = $defaultCmdData->getExclusions();
+        $users = $time = $radius = $actions = $inclusions = $exclusions = null;
+
+        if ($sender instanceof Player) {
+            $world = $sender->getPosition()->getLevelNonNull()->getFolderName();
         } else {
-            $users = $time = $radius = $world = $actions = $inclusions = $exclusions = null;
+            $world = null;
         }
 
         $argMap = [];
@@ -227,13 +240,13 @@ abstract class ParsableSubCommand extends SubCommand
                 case CommandParameter::TIME():
                     $time = Utils::parseTime($value);
                     if ($time === 0) {
-                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-amount-time"));
+                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-time"));
                         return null;
                     }
                     break;
                 case CommandParameter::WORLD():
                     if (Server::getInstance()->getLevelByName($value) === null) {
-                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world", [$value]));
+                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world", [$value, implode(", ", Utils::getWorldNames())]));
                         return null;
                     }
                     $world = $value;
@@ -245,7 +258,7 @@ abstract class ParsableSubCommand extends SubCommand
                     }
 
                     if (!ctype_digit($value)) {
-                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-amount-radius"));
+                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-radius"));
                         return null;
                     }
 
@@ -278,11 +291,11 @@ abstract class ParsableSubCommand extends SubCommand
         }
 
         $cmdData = new CommandData($users, $time, $world, $radius, $actions, $inclusions, $exclusions);
-        $worldName = $cmdData->getWorld();
-        if ($cmdData->getRadius() !== null && !$cmdData->isGlobalRadius()) {
+
+        if ($radius !== null && !$cmdData->isGlobalRadius()) {
             if ($sender instanceof Player) {
                 //Don't allow a player to use normal radius in a different world
-                if ($worldName !== null && $sender->getLevelNonNull()->getFolderName() !== $worldName) {
+                if ($world !== null && $sender->getLevelNonNull()->getFolderName() !== $world) {
                     $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-player"));
                     return null;
                 }
@@ -292,7 +305,7 @@ abstract class ParsableSubCommand extends SubCommand
                 return null;
             }
         } else {
-            if (!$sender instanceof Player && $worldName === null) {
+            if (!$sender instanceof Player && $world === null) {
                 //Don't allow console to use global radius without a world specified
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-console"));
                 return null;

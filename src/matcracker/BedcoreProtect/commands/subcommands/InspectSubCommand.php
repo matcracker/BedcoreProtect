@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
+use pocketmine\utils\TextFormat;
 
 final class InspectSubCommand extends SubCommand
 {
@@ -43,10 +44,10 @@ final class InspectSubCommand extends SubCommand
     {
         if (Inspector::isInspector($sender)) {
             Inspector::removeInspector($sender);
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.inspect.disabled"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.inspect.disabled"));
         } else {
             Inspector::addInspector($sender);
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.inspect.enabled"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.inspect.enabled"));
         }
     }
 
@@ -63,5 +64,16 @@ final class InspectSubCommand extends SubCommand
     public function getAlias(): string
     {
         return "i";
+    }
+
+    public function sendCommandHelp(CommandSender $sender): void
+    {
+        $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.inspect.help.1"));
+        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.2"));
+        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.3"));
+        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.4"));
+        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.5"));
+        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.6"));
+        $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("subcommand.inspect.help.7", [TextFormat::DARK_BLUE . "/bcp i" . TextFormat::GRAY]));
     }
 }

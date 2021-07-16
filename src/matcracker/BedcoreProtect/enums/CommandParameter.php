@@ -27,7 +27,7 @@ use dktapps\pmforms\element\Input;
 use dktapps\pmforms\element\Slider;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\Main;
-use pocketmine\level\Level;
+use matcracker\BedcoreProtect\utils\Utils;
 use function array_map;
 use function count;
 use function in_array;
@@ -57,12 +57,14 @@ final class CommandParameter
     /** @var string[] */
     private array $aliases;
     private CustomFormElement $formElement;
+    private string $example;
 
-    public function __construct(string $enumName, array $aliases, CustomFormElement $formElement)
+    public function __construct(string $enumName, array $aliases, CustomFormElement $formElement, string $example)
     {
         $this->Enum___construct($enumName);
         $this->aliases = $aliases;
         $this->formElement = $formElement;
+        $this->example = $example;
     }
 
     public static function fromString(string $name): ?CommandParameter
@@ -106,9 +108,6 @@ final class CommandParameter
     protected static function setup(): void
     {
         $plugin = Main::getInstance();
-        $worlds = array_map(static function (Level $world): string {
-            return $world->getFolderName();
-        }, $plugin->getServer()->getLevels());
 
         self::registerAll(
             new self(
@@ -116,66 +115,73 @@ final class CommandParameter
                 ["user", "u"],
                 new Input(
                     "users",
-                    $plugin->getLanguage()->translateString("form.input-menu.user-entity"),
-                    $plugin->getLanguage()->translateString("form.input-menu.user-entity-placeholder")
-                )
+                    $plugin->getLanguage()->translateString("form.params.users"),
+                    $plugin->getLanguage()->translateString("form.params.users-placeholder")
+                ),
+                "[u=shoghicp], [u=shoghicp,#zombie]"
             ),
             new self(
                 "time",
                 ["t"],
                 new Input(
                     "time",
-                    $plugin->getLanguage()->translateString("form.input-menu.time"),
+                    $plugin->getLanguage()->translateString("form.params.time"),
                     "1h3m10s"
-                )
+                ),
+                "[t=2w5d7h2m10s], [t=5d2h]"
             ),
             new self(
                 "world",
                 ["w"],
                 new Dropdown(
                     "world",
-                    $plugin->getLanguage()->translateString("form.input-menu.world"),
-                    $worlds
-                )
+                    $plugin->getLanguage()->translateString("form.params.world"),
+                    Utils::getWorldNames()
+                ),
+                "[w=my_world], [w=faction]"
             ),
             new self(
                 "radius",
                 ["r"],
                 new Slider(
                     "radius",
-                    $plugin->getLanguage()->translateString("form.input-menu.radius"),
+                    $plugin->getLanguage()->translateString("form.params.radius"),
                     0,
                     $plugin->getParsedConfig()->getMaxRadius(),
                     1.0,
                     $plugin->getParsedConfig()->getDefaultRadius(),
                 ),
+                "[r=15]"
             ),
             new self(
                 "actions",
                 ["action", "a"],
                 new Dropdown(
                     "action",
-                    $plugin->getLanguage()->translateString("form.input-menu.action"),
+                    $plugin->getLanguage()->translateString("form.params.actions"),
                     Action::COMMAND_ARGUMENTS
-                )
+                ),
+                "[a=block], [a=+block], [a=-block], [a=click,container], [a=block,kill]"
             ),
             new self(
                 "include",
                 ["i"],
                 new Input(
                     "inclusions",
-                    $plugin->getLanguage()->translateString("form.input-menu.restrict-blocks"),
+                    $plugin->getLanguage()->translateString("form.params.include"),
                     "stone,dirt,2:0"
-                )
+                ),
+                "[b=stone], [b=1,5,stained_glass:8]"
             ),
             new self(
                 "exclude",
                 ["e"],
                 new Input(
                     "exclusions",
-                    $plugin->getLanguage()->translateString("form.input-menu.exclude-blocks"),
+                    $plugin->getLanguage()->translateString("form.params.exclude"),
                     "stone,dirt,2:0"
-                )
+                ),
+                "[b=stone], [b=1,5,stained_glass:8]"
             )
         );
     }
@@ -183,6 +189,11 @@ final class CommandParameter
     protected static function register(CommandParameter $member): void
     {
         self::Enum_register($member);
+    }
+
+    public function getExample(): string
+    {
+        return $this->example;
     }
 
     public function getFormElement(): CustomFormElement

@@ -23,7 +23,9 @@ namespace matcracker\BedcoreProtect\ui;
 
 use dktapps\pmforms\MenuForm;
 use dktapps\pmforms\MenuOption;
+use matcracker\BedcoreProtect\commands\subcommands\InspectSubCommand;
 use matcracker\BedcoreProtect\commands\subcommands\SubCommand;
+use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
@@ -41,8 +43,13 @@ final class MainMenuForm extends MenuForm
     {
         $menuOptions = [];
         foreach ($subCommands as $key => $subCommand) {
-            if ($subCommand->testPermission($player) /*&& $subCommand->getForm() !== null*/) {
-                $menuOptions[] = new MenuOption($plugin->getLanguage()->translateString("form.menu.{$subCommand->getName()}"));
+            if ($subCommand->testPermission($player)) {
+                if ($subCommand instanceof InspectSubCommand) {
+                    $enable = Inspector::isInspector($player) ? "disable" : "enable";
+                    $menuOptions[] = new MenuOption($plugin->getLanguage()->translateString("form.menu.inspect.$enable"));
+                } else {
+                    $menuOptions[] = new MenuOption($plugin->getLanguage()->translateString("form.menu.{$subCommand->getName()}"));
+                }
             } else {
                 unset($subCommands[$key]);
             }
@@ -51,7 +58,7 @@ final class MainMenuForm extends MenuForm
         $subCommands = array_values($subCommands);
 
         parent::__construct(
-            TextFormat::DARK_BLUE . TextFormat::BOLD . Main::PLUGIN_NAME . " " . $plugin->getLanguage()->translateString("form.menu.title"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . Main::PLUGIN_NAME,
             $plugin->getLanguage()->translateString("form.menu.option"),
             $menuOptions,
             static function (Player $player, int $selectedOption) use ($subCommands): void {

@@ -99,14 +99,12 @@ final class Inspector
     {
         $lang = Main::getInstance()->getLanguage();
         if (count($logs) === 0) {
-            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.no-data")));
-
+            $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("inspector.no-data"));
             return;
         }
 
         if ($limit <= 0) {
-            $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.more-lines")));
-
+            $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("inspector.more-lines"));
             return;
         }
 
@@ -120,7 +118,7 @@ final class Inspector
             $pages++;
         }
 
-        $inspector->sendMessage(TextFormat::colorize("&f-----&3 " . Main::PLUGIN_NAME . " &7(" . $lang->translateString("inspector.page", [$page, $pages]) . ") &f-----"));
+        $inspector->sendMessage(TextFormat::WHITE . "----- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . " " . TextFormat::GRAY . "(" . $lang->translateString("inspector.page", [$page, $pages]) . ")" . TextFormat::WHITE . " -----");
 
         foreach ($logs as $log) {
             $from = (string)$log["entity_from"];
@@ -150,15 +148,16 @@ final class Inspector
             } elseif (isset($log["entity_to"])) {
                 $to = $log["entity_to"];
             } else {
-                $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . "&c" . $lang->translateString("inspector.corrupted-data")));
+                $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("inspector.corrupted-data"));
                 return;
             }
 
             //TODO: Use strikethrough (&m) when MC fix it.
-            $inspector->sendMessage(TextFormat::colorize(($rollback ? "&o" : "") . "&7" . Utils::timeAgo($timeStamp)
-                . "&f - &3$from &f{$action->getMessage()} &3$to &f - &7(x$x/y$y/z$z/$worldName)&f."));
+            $inspector->sendMessage(($rollback ? TextFormat::ITALIC : "") . TextFormat::GRAY . Utils::timeAgo($timeStamp) . TextFormat::WHITE . " - " .
+                TextFormat::DARK_AQUA . "$from " . TextFormat::WHITE . "{$action->getMessage()} " . TextFormat::DARK_AQUA . "$to " . TextFormat::WHITE . " - " .
+                TextFormat::GRAY . "(x$x/y$y/z$z/$worldName)" . TextFormat::WHITE . ".");
         }
 
-        $inspector->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . $lang->translateString("inspector.view-old-data")));
+        $inspector->sendMessage(TextFormat::WHITE . $lang->translateString("inspector.view-old-data"));
     }
 }

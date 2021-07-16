@@ -50,15 +50,15 @@ final class StatusSubCommand extends SubCommand
 
                 if ($dbVersion !== $initDbVersion) {
                     //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)
-                    $dbVersion .= TextFormat::ESCAPE . TextFormat::DARK_GRAY . "(" . $this->getLang()->translateString("command.status.initial-database-version", [$initDbVersion]) . ")";
+                    $dbVersion .= TextFormat::GRAY . " (" . $this->getLang()->translateString("subcommand.status.initial-database-version", [$initDbVersion]) . ")";
                 }
 
-                $sender->sendMessage(TextFormat::WHITE . "----- " . Main::MESSAGE_PREFIX . " ----- ");
-                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("command.status.version", [$pluginVersion]));
-                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("command.status.database-connection", [$this->getPlugin()->getParsedConfig()->getPrintableDatabaseType()]));
-                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("command.status.database-version", [$dbVersion]));
-                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("command.status.author", [implode(", ", $description->getAuthors())]));
-                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("command.status.website", [$description->getWebsite()]));
+                $sender->sendMessage(TextFormat::WHITE . "----- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . " ----- ");
+                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.version", [TextFormat::WHITE . $pluginVersion]));
+                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.database-connection", [TextFormat::WHITE . $this->getPlugin()->getParsedConfig()->getPrintableDatabaseType()]));
+                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.database-version", [TextFormat::WHITE . $dbVersion]));
+                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.author", [TextFormat::WHITE . implode(", ", $description->getAuthors())]));
+                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.website", [TextFormat::WHITE . $description->getWebsite()]));
             }
         );
     }

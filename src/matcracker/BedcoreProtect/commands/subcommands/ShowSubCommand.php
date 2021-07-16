@@ -38,17 +38,17 @@ final class ShowSubCommand extends SubCommand
     public function getForm(Player $player): ?BaseForm
     {
         return (new CustomForm(
-            TextFormat::DARK_BLUE . TextFormat::BOLD . $this->getPlugin()->getLanguage()->translateString("form.menu.show"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getPlugin()->getLanguage()->translateString("form.menu.show"),
             [
                 new Input(
                     "page",
-                    $this->getLang()->translateString("form.input-menu.page-number"),
+                    $this->getLang()->translateString("form.show.page-number"),
                     "1",
                     "1"
                 ),
                 new Input(
                     "lines",
-                    $this->getLang()->translateString("form.input-menu.lines-number"),
+                    $this->getLang()->translateString("form.show.lines-number"),
                     "4",
                     "4"
                 )
@@ -65,13 +65,13 @@ final class ShowSubCommand extends SubCommand
     public function onExecute(CommandSender $sender, array $args): void
     {
         if (!isset($args[0])) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("command.error.one-parameter"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.error.one-parameter"));
             return;
         }
 
         $data = LookupData::getData($sender);
         if ($data === null) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("command.error.no-data"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.show.empty-data"));
 
             return;
         }
@@ -79,7 +79,7 @@ final class ShowSubCommand extends SubCommand
         $split = explode(":", $args[0]);
         //Check if the input page is a number
         if (!ctype_digit($split[0])) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("command.error.no-numeric-value"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.error.no-numeric-value"));
             return;
         }
 
@@ -87,10 +87,14 @@ final class ShowSubCommand extends SubCommand
 
         if (isset($split[1])) {
             if (!ctype_digit($split[1])) {
-                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("command.error.no-numeric-value"));
+                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.error.no-numeric-value"));
                 return;
             }
             $lines = (int)$split[1];
+            if ($lines < 1) {
+                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.show.too-few-lines"));
+                return;
+            }
         } else {
             //Default
             $lines = 4;
@@ -100,7 +104,7 @@ final class ShowSubCommand extends SubCommand
         $rows = $data->getRows();
 
         if ($offset > $rows || $page <= 0) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("inspector.page-not-exist", [$page]));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.show.page-not-exist", [TextFormat::GOLD . $page . TextFormat::RED]));
             return;
         }
 
@@ -125,6 +129,12 @@ final class ShowSubCommand extends SubCommand
                 $pluginQueries->requestLookup($sender, $data->getCommandData(), $data->getPosition(), $lines, $offset);
                 break;
         }
+    }
+
+    public function sendCommandHelp(CommandSender $sender): void
+    {
+        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp show <page>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.show.help.page"));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp show <page>:<lines>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.show.help.page-lines"));
     }
 
     public function getName(): string

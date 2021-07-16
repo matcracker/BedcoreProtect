@@ -60,10 +60,10 @@ final class BCPCommand extends PluginCommand
         );
         //TODO: update language messages when it changes
         $this->setPermission("bcp.command.bedcoreprotect");
-        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.no-permission"));
+        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.bcp.no-permission"));
         $this->setAliases(["core", "co", "bcp"]);
-        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.usage"));
-        $this->setDescription($plugin->getLanguage()->translateString("command.description"));
+        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.bcp.usage"));
+        $this->setDescription($plugin->getLanguage()->translateString("command.bcp.description"));
 
         $this->loadSubCommand(new HelpSubCommand($plugin));
         $this->loadSubCommand(new InspectSubCommand($plugin));
@@ -84,6 +84,19 @@ final class BCPCommand extends PluginCommand
         if (strlen($subCommand->getAlias()) > 0) {
             self::$subCommandsAlias[$subCommand->getAlias()] = $subCommand;
         }
+    }
+
+    public static function getSubCommand(string $name): ?SubCommand
+    {
+        return self::$subCommands[$name] ?? self::$subCommandsAlias[$name] ?? null;
+    }
+
+    /**
+     * @return SubCommand[]
+     */
+    public static function getSubCommands(): array
+    {
+        return self::$subCommands;
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool

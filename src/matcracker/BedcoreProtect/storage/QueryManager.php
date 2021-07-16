@@ -78,7 +78,7 @@ final class QueryManager
 
     public static function addReportMessage(string $senderName, string $reportMessage): void
     {
-        self::$additionalReports[$senderName]["messages"][] = TextFormat::colorize("&f- $reportMessage");
+        self::$additionalReports[$senderName]["messages"][] = TextFormat::WHITE . "- $reportMessage";
     }
 
     public function init(string $pluginVersion): void
@@ -134,14 +134,14 @@ final class QueryManager
         $senderName = $sender->getName();
 
         if (array_key_exists($senderName, self::$activeRollbacks)) {
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "It is not possible to perform more than one rollback at a time."));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.rollback-in-progress"));
             return;
         }
 
         $worldName = $cmdData->getWorld();
         $world = Server::getInstance()->getLevelByName($worldName);
         if ($world === null) {
-            $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "The world \"$worldName\" does not exist or it's unloaded."));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.world-not-exist", [$worldName]));
             return;
         }
 
@@ -151,7 +151,7 @@ final class QueryManager
 
             foreach (self::$activeRollbacks as $rbSender => [$rbBB, $rbWorld]) {
                 if ($rbBB->intersectsWith($bb) && $world->getFolderName() === $rbWorld) {
-                    $sender->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "$rbSender is already operating in this area. Try again."));
+                    $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.rollback-area-in-progress", [$rbSender]));
                     return;
                 }
             }
@@ -233,29 +233,32 @@ final class QueryManager
             return;
         }
 
-
         if (($sender = Server::getInstance()->getPlayer($playerName)) !== null) {
             $date = Utils::timeAgo((int)microtime(true) - $cmdData->getTime());
             $lang = Main::getInstance()->getLanguage();
 
-            $sender->sendMessage(TextFormat::colorize("&f--- &3" . Main::PLUGIN_NAME . "&7 " . $lang->translateString("rollback.report") . " &f---"));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$worldName])));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date])));
-            $sender->sendMessage(TextFormat::colorize("&f- " . $lang->translateString("rollback.radius", [$cmdData->getRadius() ?? Main::getInstance()->getParsedConfig()->getMaxRadius()])));
+            $sender->sendMessage(TextFormat::WHITE . "--- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . TextFormat::GRAY . " " . $lang->translateString("rollback.report") . TextFormat::WHITE . " ---");
+            $sender->sendMessage(TextFormat::WHITE . $lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$worldName]));
+            $sender->sendMessage(TextFormat::WHITE . $lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date]));
+            if ($cmdData->isGlobalRadius()) {
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.global-radius"));
+            } else {
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.radius", [$cmdData->getRadius() ?? Main::getInstance()->getParsedConfig()->getMaxRadius()]));
+            }
 
             if (count(self::$additionalReports[$playerName]["messages"]) > 0) {
                 foreach (self::$additionalReports[$playerName]["messages"] as $message) {
                     $sender->sendMessage($message);
                 }
             } else {
-                $sender->sendMessage(TextFormat::colorize("&f- &b" . $lang->translateString("rollback.no-changes")));
+                $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $lang->translateString("rollback.no-changes"));
             }
 
             $diff = microtime(true) - self::$additionalReports[$playerName]["startTime"];
             $duration = round($diff, 2);
 
-            $sender->sendMessage(TextFormat::colorize("&f- " . $lang->translateString("rollback.time-taken", [$duration])));
-            $sender->sendMessage(TextFormat::colorize("&f------"));
+            $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.time-taken", [$duration]));
+            $sender->sendMessage(TextFormat::WHITE . "------");
         }
 
         unset(self::$additionalReports[$playerName]);

@@ -35,14 +35,9 @@ final class RestoreSubCommand extends ParsableSubCommand
     {
         $cmdData = $this->parseArguments($sender, $args);
         if ($cmdData !== null) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.restore.started", [$sender->getLevelNonNull()->getFolderName()]));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.restore.started", [$sender->getLevelNonNull()->getFolderName()]));
             $this->getPlugin()->getDatabase()->getQueryManager()->restore($sender, $cmdData);
         }
-    }
-
-    public function isPlayerCommand(): bool
-    {
-        return true;
     }
 
     public function getName(): string

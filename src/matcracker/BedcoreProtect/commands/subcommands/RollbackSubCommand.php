@@ -35,14 +35,9 @@ final class RollbackSubCommand extends ParsableSubCommand
     {
         $cmdData = $this->parseArguments($sender, $args);
         if ($cmdData !== null) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("command.rollback.started", [$sender->getLevelNonNull()->getFolderName()]));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.rollback.started", [$sender->getLevelNonNull()->getFolderName()]));
             $this->getPlugin()->getDatabase()->getQueryManager()->rollback($sender, $cmdData);
         }
-    }
-
-    public function isPlayerCommand(): bool
-    {
-        return true;
     }
 
     public function getName(): string
