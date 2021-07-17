@@ -27,12 +27,11 @@ class CommandData
 {
     public const GLOBAL_RADIUS = -1;
 
-
     /** @var string[]|null */
     protected ?array $users;
     protected ?int $time;
     protected ?int $radius;
-    protected ?string $world;
+    protected string $world;
     /** @var Action[]|null */
     protected ?array $actions;
     /** @var array[]|null */
@@ -40,7 +39,7 @@ class CommandData
     /** @var array[]|null */
     protected ?array $exclusions;
 
-    public function __construct(?array $users, ?int $time, ?string $world, ?int $radius, ?array $actions, ?array $inclusions, ?array $exclusions)
+    public function __construct(?array $users, ?int $time, string $world, ?int $radius, ?array $actions, ?array $inclusions, ?array $exclusions)
     {
         $this->users = $users;
         $this->time = $time;
@@ -64,7 +63,7 @@ class CommandData
         return $this->time;
     }
 
-    public function getWorld(): ?string
+    public function getWorld(): string
     {
         return $this->world;
     }

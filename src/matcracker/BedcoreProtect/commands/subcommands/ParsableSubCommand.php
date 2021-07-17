@@ -179,13 +179,7 @@ abstract class ParsableSubCommand extends SubCommand
 
         $parsedConfig = $this->getPlugin()->getParsedConfig();
 
-        $users = $time = $radius = $actions = $inclusions = $exclusions = null;
-
-        if ($sender instanceof Player) {
-            $world = $sender->getPosition()->getLevelNonNull()->getFolderName();
-        } else {
-            $world = null;
-        }
+        $users = $time = $radius = $world = $actions = $inclusions = $exclusions = null;
 
         $argMap = [];
         //Counter to check if all the required parameters are present.
@@ -193,7 +187,7 @@ abstract class ParsableSubCommand extends SubCommand
 
         foreach ($args as $arg) {
             $argData = explode("=", $arg);
-            if ($argData === false || count($argData) !== 2) {
+            if (count($argData) !== 2) {
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-parameter-syntax"));
 
                 return null;
@@ -223,6 +217,10 @@ abstract class ParsableSubCommand extends SubCommand
             return null;
         }
 
+        /**
+         * @var CommandParameter $parameter
+         * @var string $value
+         */
         foreach ($argMap as [$parameter, $value]) {
             switch ($parameter) {
                 case CommandParameter::USERS():
@@ -290,24 +288,28 @@ abstract class ParsableSubCommand extends SubCommand
             }
         }
 
+        if ($world === null) {
+            if ($sender instanceof Player) {
+                $world = $sender->getPosition()->getLevelNonNull()->getFolderName();
+            } else {
+                //Don't allow console to use parameters without a world specified
+                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-console"));
+                return null;
+            }
+        }
+
         $cmdData = new CommandData($users, $time, $world, $radius, $actions, $inclusions, $exclusions);
 
         if ($radius !== null && !$cmdData->isGlobalRadius()) {
             if ($sender instanceof Player) {
                 //Don't allow a player to use normal radius in a different world
-                if ($world !== null && $sender->getLevelNonNull()->getFolderName() !== $world) {
+                if ($sender->getLevelNonNull()->getFolderName() !== $world) {
                     $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-player"));
                     return null;
                 }
             } else {
                 //Don't allow console to use integer radius, only global is allowed
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-radius-usage-console"));
-                return null;
-            }
-        } else {
-            if (!$sender instanceof Player && $world === null) {
-                //Don't allow console to use global radius without a world specified
-                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-console"));
                 return null;
             }
         }

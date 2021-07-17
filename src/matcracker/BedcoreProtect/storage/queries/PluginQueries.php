@@ -60,7 +60,7 @@ class PluginQueries extends Query
             LookupData::NEAR_LOG,
             $inspector,
             $inspector->getPosition(),
-            new CommandData(null, null, null, $radius, null, null, null),
+            new CommandData(null, null, $inspector->getLevelNonNull()->getFolderName(), $radius, null, null, null),
             $limit,
             $offset
         );
@@ -289,7 +289,7 @@ class PluginQueries extends Query
             LookupData::TRANSACTION_LOG,
             $inspector,
             $position,
-            new CommandData(null, null, null, $radius, null, null, null),
+            new CommandData(null, null, $position->getLevelNonNull()->getFolderName(), $radius, null, null, null),
             $limit,
             $offset
         );
@@ -302,7 +302,7 @@ class PluginQueries extends Query
             LookupData::BLOCK_LOG,
             $inspector,
             $blockPos,
-            new CommandData(null, null, null, $radius, null, null, null),
+            new CommandData(null, null, $blockPos->getLevelNonNull()->getFolderName(), $radius, null, null, null),
             $limit,
             $offset
         );
