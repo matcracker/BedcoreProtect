@@ -54,7 +54,6 @@ final class QueryManager
 
     /** @var array[] */
     private static array $additionalReports = [];
-    /** @var AxisAlignedBB[] */
     private static array $activeRollbacks = [];
 
     private Main $plugin;
@@ -180,7 +179,7 @@ final class QueryManager
                     $world,
                     $rollback,
                     $logIds,
-                    function () use ($sender, $senderName, $cmdData, $world, $worldName, $bb, $rollback, $logIds): void {
+                    function () use ($sender, $senderName, $cmdData, $world, $rollback, $logIds): void {
                         $this->getInventoriesQueries()->rawRollback($sender, $cmdData, $world, $rollback, $logIds, null, false);
                         $this->getEntitiesQueries()->rawRollback(
                             $sender,
