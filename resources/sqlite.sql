@@ -266,6 +266,8 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
+-- #                :limit int
+-- #                :offset int
 SELECT COUNT(*) OVER () AS cnt_rows,
        bl.old_id,
        bl.old_meta,
@@ -289,7 +291,8 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 0 AND 2
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #            {entity
 -- #                :min_x int
@@ -299,6 +302,8 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
+-- #                :limit int
+-- #                :offset int
 SELECT COUNT(*) OVER () AS cnt_rows,
        e1.entity_name   AS entity_from,
        e2.entity_name   AS entity_to,
@@ -318,7 +323,8 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 3 AND 5
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #            {near
 -- #                :min_x int
@@ -367,6 +373,8 @@ LIMIT :limit OFFSET :offset;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
+-- #                :limit int
+-- #                :offset int
 SELECT COUNT(*) OVER () AS cnt_rows,
        il.old_id,
        il.old_meta,
@@ -392,7 +400,8 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 6 AND 7
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #        }
 -- #    }
