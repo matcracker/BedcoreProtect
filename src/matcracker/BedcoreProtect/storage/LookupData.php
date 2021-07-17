@@ -50,7 +50,7 @@ class LookupData
         $this->position = $position;
     }
 
-    public static function storeData(CommandSender $sender, LookupData $data)
+    public static function storeData(CommandSender $sender, LookupData $data) : void
     {
         self::$lookupData[Utils::getSenderUUID($sender)] = $data;
     }
