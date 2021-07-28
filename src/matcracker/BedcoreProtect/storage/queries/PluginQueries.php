@@ -41,7 +41,6 @@ use poggit\libasynql\generic\GenericVariable;
 use poggit\libasynql\SqlDialect;
 use function array_map;
 use function count;
-use function intval;
 use function mb_substr;
 use function microtime;
 
@@ -176,7 +175,7 @@ class PluginQueries extends Query
             "offset" => $offset
         ];
 
-        $this->buildConditionalQuery($query, $variables, $parameters, $commandData, $bb);
+        self::buildConditionalQuery($query, $variables, $parameters, $commandData, $bb);
 
         $query .= " ORDER BY time DESC LIMIT :limit OFFSET :offset;";
 
@@ -189,8 +188,9 @@ class PluginQueries extends Query
      * @param array $params
      * @param CommandData $commandData
      * @param AxisAlignedBB|null $bb
+     * @param float|null $currTime
      */
-    private function buildConditionalQuery(string &$query, array &$variables, array &$params, CommandData $commandData, ?AxisAlignedBB $bb): void
+    private static function buildConditionalQuery(string &$query, array &$variables, array &$params, CommandData $commandData, ?AxisAlignedBB $bb, ?float $currTime = null): void
     {
         if (($users = $commandData->getUsers()) !== null) {
             $variables["users"] = new GenericVariable("users", "list:string", null);
@@ -200,14 +200,12 @@ class PluginQueries extends Query
         }
 
         if (($time = $commandData->getTime()) !== null) {
+            $variables["now"] = new GenericVariable("now", GenericVariable::TYPE_FLOAT, null);
+            $params["now"] = $currTime ?? microtime(true);
             $variables["time"] = new GenericVariable("time", GenericVariable::TYPE_FLOAT, null);
             $params["time"] = microtime(true) - (float)$time;
 
-            if ($this->plugin->getParsedConfig()->isSQLite()) {
-                $query .= "(time BETWEEN :time AND (SELECT STRFTIME(\"%s\", \"now\") + STRFTIME(\"%f\", \"now\") - STRFTIME(\"%S\", \"now\"))) AND ";
-            } else {
-                $query .= "(time BETWEEN :time AND UNIX_TIMESTAMP(NOW(4))) AND ";
-            }
+            $query .= "(time BETWEEN :time AND :now) AND ";
         }
 
         if (!$commandData->isGlobalRadius() && $bb !== null) {
@@ -228,12 +226,10 @@ class PluginQueries extends Query
             $query .= "(x BETWEEN :min_x AND :max_x) AND (y BETWEEN :min_y AND :max_y) AND (z BETWEEN :min_z AND :max_z) AND ";
         }
 
-        if (($world = $commandData->getWorld()) !== null) {
-            $variables["world"] = new GenericVariable("world", GenericVariable::TYPE_STRING, null);
-            $params["world"] = $world;
+        $variables["world"] = new GenericVariable("world", GenericVariable::TYPE_STRING, null);
+        $params["world"] = $commandData->getWorld();
 
-            $query .= "world_name = :world AND ";
-        }
+        $query .= "world_name = :world AND ";
 
         if (($actions = $commandData->getActions()) !== null) {
             $variables["actions"] = new GenericVariable("actions", "list:int", null);
@@ -315,20 +311,20 @@ class PluginQueries extends Query
         ], $onSuccess);
     }
 
-    public function buildLogsSelectionQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, bool $rollback): void
+    public function buildLogsSelectionQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, ?float $currTime, bool $rollback, int $limit): void
     {
         $variables = [
-            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_INT, null),
-            "world_name" => new GenericVariable("world_name", GenericVariable::TYPE_STRING, null)
+            "rollback" => new GenericVariable("rollback", GenericVariable::TYPE_BOOL, null),
+            "limit" => new GenericVariable("limit", GenericVariable::TYPE_INT, null)
         ];
         $parameters = [
-            "rollback" => intval(!$rollback),
-            "world_name" => $commandData->getWorld()
+            "rollback" => !$rollback,
+            "limit" => $limit
         ];
 
         if ($commandData->getInclusions() !== null || $commandData->getExclusions() !== null) {
             $query = /**@lang text */
-                "SELECT log_id, id, meta 
+                "SELECT log_id, id, meta
                 FROM 
                 (SELECT log_history.*,
                     CASE
@@ -347,14 +343,14 @@ class PluginQueries extends Query
                 "SELECT log_id FROM log_history WHERE rollback = :rollback AND ";
         }
 
-        $this->buildConditionalQuery($query, $variables, $parameters, $commandData, $bb);
+        self::buildConditionalQuery($query, $variables, $parameters, $commandData, $bb, $currTime);
 
-        $query .= " AND world_name = :world_name ORDER BY time" . ($rollback ? " DESC" : "") . ";";
+        $query .= " ORDER BY time" . ($rollback ? " DESC" : "") . " LIMIT :limit;";
 
         $this->asGenericStatement($query, $args, "dyn-log-selection-query", $variables, $parameters);
     }
 
-    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
+    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
     {
         throw new PluginException("\"onRollback()\" method is not available for " . self::class);
     }

@@ -21,18 +21,14 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\QueryManager;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use poggit\libasynql\DataConnector;
-use SOFe\AwaitGenerator\Await;
 use function mb_strtolower;
 
 abstract class Query
@@ -51,54 +47,14 @@ abstract class Query
         $this->configParser = $plugin->getParsedConfig();
     }
 
-    public function rollback(CommandSender $sender, CommandData $cmdData, Level $world, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
-    {
-        $this->rawRollback($sender, $cmdData, $world, true, $logIds, $onPreComplete, $isLastRollback);
-    }
-
-    /**
-     * @param CommandSender $sender
-     * @param CommandData $cmdData
-     * @param Level $world
-     * @param bool $rollback
-     * @param int[] $logIds
-     * @param Closure|null $onPreComplete
-     * @param bool $isLastRollback
-     */
-    public function rawRollback(CommandSender $sender, CommandData $cmdData, Level $world, bool $rollback, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
-    {
-        $senderName = $sender->getName();
-        $worldName = $world->getFolderName();
-
-        Await::g2c(
-            $this->onRollback(
-                $sender,
-                $world,
-                $rollback,
-                $logIds,
-                function () use ($senderName, $cmdData, $worldName, $rollback, $logIds, $onPreComplete, $isLastRollback): void {
-                    if ($onPreComplete) {
-                        $onPreComplete();
-                    }
-
-                    if ($isLastRollback) {
-                        $this->updateRollbackStatus($rollback, $logIds);
-                        QueryManager::sendRollbackReport($senderName, $cmdData, $worldName, $rollback);
-                    }
-                }
-            )
-        );
-    }
-
     /**
      * @param CommandSender $sender
      * @param Level $world
-     * @param int[] $logIds
      * @param bool $rollback
-     * @param Closure $onComplete
+     * @param int[] $logIds
      * @return Generator
      */
-    abstract protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator;
+    abstract public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator;
 
     /**
      * @param bool $rollback
@@ -110,11 +66,6 @@ abstract class Query
             "rollback" => $rollback,
             "log_ids" => $logIds
         ]);
-    }
-
-    public function restore(CommandSender $sender, CommandData $cmdData, Level $world, array $logIds, ?Closure $onPreComplete = null, bool $isLastRollback = true): void
-    {
-        $this->rawRollback($sender, $cmdData, $world, false, $logIds, $onPreComplete, $isLastRollback);
     }
 
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator

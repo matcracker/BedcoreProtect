@@ -21,11 +21,9 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use Closure;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -183,7 +181,7 @@ class InventoriesQueries extends Query
         );
     }
 
-    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
+    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
     {
         $inventoryRows = [];
 
@@ -211,13 +209,10 @@ class InventoriesQueries extends Query
             }
         }
 
-        if (($items = count($inventoryRows)) > 0) {
-            QueryManager::addReportMessage(
-                $sender->getName(),
-                $this->plugin->getLanguage()->translateString("rollback.items", [$items])
-            );
-        }
+        //On success
+        (yield)(count($inventoryRows));
+        yield Await::REJECT;
 
-        $onComplete();
+        return yield Await::ONCE;
     }
 }

@@ -22,29 +22,24 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use matcracker\BedcoreProtect\commands\CommandData;
-use pocketmine\math\AxisAlignedBB;
 
 final class UndoRollbackData
 {
     private bool $rollback;
-    private AxisAlignedBB $bb;
     private CommandData $commandData;
-    /** @var int[] */
-    private array $logIds;
+    private float $startTime;
 
     /**
      * UndoRollbackData constructor.
      * @param bool $rollback
-     * @param AxisAlignedBB $bb
      * @param CommandData $commandData
-     * @param int[] $logIds
+     * @param float $startTime
      */
-    public function __construct(bool $rollback, AxisAlignedBB $bb, CommandData $commandData, array $logIds)
+    public function __construct(bool $rollback, CommandData $commandData, float $startTime)
     {
         $this->rollback = !$rollback;
-        $this->bb = $bb;
         $this->commandData = $commandData;
-        $this->logIds = $logIds;
+        $this->startTime = $startTime;
     }
 
     public function isRollback(): bool
@@ -52,21 +47,13 @@ final class UndoRollbackData
         return $this->rollback;
     }
 
-    public function getBoundingBox(): AxisAlignedBB
-    {
-        return $this->bb;
-    }
-
     public function getCommandData(): CommandData
     {
         return $this->commandData;
     }
 
-    /**
-     * @return int[]
-     */
-    public function getLogIds(): array
+    public function getStartTime(): float
     {
-        return $this->logIds;
+        return $this->startTime;
     }
 }

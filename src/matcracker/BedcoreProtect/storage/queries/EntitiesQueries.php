@@ -21,10 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use Closure;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
@@ -148,7 +146,7 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
+    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
     {
         $entityRows = [];
 
@@ -180,14 +178,10 @@ class EntitiesQueries extends Query
             }
         }
 
-        if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage(
-                $sender->getName(),
-                $this->plugin->getLanguage()->translateString("rollback.entities", [$entities])
-            );
-        }
-
-        $onComplete();
+        //On success
+        (yield)(count($entityRows));
+        yield Await::REJECT;
+        return yield Await::ONCE;
     }
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator

@@ -320,7 +320,7 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds, Closure $onComplete): Generator
+    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
     {
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
@@ -365,6 +365,9 @@ class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($sender->getName(), $world->getFolderName(), $blocks, $rollback, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($sender->getName(), $world->getFolderName(), $blocks, $rollback, yield));
+        yield Await::REJECT;
+
+        return yield Await::ONCE;
     }
 }
