@@ -90,7 +90,7 @@ final class InspectorListener extends BedcoreListener
 
             if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
                 $position = $clickedBlock->asPosition();
-                $tileChest = BlockUtils::asTile($clickedBlock);
+                $tileChest = BlockUtils::asTile($clickedBlock->asPosition());
                 if ($tileChest instanceof Chest) { //This is needed for double chest to get the position of its holder (the left chest).
                     $holder = $tileChest->getInventory()->getHolder();
                     if ($holder !== null) {

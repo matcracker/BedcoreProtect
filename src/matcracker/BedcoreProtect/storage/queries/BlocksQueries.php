@@ -358,8 +358,7 @@ class BlocksQueries extends Query
                     $this->plugin->getLogger()->debug("Could not load chunk at [$cx;$cz]");
                 }
             } else {
-                $tile = BlockUtils::asTile($block->toBlock());
-                if ($tile !== null) {
+                if (($tile = BlockUtils::asTile($block->asPosition())) !== null) {
                     $world->removeTile($tile);
                 }
             }

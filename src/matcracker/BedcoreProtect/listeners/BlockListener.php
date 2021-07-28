@@ -63,7 +63,7 @@ final class BlockListener extends BedcoreListener
             $block = $event->getBlock();
 
             if ($block instanceof Chest) {
-                $tileChest = BlockUtils::asTile($block);
+                $tileChest = BlockUtils::asTile($block->asPosition());
                 if ($tileChest instanceof TileChest) {
                     $inventory = $tileChest->getRealInventory();
                     if (count($inventory->getContents()) > 0) {
