@@ -23,19 +23,14 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
 
 final class RollbackSubCommand extends ParsableSubCommand
 {
-    /**
-     * @param Player $sender
-     * @param string[] $args
-     */
     public function onExecute(CommandSender $sender, array $args): void
     {
         $cmdData = $this->parseArguments($sender, $args);
         if ($cmdData !== null) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.rollback.started", [$sender->getLevelNonNull()->getFolderName()]));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.rollback.started", [$cmdData->getWorld()]));
             $this->getPlugin()->getDatabase()->getQueryManager()->rollback($sender, $cmdData);
         }
     }
