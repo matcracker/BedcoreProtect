@@ -72,7 +72,7 @@ final class HelpSubCommand extends SubCommand
                 continue;
             }
 
-            $message = TextFormat::DARK_AQUA . "/bcp " . TextFormat::GRAY . $subCommand->getName();
+            $message = TextFormat::DARK_AQUA . "/bcp " . $subCommand->getName();
             if ($subCommand instanceof HelpSubCommand) {
                 $message .= TextFormat::DARK_AQUA . " <command>";
             } elseif ($subCommand instanceof ParsableSubCommand) {

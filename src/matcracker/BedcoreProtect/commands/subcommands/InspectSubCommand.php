@@ -61,11 +61,6 @@ final class InspectSubCommand extends SubCommand
         return "inspect";
     }
 
-    public function getAlias(): string
-    {
-        return "i";
-    }
-
     public function sendCommandHelp(CommandSender $sender): void
     {
         $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.inspect.help.1"));
@@ -75,5 +70,10 @@ final class InspectSubCommand extends SubCommand
         $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.5"));
         $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.6"));
         $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("subcommand.inspect.help.7", ["/bcp {$this->getAlias()}"]));
+    }
+
+    public function getAlias(): string
+    {
+        return "i";
     }
 }
