@@ -148,10 +148,11 @@ final class QueryManager
             }
         }
 
-        $time = $undoTime ?? microtime(true);
+        $startTime = microtime(true);
+        $time = $undoTime ?? $startTime;
 
         Await::f2c(
-            function () use ($sender, $senderName, $cmdData, $world, $worldName, $bb, $rollback, $time): Generator {
+            function () use ($sender, $senderName, $cmdData, $world, $worldName, $bb, $rollback, $time, $startTime): Generator {
                 self::$activeRollbacks[$senderName] = [$bb, $worldName];
                 $executed = false;
                 $blocks = $chunks = $items = $entities = 0;
@@ -177,7 +178,7 @@ final class QueryManager
                 }
 
                 if ($sender !== null) {
-                    $this->sendRollbackReport($sender, $cmdData, $rollback, $blocks, $chunks, $items, $entities, $time);
+                    $this->sendRollbackReport($sender, $cmdData, $rollback, $blocks, $chunks, $items, $entities, $startTime);
                 }
             },
             static function () use ($senderName): void {
