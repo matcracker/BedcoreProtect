@@ -80,7 +80,6 @@ final class BCPCommand extends PluginCommand
         $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.usage"));
         $this->setDescription($this->getPlugin()->getLanguage()->translateString("command.bcp.description"));
         $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
-
     }
 
     private function loadSubCommand(SubCommand $subCommand): void
@@ -106,8 +105,6 @@ final class BCPCommand extends PluginCommand
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
     {
-        /** @var Main $plugin */
-        $plugin = $this->getPlugin();
         if (!$this->getPlugin()->isEnabled()) {
             return true;
         }
@@ -116,8 +113,8 @@ final class BCPCommand extends PluginCommand
             return true;
         }
 
-        if (!isset($args[0]) && $sender instanceof Player && $plugin->getParsedConfig()->isEnabledUI()) {
-            $sender->sendForm(self::getForm($plugin, $sender));
+        if (!isset($args[0]) && $sender instanceof Player && $this->getPlugin()->getParsedConfig()->isEnabledUI()) {
+            $sender->sendForm(self::getForm($this->getPlugin(), $sender));
             return true;
         }
 
@@ -145,5 +142,10 @@ final class BCPCommand extends PluginCommand
     public static function getForm(Main $plugin, Player $player): MainMenuForm
     {
         return new MainMenuForm($plugin, $player, self::$subCommands);
+    }
+
+    public function getPlugin(): Main
+    {
+        return parent::getPlugin();
     }
 }
