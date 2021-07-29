@@ -48,6 +48,7 @@ final class Main extends PluginBase
     private DatabaseManager $database;
     private ConfigParser $configParser;
     private ConfigParser $oldConfigParser;
+    private BCPCommand $bcpCommand;
     /** @var BedcoreListener[] */
     private array $events;
 
@@ -92,6 +93,8 @@ final class Main extends PluginBase
             $event->config = $this->configParser;
         }
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+
+        $this->bcpCommand->updateTranslations();
     }
 
     public function onLoad(): void
@@ -146,7 +149,8 @@ final class Main extends PluginBase
 
         $queryManager->setupDefaultData();
 
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+        $this->bcpCommand = new BCPCommand($this);
+        $this->getServer()->getCommandMap()->register("bedcoreprotect", $this->bcpCommand);
 
         //Registering events
         $this->events = [

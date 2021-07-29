@@ -58,12 +58,9 @@ final class BCPCommand extends PluginCommand
             "bedcoreprotect",
             $plugin
         );
-        //TODO: update language messages when it changes
         $this->setPermission("bcp.command.bedcoreprotect");
-        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.bcp.no-permission"));
         $this->setAliases(["core", "co", "bcp"]);
-        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $plugin->getLanguage()->translateString("command.bcp.usage"));
-        $this->setDescription($plugin->getLanguage()->translateString("command.bcp.description"));
+        $this->updateTranslations();
 
         $this->loadSubCommand(new HelpSubCommand($plugin));
         $this->loadSubCommand(new InspectSubCommand($plugin));
@@ -76,6 +73,14 @@ final class BCPCommand extends PluginCommand
         $this->loadSubCommand(new ShowSubCommand($plugin));
         $this->loadSubCommand(new StatusSubCommand($plugin));
         $this->loadSubCommand(new UndoSubCommand($plugin));
+    }
+
+    public function updateTranslations(): void
+    {
+        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.usage"));
+        $this->setDescription($this->getPlugin()->getLanguage()->translateString("command.bcp.description"));
+        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
+
     }
 
     private function loadSubCommand(SubCommand $subCommand): void
