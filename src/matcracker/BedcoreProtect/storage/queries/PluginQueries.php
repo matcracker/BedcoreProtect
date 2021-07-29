@@ -91,7 +91,7 @@ class PluginQueries extends Query
     {
         return function (array $rows) use ($queryType, $inspector, $cmdData, $position, $limit, $offset): void {
             if (count($rows) === 0) {
-                $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("inspector.no-data"));
+                $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("subcommand.show.empty-data"));
 
                 return;
             }
