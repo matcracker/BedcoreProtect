@@ -50,7 +50,7 @@ final class HelpSubCommand extends SubCommand
                 foreach ($param->getAliases() as $alias) {
                     $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp lookup $alias=<{$param->name()}>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.params.generic.help.shortcut"));
                 }
-                $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.examples", [$param->getExample()]));
+                $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.examples", [$param->getExample()]));
 
             } else {
                 $sender->sendMessage(TextFormat::RED . $this->getLang()->translateString("subcommand.help.info-not-found", [$args[0]]));
@@ -72,7 +72,7 @@ final class HelpSubCommand extends SubCommand
                 continue;
             }
 
-            $message = TextFormat::DARK_AQUA . "/bcp " . TextFormat::DARK_GRAY . $subCommand->getName();
+            $message = TextFormat::DARK_AQUA . "/bcp " . TextFormat::GRAY . $subCommand->getName();
             if ($subCommand instanceof HelpSubCommand) {
                 $message .= TextFormat::DARK_AQUA . " <command>";
             } elseif ($subCommand instanceof ParsableSubCommand) {

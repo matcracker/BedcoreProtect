@@ -69,11 +69,11 @@ final class InspectSubCommand extends SubCommand
     public function sendCommandHelp(CommandSender $sender): void
     {
         $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.inspect.help.1"));
-        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.2"));
-        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.3"));
-        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.4"));
-        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.5"));
-        $sender->sendMessage(TextFormat::GRAY . "* " . $this->getLang()->translateString("subcommand.inspect.help.6"));
-        $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("subcommand.inspect.help.7", [TextFormat::DARK_BLUE . "/bcp i" . TextFormat::GRAY]));
+        $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.2"));
+        $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.3"));
+        $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.4"));
+        $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.5"));
+        $sender->sendMessage(TextFormat::WHITE . "* " . $this->getLang()->translateString("subcommand.inspect.help.6"));
+        $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("subcommand.inspect.help.7", ["/bcp {$this->getAlias()}"]));
     }
 }

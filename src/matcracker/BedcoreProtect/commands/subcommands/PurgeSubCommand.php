@@ -73,7 +73,7 @@ final class PurgeSubCommand extends ParsableSubCommand
     public function sendCommandHelp(CommandSender $sender): void
     {
         $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp purge t=<time>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.purge.help.description"));
-        $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("subcommand.purge.help.example"));
+        $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("subcommand.purge.help.example"));
     }
 
     public function getName(): string

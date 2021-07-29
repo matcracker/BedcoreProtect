@@ -99,9 +99,9 @@ abstract class SubCommand implements PluginIdentifiableCommand
 
     public function sendCommandHelp(CommandSender $sender): void
     {
-        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . $this->getName() . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.{$this->getName()}.description"));
+        $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . TextFormat::GRAY . $this->getName() . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.{$this->getName()}.description"));
         if (strlen($this->getAlias()) > 0) {
-            $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . $this->getAlias() . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.bcp.help.shortcut"));
+            $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp " . TextFormat::GRAY . $this->getAlias() . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.bcp.help.shortcut"));
         }
     }
 

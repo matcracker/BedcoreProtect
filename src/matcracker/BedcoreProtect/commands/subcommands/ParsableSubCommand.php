@@ -156,7 +156,7 @@ abstract class ParsableSubCommand extends SubCommand
         $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "a=<action> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.actions.help", [$this->getName()]));
         $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "i=<include> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.include.help", [$this->getName()]));
         $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "e=<exclude> " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.exclude.help", [$this->getName()]));
-        $sender->sendMessage(TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.extra", [TextFormat::DARK_AQUA . "/bcp help <param>" . TextFormat::GRAY]));
+        $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.extra", ["/bcp help <param>"]));
 
     }
 
