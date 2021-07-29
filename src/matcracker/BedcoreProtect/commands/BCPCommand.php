@@ -143,9 +143,4 @@ final class BCPCommand extends PluginCommand
     {
         return new MainMenuForm($plugin, $player, self::$subCommands);
     }
-
-    public function getPlugin(): Main
-    {
-        return parent::getPlugin();
-    }
 }
