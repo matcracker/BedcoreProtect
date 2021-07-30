@@ -42,6 +42,9 @@ use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use function array_diff;
+use function array_intersect;
+use function array_keys;
+use function array_map;
 use function array_unique;
 use function count;
 use function explode;
@@ -55,11 +58,16 @@ abstract class ParsableSubCommand extends SubCommand
 {
     /** @var CommandParameter[] */
     private array $requiredParams;
+    /** @var string[] */
+    private array $requiredParamsNames;
 
     public function __construct(Main $plugin, array $requiredParams)
     {
         parent::__construct($plugin);
         $this->requiredParams = $requiredParams;
+        $this->requiredParamsNames = array_map(static function (CommandParameter $parameter): string {
+            return $parameter->name();
+        }, $this->requiredParams);
     }
 
     public function getForm(Player $player): ?BaseForm
@@ -160,30 +168,24 @@ abstract class ParsableSubCommand extends SubCommand
 
     }
 
-    final protected function parseArguments(CommandSender $sender, array $args): ?CommandData
+    /**
+     * @param CommandSender $sender
+     * @param array<int, string> $args
+     * @param array<string, string> $defaultValues
+     * @return CommandData|null
+     */
+    final protected function parseArguments(CommandSender $sender, array $args, array $defaultValues = []): ?CommandData
     {
-        $countParams = count($args);
-        $countReqParams = count($this->requiredParams);
-        if ($countParams === 0 || $countParams < $countReqParams) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.too-few-parameters", [$countReqParams]));
-
-            return null;
-        }
-
         $MAX_PARAMS = CommandParameter::count();
-        if ($countParams > $MAX_PARAMS) {
+        if (count($args) > $MAX_PARAMS) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.too-many-parameters", [$MAX_PARAMS]));
 
             return null;
         }
 
-        $parsedConfig = $this->getPlugin()->getParsedConfig();
-
-        $users = $time = $radius = $world = $actions = $inclusions = $exclusions = null;
-
-        $argMap = [];
+        $argMap = $defaultValues;
         //Counter to check if all the required parameters are present.
-        $currReqParams = 0;
+        $currReqParams = count($argMap);
 
         foreach ($args as $arg) {
             $argData = explode("=", $arg);
@@ -208,22 +210,23 @@ abstract class ParsableSubCommand extends SubCommand
                 $currReqParams++;
             }
 
-            $argMap[] = [$parameter, $argData[1]];
+            $argMap[$parameter->name()] = $argData[1];
         }
 
-        if ($currReqParams !== $countReqParams) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.missing-parameters", [implode(",", $this->requiredParams)]));
-
+        if (count(array_intersect($userParams = array_keys($argMap), $this->requiredParamsNames)) !== count($this->requiredParamsNames)) {
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.missing-parameters", [implode(", ", array_diff($this->requiredParamsNames, $userParams))]));
             return null;
         }
 
+        $users = $time = $radius = $world = $actions = $inclusions = $exclusions = null;
+
         /**
-         * @var CommandParameter $parameter
+         * @var string $parameter
          * @var string $value
          */
-        foreach ($argMap as [$parameter, $value]) {
+        foreach ($argMap as $parameter => $value) {
             switch ($parameter) {
-                case CommandParameter::USERS():
+                case CommandParameter::USERS()->name():
                     $users = array_unique(explode(",", $value));
                     foreach ($users as $user) {
                         if (mb_substr($user, 0, 1) !== "#") { //Entity
@@ -235,21 +238,21 @@ abstract class ParsableSubCommand extends SubCommand
                         }
                     }
                     break;
-                case CommandParameter::TIME():
+                case CommandParameter::TIME()->name():
                     $time = Utils::parseTime($value);
                     if ($time === 0) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-time"));
                         return null;
                     }
                     break;
-                case CommandParameter::WORLD():
+                case CommandParameter::WORLD()->name():
                     if (Server::getInstance()->getLevelByName($value) === null) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world", [$value, implode(", ", Utils::getWorldNames())]));
                         return null;
                     }
                     $world = $value;
                     break;
-                case CommandParameter::RADIUS():
+                case CommandParameter::RADIUS()->name():
                     if (mb_strtolower($value) === "#global") {
                         $radius = CommandData::GLOBAL_RADIUS;
                         break;
@@ -261,13 +264,13 @@ abstract class ParsableSubCommand extends SubCommand
                     }
 
                     $radius = (int)$value;
-                    $maxRadius = $parsedConfig->getMaxRadius();
+                    $maxRadius = $this->getPlugin()->getParsedConfig()->getMaxRadius();
                     if ($radius < 0 || ($maxRadius > 0 && $radius > $maxRadius)) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-radius"));
                         return null;
                     }
                     break;
-                case CommandParameter::ACTIONS():
+                case CommandParameter::ACTIONS()->name():
                     $actions = Action::fromCommandArgument(mb_strtolower($value));
                     if ($actions === null) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-action", [$value, implode(", ", Action::COMMAND_ARGUMENTS)]));
@@ -275,26 +278,16 @@ abstract class ParsableSubCommand extends SubCommand
                     }
 
                     break;
-                case CommandParameter::INCLUDE():
+                case CommandParameter::INCLUDE()->name():
                     if (($inclusions = $this->parseItemArgument($sender, $value)) === null) {
                         return null;
                     }
                     break;
-                case CommandParameter::EXCLUDE():
+                case CommandParameter::EXCLUDE()->name():
                     if (($exclusions = self::parseItemArgument($sender, $value)) === null) {
                         return null;
                     }
                     break;
-            }
-        }
-
-        if ($world === null) {
-            if ($sender instanceof Player) {
-                $world = $sender->getPosition()->getLevelNonNull()->getFolderName();
-            } else {
-                //Don't allow console to use parameters without a world specified
-                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-console"));
-                return null;
             }
         }
 
@@ -320,7 +313,7 @@ abstract class ParsableSubCommand extends SubCommand
     /**
      * @param CommandSender $sender
      * @param string $str
-     * @return int[][]|null
+     * @return array<string, array<int, int>>|null
      */
     private function parseItemArgument(CommandSender $sender, string $str): ?array
     {

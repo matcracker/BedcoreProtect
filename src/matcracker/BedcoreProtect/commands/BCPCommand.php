@@ -64,12 +64,12 @@ final class BCPCommand extends PluginCommand
 
         $this->loadSubCommand(new HelpSubCommand($plugin));
         $this->loadSubCommand(new InspectSubCommand($plugin));
-        $this->loadSubCommand(new LookupSubCommand($plugin, [CommandParameter::TIME()]));
+        $this->loadSubCommand(new LookupSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::WORLD()]));
         $this->loadSubCommand(new NearSubCommand($plugin));
         $this->loadSubCommand(new PurgeSubCommand($plugin, [CommandParameter::TIME()]));
         $this->loadSubCommand(new ReloadSubCommand($plugin));
-        $this->loadSubCommand(new RestoreSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::RADIUS()]));
-        $this->loadSubCommand(new RollbackSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::RADIUS()]));
+        $this->loadSubCommand(new RestoreSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::RADIUS(), CommandParameter::WORLD()]));
+        $this->loadSubCommand(new RollbackSubCommand($plugin, [CommandParameter::TIME(), CommandParameter::RADIUS(), CommandParameter::WORLD()]));
         $this->loadSubCommand(new ShowSubCommand($plugin));
         $this->loadSubCommand(new StatusSubCommand($plugin));
         $this->loadSubCommand(new UndoSubCommand($plugin));
