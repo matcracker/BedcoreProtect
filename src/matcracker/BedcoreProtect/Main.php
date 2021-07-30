@@ -34,6 +34,7 @@ use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\DatabaseManager;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\TextFormat;
 use function mkdir;
 use function version_compare;
@@ -148,6 +149,15 @@ final class Main extends PluginBase
         }
 
         $queryManager->setupDefaultData();
+
+        if ($this->configParser->isSQLite()) {
+            static $hourTicks = 20 * 60 * 60 * 8;
+            $this->getScheduler()->scheduleDelayedRepeatingTask(new ClosureTask(
+                function (int $currentTick): void {
+                    $this->database->optimize();
+                }
+            ), $hourTicks, $hourTicks);
+        }
 
         $this->bcpCommand = new BCPCommand($this);
         $this->getServer()->getCommandMap()->register("bedcoreprotect", $this->bcpCommand);

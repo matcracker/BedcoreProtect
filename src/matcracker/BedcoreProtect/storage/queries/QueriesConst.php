@@ -40,6 +40,7 @@ final class QueriesConst
     public const SET_FOREIGN_KEYS = "bcp.generic.set_foreign_keys";
     public const BEGIN_TRANSACTION = "bcp.generic.begin_transaction";
     public const END_TRANSACTION = "bcp.generic.end_transaction";
+    public const OPTIMIZE = "bcp.generic.optimize";
     public const ADD_ENTITY = "bcp.add.entity";
     public const ADD_DATABASE_VERSION = "bcp.add.db_version";
     public const ADD_HISTORY_LOG = "bcp.add.log.main";

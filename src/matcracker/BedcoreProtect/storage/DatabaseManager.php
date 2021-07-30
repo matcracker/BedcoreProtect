@@ -81,9 +81,27 @@ final class DatabaseManager
         return $this->patchManager;
     }
 
+    public function optimize(): void
+    {
+        if ($this->plugin->getParsedConfig()->isSQLite()) {
+            $this->connector->executeGeneric(QueriesConst::OPTIMIZE);
+        }
+    }
+
     public function disconnect(): void
     {
+        //Wait to execute all the queued queries.
         $this->connector->waitAll();
+
+        if ($this->plugin->getParsedConfig()->isSQLite()) {
+            /*
+             * According to SQLite documentation (https://www.sqlite.org/pragma.html#pragma_optimize)
+             * it is recommended to run optimization just before closing the database or every few hours/days.
+             */
+            $this->optimize();
+            $this->connector->waitAll();
+        }
+
         $this->connector->close();
     }
 

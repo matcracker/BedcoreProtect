@@ -89,6 +89,9 @@ BEGIN TRANSACTION;
 -- #        {end_transaction
 END TRANSACTION;
 -- #        }
+-- #        {optimize
+PRAGMA optimize;
+-- #        }
 -- #    }
 -- #    {add
 -- #        {entity
