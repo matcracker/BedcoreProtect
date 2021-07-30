@@ -3,7 +3,8 @@
 [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Uf6U78g)
 
-# BedcoreProtect
+##BedcoreProtect
+
 BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
 ## Features
@@ -65,7 +66,6 @@ The main command is **/bedcoreprotect** but it accepts the folllowing aliases: *
 **Quick command overview:**
 - **/bcp help - _Display a list of commands_** (**Permission:** _bcp.subcommand.help_)
 - **/bcp inspect - _Toggle the inspector mode_** (**Permission:** _bcp.subcommand.inspect_)
-- **/bcp menu - _Display a graphic interface to use the plugin (UI)._** (**Permission:** _bcp.subcommand.menu_)
 - **/bcp rollback \<params> - _Rollback block data_** (**Permission:** _bcp.subcommand.rollback_)
 - **/bcp restore \<params> - _Restore block data_** (**Permission:** _bcp.subcommand.restore_)
 - **/bcp lookup \<params> - _Advanced block data lookup_** (**Permission:** _bcp.subcommand.lookup_)
@@ -79,16 +79,16 @@ The main command is **/bedcoreprotect** but it accepts the folllowing aliases: *
 - **/bcp undo**: _Revert a rollback/restore via the opposite action_ (**Permission:** _bcp.subcommand.undo_)
 ---
 **Advanced command overview:**
+> **/bcp**<br>
+_If the configuration option `enable-ui-menu` is enabled, it displays a graphic interface to simplify the plugin commands usage._
+
 > **/bcp help**<br>
 _Diplay a list of commands in-game_
 
 > **/bpc inspect**<br>
 _Enable the inspector. Type the command again to disable it. You can also use just **"/bcp i"**_
 
-> **/bpc menu**<br>
-_Display a graphic interface to simplify the plugin commands usage. You can also use just **"/bcp ui"**_
-
-> **/bcp rollback u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
+> **/bcp rollback u=\<user> t=\<time> r=\<radius> w=\<world> a=\<action> b=\<blocks> e=\<exclude>**<br>
 _Nearly all of the parameters are optional. Shortcut: **"/bcp rb"**._
 
 >>**u=\<user>** - Specify a user to rollback.<br>
@@ -101,8 +101,13 @@ You can pick and choose time amounts. <br>
 _Example: t=5d2h_
 
 >>**r=\<radius>** - Specify a radius.<br>
-You can use this to only rollback blocks near you.<br><br>
+You can use this to only rollback blocks near you.<br>
+You can also use `r=#global` to indicate the entire world.<br><br>
 For example, the following would only rollback damage within 10 blocks of where you are standing: r=10
+
+>>**w=\<world>** - Specify a world.<br>
+You can specify a world to rollback.<br>
+_Example: w=world w=FactionWorld_
 
 >>**a=\<action>** - Restrict the lookup to a certain action.<br>
 For example, if you wanted to only rollback blocks placed, you would use a:+block<br><br>
@@ -125,11 +130,11 @@ You can find a list of block type IDs at https://minecraft.gamepedia.com/Bedrock
 >>**e=\<exclude>** - Exclude certain block types from the rollback.<br>
 For example, if you don't want TNT to come back during a rollback, you would type e:46
 
-> **/bpc restore u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
+> **/bpc restore u=\<user> t=\<time> r=\<radius> w=\<world> a=\<action> b=\<blocks> e=\<exclude>**<br>
 _Same parameters as /bcp rollback. Shortcut: **"/bcp rs"**._<br><br>
 Restoring can be used to undo rollbacks.
 
-> **/bcp lookup u=\<user> t=\<time> r=\<radius> a=\<action> b=\<blocks> e=\<exclude>**<br>
+> **/bcp lookup u=\<user> t=\<time> r=\<radius> w=\<world> a=\<action> b=\<blocks> e=\<exclude>**<br>
 _Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br>
 
 > **/bcp show \<page>:\[lines]**<br>
