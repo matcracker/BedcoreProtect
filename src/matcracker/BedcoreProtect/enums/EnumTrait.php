@@ -80,6 +80,13 @@ trait EnumTrait
         return $result;
     }
 
+    protected static function registerAll(self ...$members): void
+    {
+        foreach ($members as $member) {
+            self::register($member);
+        }
+    }
+
     /**
      * Registers the given object as an enum member.
      *
@@ -93,13 +100,6 @@ trait EnumTrait
     public function name(): string
     {
         return $this->enumName;
-    }
-
-    protected static function registerAll(self ...$members): void
-    {
-        foreach ($members as $member) {
-            self::register($member);
-        }
     }
 
     /**

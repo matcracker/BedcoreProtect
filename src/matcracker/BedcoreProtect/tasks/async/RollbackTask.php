@@ -78,6 +78,7 @@ class RollbackTask extends AsyncTask
             $chunks[$hash] = Chunk::fastDeserialize($serialChunk);
         }
 
+        /** @var SerializableBlock $block */
         foreach (unserialize($this->serializedBlocks) as $block) {
             $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
