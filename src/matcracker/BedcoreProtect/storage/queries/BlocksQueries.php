@@ -241,12 +241,12 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $name = $who->getName();
         //Particular blocks
         if ($who instanceof Leaves) {
-            $name = "leaves";
+            $name = "leaves-uuid";
+        } else {
+            $name = "{$who->getName()}-uuid";
         }
-        $name .= "-uuid";
         $pos = $position ?? $newBlock->asPosition();
 
         Await::g2c($this->addRawBlockLog(

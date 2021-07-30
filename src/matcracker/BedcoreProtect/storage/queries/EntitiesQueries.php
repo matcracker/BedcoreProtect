@@ -58,9 +58,7 @@ class EntitiesQueries extends Query
                 "leaves-uuid" => "#Decay"
             ];
 
-            $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-
-            yield $this->addRawEntity($serverUuid, "#console");
+            yield $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
             foreach ($map as $uuid => $name) {
                 yield $this->addRawEntity($uuid, $name);
             }
