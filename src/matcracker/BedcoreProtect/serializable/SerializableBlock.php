@@ -33,20 +33,16 @@ final class SerializableBlock
     private string $name;
     private int $id;
     private int $meta;
-    private int $x;
-    private int $y;
-    private int $z;
+    private Vector3 $position;
     private string $worldName;
     private ?string $serializedNbt;
 
-    public function __construct(string $name, int $id, int $meta, int $x, int $y, int $z, string $worldName, ?string $serializedNbt = null)
+    public function __construct(string $name, int $id, int $meta, Vector3 $position, string $worldName, ?string $serializedNbt = null)
     {
         $this->name = $name;
         $this->id = $id;
         $this->meta = $meta;
-        $this->x = $x;
-        $this->y = $y;
-        $this->z = $z;
+        $this->position = $position;
         $this->worldName = $worldName;
         $this->serializedNbt = $serializedNbt;
     }
@@ -57,9 +53,7 @@ final class SerializableBlock
             $block->getName(),
             $block->getId(),
             $block->getDamage(),
-            (int)$block->getX(),
-            (int)$block->getY(),
-            (int)$block->getZ(),
+            $block->asVector3(),
             $block->getLevelNonNull()->getFolderName(),
             BlockUtils::serializeTileTag($block)
         );
@@ -72,7 +66,7 @@ final class SerializableBlock
 
     public function asPosition(): Position
     {
-        return new Position($this->x, $this->y, $this->z, WorldUtils::getNonNullWorldByName($this->worldName));
+        return Position::fromObject($this->position, WorldUtils::getNonNullWorldByName($this->worldName));
     }
 
     public function getName(): string
@@ -97,22 +91,22 @@ final class SerializableBlock
 
     public function asVector3(): Vector3
     {
-        return new Vector3($this->x, $this->y, $this->z);
+        return $this->position;
     }
 
     public function getX(): int
     {
-        return $this->x;
+        return $this->position->x;
     }
 
     public function getY(): int
     {
-        return $this->y;
+        return $this->position->y;
     }
 
     public function getZ(): int
     {
-        return $this->z;
+        return $this->position->z;
     }
 
     public function getWorldName(): string
@@ -122,6 +116,6 @@ final class SerializableBlock
 
     public function __toString(): string
     {
-        return "SerializableBlock(id=$this->id,meta=$this->meta,x=$this->x,y=$this->y,z=$this->z,world=$this->worldName)";
+        return "SerializableBlock(id=$this->id,meta=$this->meta,vector=$this->position,world=$this->worldName)";
     }
 }

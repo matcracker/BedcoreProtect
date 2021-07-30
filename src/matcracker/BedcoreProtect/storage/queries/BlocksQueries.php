@@ -335,21 +335,18 @@ class BlocksQueries extends Query
 
         foreach ($blockRows as $row) {
             $serializedNBT = (string)$row["{$prefix}_nbt"];
-            $x = (int)$row["x"];
-            $z = (int)$row["z"];
-            $blocks[] = $block = new SerializableBlock("", (int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], $x, (int)$row["y"], $z, (string)$row["world_name"], $serializedNBT);
+            $id = (int)$row["{$prefix}_id"];
+            $pos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
+            $blocks[] = new SerializableBlock("", $id, (int)$row["{$prefix}_meta"], $pos, (string)$row["world_name"], $serializedNBT);
 
             if (strlen($serializedNBT) > 0) {
-                $nbt = Utils::deserializeNBT($serializedNBT);
-                $cx = $x >> 4;
-                $cz = $z >> 4;
+                $cx = $pos->x >> 4;
+                $cz = $pos->z >> 4;
                 if ($world->loadChunk($cx, $cz, false)) {
-                    if (class_exists($tileName = BlockUtils::getTileName($block->getId()))) {
-                        $tile = Tile::createTile($tileName, $world, $nbt);
-                        if ($tile !== null) {
-                            if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
-                                $tile->getInventory()->clearAll();
-                            }
+                    if (class_exists($tileName = BlockUtils::getTileName($id))) {
+                        $tile = Tile::createTile($tileName, $world, Utils::deserializeNBT($serializedNBT));
+                        if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
+                            $tile->getInventory()->clearAll();
                         }
                     } else {
                         $this->plugin->getLogger()->debug("Could not find tile \"$tileName\".");
@@ -358,7 +355,7 @@ class BlocksQueries extends Query
                     $this->plugin->getLogger()->debug("Could not load chunk at [$cx;$cz]");
                 }
             } else {
-                if (($tile = BlockUtils::asTile($block->asPosition())) !== null) {
+                if (($tile = $world->getTile($pos)) !== null) {
                     $world->removeTile($tile);
                 }
             }
