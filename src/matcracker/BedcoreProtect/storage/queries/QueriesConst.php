@@ -41,6 +41,7 @@ final class QueriesConst
     public const BEGIN_TRANSACTION = "bcp.generic.begin_transaction";
     public const END_TRANSACTION = "bcp.generic.end_transaction";
     public const OPTIMIZE = "bcp.generic.optimize";
+    public const VACUUM = "bcp.generic.vacuum";
     public const ADD_ENTITY = "bcp.add.entity";
     public const ADD_DATABASE_VERSION = "bcp.add.db_version";
     public const ADD_HISTORY_LOG = "bcp.add.log.main";
@@ -59,7 +60,8 @@ final class QueriesConst
     public const GET_ENTITY_LOG = "bcp.get.log.entity";
     public const GET_NEAR_LOG = "bcp.get.log.near";
     public const GET_TRANSACTION_LOG = "bcp.get.log.transaction";
-    public const PURGE = "bcp.purge";
+    public const PURGE_TIME = "bcp.purge.time";
+    public const PURGE_WORLD = "bcp.purge.world";
 
     private function __construct()
     {

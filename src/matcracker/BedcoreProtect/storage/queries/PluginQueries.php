@@ -39,6 +39,7 @@ use pocketmine\utils\TextFormat;
 use poggit\libasynql\generic\GenericStatementImpl;
 use poggit\libasynql\generic\GenericVariable;
 use poggit\libasynql\SqlDialect;
+use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function count;
 use function mb_substr;
@@ -59,7 +60,7 @@ class PluginQueries extends Query
             LookupData::NEAR_LOG,
             $inspector,
             $inspector->getPosition(),
-            new CommandData(null, null, $inspector->getLevelNonNull()->getFolderName(), $radius, null, null, null),
+            new CommandData(null, null, $inspector->getLevelNonNull()->getFolderName(), $radius),
             $limit,
             $offset
         );
@@ -285,7 +286,7 @@ class PluginQueries extends Query
             LookupData::TRANSACTION_LOG,
             $inspector,
             $position,
-            new CommandData(null, null, $position->getLevelNonNull()->getFolderName(), $radius, null, null, null),
+            new CommandData(null, null, $position->getLevelNonNull()->getFolderName(), $radius),
             $limit,
             $offset
         );
@@ -298,17 +299,36 @@ class PluginQueries extends Query
             LookupData::BLOCK_LOG,
             $inspector,
             $blockPos,
-            new CommandData(null, null, $blockPos->getLevelNonNull()->getFolderName(), $radius, null, null, null),
+            new CommandData(null, null, $blockPos->getLevelNonNull()->getFolderName(), $radius),
             $limit,
             $offset
         );
     }
 
-    public function purge(float $time, ?Closure $onSuccess = null): void
+    public function purge(float $time, ?string $worldName, bool $optimize, ?Closure $onSuccess = null): void
     {
-        $this->connector->executeChange(QueriesConst::PURGE, [
-            "time" => $time
-        ], $onSuccess);
+        Await::f2c(
+            function () use ($time, $worldName, $optimize, $onSuccess) {
+                if ($worldName !== null) {
+                    /** @var int $affectedRows */
+                    $affectedRows = yield $this->executeChange(QueriesConst::PURGE_WORLD, [
+                        "time" => $time,
+                        "world" => $worldName
+                    ]);
+                } else {
+                    /** @var int $affectedRows */
+                    $affectedRows = yield $this->executeChange(QueriesConst::PURGE_TIME, ["time" => $time]);
+                }
+
+                if ($optimize) {
+                    yield $this->executeGeneric($this->configParser->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
+                }
+
+                if ($onSuccess !== null) {
+                    $onSuccess($affectedRows);
+                }
+            }
+        );
     }
 
     public function buildLogsSelectionQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, ?float $currTime, bool $rollback, int $limit): void

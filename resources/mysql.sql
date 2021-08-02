@@ -83,6 +83,9 @@ START TRANSACTION;
 -- #        {end_transaction
 COMMIT;
 -- #        }
+-- #        {optimize
+OPTIMIZE TABLE entities, log_history, blocks_log, entities_log, inventories_log, status;
+-- #        }
 -- #    }
 -- #    {add
 -- #        {entity
@@ -397,9 +400,19 @@ LIMIT :limit OFFSET :offset;
 -- #        }
 -- #    }
 -- #    {purge
--- #        :time float
+-- #        {time
+-- #            :time float
 DELETE
 FROM log_history
 WHERE time < UNIX_TIMESTAMP() - :time;
+-- #        }
+-- #        {world
+-- #            :time float
+-- #            :world_name string
+DELETE
+FROM log_history
+WHERE (time < UNIX_TIMESTAMP() - :time)
+  AND world_name = :world_name;
+-- #        }
 -- #    }
 -- #}

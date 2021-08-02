@@ -32,6 +32,7 @@ use InvalidArgumentException;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\AdditionalParameter;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -184,10 +185,22 @@ abstract class ParsableSubCommand extends SubCommand
         }
 
         $argMap = $defaultValues;
+        $additionalParams = [];
         //Counter to check if all the required parameters are present.
         $currReqParams = count($argMap);
 
         foreach ($args as $arg) {
+            //Check if the argument is an additional parameter by checking the first char.
+            if ($arg[0] === AdditionalParameter::KEY_CHAR) {
+                try {
+                    $additionalParams[] = AdditionalParameter::fromString(mb_substr($arg, 1));
+                    continue;
+                } catch (InvalidArgumentException $e) {
+                    $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-additional-parameter", [mb_strtolower($arg)]));
+                    return null;
+                }
+            }
+
             $argData = explode("=", $arg);
             if (count($argData) !== 2) {
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-parameter-syntax"));
@@ -291,7 +304,7 @@ abstract class ParsableSubCommand extends SubCommand
             }
         }
 
-        $cmdData = new CommandData($users, $time, $world, $radius, $actions, $inclusions, $exclusions);
+        $cmdData = new CommandData($users, $time, $world, $radius, $actions, $inclusions, $exclusions, $additionalParams);
 
         if ($radius !== null && !$cmdData->isGlobalRadius()) {
             if ($sender instanceof Player) {

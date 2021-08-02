@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands;
 
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\AdditionalParameter;
 
 class CommandData
 {
@@ -34,12 +35,14 @@ class CommandData
     protected ?string $world;
     /** @var Action[]|null */
     protected ?array $actions;
-    /** @var array[]|null */
+    /** @var array<string, array<int, int>>|null */
     protected ?array $inclusions;
-    /** @var array[]|null */
+    /** @var array<string, array<int, int>>|null */
     protected ?array $exclusions;
+    /** @var AdditionalParameter[] */
+    protected array $additionalParams;
 
-    public function __construct(?array $users, ?int $time, ?string $world, ?int $radius, ?array $actions, ?array $inclusions, ?array $exclusions)
+    public function __construct(?array $users = null, ?int $time = null, ?string $world = null, ?int $radius = null, ?array $actions = null, ?array $inclusions = null, ?array $exclusions = null, array $additionalParams = [])
     {
         $this->users = $users;
         $this->time = $time;
@@ -48,6 +51,7 @@ class CommandData
         $this->actions = $actions;
         $this->inclusions = $inclusions;
         $this->exclusions = $exclusions;
+        $this->additionalParams = $additionalParams;
     }
 
     /**
@@ -100,5 +104,13 @@ class CommandData
     public function getExclusions(): ?array
     {
         return $this->exclusions;
+    }
+
+    /**
+     * @return AdditionalParameter[]
+     */
+    public function getAdditionalParams(): array
+    {
+        return $this->additionalParams;
     }
 }

@@ -92,6 +92,9 @@ END TRANSACTION;
 -- #        {optimize
 PRAGMA optimize;
 -- #        }
+-- #        {vacuum
+VACUUM;
+-- #        }
 -- #    }
 -- #    {add
 -- #        {entity
@@ -409,9 +412,19 @@ LIMIT :limit OFFSET :offset;
 -- #        }
 -- #    }
 -- #    {purge
--- #        :time float
+-- #        {time
+-- #            :time float
 DELETE
 FROM log_history
 WHERE time < (SELECT STRFTIME('%s', 'now')) - :time;
+-- #        }
+-- #        {world
+-- #            :time float
+-- #            :world_name string
+DELETE
+FROM log_history
+WHERE (time < (SELECT STRFTIME('%s', 'now')) - :time)
+  AND world_name = :world_name;
+-- #        }
 -- #    }
 -- #}

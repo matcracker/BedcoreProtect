@@ -26,10 +26,13 @@ use dktapps\pmforms\CustomForm;
 use dktapps\pmforms\CustomFormResponse;
 use dktapps\pmforms\element\Input;
 use matcracker\BedcoreProtect\commands\BCPCommand;
+use matcracker\BedcoreProtect\enums\AdditionalParameter;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
+use function array_map;
+use function in_array;
 use const PHP_FLOAT_MAX;
 
 final class PurgeSubCommand extends ParsableSubCommand
@@ -40,8 +43,11 @@ final class PurgeSubCommand extends ParsableSubCommand
         if ($cmdData !== null) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.started"));
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.no-restart"));
+
             $this->getPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->purge(
                 (float)$cmdData->getTime() ?? PHP_FLOAT_MAX,
+                $cmdData->getWorld(),
+                in_array(AdditionalParameter::OPTIMIZE(), $cmdData->getAdditionalParams()),
                 function (int $affectedRows) use ($sender): void {
                     $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.success"));
                     $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.deleted-rows", [$affectedRows]));
