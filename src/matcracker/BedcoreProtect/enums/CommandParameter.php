@@ -70,19 +70,16 @@ final class CommandParameter
     public static function fromString(string $name): ?CommandParameter
     {
         try {
-            $parameter = self::Enum_fromString($name);
+            return self::Enum_fromString($name);
         } catch (InvalidArgumentException $e) {
-            $parameter = null;
-
             foreach (self::getAll() as $enum) {
                 if (in_array(mb_strtolower($name), $enum->getAliases())) {
-                    $parameter = $enum;
-                    break;
+                    return $enum;
                 }
             }
         }
 
-        return $parameter;
+        return null;
     }
 
     /**
