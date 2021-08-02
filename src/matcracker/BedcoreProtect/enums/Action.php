@@ -60,9 +60,9 @@ final class Action
         "kill"
     ];
 
-    /** @var Action[] */
+    /** @var self[] */
     private static array $numericIdMap = [];
-    /** @var Action[][] */
+    /** @var self[][] */
     private static array $commandArgumentsMap;
     private int $type;
     private string $message;
@@ -83,7 +83,7 @@ final class Action
         $this->commandArguments = $commandArguments;
     }
 
-    public static function fromType(int $type): Action
+    public static function fromType(int $type): self
     {
         self::checkInit();
         if (!array_key_exists($type, self::$numericIdMap)) {
@@ -96,7 +96,7 @@ final class Action
     /**
      * Returns an array of Action of the specific command argument.
      * @param string $argument
-     * @return Action[]|null
+     * @return self[]|null
      */
     public static function fromCommandArgument(string $argument): ?array
     {
@@ -120,7 +120,7 @@ final class Action
         );
     }
 
-    protected static function register(Action $member): void
+    protected static function register(self $member): void
     {
         self::Enum_register($member);
         self::$numericIdMap[$member->getType()] = $member;
