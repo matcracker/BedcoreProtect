@@ -31,7 +31,6 @@ use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
-use function array_map;
 use function in_array;
 use const PHP_FLOAT_MAX;
 

@@ -81,13 +81,6 @@ final class DatabaseManager
         return $this->patchManager;
     }
 
-    public function optimize(): void
-    {
-        if ($this->plugin->getParsedConfig()->isSQLite()) {
-            $this->connector->executeGeneric(QueriesConst::OPTIMIZE);
-        }
-    }
-
     public function disconnect(): void
     {
         //Wait to execute all the queued queries.
@@ -103,6 +96,13 @@ final class DatabaseManager
         }
 
         $this->connector->close();
+    }
+
+    public function optimize(): void
+    {
+        if ($this->plugin->getParsedConfig()->isSQLite()) {
+            $this->connector->executeGeneric(QueriesConst::OPTIMIZE);
+        }
     }
 
     public function getStatus(): Generator
