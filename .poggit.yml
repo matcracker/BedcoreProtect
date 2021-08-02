@@ -13,7 +13,7 @@ projects:
         version: ~3.3.1
       - src: SOF3/await-generator/await-generator
         version: ~3.1.0
-      - src: JackMD/UpdateNotifier/UpdateNotifier
+      - src: ifera-mc/UpdateNotifier/UpdateNotifier
         version: ~2.1.0
       - src: dktapps-pm-pl/pmforms/pmforms
         version: ~1.0.0
