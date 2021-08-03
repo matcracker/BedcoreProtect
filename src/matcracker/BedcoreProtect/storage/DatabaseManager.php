@@ -83,6 +83,10 @@ final class DatabaseManager
 
     public function disconnect(): void
     {
+        if (!isset($this->connector)) {
+            return;
+        }
+
         //Wait to execute all the queued queries.
         $this->connector->waitAll();
 

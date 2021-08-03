@@ -46,6 +46,7 @@ abstract class BedcoreListener implements Listener
         $this->config = $plugin->getParsedConfig();
 
         $this->air = new Air();
+        $this->air->setComponents(0, 0, 0);
 
         $this->pluginQueries = $plugin->getDatabase()->getQueryManager()->getPluginQueries();
         $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();

@@ -253,7 +253,7 @@ abstract class ParsableSubCommand extends SubCommand
                     break;
                 case CommandParameter::TIME()->name():
                     $time = Utils::parseTime($value);
-                    if ($time === 0) {
+                    if ($time === null) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-time"));
                         return null;
                     }

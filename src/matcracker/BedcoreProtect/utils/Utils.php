@@ -38,12 +38,9 @@ use function count;
 use function is_string;
 use function json_decode;
 use function microtime;
-use function min;
 use function preg_match;
 use function preg_replace;
 use function strlen;
-use const PHP_INT_MAX;
-use const PREG_OFFSET_CAPTURE;
 
 final class Utils
 {
@@ -56,49 +53,49 @@ final class Utils
      *
      * @param string $strDate the date to parse.
      *
-     * @return int
+     * @return int|null
      */
-    public static function parseTime(string $strDate): int
+    public static function parseTime(string $strDate): ?int
     {
-        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches, PREG_OFFSET_CAPTURE);
+        /** @var string[] $matches */
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches);
 
         if (count($matches) === 0) {
-            return 0;
+            return null;
+        }
+
+        $value = preg_replace("/[^0-9]/", "", $matches[1]);
+        if (!is_string($value)) {
+            throw new UnexpectedValueException("Invalid time parsed, expected string.");
+        }
+
+        $dateType = preg_replace("/[^smhdw]/", "", $matches[2]);
+        if (!is_string($dateType)) {
+            throw new UnexpectedValueException("Invalid date type parsed, expected string.");
         }
 
         $time = 0;
-        foreach ($matches[0] as $match) {
-            $value = preg_replace("/[^0-9]/", "", $match);
-            if (!is_string($value)) {
-                throw new UnexpectedValueException("Invalid time parsed, expected string.");
-            }
-            $value = (int)$value;
+        $value = (int)$value;
 
-            $dateType = preg_replace("/[^smhdw]/", "", $match);
-            if (!is_string($dateType)) {
-                throw new UnexpectedValueException("Invalid date type parsed, expected string.");
-            }
-
-            switch ($dateType) {
-                case "w":
-                    $time += $value * 7 * 24 * 60 * 60;
-                    break;
-                case "d":
-                    $time += $value * 24 * 60 * 60;
-                    break;
-                case "h":
-                    $time += $value * 60 * 60;
-                    break;
-                case "m":
-                    $time += $value * 60;
-                    break;
-                case "s":
-                    $time += $value;
-                    break;
-            }
+        switch ($dateType) {
+            case "w":
+                $time += $value * 7 * 24 * 60 * 60;
+                break;
+            case "d":
+                $time += $value * 24 * 60 * 60;
+                break;
+            case "h":
+                $time += $value * 60 * 60;
+                break;
+            case "m":
+                $time += $value * 60;
+                break;
+            case "s":
+                $time += $value;
+                break;
         }
 
-        return (int)min($time, PHP_INT_MAX);
+        return (int)$time;
     }
 
     public static function getSenderUUID(CommandSender $sender): string
