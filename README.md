@@ -120,9 +120,9 @@ For example, `/bcp purge t=30d` will delete all data older than one month, and o
 
 #### Purging Worlds
 You can also optionally specify a world where delete the data.
-For example, `/co purge t=30d w=faction_world` will delete all data older than one month in the Faction world, without deleting data in any other worlds.
+For example, `/bcp purge t=30d w=faction_world` will delete all data older than one month in the Faction world, without deleting data in any other worlds.
 
-You can also add `#optimize` to the end of the command (e.g. `/co purge t=30d #optimize`) will also optimize your tables and reclaim disk space.
+You can also add `#optimize` to the end of the command (e.g. `/bcp purge t=30d #optimize`) will also optimize your tables and reclaim disk space.
 
 ---
 ### /bcp reload
@@ -169,7 +169,7 @@ Perform a restore. _Restoring can be used to undo rollbacks or to restore player
 ---
 
 ### /bcp show \<page\>:\<lines\>
-Allow switching page when multiple pages are returned from the [/co lookup](#bcp-lookup-parameters) command.
+Allow switching page when multiple pages are returned from the [/bcp lookup](#bcp-lookup-parameters) command.
 To change the number of lines displayed on a page, use the command `/bcp show <page>:<lines>`.
 
 > **Alias:** /bcp s
