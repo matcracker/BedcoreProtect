@@ -73,6 +73,11 @@ final class ConfigParser
         return (string)$this->data["database"]["sqlite"]["file"];
     }
 
+    public function isEnabledUI(): bool
+    {
+        return (bool)$this->data["enable-ui-menu"];
+    }
+
     public function isEnabledWorld(Level $world): bool
     {
         return in_array($world->getFolderName(), $this->getEnabledWorlds()) || count($this->getEnabledWorlds()) === 0;

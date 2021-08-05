@@ -28,7 +28,7 @@ use function ucfirst;
 
 final class ConfigUpdater
 {
-    public const LAST_VERSION = 2;
+    public const LAST_VERSION = 3;
     private const KEY_NOT_PRESENT = -1;
 
     private Main $plugin;

@@ -22,9 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
@@ -48,17 +46,17 @@ class RollbackTask extends AsyncTask
 
     /**
      * RollbackTask constructor.
-     * @param bool $rollback
-     * @param string $worldName
      * @param string $senderName
+     * @param string $worldName
      * @param SerializableBlock[] $blocks
+     * @param bool $rollback
      * @param Closure $onComplete
      */
-    public function __construct(bool $rollback, string $worldName, string $senderName, array $blocks, Closure $onComplete)
+    public function __construct(string $senderName, string $worldName, array $blocks, bool $rollback, Closure $onComplete)
     {
-        $this->rollback = $rollback;
-        $this->worldName = $worldName;
         $this->senderName = $senderName;
+        $this->worldName = $worldName;
+        $this->rollback = $rollback;
         $this->blocks = $blocks;
         $this->serializedBlocks = serialize($blocks);
 
@@ -80,6 +78,7 @@ class RollbackTask extends AsyncTask
             $chunks[$hash] = Chunk::fastDeserialize($serialChunk);
         }
 
+        /** @var SerializableBlock $block */
         foreach (unserialize($this->serializedBlocks) as $block) {
             $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
@@ -111,13 +110,7 @@ class RollbackTask extends AsyncTask
 
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal();
-
-        $lang = Main::getInstance()->getLanguage();
-        QueryManager::addReportMessage($this->senderName, $lang->translateString("rollback.blocks", [count($this->blocks)]));
-        //Set the execution time to 0 to avoid duplication of time in the same operation.
-        QueryManager::addReportMessage($this->senderName, $lang->translateString("rollback.modified-chunks", [count($chunks)]));
-
-        $onComplete();
+        $onComplete([count($this->blocks), count($chunks)]);
     }
 
     /**

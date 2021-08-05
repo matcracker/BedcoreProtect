@@ -138,7 +138,7 @@ final class PlayerListener extends BedcoreListener
                     $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
 
                 } elseif ($this->config->getPlayerInteractions() && $clickedBlock instanceof ItemFrame) {
-                    $tile = BlockUtils::asTile($clickedBlock);
+                    $tile = BlockUtils::asTile($clickedBlock->asPosition());
                     if ($tile instanceof TileItemFrame && $tile->hasItem()) {
                         //I consider the ItemFrame as a fake inventory holder to only log "removing" item.
                         $this->blocksQueries->addItemFrameLogByPlayer($player, $tile, $tile->getItem(), Action::REMOVE());
@@ -187,7 +187,7 @@ final class PlayerListener extends BedcoreListener
 
                     if (!$player->isSneaking() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
-                            $tile = BlockUtils::asTile($clickedBlock);
+                            $tile = BlockUtils::asTile($clickedBlock->asPosition());
                             if ($tile instanceof TileItemFrame) {
                                 if (!$tile->hasItem() && !$itemInHand->isNull()) {
                                     //I consider the ItemFrame as a fake inventory holder to only log "adding" item.

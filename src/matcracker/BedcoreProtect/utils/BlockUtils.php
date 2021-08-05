@@ -34,6 +34,7 @@ use pocketmine\block\FenceGate;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Lever;
 use pocketmine\block\Trapdoor;
+use pocketmine\level\Position;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\tile\Tile;
 use function is_a;
@@ -117,7 +118,7 @@ final class BlockUtils
      */
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
-        if (($tile = self::asTile($block)) !== null) {
+        if (($tile = self::asTile($block->asPosition())) !== null) {
             return clone $tile->saveNBT();
         }
 
@@ -128,17 +129,16 @@ final class BlockUtils
     /**
      * Returns a Tile instance of the given block if it exists.
      *
-     * @param Block $block
-     *
+     * @param Position $position
      * @return Tile|null
      */
-    public static function asTile(Block $block): ?Tile
+    public static function asTile(Position $position): ?Tile
     {
-        if (($world = $block->getLevel()) === null) {
+        if (($world = $position->getLevel()) === null) {
             return null;
         }
 
-        return $world->getTile($block->asVector3());
+        return $world->getTile($position->asVector3());
     }
 
     /**

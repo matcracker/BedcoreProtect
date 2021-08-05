@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
+use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
@@ -30,8 +30,9 @@ use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\level\Level;
+use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\Player;
 use pocketmine\Server;
@@ -51,18 +52,17 @@ final class QueryManager
         __construct as DefQueriesConstr;
     }
 
-    /** @var array[] */
-    private static array $additionalReports = [];
-    /** @var AxisAlignedBB[] */
+    private const ROLLBACK_ROWS_LIMIT = 25000;
+
     private static array $activeRollbacks = [];
+    /** @var UndoRollbackData[] */
+    private static array $undoData = [];
 
     private Main $plugin;
     private PluginQueries $pluginQueries;
     private BlocksQueries $blocksQueries;
     private EntitiesQueries $entitiesQueries;
     private InventoriesQueries $inventoriesQueries;
-    /** @var UndoRollbackData[] */
-    private array $undoData = [];
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
@@ -73,11 +73,6 @@ final class QueryManager
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
         $this->inventoriesQueries = new InventoriesQueries($plugin, $connector);
         $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
-    }
-
-    public static function addReportMessage(string $senderName, string $reportMessage): void
-    {
-        self::$additionalReports[$senderName]["messages"][] = TextFormat::colorize("&f- $reportMessage");
     }
 
     public function init(string $pluginVersion): void
@@ -117,92 +112,89 @@ final class QueryManager
         $this->connector->waitAll();
     }
 
-    public function rollback(Level $world, AxisAlignedBB $bb, CommandParser $commandParser): void
+    public function rollback(CommandSender $sender, CommandData $cmdData): void
     {
-        $this->rawRollback(true, $world, $bb, $commandParser);
+        $this->rawRollback($sender, $cmdData, true);
     }
 
     /**
+     * @param CommandSender $sender
+     * @param CommandData $cmdData
      * @param bool $rollback
-     * @param Level $world
-     * @param AxisAlignedBB $bb
-     * @param CommandParser $commandParser
-     * @param int[]|null $logIds
+     * @param float|null $undoTime
      */
-    private function rawRollback(bool $rollback, Level $world, AxisAlignedBB $bb, CommandParser $commandParser, ?array $logIds = null): void
+    private function rawRollback(CommandSender $sender, CommandData $cmdData, bool $rollback, ?float $undoTime = null): void
     {
-        $senderName = $commandParser->getSenderName();
-        $player = Server::getInstance()->getPlayer($senderName);
+        $senderName = $sender->getName();
 
         if (array_key_exists($senderName, self::$activeRollbacks)) {
-            if ($player !== null) {
-                $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "It is not possible to perform more than one rollback at a time."));
-            }
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.rollback-in-progress"));
             return;
         }
 
-        foreach (self::$activeRollbacks as $rbSender => $activeRollback) {
-            if ($activeRollback->intersectsWith($bb)) {
-                if ($player !== null) {
-                    $player->sendMessage(TextFormat::colorize(Main::MESSAGE_PREFIX . TextFormat::RED . "$rbSender is already operating in this area. Try again."));
-                }
+        $worldName = $cmdData->getWorld();
+        $world = Server::getInstance()->getLevelByName($worldName);
+        if ($world === null) {
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.world-not-exist", [$worldName]));
+            return;
+        }
+
+        $bb = $sender instanceof Player ? MathUtils::getRangedVector($sender->asVector3(), $cmdData->getRadius()) : null;
+
+        foreach (self::$activeRollbacks as $actSender => [$actBB, $actWorld]) {
+            if ((($bb !== null && $actBB !== null && $actBB->intersectsWith($bb)) || $cmdData->isGlobalRadius()) && $worldName === $actWorld) {
+                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.rollback-area-in-progress", [$actSender]));
                 return;
             }
         }
 
-        self::initAdditionReports($senderName);
+        $startTime = microtime(true);
+        $time = $undoTime ?? $startTime;
 
         Await::f2c(
-            function () use ($rollback, $world, $bb, $commandParser, $senderName, $logIds): Generator {
-                /** @var int[] $logIds */
-                $logIds = $logIds ?? yield $this->getRollbackLogIds($rollback, $world, $bb, $commandParser);
-                if (count($logIds) === 0) { //No changes.
-                    self::sendRollbackReport($rollback, $world, $commandParser);
-                    return;
+            function () use ($sender, $senderName, $cmdData, $world, $worldName, $bb, $rollback, $time, $startTime): Generator {
+                self::$activeRollbacks[$senderName] = [$bb, $worldName];
+                $executed = false;
+                $blocks = $chunks = $items = $entities = 0;
+
+                while (count($logIds = yield $this->getRollbackLogIds($cmdData, $bb, $time, $rollback, self::ROLLBACK_ROWS_LIMIT)) !== 0) {
+                    [$tmpBlocks, $tmpChunks] = yield $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    $blocks += $tmpBlocks;
+                    $chunks += $tmpChunks;
+
+                    $items += yield $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    $entities += yield $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds);
+
+                    yield $this->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+                        "rollback" => $rollback,
+                        "log_ids" => $logIds
+                    ]);
+
+                    $executed = true;
                 }
 
-                self::$activeRollbacks[$senderName] = $bb;
-                $this->undoData[$senderName] = new UndoRollbackData($rollback, $bb, $commandParser, $logIds);
+                if ($executed) {
+                    self::$undoData[$senderName] = new UndoRollbackData($rollback, $cmdData, $time);
+                }
 
-                $this->getBlocksQueries()->rawRollback(
-                    $rollback,
-                    $world,
-                    $commandParser,
-                    $logIds,
-                    function () use ($rollback, $world, $commandParser, $logIds): void {
-                        $this->getInventoriesQueries()->rawRollback($rollback, $world, $commandParser, $logIds, null, false);
-                        $this->getEntitiesQueries()->rawRollback(
-                            $rollback,
-                            $world,
-                            $commandParser,
-                            $logIds,
-                            static function () use ($commandParser): void {
-                                unset(self::$activeRollbacks[$commandParser->getSenderName()]);
-                            }
-                        );
-                    },
-                    false
-                );
+                if ($sender !== null) {
+                    $this->sendRollbackReport($sender, $cmdData, $rollback, $blocks, $chunks, $items, $entities, $startTime);
+                }
+            },
+            static function () use ($senderName): void {
+                unset(self::$activeRollbacks[$senderName]);
             }
         );
     }
 
-    private static function initAdditionReports(string $senderName): void
-    {
-        self::$additionalReports[$senderName] = [
-            "messages" => [],
-            "startTime" => microtime(true)
-        ];
-    }
-
-    private function getRollbackLogIds(bool $rollback, Level $world, AxisAlignedBB $bb, CommandParser $commandParser): Generator
+    private function getRollbackLogIds(CommandData $cmdData, ?AxisAlignedBB $bb, float $currTime, bool $rollback, int $limit): Generator
     {
         $query = "";
         $args = [];
-        $commandParser->buildLogsSelectionQuery($query, $args, $rollback, $world, $bb);
+        $this->pluginQueries->buildLogsSelectionQuery($query, $args, $cmdData, $bb, $currTime, $rollback, $limit);
 
         $onSuccess = yield;
-        $wrapOnSuccess = function (array $rows) use ($onSuccess): void {
+        $wrapOnSuccess = static function (array $rows) use ($onSuccess): void {
             /** @var int[] $logIds */
             $logIds = [];
             foreach ($rows as $row) {
@@ -213,40 +205,6 @@ final class QueryManager
 
         $this->connector->executeSelectRaw($query, $args, $wrapOnSuccess, yield Await::REJECT);
         return yield Await::ONCE;
-    }
-
-    public static function sendRollbackReport(bool $rollback, Level $world, CommandParser $commandParser): void
-    {
-        $senderName = $commandParser->getSenderName();
-        if (!array_key_exists($senderName, self::$additionalReports)) {
-            return;
-        }
-
-        if (($sender = Server::getInstance()->getPlayer($senderName)) !== null) {
-            $date = Utils::timeAgo(microtime(true) - $commandParser->getTime());
-            $lang = Main::getInstance()->getLanguage();
-
-            $sender->sendMessage(TextFormat::colorize("&f--- &3" . Main::PLUGIN_NAME . "&7 " . $lang->translateString("rollback.report") . " &f---"));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$world->getFolderName()])));
-            $sender->sendMessage(TextFormat::colorize($lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date])));
-            $sender->sendMessage(TextFormat::colorize("&f- " . $lang->translateString("rollback.radius", [$commandParser->getRadius() ?? $commandParser->getDefaultRadius()])));
-
-            if (count(self::$additionalReports[$senderName]["messages"]) > 0) {
-                foreach (self::$additionalReports[$senderName]["messages"] as $message) {
-                    $sender->sendMessage($message);
-                }
-            } else {
-                $sender->sendMessage(TextFormat::colorize("&f- &b" . $lang->translateString("rollback.no-changes")));
-            }
-
-            $diff = microtime(true) - self::$additionalReports[$senderName]["startTime"];
-            $duration = round($diff, 2);
-
-            $sender->sendMessage(TextFormat::colorize("&f- " . $lang->translateString("rollback.time-taken", [$duration])));
-            $sender->sendMessage(TextFormat::colorize("&f------"));
-        }
-
-        unset(self::$additionalReports[$senderName]);
     }
 
     public function getBlocksQueries(): BlocksQueries
@@ -264,21 +222,61 @@ final class QueryManager
         return $this->entitiesQueries;
     }
 
-    public function undoRollback(Player $player): bool
+    private function sendRollbackReport(CommandSender $sender, CommandData $cmdData, bool $rollback, int $blocks, int $chunks, int $items, int $entities, float $startTime): void
     {
-        if (!isset($this->undoData[$player->getName()])) {
+        $date = Utils::timeAgo((int)microtime(true) - $cmdData->getTime());
+
+        $sender->sendMessage(TextFormat::WHITE . "--- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . TextFormat::GRAY . " " . $this->plugin->getLanguage()->translateString("rollback.report") . TextFormat::WHITE . " ---");
+        $sender->sendMessage(TextFormat::WHITE . $this->plugin->getLanguage()->translateString(($rollback ? "rollback" : "restore") . ".completed", [$cmdData->getWorld()]));
+        $sender->sendMessage(TextFormat::WHITE . $this->plugin->getLanguage()->translateString(($rollback ? "rollback" : "restore") . ".date", [$date]));
+        if ($cmdData->isGlobalRadius()) {
+            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.global-radius"));
+        } else {
+            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.radius", [$cmdData->getRadius() ?? $this->plugin->getParsedConfig()->getMaxRadius()]));
+        }
+
+        if ($blocks > 0) {
+            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.blocks", [$blocks]));
+            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.modified-chunks", [$chunks]));
+
+            if ($items > 0) {
+                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.items", [$items]));
+            }
+
+            if ($entities > 0) {
+                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.entities", [$entities]));
+            }
+
+        } else {
+            $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $this->plugin->getLanguage()->translateString("rollback.no-changes"));
+        }
+
+        $diff = microtime(true) - $startTime;
+        $duration = round($diff, 2);
+
+        $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.time-taken", [$duration]));
+        $sender->sendMessage(TextFormat::WHITE . "------");
+    }
+
+    public function undoRollback(CommandSender $sender): bool
+    {
+        $data = self::getUndoData($sender);
+        if ($data === null) {
             return false;
         }
 
-        $data = $this->undoData[$player->getName()];
-
-        $this->rawRollback($data->isRollback(), $player->getLevelNonNull(), $data->getBoundingBox(), $data->getCommandParser(), $data->getLogIds());
+        $this->rawRollback($sender, $data->getCommandData(), $data->isRollback(), $data->getStartTime());
         return true;
     }
 
-    public function restore(Level $world, AxisAlignedBB $bb, CommandParser $commandParser): void
+    public static function getUndoData(CommandSender $sender): ?UndoRollbackData
     {
-        $this->rawRollback(false, $world, $bb, $commandParser);
+        return self::$undoData[$sender->getName()] ?? null;
+    }
+
+    public function restore(CommandSender $sender, CommandData $cmdData): void
+    {
+        $this->rawRollback($sender, $cmdData, false);
     }
 
     public function getPluginQueries(): PluginQueries

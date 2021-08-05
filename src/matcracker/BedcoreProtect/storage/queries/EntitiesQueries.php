@@ -21,18 +21,17 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\storage\QueryManager;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
+use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
 use pocketmine\level\Level;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
+use function class_exists;
 use function count;
 use function get_class;
 use function mb_strtolower;
@@ -48,7 +47,7 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): void
     {
-        Await::f2c(function () : Generator {
+        Await::f2c(function (): Generator {
             static $map = [
                 "flow-uuid" => "#Flow",
                 "water-uuid" => "#Water",
@@ -59,9 +58,7 @@ class EntitiesQueries extends Query
                 "leaves-uuid" => "#Decay"
             ];
 
-            $serverUuid = Server::getInstance()->getServerUniqueId()->toString();
-
-            yield $this->addRawEntity($serverUuid, "#console");
+            yield $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
             foreach ($map as $uuid => $name) {
                 yield $this->addRawEntity($uuid, $name);
             }
@@ -147,7 +144,7 @@ class EntitiesQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
     {
         $entityRows = [];
 
@@ -160,12 +157,15 @@ class EntitiesQueries extends Query
                     ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
                     (!$rollback && $action->equals(Action::SPAWN()))
                 ) {
-                    /** @var Entity $entityClass */
                     $entityClass = (string)$row["entity_classpath"];
-                    $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row["entityfrom_nbt"]));
-                    if ($entity !== null) {
-                        yield $this->updateEntityId((int)$row["log_id"], $entity);
-                        $entity->spawnToAll();
+                    if (class_exists($entityClass)) {
+                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row["entityfrom_nbt"]));
+                        if ($entity !== null) {
+                            yield $this->updateEntityId((int)$row["log_id"], $entity);
+                            $entity->spawnToAll();
+                        }
+                    } else {
+                        $this->plugin->getLogger()->debug("Could not find entity \"$entityClass\".");
                     }
                 } else {
                     $entity = $world->getEntity((int)$row["entityfrom_id"]);
@@ -176,14 +176,10 @@ class EntitiesQueries extends Query
             }
         }
 
-        if (($entities = count($entityRows)) > 0) {
-            QueryManager::addReportMessage(
-                $commandParser->getSenderName(),
-                $this->plugin->getLanguage()->translateString("rollback.entities", [$entities])
-            );
-        }
-
-        $onComplete();
+        //On success
+        (yield)(count($entityRows));
+        yield Await::REJECT;
+        return yield Await::ONCE;
     }
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator

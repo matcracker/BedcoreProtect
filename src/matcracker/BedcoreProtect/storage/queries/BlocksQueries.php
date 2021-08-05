@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use ArrayOutOfBoundsException;
 use Closure;
 use Generator;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
@@ -35,6 +34,7 @@ use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\Leaves;
+use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\item\Item;
@@ -50,6 +50,7 @@ use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function array_values;
+use function class_exists;
 use function count;
 use function microtime;
 use function strlen;
@@ -240,12 +241,12 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
     {
-        $name = $who->getName();
         //Particular blocks
         if ($who instanceof Leaves) {
-            $name = "leaves";
+            $name = "leaves-uuid";
+        } else {
+            $name = "{$who->getName()}-uuid";
         }
-        $name .= "-uuid";
         $pos = $position ?? $newBlock->asPosition();
 
         Await::g2c($this->addRawBlockLog(
@@ -319,7 +320,7 @@ class BlocksQueries extends Query
         );
     }
 
-    protected function onRollback(bool $rollback, Level $world, CommandParser $commandParser, array $logIds, Closure $onComplete): Generator
+    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
     {
         /** @var SerializableBlock[] $blocks */
         $blocks = [];
@@ -334,24 +335,35 @@ class BlocksQueries extends Query
 
         foreach ($blockRows as $row) {
             $serializedNBT = (string)$row["{$prefix}_nbt"];
-            $blocks[] = $block = new SerializableBlock("", (int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["x"], (int)$row["y"], (int)$row["z"], (string)$row["world_name"], $serializedNBT);
+            $id = (int)$row["{$prefix}_id"];
+            $pos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
+            $blocks[] = new SerializableBlock("", $id, (int)$row["{$prefix}_meta"], $pos, (string)$row["world_name"], $serializedNBT);
 
             if (strlen($serializedNBT) > 0) {
-                $nbt = Utils::deserializeNBT($serializedNBT);
-                $tile = Tile::createTile(BlockUtils::getTileName($block->getId()), $world, $nbt);
-                if ($tile !== null) {
-                    if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
-                        $tile->getInventory()->clearAll();
+                $cx = $pos->x >> 4;
+                $cz = $pos->z >> 4;
+                if ($world->loadChunk($cx, $cz, false)) {
+                    if (class_exists($tileName = BlockUtils::getTileName($id))) {
+                        $tile = Tile::createTile($tileName, $world, Utils::deserializeNBT($serializedNBT));
+                        if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
+                            $tile->getInventory()->clearAll();
+                        }
+                    } else {
+                        $this->plugin->getLogger()->debug("Could not find tile \"$tileName\".");
                     }
+                } else {
+                    $this->plugin->getLogger()->debug("Could not load chunk at [$cx;$cz]");
                 }
             } else {
-                $tile = BlockUtils::asTile($block->toBlock());
-                if ($tile !== null) {
+                if (($tile = $world->getTile($pos)) !== null) {
                     $world->removeTile($tile);
                 }
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($rollback, $world->getFolderName(), $commandParser->getSenderName(), $blocks, $onComplete));
+        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($sender->getName(), $world->getFolderName(), $blocks, $rollback, yield));
+        yield Await::REJECT;
+
+        return yield Await::ONCE;
     }
 }

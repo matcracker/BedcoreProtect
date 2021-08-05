@@ -89,6 +89,12 @@ BEGIN TRANSACTION;
 -- #        {end_transaction
 END TRANSACTION;
 -- #        }
+-- #        {optimize
+PRAGMA optimize;
+-- #        }
+-- #        {vacuum
+VACUUM;
+-- #        }
 -- #    }
 -- #    {add
 -- #        {entity
@@ -266,13 +272,16 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT bl.old_id,
+-- #                :limit int
+-- #                :offset int
+SELECT COUNT(*) OVER () AS cnt_rows,
+       bl.old_id,
        bl.old_meta,
        bl.old_nbt,
        bl.new_id,
        bl.new_meta,
        bl.new_nbt,
-       e.entity_name AS entity_from,
+       e.entity_name    AS entity_from,
        x,
        y,
        z,
@@ -288,7 +297,8 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 0 AND 2
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #            {entity
 -- #                :min_x int
@@ -298,8 +308,11 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT e1.entity_name AS entity_from,
-       e2.entity_name AS entity_to,
+-- #                :limit int
+-- #                :offset int
+SELECT COUNT(*) OVER () AS cnt_rows,
+       e1.entity_name   AS entity_from,
+       e2.entity_name   AS entity_to,
        x,
        y,
        z,
@@ -316,7 +329,8 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 3 AND 5
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #            {near
 -- #                :min_x int
@@ -326,14 +340,17 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT bl.old_id,
+-- #                :limit int
+-- #                :offset int
+SELECT COUNT(*) OVER () AS cnt_rows,
+       bl.old_id,
        bl.old_meta,
        bl.old_nbt,
        bl.new_id,
        bl.new_meta,
        bl.new_nbt,
-       e1.entity_name AS entity_from,
-       e2.entity_name AS entity_to,
+       e1.entity_name   AS entity_from,
+       e2.entity_name   AS entity_to,
        x,
        y,
        z,
@@ -351,7 +368,8 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 0 AND 5
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #            {transaction
 -- #                :min_x int
@@ -361,7 +379,10 @@ ORDER BY time DESC;
 -- #                :min_z int
 -- #                :max_z int
 -- #                :world_name string
-SELECT il.old_id,
+-- #                :limit int
+-- #                :offset int
+SELECT COUNT(*) OVER () AS cnt_rows,
+       il.old_id,
        il.old_meta,
        il.old_nbt,
        il.old_amount,
@@ -369,7 +390,7 @@ SELECT il.old_id,
        il.new_meta,
        il.new_nbt,
        il.new_amount,
-       e.entity_name AS entity_from,
+       e.entity_name    AS entity_from,
        x,
        y,
        z,
@@ -385,14 +406,25 @@ WHERE (x BETWEEN :min_x AND :max_x)
   AND (z BETWEEN :min_z AND :max_z)
   AND world_name = :world_name
   AND action BETWEEN 6 AND 7
-ORDER BY time DESC;
+ORDER BY time DESC
+LIMIT :limit OFFSET :offset;
 -- #            }
 -- #        }
 -- #    }
 -- #    {purge
--- #        :time float
+-- #        {time
+-- #            :time float
 DELETE
 FROM log_history
 WHERE time < (SELECT STRFTIME('%s', 'now')) - :time;
+-- #        }
+-- #        {world
+-- #            :time float
+-- #            :world_name string
+DELETE
+FROM log_history
+WHERE (time < (SELECT STRFTIME('%s', 'now')) - :time)
+  AND world_name = :world_name;
+-- #        }
 -- #    }
 -- #}

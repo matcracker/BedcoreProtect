@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect;
 
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
-use matcracker\BedcoreProtect\commands\CommandParser;
 use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\config\ConfigUpdater;
 use matcracker\BedcoreProtect\listeners\BedcoreListener;
@@ -35,20 +34,22 @@ use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\DatabaseManager;
 use pocketmine\lang\BaseLang;
 use pocketmine\plugin\PluginBase;
+use pocketmine\scheduler\ClosureTask;
+use pocketmine\utils\TextFormat;
 use function mkdir;
 use function version_compare;
 
 final class Main extends PluginBase
 {
     public const PLUGIN_NAME = "BedcoreProtect";
-    public const PLUGIN_TAG = "[" . self::PLUGIN_NAME . "]";
-    public const MESSAGE_PREFIX = "&3" . self::PLUGIN_NAME . " &f- ";
+    public const MESSAGE_PREFIX = TextFormat::DARK_AQUA . self::PLUGIN_NAME . TextFormat::WHITE . " - ";
 
     private static Main $instance;
     private BaseLang $baseLang;
     private DatabaseManager $database;
     private ConfigParser $configParser;
     private ConfigParser $oldConfigParser;
+    private BCPCommand $bcpCommand;
     /** @var BedcoreListener[] */
     private array $events;
 
@@ -93,6 +94,8 @@ final class Main extends PluginBase
             $event->config = $this->configParser;
         }
         $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+
+        $this->bcpCommand->updateTranslations();
     }
 
     public function onLoad(): void
@@ -147,9 +150,17 @@ final class Main extends PluginBase
 
         $queryManager->setupDefaultData();
 
-        CommandParser::initActions();
+        if ($this->configParser->isSQLite()) {
+            static $hourTicks = 20 * 60 * 60 * 8;
+            $this->getScheduler()->scheduleDelayedRepeatingTask(new ClosureTask(
+                function (int $currentTick): void {
+                    $this->database->optimize();
+                }
+            ), $hourTicks, $hourTicks);
+        }
 
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", new BCPCommand($this));
+        $this->bcpCommand = new BCPCommand($this);
+        $this->getServer()->getCommandMap()->register("bedcoreprotect", $this->bcpCommand);
 
         //Registering events
         $this->events = [

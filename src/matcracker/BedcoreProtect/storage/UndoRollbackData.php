@@ -21,30 +21,25 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage;
 
-use matcracker\BedcoreProtect\commands\CommandParser;
-use pocketmine\math\AxisAlignedBB;
+use matcracker\BedcoreProtect\commands\CommandData;
 
 final class UndoRollbackData
 {
     private bool $rollback;
-    private AxisAlignedBB $bb;
-    private CommandParser $commandParser;
-    /** @var int[] */
-    private array $logIds;
+    private CommandData $commandData;
+    private float $startTime;
 
     /**
      * UndoRollbackData constructor.
      * @param bool $rollback
-     * @param AxisAlignedBB $bb
-     * @param CommandParser $commandParser
-     * @param int[] $logIds
+     * @param CommandData $commandData
+     * @param float $startTime
      */
-    public function __construct(bool $rollback, AxisAlignedBB $bb, CommandParser $commandParser, array $logIds)
+    public function __construct(bool $rollback, CommandData $commandData, float $startTime)
     {
         $this->rollback = !$rollback;
-        $this->bb = $bb;
-        $this->commandParser = $commandParser;
-        $this->logIds = $logIds;
+        $this->commandData = $commandData;
+        $this->startTime = $startTime;
     }
 
     public function isRollback(): bool
@@ -52,21 +47,13 @@ final class UndoRollbackData
         return $this->rollback;
     }
 
-    public function getBoundingBox(): AxisAlignedBB
+    public function getCommandData(): CommandData
     {
-        return $this->bb;
+        return $this->commandData;
     }
 
-    public function getCommandParser(): CommandParser
+    public function getStartTime(): float
     {
-        return $this->commandParser;
-    }
-
-    /**
-     * @return int[]
-     */
-    public function getLogIds(): array
-    {
-        return $this->logIds;
+        return $this->startTime;
     }
 }

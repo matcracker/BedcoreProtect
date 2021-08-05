@@ -1,7 +1,7 @@
 ---
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-version: 0.9.1
+version: 0.10.0
 api: 3.21.0
 
 load: POSTWORLD
@@ -19,8 +19,6 @@ permissions:
         description: "Allows the user to run the sub-command /bedcoreprotect inspect"
       bcp.subcommand.lookup:
         description: "Allows the user to run the sub-command /bedcoreprotect lookup"
-      bcp.subcommand.menu:
-        description: "Allows the user to run the sub-command /bedcoreprotect menu"
       bcp.subcommand.near:
         description: "Allows the user to run the sub-command /bedcoreprotect near"
       bcp.subcommand.purge:

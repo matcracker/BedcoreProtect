@@ -76,7 +76,7 @@ final class AwaitMutex
     }
 
     /**
-     * Returns true if the mutex is currently unused, false if it is currently unlocked.
+     * Returns true if the mutex is currently unused, false if it is currently locked.
      */
     public function isIdle(): bool
     {
