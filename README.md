@@ -56,8 +56,8 @@ Rollback or restore multiple players at once.
 
 ...and the list is still expanding!
 
-## Database Minimum Requirements
-If you are using **MySQL** as storage, the minimum required version must be >= **5.6.4**
+# Database Minimum Requirements
+In case of **MySQL** as storage, the minimum required version must be >= **5.6.4**
 
 # Commands
 You can access the following commands by using **/bedcoreprotect**, **/bcp**, **/core** or **/co**.
