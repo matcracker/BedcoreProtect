@@ -1,9 +1,8 @@
+# BedcoreProtect
 [![](https://poggit.pmmp.io/shield.dl.total/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![](https://poggit.pmmp.io/shield.state/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![](https://poggit.pmmp.io/shield.api/BedcoreProtect)](https://poggit.pmmp.io/p/BedcoreProtect)
 [![Discord](https://img.shields.io/discord/620519017148579841.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Uf6U78g)
-
-## BedcoreProtect
 
 BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine servers. Rollback and restore any amount of damage.
 
@@ -57,100 +56,214 @@ Rollback or restore multiple players at once.
 
 ...and the list is still expanding!
 
-# Database Minimum Requirements
-- **MySQL** version must be >= **5.6.4**
+## Database Minimum Requirements
+If you are using **MySQL** as storage, the minimum required version must be >= **5.6.4**
 
 # Commands
-The main command is **/bedcoreprotect** but it accepts the folllowing aliases: **/bcp, /core, /co** (**Main permission:** _bcp.command.bedcoreprotect_)
+You can access the following commands by using **/bedcoreprotect**, **/bcp**, **/core** or **/co**.
+Running this command without arguments and with the configuration option `enable-ui-menu: true`, it will display a graphic interface to simplify the plugin usage.
 
-**Quick command overview:**
-- **/bcp help - _Display a list of commands_** (**Permission:** _bcp.subcommand.help_)
-- **/bcp inspect - _Toggle the inspector mode_** (**Permission:** _bcp.subcommand.inspect_)
-- **/bcp rollback \<params> - _Rollback block data_** (**Permission:** _bcp.subcommand.rollback_)
-- **/bcp restore \<params> - _Restore block data_** (**Permission:** _bcp.subcommand.restore_)
-- **/bcp lookup \<params> - _Advanced block data lookup_** (**Permission:** _bcp.subcommand.lookup_)
-- **/bcp show \<params> - _Allows to show a specific page of logs._** (**Permission:** _bcp.subcommand.show_)
-- **/bcp purge \<params> - _Delete old block data_** (**Permission:** _bcp.subcommand.purge_)
-- **/bcp reload - _Reload the configuration file_** (**Permission:** _bcp.subcommand.reload_)
-- **/bcp status - _View the plugin status_** (**Permission:** _bcp.subcommand.status_)
+The **command permission** is _bcp.command.bedcoreprotect_ (default: operator).
 
-**Shortcut commands:**
-- **/bcp near \[value]**: _Performs a lookup with radius (default 10)_ (**Permission:** _bcp.subcommand.near_)
-- **/bcp undo**: _Revert a rollback/restore via the opposite action_ (**Permission:** _bcp.subcommand.undo_)
+## Command overview
+| Command       | Description                   | Permission              | Permission default |
+|---------------|-------------------------------|-------------------------|:------------------:|
+| /bcp help     | Display a list of commands    | bcp.subcommand.help     | Operator           |
+| /bcp lookup   | Lookup block data             | bcp.subcommand.lookup   | Operator           |
+| /bcp purge    | Delete old block data         | bcp.subcommand.purge    | Operator           |
+| /bcp reload   | Reload the configuration file | bcp.subcommand.reload   | Operator           |
+| /bcp inspect  | Toggle the inspector          | bcp.subcommand.inspect  | Operator           |
+| /bcp restore  | Restore block data            | bcp.subcommand.restore  | Operator           |
+| /bcp rollback | Rollback block data           | bcp.subcommand.rollback | Operator           |
+| /bcp show     | View the plugin status        | bcp.subcommand.show     | Operator           |
+| /bcp status   | View the plugin status        | bcp.subcommand.status   | Operator           |
+
+### Command shortcuts
+| Command   | Description                                       | Permission          | Permission default |
+|-----------|---------------------------------------------------|---------------------|:------------------:|
+| /bcp near | Performs a lookup with radius 10                  | bcp.subcommand.near | Operator           |
+| /bcp undo | Revert a rollback/restore via the opposite action | bcp.subcommand.undo | Operator           |
+
+## Command details
+_Detailed commands information are listed below._
+
+### /bcp help
+Display a list of commands available in-game.
+
 ---
-**Advanced command overview:**
-> **/bcp**<br>
-_If the configuration option `enable-ui-menu` is enabled, it displays a graphic interface to simplify the plugin commands usage._
 
-> **/bcp help**<br>
-_Diplay a list of commands in-game_
+### /bcp lookup \<parameters\>
+Perform a lookup returning a page with all blocks data fetched. If multiple pages are returned, see the command [/bcp show](#bcp-show-pagelines) to switch pages.
 
-> **/bpc inspect**<br>
-_Enable the inspector. Type the command again to disable it. You can also use just **"/bcp i"**_
+> **Alias:** /bcp l \<parameters\>
 
-> **/bcp rollback u=\<user> t=\<time> r=\<radius> w=\<world> a=\<action> b=\<blocks> e=\<exclude>**<br>
-_Nearly all of the parameters are optional. Shortcut: **"/bcp rb"**._
+| Parameter | Mandatory          |
+|-----------|:------------------:|
+| time      | YES                |
+| world     | YES (only console) |
+| radius    | NO                 |
+| users     | NO                 |
+| actions   | NO                 |
+| include   | NO                 |
+| exclude   | NO                 |
 
->>**u=\<user>** - Specify a user to rollback.<br>
-_Example: u=Shoghi u=Shoghi,#zombie_
+---
+### /bcp purge \<parameters\>
+Purge old block data. Useful for freeing up space on your HDD if you don't need the older data.
 
->>**t=\<time>** - Specify the amount of time to rollback.<br>
-You can specify weeks,days,hours,minutes, and seconds.<br><br>
-_Example: t=4w5d2h7m20s_<br><br>
-You can pick and choose time amounts. <br>
-_Example: t=5d2h_
+| Parameter | Mandatory |
+|-----------|:---------:|
+| time      | YES       |
+| world     | NO        |
 
->>**r=\<radius>** - Specify a radius.<br>
-You can use this to only rollback blocks near you.<br>
-You can also use `r=#global` to indicate the entire world.<br><br>
-For example, the following would only rollback damage within 10 blocks of where you are standing: r=10
+For example, `/bcp purge t=30d` will delete all data older than one month, and only keep the last 30 days of data.
 
->>**w=\<world>** - Specify a world.<br>
-You can specify a world to rollback.<br>
-_Example: w=world w=FactionWorld_
+#### Purging Worlds
+You can also optionally specify a world where delete the data.
+For example, `/co purge t=30d w=faction_world` will delete all data older than one month in the Faction world, without deleting data in any other worlds.
 
->>**a=\<action>** - Restrict the lookup to a certain action.<br>
-For example, if you wanted to only rollback blocks placed, you would use a:+block<br><br>
-Here's a list of all the actions:<br>
-  • a=block (blocks placed/broken)<br>
-  • a=+block (blocks placed)<br>
-  • a=-block (blocks broken)<br>
-  • a=click (player interactions)<br>
-  • a=container (items taken from or put in chests, etc.)<br>
-  • a=+container (items put in chests, etc.) <br>
-  • a=-container (items taken from chests, etc.)<br>
-  • a=kill (mobs/animals killed)<br>
-  
->>**b=\<blocks>** - Restrict the rollback to certain block types.<br>
-For example, if you wanted to only rollback stone, you would use b=1<br>
-You can specify multiple items, such as b=1,5,7<br>
-or b=stone,planks,bedrock<br><br>
-You can find a list of block type IDs at https://minecraft.gamepedia.com/Bedrock_Edition_data_values
+You can also add `#optimize` to the end of the command (e.g. `/co purge t=30d #optimize`) will also optimize your tables and reclaim disk space.
 
->>**e=\<exclude>** - Exclude certain block types from the rollback.<br>
-For example, if you don't want TNT to come back during a rollback, you would type e:46
+---
+### /bcp reload
+Reloads the configuration file.
 
-> **/bpc restore u=\<user> t=\<time> r=\<radius> w=\<world> a=\<action> b=\<blocks> e=\<exclude>**<br>
-_Same parameters as /bcp rollback. Shortcut: **"/bcp rs"**._<br><br>
-Restoring can be used to undo rollbacks.
+---
 
-> **/bcp lookup u=\<user> t=\<time> r=\<radius> w=\<world> a=\<action> b=\<blocks> e=\<exclude>**<br>
-_Search through block data using the same parameters as /bcp rollback. Shortcut: **"/bcp l"**._<br>
+### /bcp inspect
+Enable the inspector. Type the command again to disable it.
 
-> **/bcp show \<page>:\[lines]**<br>
-_Allow to switch pages of /bcp lookup command. Shortcut: **"/bcp s"**._<br><br>
-When multiple pages returned from lookup command, use the command **"/bcp show \<page>"** to switch pages.<br>
-To change the number of lines displayed on a page, use the command **"/bcp show \<page>:\<lines>"**.<br><br>
-For example, **"/bcp show 1:10"** will return 10 lines of data, starting at the first page.
+> **Alias:** /bcp i
+---
 
-> **/bcp purge t=\<time>**<br>
-_Purge old block data. Useful for freeing up space on your HDD if you don't need the older data._<br><br>
-For example, "/bcp purge t=30d" will delete all data older than one month, and only keep the last 30 days of data.
+### /bcp restore \<parameters\>
+Perform a rollback. _Rollbacks can be used to revert player actions._
+
+> **Alias:** /bcp rs \<parameters\>
+
+| Parameter | Mandatory          |
+|-----------|:------------------:|
+| time      | YES                |
+| world     | YES (only console) |
+| radius    | YES                |
+| users     | NO                 |
+| actions   | NO                 |
+| include   | NO                 |
+| exclude   | NO                 |
+---
+
+### /bcp rollback \<parameters\>
+Perform a restore. _Restoring can be used to undo rollbacks or to restore player actions._
+
+> **Alias:** /bcp rb \<parameters\>
+
+| Parameter | Mandatory          |
+|-----------|:------------------:|
+| time      | YES                |
+| world     | YES (only console) |
+| radius    | YES                |
+| users     | NO                 |
+| actions   | NO                 |
+| include   | NO                 |
+| exclude   | NO                 |
+---
+
+### /bcp show \<page\>:\<lines\>
+Allow switching page when multiple pages are returned from the [/co lookup](#bcp-lookup-parameters) command.
+To change the number of lines displayed on a page, use the command `/bcp show <page>:<lines>`.
+
+> **Alias:** /bcp s
+
+> For example, `/bcp s 2:10` will return 10 lines of data, starting from the second page.
+---
+
+### /bcp status
+Displays the plugin status and version information.
+
+---
+
+## Parameters overview
+| Parameter | Aliases   | Description                    |
+|-----------|-----------|--------------------------------|
+| users     | user, u   | Specify the user(s).           |
+| time      | t         | Specify the amount of time.    |
+| radius    | r         | Specify a radius area.         |
+| world     | w         | Specify the world.             |
+| actions   | action, a | Restrict to a certain actions. |
+| include   | i         | Include specific blocks.       |
+| exclude   | e         | Exclude specific blocks.       |
+
+## Parameter details
+_Detailed commands parameters information are listed below._
+
+### u=\<users\>
+_You can specify a single or multiple users or entities._
+
+Examples:
+- `u=Notch`
+- `u=Notch,shoghicp`
+- `u=matcracker,#Zombie`
+---
+
+### t=\<time\>
+_You can specify weeks, days, hours, minutes, and seconds._
+
+Examples:
+- `t=4w5d2h7m20s`
+- `t=5d2h`
+---
+
+### r=\<radius\>
+_A numeric radius targets within that many blocks of your player location._
+
+Examples:
+- `r=20` _(target within 20 blocks of your location)_
+- `r=#global` _(target the entire server)_
+---
+
+### w=\<world\>
+_You can specify a single world._
+
+Examples:
+- `w=faction`
+- `w="my world"` _(if your world name has whitespaces use double quotes)_
+---
+
+### a=\<actions\>
+_Restrict the command to a specific action._
+
+| Action     | Description                       |
+|------------|-----------------------------------|
+| block      | Placed/Broken blocks              |
+| +block     | Placed blocks                     |
+| -block     | Broken blocks                     |
+| click      | Player interactions               |
+| container  | Items taken from or put in chests |
+| +container | Items put in chests               |
+| -container | Items taken from chests           |
+| kill       | Mobs killed                       |
+
+> For example, if you want to only rollback blocks placed, you would use `a=+block`
+---
+
+### i=\<include\>
+_Can be used to specify a blocks/items._
+
+Examples:
+- `i=stone` _(only includes stone)_
+- `w=stone,oak_wood,bedrock` _(specify multiple blocks)_
+> You can find a list of blocks at https://minecraft.gamepedia.com/Bedrock_Edition_data_values.
+---
+
+### e=\<exclude\>
+_Can be used to exclude a blocks/items._
+
+Examples:
+- `e=tnt` _(only excludes TNT)_
+---
 
 # FAQ
-
-**I found a bug, where can I report it?**
-- > You can report [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Bug report**.
-
-**Where can I request a new feature?**
-- > You can ask a new feature [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Feature request**.
+- **I found a bug, where can I report it?**
+  - You can report [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Bug report**.
+- **Where can I request a new feature?**
+  - You can ask a new feature [here](https://github.com/matcracker/BedcoreProtect/issues/new/choose) by clicking button **"Get Started"** on **Feature request**.
