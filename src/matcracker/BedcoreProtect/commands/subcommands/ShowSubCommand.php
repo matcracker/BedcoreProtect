@@ -141,4 +141,9 @@ final class ShowSubCommand extends SubCommand
     {
         return "show";
     }
+
+    public function getAlias(): string
+    {
+        return "s";
+    }
 }
