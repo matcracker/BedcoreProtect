@@ -313,7 +313,7 @@ class PluginQueries extends Query
                     /** @var int $affectedRows */
                     $affectedRows = yield $this->executeChange(QueriesConst::PURGE_WORLD, [
                         "time" => $time,
-                        "world" => $worldName
+                        "world_name" => $worldName
                     ]);
                 } else {
                     /** @var int $affectedRows */
