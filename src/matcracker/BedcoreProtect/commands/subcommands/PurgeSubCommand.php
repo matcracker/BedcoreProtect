@@ -24,14 +24,20 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 use dktapps\pmforms\BaseForm;
 use dktapps\pmforms\CustomForm;
 use dktapps\pmforms\CustomFormResponse;
+use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Input;
+use dktapps\pmforms\element\Toggle;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
+use matcracker\BedcoreProtect\enums\CommandParameter;
+use matcracker\BedcoreProtect\forms\WorldDropDown;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
+use function array_merge;
 use function in_array;
+use function strlen;
 use const PHP_FLOAT_MAX;
 
 final class PurgeSubCommand extends ParsableSubCommand
@@ -57,17 +63,46 @@ final class PurgeSubCommand extends ParsableSubCommand
 
     public function getForm(Player $player): ?BaseForm
     {
+        /** @var WorldDropDown $worldDropDown */
+        $worldDropDown = clone CommandParameter::WORLD()->getFormElement();
+        $worldDropDown->setOptions(array_merge(["----"], $worldDropDown->getOptions()));
+
+        $elements = [
+            "time" => new Input(
+                "time",
+                $this->getLang()->translateString("form.purge.delete-data"),
+                "1h3m10s"
+            ),
+            "world" => $worldDropDown,
+            "optimize" => new Toggle(
+                "optimize",
+                $this->getLang()->translateString("form.purge.optimize")
+            )
+        ];
+
         return (new CustomForm(
             TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getLang()->translateString("form.menu.purge"),
-            [
-                new Input(
-                    "time",
-                    $this->getLang()->translateString("form.purge.delete-data"),
-                    "1h3m10s"
-                )
-            ],
-            static function (Player $player, CustomFormResponse $response): void {
-                $player->chat("/bcp purge t={$response->getString("time")}");
+            $elements,
+            function (Player $player, CustomFormResponse $response) use ($elements): void {
+                $command = "/bcp {$this->getName()}";
+
+                if (strlen($time = $response->getString("time")) > 0) {
+                    $command .= " t=$time";
+                }
+
+                if (($worldIdx = $response->getInt("world")) > 0) {
+                    /** @var Dropdown $worldDropDown */
+                    $worldDropDown = $elements["world"];
+                    /** @var string $world */
+                    $world = $worldDropDown->getOption($worldIdx);
+                    $command .= " w=$world";
+                }
+
+                if ($response->getBool("optimize")) {
+                    $command .= " #optimize";
+                }
+
+                $player->chat($command);
             },
             function (Player $player): void {
                 $player->sendForm(BCPCommand::getForm($this->getPlugin(), $player));
@@ -75,14 +110,14 @@ final class PurgeSubCommand extends ParsableSubCommand
         ));
     }
 
+    public function getName(): string
+    {
+        return "purge";
+    }
+
     public function sendCommandHelp(CommandSender $sender): void
     {
         $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp purge t=<time>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("subcommand.purge.help.description"));
         $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("subcommand.purge.help.example"));
-    }
-
-    public function getName(): string
-    {
-        return "purge";
     }
 }

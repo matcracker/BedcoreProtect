@@ -26,6 +26,7 @@ use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Input;
 use dktapps\pmforms\element\Slider;
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\forms\WorldDropDown;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use function array_map;
@@ -130,7 +131,7 @@ final class CommandParameter
             new self(
                 "world",
                 ["w"],
-                new Dropdown(
+                new WorldDropDown(
                     "world",
                     $plugin->getLanguage()->translateString("form.params.world"),
                     WorldUtils::getWorldNames()
