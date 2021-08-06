@@ -27,6 +27,7 @@ use pocketmine\level\format\Chunk;
 use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
+use function array_map;
 
 final class WorldUtils
 {
@@ -64,5 +65,12 @@ final class WorldUtils
         }
 
         return $world;
+    }
+
+    public static function getWorldNames(): array
+    {
+        return array_map(static function (Level $world): string {
+            return $world->getFolderName();
+        }, Server::getInstance()->getLevels());
     }
 }

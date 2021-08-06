@@ -23,15 +23,12 @@ namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Level;
 use pocketmine\nbt\BigEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\NamedTag;
 use pocketmine\Player;
-use pocketmine\Server;
 use UnexpectedValueException;
 use function array_filter;
-use function array_map;
 use function base64_decode;
 use function base64_encode;
 use function count;
@@ -170,12 +167,5 @@ final class Utils
         }
 
         return $tag;
-    }
-
-    public static function getWorldNames(): array
-    {
-        return array_map(static function (Level $world): string {
-            return $world->getFolderName();
-        }, Server::getInstance()->getLevels());
     }
 }

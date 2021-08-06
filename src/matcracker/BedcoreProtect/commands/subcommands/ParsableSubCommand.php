@@ -36,6 +36,7 @@ use matcracker\BedcoreProtect\enums\AdditionalParameter;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
+use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\command\CommandSender;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
@@ -260,7 +261,7 @@ abstract class ParsableSubCommand extends SubCommand
                     break;
                 case CommandParameter::WORLD()->name():
                     if (Server::getInstance()->getLevelByName($value) === null) {
-                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world", [$value, implode(", ", Utils::getWorldNames())]));
+                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world", [$value, implode(", ", WorldUtils::getWorldNames())]));
                         return null;
                     }
                     $world = $value;
