@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\ui;
+namespace matcracker\BedcoreProtect\forms;
 
 use dktapps\pmforms\MenuForm;
 use dktapps\pmforms\MenuOption;
