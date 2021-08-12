@@ -49,7 +49,6 @@ use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function array_values;
-use function class_exists;
 use function count;
 use function microtime;
 use function strlen;
@@ -340,8 +339,11 @@ class BlocksQueries extends Query
                 $cx = $pos->x >> 4;
                 $cz = $pos->z >> 4;
                 if ($world->loadChunk($cx, $cz, false)) {
-                    if (class_exists($tileName = BlockUtils::getTileName($id))) {
-                        $tile = Tile::createTile($tileName, $world, Utils::deserializeNBT($serializedNBT));
+                    $nbt = Utils::deserializeNBT($serializedNBT);
+                    $tileName = $nbt->getString(Tile::TAG_ID);
+
+                    $tile = Tile::createTile($tileName, $world, $nbt);
+                    if ($tile !== null) {
                         if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                             $tile->getInventory()->clearAll();
                         }

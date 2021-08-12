@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\block\Anvil;
 use pocketmine\block\Block;
-use pocketmine\block\BlockIds;
 use pocketmine\block\BrewingStand;
 use pocketmine\block\BurningFurnace;
 use pocketmine\block\Button;
@@ -125,7 +124,6 @@ final class BlockUtils
         return null;
     }
 
-
     /**
      * Returns a Tile instance of the given block if it exists.
      *
@@ -139,31 +137,5 @@ final class BlockUtils
         }
 
         return $world->getTile($position->asVector3());
-    }
-
-    /**
-     * @param int $blockId
-     * @return string
-     */
-    public static function getTileName(int $blockId): string //TODO: Remove on API 4.0
-    {
-        static $array = [
-            BlockIds::STANDING_BANNER => Tile::BANNER,
-            BlockIds::WALL_BANNER => Tile::BANNER,
-            BlockIds::BED_BLOCK => Tile::BED,
-            BlockIds::BREWING_STAND_BLOCK => Tile::BREWING_STAND,
-            BlockIds::CHEST => Tile::CHEST,
-            BlockIds::TRAPPED_CHEST => Tile::CHEST,
-            BlockIds::ENCHANTING_TABLE => Tile::ENCHANT_TABLE,
-            BlockIds::ENDER_CHEST => Tile::ENDER_CHEST,
-            BlockIds::FLOWER_POT_BLOCK => Tile::FLOWER_POT,
-            BlockIds::FURNACE => Tile::FURNACE,
-            BlockIds::ITEM_FRAME_BLOCK => Tile::ITEM_FRAME,
-            BlockIds::SIGN_POST => Tile::SIGN,
-            BlockIds::WALL_SIGN => Tile::SIGN,
-            BlockIds::SKULL_BLOCK => Tile::SKULL
-        ];
-
-        return $array[$blockId] ?? "Unknown";
     }
 }
