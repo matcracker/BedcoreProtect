@@ -28,7 +28,6 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\tasks\async\RollbackTask;
-use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -65,14 +64,12 @@ class BlocksQueries extends Query
 {
     protected EntitiesQueries $entitiesQueries;
     protected InventoriesQueries $inventoriesQueries;
-    private AwaitMutex $mutexBlock;
 
     public function __construct(Main $plugin, DataConnector $connector, EntitiesQueries $entitiesQueries, InventoriesQueries $inventoriesQueries)
     {
         parent::__construct($plugin, $connector);
         $this->entitiesQueries = $entitiesQueries;
         $this->inventoriesQueries = $inventoriesQueries;
-        $this->mutexBlock = new AwaitMutex();
     }
 
     /**
@@ -177,7 +174,7 @@ class BlocksQueries extends Query
 
         $uuidEntity = EntityUtils::getUniqueId($entity);
 
-        $this->mutexBlock->putClosure(
+        $this->getMutex()->putClosure(
             function () use ($entity, $uuidEntity, $oldBlocks, $newBlocks, $cntNewBlocks, $action, $time): Generator {
                 yield $this->entitiesQueries->addEntity($entity);
 

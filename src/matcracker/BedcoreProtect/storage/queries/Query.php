@@ -25,6 +25,7 @@ use Generator;
 use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\utils\AwaitMutex;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Level;
 use pocketmine\math\Vector3;
@@ -37,6 +38,8 @@ abstract class Query
         __construct as DefQueriesConstr;
     }
 
+    private static AwaitMutex $mutex;
+
     protected Main $plugin;
     protected ConfigParser $configParser;
 
@@ -45,6 +48,15 @@ abstract class Query
         $this->DefQueriesConstr($connector);
         $this->plugin = $plugin;
         $this->configParser = $plugin->getParsedConfig();
+    }
+
+    final protected static function getMutex(): AwaitMutex
+    {
+        if (!isset(self::$mutex)) {
+            self::$mutex = new AwaitMutex();
+        }
+
+        return self::$mutex;
     }
 
     /**

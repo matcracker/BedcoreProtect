@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\utils\AwaitMutex;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
@@ -53,12 +52,10 @@ use function microtime;
  */
 class InventoriesQueries extends Query
 {
-    private AwaitMutex $mutexInventory;
 
     public function __construct(Main $plugin, DataConnector $connector)
     {
         parent::__construct($plugin, $connector);
-        $this->mutexInventory = new AwaitMutex();
     }
 
     public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction): void
@@ -155,7 +152,7 @@ class InventoriesQueries extends Query
 
         $airItem = ItemFactory::get(ItemIds::AIR);
 
-        $this->mutexInventory->putClosure(
+        $this->getMutex()->putClosure(
             function () use ($player, $worldName, $time, $contents, $inventoryPosition, $airItem): Generator {
                 yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
 
