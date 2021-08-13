@@ -23,10 +23,10 @@ namespace matcracker\BedcoreProtect\utils;
 
 use DateTime;
 use pocketmine\command\CommandSender;
-use pocketmine\nbt\BigEndianNBTStream;
+use pocketmine\nbt\BigEndianNbtSerializer;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\nbt\tag\NamedTag;
-use pocketmine\Player;
+use pocketmine\nbt\TreeRoot;
+use pocketmine\player\Player;
 use UnexpectedValueException;
 use function array_filter;
 use function base64_decode;
@@ -74,23 +74,13 @@ final class Utils
         $time = 0;
         $value = (int)$value;
 
-        switch ($dateType) {
-            case "w":
-                $time += $value * 7 * 24 * 60 * 60;
-                break;
-            case "d":
-                $time += $value * 24 * 60 * 60;
-                break;
-            case "h":
-                $time += $value * 60 * 60;
-                break;
-            case "m":
-                $time += $value * 60;
-                break;
-            case "s":
-                $time += $value;
-                break;
-        }
+        $time += match ($dateType) {
+            "w" => $value * 7 * 24 * 60 * 60,
+            "d" => $value * 24 * 60 * 60,
+            "h" => $value * 60 * 60,
+            "m" => $value * 60,
+            "s" => $value,
+        };
 
         return (int)$time;
     }
@@ -136,16 +126,8 @@ final class Utils
      */
     public static function serializeNBT(CompoundTag $tag): string
     {
-        $nbtSerializer = new BigEndianNBTStream();
-
-        $compressedData = $nbtSerializer->writeCompressed($tag);
-
-        if (!is_string($compressedData)) {
-            throw new UnexpectedValueException("Invalid compression of NBT data.");
-        }
-
         //Encoding to Base64 for more safe storing.
-        return base64_encode($compressedData);
+        return base64_encode((new BigEndianNbtSerializer())->write(new TreeRoot($tag)));
     }
 
     /**
@@ -157,15 +139,6 @@ final class Utils
      */
     public static function deserializeNBT(string $encodedData): CompoundTag
     {
-        $nbtSerializer = new BigEndianNBTStream();
-
-        /** @var NamedTag $tag */
-        $tag = $nbtSerializer->readCompressed(base64_decode($encodedData));
-
-        if (!($tag instanceof CompoundTag)) {
-            throw new UnexpectedValueException("Value must return CompoundTag, got " . $tag->__toString());
-        }
-
-        return $tag;
+        return (new BigEndianNbtSerializer())->read(base64_decode($encodedData))->mustGetCompoundTag();
     }
 }

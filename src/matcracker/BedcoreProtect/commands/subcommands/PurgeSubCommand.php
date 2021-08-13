@@ -33,7 +33,7 @@ use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\forms\WorldDropDown;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function array_merge;
 use function in_array;
@@ -49,7 +49,7 @@ final class PurgeSubCommand extends ParsableSubCommand
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.started"));
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.no-restart"));
 
-            $this->getPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->purge(
+            $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->purge(
                 (float)$cmdData->getTime() ?? PHP_FLOAT_MAX,
                 $cmdData->getWorld(),
                 in_array(AdditionalParameter::OPTIMIZE(), $cmdData->getAdditionalParams()),
@@ -105,7 +105,7 @@ final class PurgeSubCommand extends ParsableSubCommand
                 $player->chat($command);
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getPlugin(), $player));
+                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
             }
         ));
     }

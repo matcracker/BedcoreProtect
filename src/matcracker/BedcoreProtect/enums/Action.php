@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\enums;
 
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\Main;
+use pocketmine\utils\EnumTrait;
 use function array_key_exists;
 
 /**
@@ -43,7 +44,7 @@ use function array_key_exists;
  */
 final class Action
 {
-    use EnumTrait {
+    use CustomEnumTrait {
         register as Enum_register;
         __construct as Enum___construct;
     }
@@ -64,9 +65,6 @@ final class Action
     private static array $numericIdMap = [];
     /** @var self[][] */
     private static array $commandArgumentsMap;
-    private int $type;
-    private string $message;
-    private array $commandArguments;
 
     /**
      * Action constructor.
@@ -75,12 +73,14 @@ final class Action
      * @param string $message
      * @param string[] $commandArguments
      */
-    public function __construct(string $enumName, int $type, string $message, array $commandArguments)
+    public function __construct(
+        string         $enumName,
+        private int    $type,
+        private string $message,
+        private array  $commandArguments
+    )
     {
         $this->Enum___construct($enumName);
-        $this->type = $type;
-        $this->message = $message;
-        $this->commandArguments = $commandArguments;
     }
 
     public static function fromType(int $type): self

@@ -32,7 +32,7 @@ use matcracker\BedcoreProtect\listeners\InspectorListener;
 use matcracker\BedcoreProtect\listeners\PlayerListener;
 use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\DatabaseManager;
-use pocketmine\lang\BaseLang;
+use pocketmine\lang\Language;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\TextFormat;
@@ -45,7 +45,7 @@ final class Main extends PluginBase
     public const MESSAGE_PREFIX = TextFormat::DARK_AQUA . self::PLUGIN_NAME . TextFormat::WHITE . " - ";
 
     private static Main $instance;
-    private BaseLang $baseLang;
+    private Language $language;
     private DatabaseManager $database;
     private ConfigParser $configParser;
     private ConfigParser $oldConfigParser;
@@ -58,9 +58,9 @@ final class Main extends PluginBase
         return self::$instance;
     }
 
-    public function getLanguage(): BaseLang
+    public function getLanguage(): Language
     {
-        return $this->baseLang;
+        return $this->language;
     }
 
     public function getDatabase(): DatabaseManager
@@ -93,7 +93,7 @@ final class Main extends PluginBase
         foreach ($this->events as $event) {
             $event->config = $this->configParser;
         }
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+        $this->language = new Language($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
 
         $this->bcpCommand->updateTranslations();
     }
@@ -113,7 +113,7 @@ final class Main extends PluginBase
         }
 
         $this->configParser = new ConfigParser($this->getConfig());
-        $this->baseLang = new BaseLang($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
+        $this->language = new Language($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
 
         $this->saveResource($this->configParser->getDatabaseFileName());
 
@@ -139,13 +139,13 @@ final class Main extends PluginBase
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
         if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning($this->baseLang->translateString("database.version.higher"));
+            $this->getLogger()->warning($this->language->translateString("database.version.higher"));
             $pluginManager->disablePlugin($this);
             return;
         }
 
         if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
-            $this->getLogger()->info($this->baseLang->translateString("database.version.updated", [$dbVersion, $lastPatch]));
+            $this->getLogger()->info($this->language->translateString("database.version.updated", [$dbVersion, $lastPatch]));
         }
 
         $queryManager->setupDefaultData();
@@ -153,7 +153,7 @@ final class Main extends PluginBase
         if ($this->configParser->isSQLite()) {
             static $hourTicks = 20 * 60 * 60 * 8;
             $this->getScheduler()->scheduleDelayedRepeatingTask(new ClosureTask(
-                function (int $currentTick): void {
+                function (): void {
                     $this->database->optimize();
                 }
             ), $hourTicks, $hourTicks);

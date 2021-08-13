@@ -27,7 +27,7 @@ use matcracker\BedcoreProtect\commands\subcommands\InspectSubCommand;
 use matcracker\BedcoreProtect\commands\subcommands\SubCommand;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function array_values;
 

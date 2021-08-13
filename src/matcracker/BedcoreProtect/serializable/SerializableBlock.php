@@ -25,26 +25,19 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
-use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\World\Position;
 
 final class SerializableBlock
 {
-    private string $name;
-    private int $id;
-    private int $meta;
-    private Vector3 $position;
-    private string $worldName;
-    private ?string $serializedNbt;
-
-    public function __construct(string $name, int $id, int $meta, Vector3 $position, string $worldName, ?string $serializedNbt = null)
+    public function __construct(
+        private string  $name,
+        private int     $id,
+        private int     $meta,
+        private Vector3 $position,
+        private string  $worldName,
+        private ?string $serializedNbt = null)
     {
-        $this->name = $name;
-        $this->id = $id;
-        $this->meta = $meta;
-        $this->position = $position;
-        $this->worldName = $worldName;
-        $this->serializedNbt = $serializedNbt;
     }
 
     public static function fromBlock(Block $block): self
@@ -52,16 +45,16 @@ final class SerializableBlock
         return new self(
             $block->getName(),
             $block->getId(),
-            $block->getDamage(),
-            $block->asVector3(),
-            $block->getLevelNonNull()->getFolderName(),
+            $block->getMeta(),
+            $block->getPos(),
+            $block->getPos()->getWorld()->getFolderName(),
             BlockUtils::serializeTileTag($block)
         );
     }
 
     public function toBlock(): Block
     {
-        return BlockFactory::get($this->id, $this->meta, $this->asPosition());
+        return BlockFactory::getInstance()->get($this->id, $this->meta, $this->asPosition());
     }
 
     public function asPosition(): Position

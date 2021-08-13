@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\storage;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\World\Position;
 
 class LookupData
 {
@@ -35,19 +35,14 @@ class LookupData
 
     /** @var self[] */
     private static array $lookupData = [];
-    private int $queryType;
-    private int $rows;
-    private ?CommandSender $sender;
-    private ?CommandData $commandData;
-    private ?Position $position;
 
-    public function __construct(int $queryType, int $rows, ?CommandSender $sender, ?CommandData $commandData, ?Position $position)
+    public function __construct(
+        private int            $queryType,
+        private int            $rows,
+        private ?CommandSender $sender,
+        private ?CommandData   $commandData,
+        private ?Position      $position)
     {
-        $this->queryType = $queryType;
-        $this->rows = $rows;
-        $this->sender = $sender;
-        $this->commandData = $commandData;
-        $this->position = $position;
     }
 
     public static function storeData(CommandSender $sender, LookupData $data): void

@@ -29,6 +29,7 @@ use InvalidArgumentException;
 use matcracker\BedcoreProtect\forms\WorldDropDown;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\WorldUtils;
+use pocketmine\utils\EnumTrait;
 use function array_map;
 use function count;
 use function in_array;
@@ -52,27 +53,28 @@ final class CommandParameter
     use EnumTrait {
         register as Enum_register;
         __construct as Enum___construct;
-        fromString as Enum_fromString;
     }
 
-    /** @var string[] */
-    private array $aliases;
-    private CustomFormElement $formElement;
-    private string $example;
-
-    public function __construct(string $enumName, array $aliases, CustomFormElement $formElement, string $example)
+    /**
+     * @param string $enumName
+     * @param string[] $aliases
+     * @param CustomFormElement $formElement
+     * @param string $example
+     */
+    public function __construct(
+        string $enumName,
+        private array $aliases,
+        private CustomFormElement $formElement,
+        private string $example)
     {
         $this->Enum___construct($enumName);
-        $this->aliases = $aliases;
-        $this->formElement = $formElement;
-        $this->example = $example;
     }
 
     public static function fromString(string $name): ?CommandParameter
     {
         try {
-            return self::Enum_fromString($name);
-        } catch (InvalidArgumentException $e) {
+            return self::fromString($name);
+        } catch (InvalidArgumentException) {
             foreach (self::getAll() as $enum) {
                 if (in_array(mb_strtolower($name), $enum->getAliases())) {
                     return $enum;

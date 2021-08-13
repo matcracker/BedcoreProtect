@@ -28,7 +28,7 @@ use dktapps\pmforms\element\Slider;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 
 final class NearSubCommand extends SubCommand
@@ -42,9 +42,9 @@ final class NearSubCommand extends SubCommand
                     "radius",
                     $this->getLang()->translateString("form.params.radius"),
                     1,
-                    $this->getPlugin()->getParsedConfig()->getMaxRadius(),
+                    $this->getOwningPlugin()->getParsedConfig()->getMaxRadius(),
                     1.0,
-                    $this->getPlugin()->getParsedConfig()->getDefaultRadius(),
+                    $this->getOwningPlugin()->getParsedConfig()->getDefaultRadius(),
                 ),
             ],
             static function (Player $player, CustomFormResponse $response): void {
@@ -52,7 +52,7 @@ final class NearSubCommand extends SubCommand
                 $player->chat("/bcp near $radius");
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getPlugin(), $player));
+                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
             }
         ));
     }
@@ -70,16 +70,16 @@ final class NearSubCommand extends SubCommand
             }
 
             $near = (int)$args[0];
-            $maxRadius = $this->getPlugin()->getParsedConfig()->getMaxRadius();
+            $maxRadius = $this->getOwningPlugin()->getParsedConfig()->getMaxRadius();
             if ($near < 0 || $near > $maxRadius) {
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.near.out-of-range", [0, $maxRadius]));
                 return;
             }
         } else {
-            $near = $this->getPlugin()->getParsedConfig()->getDefaultRadius();
+            $near = $this->getOwningPlugin()->getParsedConfig()->getDefaultRadius();
         }
 
-        $this->getPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestNearLog($sender, $near);
+        $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestNearLog($sender, $near);
     }
 
     public function isPlayerCommand(): bool

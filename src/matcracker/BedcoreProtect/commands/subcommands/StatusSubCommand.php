@@ -25,7 +25,7 @@ use dktapps\pmforms\BaseForm;
 use Generator;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use SOFe\AwaitGenerator\Await;
 use function implode;
@@ -42,9 +42,9 @@ final class StatusSubCommand extends SubCommand
     {
         Await::f2c(
             function () use ($sender): Generator {
-                $description = $this->getPlugin()->getDescription();
+                $description = $this->getOwningPlugin()->getDescription();
                 $pluginVersion = $description->getVersion();
-                $dbVersions = (yield $this->getPlugin()->getDatabase()->getStatus())[0];
+                $dbVersions = (yield $this->getOwningPlugin()->getDatabase()->getStatus())[0];
                 $dbVersion = (string)$dbVersions["version"];
                 $initDbVersion = (string)$dbVersions["init_version"];
 
@@ -55,7 +55,7 @@ final class StatusSubCommand extends SubCommand
 
                 $sender->sendMessage(TextFormat::WHITE . "----- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . " ----- ");
                 $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.version", [TextFormat::WHITE . $pluginVersion]));
-                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.database-connection", [TextFormat::WHITE . $this->getPlugin()->getParsedConfig()->getPrintableDatabaseType()]));
+                $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.database-connection", [TextFormat::WHITE . $this->getOwningPlugin()->getParsedConfig()->getPrintableDatabaseType()]));
                 $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.database-version", [TextFormat::WHITE . $dbVersion]));
                 $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.author", [TextFormat::WHITE . implode(", ", $description->getAuthors())]));
                 $sender->sendMessage(TextFormat::DARK_AQUA . $this->getLang()->translateString("subcommand.status.website", [TextFormat::WHITE . $description->getWebsite()]));

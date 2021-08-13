@@ -34,13 +34,11 @@ final class DatabaseManager
         __construct as DefQueriesConstr;
     }
 
-    protected Main $plugin;
     private PatchManager $patchManager;
     private QueryManager $queryManager;
 
-    public function __construct(Main $plugin)
+    public function __construct(protected Main $plugin)
     {
-        $this->plugin = $plugin;
     }
 
     /**
@@ -54,7 +52,7 @@ final class DatabaseManager
                 "sqlite" => "sqlite.sql",
                 "mysql" => "mysql.sql"
             ]);
-        } catch (SqlError $error) {
+        } catch (SqlError) {
             $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
             return false;
         }

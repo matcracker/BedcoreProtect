@@ -27,8 +27,8 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Level;
 use pocketmine\math\Vector3;
+use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use function mb_strtolower;
 
@@ -40,13 +40,11 @@ abstract class Query
 
     private static AwaitMutex $mutex;
 
-    protected Main $plugin;
     protected ConfigParser $configParser;
 
-    public function __construct(Main $plugin, DataConnector $connector)
+    public function __construct(protected Main $plugin, DataConnector $connector)
     {
         $this->DefQueriesConstr($connector);
-        $this->plugin = $plugin;
         $this->configParser = $plugin->getParsedConfig();
     }
 
@@ -61,12 +59,12 @@ abstract class Query
 
     /**
      * @param CommandSender $sender
-     * @param Level $world
+     * @param World $world
      * @param bool $rollback
      * @param int[] $logIds
      * @return Generator
      */
-    abstract public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator;
+    abstract public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator;
 
     /**
      * @param bool $rollback

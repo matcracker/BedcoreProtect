@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\config;
 
+use InvalidArgumentException;
 use matcracker\BedcoreProtect\Main;
 use function array_keys;
 use function count;
@@ -31,11 +32,8 @@ final class ConfigUpdater
     public const LAST_VERSION = 3;
     private const KEY_NOT_PRESENT = -1;
 
-    private Main $plugin;
-
-    public function __construct(Main $plugin)
+    public function __construct(private Main $plugin)
     {
-        $this->plugin = $plugin;
     }
 
     public function checkUpdate(): bool
@@ -66,7 +64,12 @@ final class ConfigUpdater
         $this->printOptions($resultOptions, "changed");
         $this->printOptions($resultOptions, "removed");
 
-        return $this->plugin->getConfig()->save();
+        try {
+            $this->plugin->getConfig()->save();
+            return true;
+        } catch (InvalidArgumentException) {
+            return false;
+        }
     }
 
     private function saveConfigBackup(): bool

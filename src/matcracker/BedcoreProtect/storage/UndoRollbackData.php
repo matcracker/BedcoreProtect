@@ -25,21 +25,18 @@ use matcracker\BedcoreProtect\commands\CommandData;
 
 final class UndoRollbackData
 {
-    private bool $rollback;
-    private CommandData $commandData;
-    private float $startTime;
-
     /**
      * UndoRollbackData constructor.
      * @param bool $rollback
      * @param CommandData $commandData
      * @param float $startTime
      */
-    public function __construct(bool $rollback, CommandData $commandData, float $startTime)
+    public function __construct(
+        private bool $rollback,
+        private CommandData $commandData,
+        private float $startTime)
     {
         $this->rollback = !$rollback;
-        $this->commandData = $commandData;
-        $this->startTime = $startTime;
     }
 
     public function isRollback(): bool

@@ -23,23 +23,21 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\block\inventory\BlockInventory;
+use pocketmine\block\tile\Chest;
 use pocketmine\command\CommandSender;
-use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\Player;
-use pocketmine\tile\Chest;
-use poggit\libasynql\DataConnector;
+use pocketmine\player\Player;
+use pocketmine\World\Position;
+use pocketmine\World\World;
 use SOFe\AwaitGenerator\Await;
 use function count;
 use function microtime;
@@ -52,17 +50,11 @@ use function microtime;
  */
 class InventoriesQueries extends Query
 {
-
-    public function __construct(Main $plugin, DataConnector $connector)
-    {
-        parent::__construct($plugin, $connector);
-    }
-
     public function addInventorySlotLogByPlayer(Player $player, SlotChangeAction $slotAction): void
     {
         $inventory = $slotAction->getInventory();
 
-        if (!$inventory instanceof ContainerInventory) {
+        if (!$inventory instanceof BlockInventory) {
             return;
         }
 
@@ -77,7 +69,7 @@ class InventoriesQueries extends Query
         }
 
         $playerUuid = EntityUtils::getUniqueId($player);
-        $worldName = $player->getLevelNonNull()->getFolderName();
+        $worldName = $player->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -119,11 +111,11 @@ class InventoriesQueries extends Query
             "log_id" => $lastId,
             "slot" => $slot,
             "old_id" => $oldItem->getId(),
-            "old_meta" => $oldItem->getDamage(),
+            "old_meta" => $oldItem->getMeta(),
             "old_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
             "old_amount" => $oldItem->getCount(),
             "new_id" => $newItem->getId(),
-            "new_meta" => $newItem->getDamage(),
+            "new_meta" => $newItem->getMeta(),
             "new_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
             "new_amount" => $newItem->getCount()
         ]);
@@ -143,9 +135,9 @@ class InventoriesQueries extends Query
         Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, microtime(true)));
     }
 
-    public function addInventoryLogByPlayer(Player $player, ContainerInventory $inventory, Position $inventoryPosition): void
+    public function addInventoryLogByPlayer(Player $player, BlockInventory $inventory, Position $inventoryPosition): void
     {
-        $worldName = $player->getLevelNonNull()->getFolderName();
+        $worldName = $player->getWorld()->getFolderName();
         $time = microtime(true);
 
         $contents = $inventory->getContents();
@@ -178,7 +170,7 @@ class InventoriesQueries extends Query
         );
     }
 
-    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
+    public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
         $inventoryRows = [];
 

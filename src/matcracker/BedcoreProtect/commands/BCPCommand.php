@@ -36,30 +36,27 @@ use matcracker\BedcoreProtect\commands\subcommands\UndoSubCommand;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\forms\MainMenuForm;
 use matcracker\BedcoreProtect\Main;
+use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\command\PluginCommand;
-use pocketmine\Player;
+use pocketmine\player\Player;
+use pocketmine\plugin\PluginOwned;
 use pocketmine\utils\TextFormat;
 use function array_shift;
 use function count;
 use function mb_strtolower;
 use function strlen;
 
-final class BCPCommand extends PluginCommand
+final class BCPCommand extends Command implements PluginOwned
 {
     /** @var SubCommand[] */
     private static array $subCommands = [];
     /** @var SubCommand[] */
     private static array $subCommandsAlias = [];
 
-    public function __construct(Main $plugin)
+    public function __construct(private Main $plugin)
     {
-        parent::__construct(
-            "bedcoreprotect",
-            $plugin
-        );
+        parent::__construct("bedcoreprotect", aliases: ["core", "co", "bcp"]);
         $this->setPermission("bcp.command.bedcoreprotect");
-        $this->setAliases(["core", "co", "bcp"]);
         $this->updateTranslations();
 
         $this->loadSubCommand(new HelpSubCommand($plugin));
@@ -77,9 +74,9 @@ final class BCPCommand extends PluginCommand
 
     public function updateTranslations(): void
     {
-        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.usage"));
-        $this->setDescription($this->getPlugin()->getLanguage()->translateString("command.bcp.description"));
-        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
+        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.bcp.usage"));
+        $this->setDescription($this->getOwningPlugin()->getLanguage()->translateString("command.bcp.description"));
+        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
     }
 
     private function loadSubCommand(SubCommand $subCommand): void
@@ -105,7 +102,7 @@ final class BCPCommand extends PluginCommand
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
     {
-        if (!$this->getPlugin()->isEnabled()) {
+        if (!$this->getOwningPlugin()->isEnabled()) {
             return true;
         }
 
@@ -113,8 +110,8 @@ final class BCPCommand extends PluginCommand
             return true;
         }
 
-        if (!isset($args[0]) && $sender instanceof Player && $this->getPlugin()->getParsedConfig()->isEnabledUI()) {
-            $sender->sendForm(self::getForm($this->getPlugin(), $sender));
+        if (!isset($args[0]) && $sender instanceof Player && $this->getOwningPlugin()->getParsedConfig()->isEnabledUI()) {
+            $sender->sendForm(self::getForm($this->getOwningPlugin(), $sender));
             return true;
         }
 
@@ -142,5 +139,10 @@ final class BCPCommand extends PluginCommand
     public static function getForm(Main $plugin, Player $player): MainMenuForm
     {
         return new MainMenuForm($plugin, $player, self::$subCommands);
+    }
+
+    public function getOwningPlugin(): Main
+    {
+        return $this->plugin;
     }
 }

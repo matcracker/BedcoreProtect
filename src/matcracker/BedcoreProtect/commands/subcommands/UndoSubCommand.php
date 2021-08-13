@@ -25,7 +25,7 @@ use dktapps\pmforms\BaseForm;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\QueryManager;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 
 final class UndoSubCommand extends SubCommand
@@ -49,7 +49,7 @@ final class UndoSubCommand extends SubCommand
                 $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.restore.started", [$worldName]));
             }
 
-            $this->getPlugin()->getDatabase()->getQueryManager()->undoRollback($sender);
+            $this->getOwningPlugin()->getDatabase()->getQueryManager()->undoRollback($sender);
         } else {
             $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.undo.no-data"));
         }

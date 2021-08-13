@@ -24,37 +24,32 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 use dktapps\pmforms\BaseForm;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\command\PluginIdentifiableCommand;
-use pocketmine\lang\BaseLang;
-use pocketmine\Player;
+use pocketmine\lang\Language;
+use pocketmine\player\Player;
+use pocketmine\plugin\PluginOwned;
 use pocketmine\utils\TextFormat;
 use function strlen;
 
-abstract class SubCommand implements PluginIdentifiableCommand
+abstract class SubCommand implements PluginOwned
 {
-    private Main $plugin;
-
-    public function __construct(Main $plugin)
-    {
-        $this->plugin = $plugin;
-    }
+    public function __construct(private Main $plugin){}
 
     abstract public function getForm(Player $player): ?BaseForm;
 
     public function execute(CommandSender $sender, array $args): void
     {
         if (!$this->testPermission($sender)) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
             return;
         }
 
         if ($this->isPlayerCommand() && !$sender instanceof Player) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("command.error.no-console"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.error.no-console"));
             return;
         }
 
         if ($this instanceof ParsableSubCommand && !isset($args[0])) {
-            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getPlugin()->getLanguage()->translateString("subcommand.error.one-parameter"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("subcommand.error.one-parameter"));
             return;
         }
 
@@ -68,10 +63,7 @@ abstract class SubCommand implements PluginIdentifiableCommand
 
     abstract public function getName(): string;
 
-    /**
-     * @return Main
-     */
-    public function getPlugin(): Main
+    public function getOwningPlugin(): Main
     {
         return $this->plugin;
     }
@@ -92,7 +84,7 @@ abstract class SubCommand implements PluginIdentifiableCommand
         return $this->getLang()->translateString("subcommand.{$this->getName()}.description");
     }
 
-    final protected function getLang(): BaseLang
+    final protected function getLang(): Language
     {
         return $this->plugin->getLanguage();
     }

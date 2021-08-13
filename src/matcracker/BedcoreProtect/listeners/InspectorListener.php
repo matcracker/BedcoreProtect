@@ -24,11 +24,11 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\tile\Chest;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\tile\Chest;
 
 final class InspectorListener extends BedcoreListener
 {
@@ -52,9 +52,9 @@ final class InspectorListener extends BedcoreListener
         $player = $event->getPlayer();
 
         //It checks the block clicked
-        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getLevelNonNull())) {
-            $this->pluginQueries->requestBlockLog($player, $event->getBlock()->asPosition());
-            $event->setCancelled();
+        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
+            $this->pluginQueries->requestBlockLog($player, $event->getBlock()->getPos());
+            $event->cancel();
         }
     }
 
@@ -68,9 +68,9 @@ final class InspectorListener extends BedcoreListener
         $player = $event->getPlayer();
 
         //It checks the block where the player places.
-        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getLevelNonNull())) {
-            $this->pluginQueries->requestBlockLog($player, $event->getBlockReplaced()->asPosition());
-            $event->setCancelled();
+        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
+            $this->pluginQueries->requestBlockLog($player, $event->getBlockReplaced()->getPos());
+            $event->cancel();
         }
     }
 
@@ -83,25 +83,25 @@ final class InspectorListener extends BedcoreListener
     {
         $player = $event->getPlayer();
 
-        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getLevelNonNull())) {
+        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
             $clickedBlock = $event->getBlock();
             $action = $event->getAction();
 
             if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $tileChest = BlockUtils::asTile($clickedBlock->asPosition());
+                    $tileChest = BlockUtils::asTile($clickedBlock->getPos());
                     //This is needed for double chest to get the position of its holder (the left chest).
-                    if ($tileChest instanceof Chest && ($holder = $tileChest->getInventory()->getHolder()) !== null) {
-                        $position = $holder->asPosition();
+                    if ($tileChest instanceof Chest) {
+                        $position = $tileChest->getInventory()->getHolder();
                     } else {
-                        $position = $clickedBlock->asPosition();
+                        $position = $clickedBlock->getPos();
                     }
                     $this->pluginQueries->requestTransactionLog($player, $position);
-                    $event->setCancelled();
+                    $event->cancel();
 
                 } elseif (BlockUtils::canBeClicked($clickedBlock)) {
-                    $this->pluginQueries->requestBlockLog($player, $clickedBlock->asPosition());
-                    $event->setCancelled();
+                    $this->pluginQueries->requestBlockLog($player, $clickedBlock->getPos());
+                    $event->cancel();
                 }
             }
         }

@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\BlockFactory;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Human;
 use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\Painting;
@@ -44,9 +45,8 @@ final class EntityListener extends BedcoreListener
     public function trackEntityExplode(EntityExplodeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->config->isEnabledWorld($entity->getLevelNonNull()) && $this->config->getExplosions()) {
-            $this->air->setLevel($entity->getLevelNonNull());
-            $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), [$this->air], Action::BREAK());
+        if ($this->config->isEnabledWorld($entity->getWorld()) && $this->config->getExplosions()) {
+            $this->blocksQueries->addBlocksLogByEntity($entity, $event->getBlockList(), [VanillaBlocks::AIR()], Action::BREAK());
         }
     }
 
@@ -64,10 +64,10 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        $world = $entity->getLevelNonNull();
+        $world = $entity->getWorldNonNull();
         if ($this->config->isEnabledWorld($world)) {
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
-                $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getDamage()), $this->air, Action::BREAK(), $entity->asPosition());
+                $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getMeta()), $this->air, Action::BREAK(), $entity->asPosition());
             }
         }
     }
@@ -86,7 +86,7 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->config->isEnabledWorld($entity->getLevelNonNull())) {
+        if ($this->config->isEnabledWorld($entity->getWorldNonNull())) {
             if ($entity instanceof Painting && $this->config->getBlockBreak()) {
                 $damager = $event->getDamager();
                 if ($damager !== null) {
@@ -109,7 +109,7 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->config->isEnabledWorld($entity->getLevelNonNull()) && $this->config->getEntityKills()) {
+        if ($this->config->isEnabledWorld($entity->getWorldNonNull()) && $this->config->getEntityKills()) {
             $damageEvent = $entity->getLastDamageCause();
             if ($damageEvent instanceof EntityDamageByEntityEvent) {
                 $damager = $damageEvent->getDamager();
@@ -131,7 +131,7 @@ final class EntityListener extends BedcoreListener
     public function trackEntityBlockChange(EntityBlockChangeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->config->isEnabledWorld($entity->getLevelNonNull()) && $this->config->getBlockMovement()) {
+        if ($this->config->isEnabledWorld($entity->getWorldNonNull()) && $this->config->getBlockMovement()) {
             $this->blocksQueries->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->asPosition());
         }
     }

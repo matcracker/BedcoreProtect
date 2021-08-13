@@ -45,12 +45,9 @@ final class PatchManager
         __construct as DefQueriesConstr;
     }
 
-    private Main $plugin;
-
-    public function __construct(Main $plugin, DataConnector $connector)
+    public function __construct(private Main $plugin, DataConnector $connector)
     {
         $this->DefQueriesConstr($connector);
-        $this->plugin = $plugin;
     }
 
     /**

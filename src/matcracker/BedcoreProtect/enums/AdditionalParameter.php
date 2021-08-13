@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\enums;
 
+use pocketmine\utils\EnumTrait;
+
 /**
  * This doc-block is generated automatically, do not modify it manually.
  * This must be regenerated whenever enum members are added, removed or changed.
@@ -32,12 +34,10 @@ final class AdditionalParameter
 {
     public const KEY_CHAR = "#";
 
-    use EnumTrait {
+    use CustomEnumTrait {
         register as Enum_register;
         __construct as Enum___construct;
     }
-
-    private string $argument;
 
     public function __construct(string $enumName)
     {

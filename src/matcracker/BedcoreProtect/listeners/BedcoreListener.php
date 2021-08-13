@@ -27,27 +27,21 @@ use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
-use pocketmine\block\Air;
 use pocketmine\event\Listener;
 
 abstract class BedcoreListener implements Listener
 {
     public ConfigParser $config;
-    protected Main $plugin;
-    protected Air $air;
     protected PluginQueries $pluginQueries;
     protected BlocksQueries $blocksQueries;
     protected EntitiesQueries $entitiesQueries;
     protected InventoriesQueries $inventoriesQueries;
 
-    public function __construct(Main $plugin)
+    public function __construct(
+        protected Main $plugin
+    )
     {
-        $this->plugin = $plugin;
         $this->config = $plugin->getParsedConfig();
-
-        $this->air = new Air();
-        $this->air->setComponents(0, 0, 0);
-
         $this->pluginQueries = $plugin->getDatabase()->getQueryManager()->getPluginQueries();
         $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();
         $this->entitiesQueries = $plugin->getDatabase()->getQueryManager()->getEntitiesQueries();

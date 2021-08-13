@@ -29,9 +29,9 @@ final class AwaitMutex
     /**
      * @param Closure $promise
      * @param callable|null $onSuccess
-     * @param callable[]|callable $onError
+     * @param callable|callable[] $onError
      */
-    public function putClosure(Closure $promise, ?callable $onSuccess = null, $onError = []): void
+    public function putClosure(Closure $promise, ?callable $onSuccess = null, callable|array $onError = []): void
     {
         $this->put($promise(), $onSuccess, $onError);
     }
@@ -39,9 +39,9 @@ final class AwaitMutex
     /**
      * @param Generator $promise
      * @param callable|null $onSuccess
-     * @param callable[]|callable $onError
+     * @param callable|callable[] $onError
      */
-    public function put(Generator $promise, ?callable $onSuccess = null, $onError = []): void
+    public function put(Generator $promise, ?callable $onSuccess = null, callable|array $onError = []): void
     {
         $this->queue[] = function () use ($promise, $onSuccess, $onError): void {
             Await::g2c(

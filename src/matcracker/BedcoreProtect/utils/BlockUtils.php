@@ -32,10 +32,10 @@ use pocketmine\block\EnchantingTable;
 use pocketmine\block\FenceGate;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Lever;
+use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
-use pocketmine\level\Position;
+use pocketmine\World\Position;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\tile\Tile;
 use function is_a;
 
 final class BlockUtils
@@ -117,7 +117,7 @@ final class BlockUtils
      */
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
-        if (($tile = self::asTile($block->asPosition())) !== null) {
+        if (($tile = self::asTile($block->getPos())) !== null) {
             return clone $tile->saveNBT();
         }
 
@@ -132,7 +132,7 @@ final class BlockUtils
      */
     public static function asTile(Position $position): ?Tile
     {
-        if (($world = $position->getLevel()) === null) {
+        if (($world = $position->getWorld()) === null) {
             return null;
         }
 

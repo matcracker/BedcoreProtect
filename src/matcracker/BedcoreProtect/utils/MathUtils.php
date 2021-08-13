@@ -21,6 +21,7 @@ namespace matcracker\BedcoreProtect\utils;
 
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Vector3;
+use function floor;
 
 final class MathUtils
 {
@@ -36,13 +37,11 @@ final class MathUtils
 
     public static function floorBoundingBox(AxisAlignedBB $bb): void
     {
-        $bb->setBounds(
-            (int)floor($bb->minX),
-            (int)floor($bb->minY),
-            (int)floor($bb->minZ),
-            (int)floor($bb->maxX),
-            (int)floor($bb->maxY),
-            (int)floor($bb->maxZ)
-        );
+        $bb->minX = floor($bb->minX);
+        $bb->minY = floor($bb->minY);
+        $bb->minZ = floor($bb->minZ);
+        $bb->maxX = floor($bb->maxX);
+        $bb->maxY = floor($bb->maxY);
+        $bb->maxZ = floor($bb->maxZ);
     }
 }

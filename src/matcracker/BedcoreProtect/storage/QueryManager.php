@@ -34,7 +34,7 @@ use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
@@ -58,16 +58,14 @@ final class QueryManager
     /** @var UndoRollbackData[] */
     private static array $undoData = [];
 
-    private Main $plugin;
     private PluginQueries $pluginQueries;
     private BlocksQueries $blocksQueries;
     private EntitiesQueries $entitiesQueries;
     private InventoriesQueries $inventoriesQueries;
 
-    public function __construct(Main $plugin, DataConnector $connector)
+    public function __construct(private Main $plugin, DataConnector $connector)
     {
         $this->DefQueriesConstr($connector);
-        $this->plugin = $plugin;
 
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
@@ -133,13 +131,13 @@ final class QueryManager
         }
 
         $worldName = $cmdData->getWorld();
-        $world = Server::getInstance()->getLevelByName($worldName);
+        $world = Server::getInstance()->getWorldManager()->getWorldByName($worldName);
         if ($world === null) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("rollback.error.world-not-exist", [$worldName]));
             return;
         }
 
-        $bb = $sender instanceof Player ? MathUtils::getRangedVector($sender->asVector3(), $cmdData->getRadius()) : null;
+        $bb = $sender instanceof Player ? MathUtils::getRangedVector($sender->getPosition(), $cmdData->getRadius()) : null;
 
         foreach (self::$activeRollbacks as $actSender => [$actBB, $actWorld]) {
             if ((($bb !== null && $actBB !== null && $actBB->intersectsWith($bb)) || $cmdData->isGlobalRadius()) && $worldName === $actWorld) {

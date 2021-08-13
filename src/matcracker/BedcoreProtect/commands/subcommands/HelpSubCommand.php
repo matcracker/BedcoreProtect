@@ -26,7 +26,7 @@ use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function mb_strtolower;
 

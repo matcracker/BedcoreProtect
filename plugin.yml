@@ -1,38 +1,49 @@
 ---
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-version: 0.10.2
-api: 3.21.0
+version: 1.0.0
+api: 4.0.0
 
 load: POSTWORLD
 author: matcracker
 description: "BedcoreProtect is a fast, efficient, data logging and anti-griefing tool for PocketMine server. Rollback and restore any amount of damage"
 website: https://github.com/matcracker/BedcoreProtect
+
 permissions:
   bcp.command.bedcoreprotect:
     description: "Allows the user to run the command and sub-commands /bedcoreprotect"
     default: op
-    children:
-      bcp.subcommand.help:
-        description: "Allows the user to run the sub-command /bedcoreprotect help"
-      bcp.subcommand.inspect:
-        description: "Allows the user to run the sub-command /bedcoreprotect inspect"
-      bcp.subcommand.lookup:
-        description: "Allows the user to run the sub-command /bedcoreprotect lookup"
-      bcp.subcommand.near:
-        description: "Allows the user to run the sub-command /bedcoreprotect near"
-      bcp.subcommand.purge:
-        description: "Allows the user to run the sub-command /bedcoreprotect purge"
-      bcp.subcommand.rollback:
-        description: "Allows the user to run the sub-command /bedcoreprotect rollback"
-      bcp.subcommand.reload:
-        description: "Allows the user to run the sub-command /bedcoreprotect reload"
-      bcp.subcommand.restore:
-        description: "Allows the user to run the sub-command /bedcoreprotect restore"
-      bcp.subcommand.show:
-        description: "Allows the user to run the sub-command /bedcoreprotect show"
-      bcp.subcommand.status:
-        description: "Allows the user to run the sub-command /bedcoreprotect status"
-      bcp.subcommand.undo:
-        description: "Allows the user to run the sub-command /bedcoreprotect undo"
+  bcp.subcommand.help:
+    description: "Allows the user to run the sub-command /bedcoreprotect help"
+    default: op
+  bcp.subcommand.inspect:
+    description: "Allows the user to run the sub-command /bedcoreprotect inspect"
+    default: op
+  bcp.subcommand.lookup:
+    description: "Allows the user to run the sub-command /bedcoreprotect lookup"
+    default: op
+  bcp.subcommand.near:
+    description: "Allows the user to run the sub-command /bedcoreprotect near"
+    default: op
+  bcp.subcommand.purge:
+    description: "Allows the user to run the sub-command /bedcoreprotect purge"
+    default: op
+  bcp.subcommand.rollback:
+    description: "Allows the user to run the sub-command /bedcoreprotect rollback"
+    default: op
+  bcp.subcommand.reload:
+    description: "Allows the user to run the sub-command /bedcoreprotect reload"
+    default: op
+  bcp.subcommand.restore:
+    description: "Allows the user to run the sub-command /bedcoreprotect restore"
+    default: op
+  bcp.subcommand.show:
+    description: "Allows the user to run the sub-command /bedcoreprotect show"
+    default: op
+  bcp.subcommand.status:
+    description: "Allows the user to run the sub-command /bedcoreprotect status"
+    default: op
+  bcp.subcommand.undo:
+    description: "Allows the user to run the sub-command /bedcoreprotect undo"
+    default: op
 ...

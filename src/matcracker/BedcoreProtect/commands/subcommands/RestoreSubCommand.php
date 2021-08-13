@@ -24,7 +24,7 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 final class RestoreSubCommand extends ParsableSubCommand
 {
@@ -32,8 +32,8 @@ final class RestoreSubCommand extends ParsableSubCommand
     {
         if ($sender instanceof Player) {
             $default = [
-                CommandParameter::RADIUS()->name() => (string)$this->getPlugin()->getParsedConfig()->getDefaultRadius(),
-                CommandParameter::WORLD()->name() => $sender->getLevelNonNull()->getFolderName()
+                CommandParameter::RADIUS()->name() => (string)$this->getOwningPlugin()->getParsedConfig()->getDefaultRadius(),
+                CommandParameter::WORLD()->name() => $sender->getWorld()->getFolderName()
             ];
         } else {
             $default = [];
@@ -42,7 +42,7 @@ final class RestoreSubCommand extends ParsableSubCommand
         $cmdData = $this->parseArguments($sender, $args, $default);
         if ($cmdData !== null) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.restore.started", [$cmdData->getWorld()]));
-            $this->getPlugin()->getDatabase()->getQueryManager()->restore($sender, $cmdData);
+            $this->getOwningPlugin()->getDatabase()->getQueryManager()->restore($sender, $cmdData);
         }
     }
 

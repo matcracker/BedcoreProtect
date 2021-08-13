@@ -19,29 +19,26 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\commands\subcommands;
+namespace matcracker\BedcoreProtect\enums;
 
-use dktapps\pmforms\BaseForm;
-use matcracker\BedcoreProtect\Main;
-use pocketmine\command\CommandSender;
-use pocketmine\player\Player;
+use InvalidArgumentException;
+use pocketmine\utils\EnumTrait;
 
-final class ReloadSubCommand extends SubCommand
+trait CustomEnumTrait
 {
-    public function onExecute(CommandSender $sender, array $args): void
-    {
-        $this->getOwningPlugin()->reloadPlugin();
-        $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.reload.success"));
-    }
+    use EnumTrait;
 
-    public function getForm(Player $player): ?BaseForm
+    /**
+     * Returns the enum member matching the given name.
+     * This is overridden to change the return typehint.
+     *
+     * @throws InvalidArgumentException if no member matches.
+     */
+    public static function fromString(string $name): self
     {
-        $player->chat("/bcp reload");
-        return null;
-    }
-
-    public function getName(): string
-    {
-        return "reload";
+        //phpstan doesn't support generic traits yet :(
+        /** @var self $result */
+        $result = self::_registryFromString($name);
+        return $result;
     }
 }

@@ -21,8 +21,8 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\config;
 
-use pocketmine\level\Level;
 use pocketmine\utils\Config;
+use pocketmine\World\World;
 use poggit\libasynql\SqlDialect;
 use function count;
 use function in_array;
@@ -66,7 +66,6 @@ final class ConfigParser
 
     /**
      * Return the database file name for SQLite.
-     * @return string
      */
     public function getDatabaseFileName(): string
     {
@@ -78,7 +77,7 @@ final class ConfigParser
         return (bool)$this->data["enable-ui-menu"];
     }
 
-    public function isEnabledWorld(Level $world): bool
+    public function isEnabledWorld(World $world): bool
     {
         return in_array($world->getFolderName(), $this->getEnabledWorlds()) || count($this->getEnabledWorlds()) === 0;
     }

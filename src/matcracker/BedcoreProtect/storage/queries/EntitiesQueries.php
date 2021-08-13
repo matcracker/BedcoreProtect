@@ -28,7 +28,7 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
-use pocketmine\level\Level;
+use pocketmine\World\World;
 use pocketmine\Server;
 use SOFe\AwaitGenerator\Await;
 use function class_exists;
@@ -84,7 +84,7 @@ class EntitiesQueries extends Query
     public function addEntityLogByEntity(Entity $damager, Entity $entity, Action $action): void
     {
         $entityNbt = EntityUtils::getSerializedNbt($entity);
-        $worldName = $entity->getLevelNonNull()->getFolderName();
+        $worldName = $entity->getWorld()->getFolderName();
         $time = microtime(true);
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
@@ -92,7 +92,7 @@ class EntitiesQueries extends Query
                 yield $this->addEntity($entity);
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->asVector3(), $worldName, $action, $time);
+                $lastId = yield $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->getPosition(), $worldName, $action, $time);
                 yield $this->addEntityLog($lastId, $entity, $entityNbt);
             }
         );
@@ -125,7 +125,7 @@ class EntitiesQueries extends Query
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
-        $worldName = $block->getLevelNonNull()->getFolderName();
+        $worldName = $block->getPos()->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -137,14 +137,14 @@ class EntitiesQueries extends Query
                 yield $this->addRawEntity($uuid, "#$blockName");
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($uuid, $block->asVector3(), $worldName, $action, $time);
+                $lastId = yield $this->addRawLog($uuid, $block->getPos(), $worldName, $action, $time);
 
                 yield $this->addEntityLog($lastId, $entity, $serializedNbt);
             }
         );
     }
 
-    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
+    public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
         $entityRows = [];
 

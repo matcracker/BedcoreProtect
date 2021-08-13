@@ -30,11 +30,10 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\LookupData;
 use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
+use pocketmine\player\Player;
+use pocketmine\World\World;
+use pocketmine\World\Position;
 use pocketmine\math\AxisAlignedBB;
-use pocketmine\Player;
-use pocketmine\plugin\PluginException;
 use pocketmine\utils\TextFormat;
 use poggit\libasynql\generic\GenericStatementImpl;
 use poggit\libasynql\generic\GenericVariable;
@@ -60,7 +59,7 @@ class PluginQueries extends Query
             LookupData::NEAR_LOG,
             $inspector,
             $inspector->getPosition(),
-            new CommandData(null, null, $inspector->getLevelNonNull()->getFolderName(), $radius),
+            new CommandData(null, null, $inspector->getWorld()->getFolderName(), $radius),
             $limit,
             $offset
         );
@@ -80,7 +79,7 @@ class PluginQueries extends Query
                 "max_y" => $bb->maxY,
                 "min_z" => $bb->minZ,
                 "max_z" => $bb->maxZ,
-                "world_name" => $position->getLevelNonNull()->getFolderName(),
+                "world_name" => $position->getWorld()->getFolderName(),
                 "limit" => $limit,
                 "offset" => $offset
             ],
@@ -286,7 +285,7 @@ class PluginQueries extends Query
             LookupData::TRANSACTION_LOG,
             $inspector,
             $position,
-            new CommandData(null, null, $position->getLevelNonNull()->getFolderName(), $radius),
+            new CommandData(null, null, $position->getWorld()->getFolderName(), $radius),
             $limit,
             $offset
         );
@@ -299,7 +298,7 @@ class PluginQueries extends Query
             LookupData::BLOCK_LOG,
             $inspector,
             $blockPos,
-            new CommandData(null, null, $blockPos->getLevelNonNull()->getFolderName(), $radius),
+            new CommandData(null, null, $blockPos->getWorld()->getFolderName(), $radius),
             $limit,
             $offset
         );
@@ -370,8 +369,8 @@ class PluginQueries extends Query
         $this->asGenericStatement($query, $args, "dyn-log-selection-query", $variables, $parameters);
     }
 
-    public function onRollback(CommandSender $sender, Level $world, bool $rollback, array $logIds): Generator
+    public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
-        throw new PluginException("\"onRollback()\" method is not available for " . self::class);
+        0 && yield;
     }
 }

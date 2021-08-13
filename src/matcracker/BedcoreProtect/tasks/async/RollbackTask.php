@@ -24,11 +24,11 @@ namespace matcracker\BedcoreProtect\tasks\async;
 use Closure;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\utils\WorldUtils;
-use pocketmine\level\format\Chunk;
-use pocketmine\level\Level;
 use pocketmine\math\AxisAlignedBB;
+use pocketmine\network\mcpe\serializer\ChunkSerializer;
 use pocketmine\scheduler\AsyncTask;
-use pocketmine\Server;
+use pocketmine\world\format\Chunk;
+use pocketmine\world\World;
 use Threaded;
 use function count;
 use function serialize;
@@ -36,11 +36,6 @@ use function unserialize;
 
 class RollbackTask extends AsyncTask
 {
-    protected bool $rollback;
-    protected string $worldName;
-    protected string $senderName;
-    /** @var SerializableBlock[] */
-    private array $blocks;
     private string $serializedBlocks;
     private Threaded $serializedChunks;
 
@@ -52,20 +47,21 @@ class RollbackTask extends AsyncTask
      * @param bool $rollback
      * @param Closure $onComplete
      */
-    public function __construct(string $senderName, string $worldName, array $blocks, bool $rollback, Closure $onComplete)
+    public function __construct(
+        protected string $senderName,
+        protected string $worldName,
+        private array $blocks,
+        protected bool $rollback,
+        Closure $onComplete)
     {
-        $this->senderName = $senderName;
-        $this->worldName = $worldName;
-        $this->rollback = $rollback;
-        $this->blocks = $blocks;
         $this->serializedBlocks = serialize($blocks);
 
         $this->serializedChunks = new Threaded();
         foreach (WorldUtils::getChunks(WorldUtils::getNonNullWorldByName($worldName), $blocks) as $hash => $chunk) {
-            $this->serializedChunks[] = serialize([$hash, $chunk->fastSerialize()]);
+            $this->serializedChunks[] = serialize([$hash, ChunkSerializer::serializeFullChunk($chunk)]);
         }
 
-        $this->storeLocal($onComplete);
+        $this->storeLocal("onComplete", $onComplete);
     }
 
     public function onRun(): void
@@ -75,21 +71,21 @@ class RollbackTask extends AsyncTask
 
         foreach ($this->serializedChunks as $serializedChunk) {
             [$hash, $serialChunk] = unserialize($serializedChunk);
-            $chunks[$hash] = Chunk::fastDeserialize($serialChunk);
+            $chunks[$hash] = World::fastDeserialize($serialChunk);
         }
 
         /** @var SerializableBlock $block */
         foreach (unserialize($this->serializedBlocks) as $block) {
-            $index = Level::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
+            $index = World::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
             if (isset($chunks[$index])) {
-                $chunks[$index]->setBlock($block->getX() & 0x0f, $block->getY(), $block->getZ() & 0x0f, $block->getId(), $block->getMeta());
+                $chunks[$index]->setFullBlock($block->getX(), $block->getY(), $block->getZ(), $block->getId());
             }
         }
 
         $this->setResult($chunks);
     }
 
-    public function onCompletion(Server $server): void
+    public function onCompletion(): void
     {
         $world = WorldUtils::getNonNullWorldByName($this->worldName);
 
@@ -101,7 +97,7 @@ class RollbackTask extends AsyncTask
 
         foreach ($this->blocks as $block) {
             $pos = $block->asVector3();
-            $world->updateAllLight($pos);
+            $world->updateAllLight($pos->x, $pos->y, $pos->z);
             foreach ($world->getNearbyEntities(new AxisAlignedBB($pos->x - 1, $pos->y - 1, $pos->z - 1, $pos->x + 2, $pos->y + 2, $pos->z + 2)) as $entity) {
                 $entity->onNearbyBlockChange();
             }
@@ -109,7 +105,7 @@ class RollbackTask extends AsyncTask
         }
 
         /**@var Closure $onComplete */
-        $onComplete = $this->fetchLocal();
+        $onComplete = $this->fetchLocal("onComplete");
         $onComplete([count($this->blocks), count($chunks)]);
     }
 

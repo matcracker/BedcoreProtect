@@ -28,35 +28,28 @@ class CommandData
 {
     public const GLOBAL_RADIUS = -1;
 
-    /** @var string[]|null */
-    protected ?array $users;
-    protected ?int $time;
-    protected ?int $radius;
-    protected ?string $world;
-    /** @var Action[]|null */
-    protected ?array $actions;
-    /** @var array<string, array<int, int>>|null */
-    protected ?array $inclusions;
-    /** @var array<string, array<int, int>>|null */
-    protected ?array $exclusions;
-    /** @var AdditionalParameter[] */
-    protected array $additionalParams;
-
-    public function __construct(?array $users = null, ?int $time = null, ?string $world = null, ?int $radius = null, ?array $actions = null, ?array $inclusions = null, ?array $exclusions = null, array $additionalParams = [])
+    /**
+     * @param string[]|null $users
+     * @param int|null $time
+     * @param string|null $world
+     * @param int|null $radius
+     * @param Action[]|null $actions
+     * @param array<string, array<int, int>>|null $inclusions
+     * @param array<string, array<int, int>>|null $exclusions
+     * @param AdditionalParameter[] $additionalParams
+     */
+    public function __construct(
+        private ?array  $users = null,
+        private ?int    $time = null,
+        private ?string $world = null,
+        private ?int    $radius = null,
+        private ?array  $actions = null,
+        private ?array  $inclusions = null,
+        private ?array  $exclusions = null,
+        private array   $additionalParams = [])
     {
-        $this->users = $users;
-        $this->time = $time;
-        $this->world = $world;
-        $this->radius = $radius;
-        $this->actions = $actions;
-        $this->inclusions = $inclusions;
-        $this->exclusions = $exclusions;
-        $this->additionalParams = $additionalParams;
     }
 
-    /**
-     * @return string[]|null
-     */
     public function getUsers(): ?array
     {
         return $this->users;
@@ -82,33 +75,21 @@ class CommandData
         return $this->radius === self::GLOBAL_RADIUS;
     }
 
-    /**
-     * @return Action[]|null
-     */
     public function getActions(): ?array
     {
         return $this->actions;
     }
 
-    /**
-     * @return array<string, array<int, int>>|null
-     */
     public function getInclusions(): ?array
     {
         return $this->inclusions;
     }
 
-    /**
-     * @return array<string, array<int, int>>|null
-     */
     public function getExclusions(): ?array
     {
         return $this->exclusions;
     }
 
-    /**
-     * @return AdditionalParameter[]
-     */
     public function getAdditionalParams(): array
     {
         return $this->additionalParams;

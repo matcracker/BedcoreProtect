@@ -38,9 +38,8 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\command\CommandSender;
-use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
-use pocketmine\Player;
+use pocketmine\item\VanillaItems;
+use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use function array_diff;
@@ -58,15 +57,16 @@ use function strlen;
 
 abstract class ParsableSubCommand extends SubCommand
 {
-    /** @var CommandParameter[] */
-    private array $requiredParams;
     /** @var string[] */
     private array $requiredParamsNames;
 
-    public function __construct(Main $plugin, array $requiredParams)
+    /**
+     * @param Main $plugin
+     * @param CommandParameter[] $requiredParams
+     */
+    public function __construct(Main $plugin, private array $requiredParams)
     {
         parent::__construct($plugin);
-        $this->requiredParams = $requiredParams;
         $this->requiredParamsNames = array_map(static function (CommandParameter $parameter): string {
             return $parameter->name();
         }, $this->requiredParams);
@@ -109,7 +109,7 @@ abstract class ParsableSubCommand extends SubCommand
         }
 
         return (new CustomForm(
-            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getPlugin()->getLanguage()->translateString("form.menu.{$this->getName()}"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getOwningPlugin()->getLanguage()->translateString("form.menu.{$this->getName()}"),
             $elements,
             function (Player $player, CustomFormResponse $response) use ($elements): void {
                 $command = "/bcp {$this->getName()}";
@@ -147,7 +147,7 @@ abstract class ParsableSubCommand extends SubCommand
                 $player->chat($command);
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getPlugin(), $player));
+                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
             }
         ));
     }
@@ -196,7 +196,7 @@ abstract class ParsableSubCommand extends SubCommand
                 try {
                     $additionalParams[] = AdditionalParameter::fromString(mb_substr($arg, 1));
                     continue;
-                } catch (InvalidArgumentException $e) {
+                } catch (InvalidArgumentException) {
                     $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-additional-parameter", [mb_strtolower($arg)]));
                     return null;
                 }
@@ -260,7 +260,7 @@ abstract class ParsableSubCommand extends SubCommand
                     }
                     break;
                 case CommandParameter::WORLD()->name():
-                    if (Server::getInstance()->getLevelByName($value) === null) {
+                    if (Server::getInstance()->getWorldManager()->getWorldByName($value) === null) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world", [$value, implode(", ", WorldUtils::getWorldNames())]));
                         return null;
                     }
@@ -278,7 +278,7 @@ abstract class ParsableSubCommand extends SubCommand
                     }
 
                     $radius = (int)$value;
-                    $maxRadius = $this->getPlugin()->getParsedConfig()->getMaxRadius();
+                    $maxRadius = $this->getOwningPlugin()->getParsedConfig()->getMaxRadius();
                     if ($radius < 0 || ($maxRadius > 0 && $radius > $maxRadius)) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-radius"));
                         return null;
@@ -310,7 +310,7 @@ abstract class ParsableSubCommand extends SubCommand
         if ($radius !== null && !$cmdData->isGlobalRadius()) {
             if ($sender instanceof Player) {
                 //Don't allow a player to use normal radius in a different world
-                if ($sender->getLevelNonNull()->getFolderName() !== $world) {
+                if ($sender->getWorld()->getFolderName() !== $world) {
                     $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-world-usage-player"));
                     return null;
                 }
@@ -335,18 +335,16 @@ abstract class ParsableSubCommand extends SubCommand
         $itemIds = [];
         /** @var int[] $itemMetas */
         $itemMetas = [];
-
         foreach (explode(",", $str) as $strItem) {
             try {
-                /** @var Item $item */
-                $item = ItemFactory::fromString($strItem);
-            } catch (InvalidArgumentException $exception) {
+                $item = VanillaItems::fromString($strItem);
+            } catch (InvalidArgumentException) {
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-item-block", [$strItem]));
                 return null;
             }
 
             $itemIds[] = $item->getId();
-            $itemMetas[] = $item->getDamage();
+            $itemMetas[] = $item->getMeta();
         }
 
         return [

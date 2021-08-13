@@ -27,11 +27,8 @@ use SOFe\AwaitGenerator\Await;
 
 trait DefaultQueriesTrait
 {
-    protected DataConnector $connector;
-
-    public function __construct(DataConnector $connector)
+    public function __construct(protected DataConnector $connector)
     {
-        $this->connector = $connector;
     }
 
     final protected function executeGeneric(string $query, array $args = []): Generator

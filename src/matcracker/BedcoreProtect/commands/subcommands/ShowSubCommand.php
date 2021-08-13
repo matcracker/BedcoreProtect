@@ -29,7 +29,7 @@ use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\LookupData;
 use pocketmine\command\CommandSender;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function explode;
 
@@ -38,7 +38,7 @@ final class ShowSubCommand extends SubCommand
     public function getForm(Player $player): ?BaseForm
     {
         return (new CustomForm(
-            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getPlugin()->getLanguage()->translateString("form.menu.show"),
+            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getOwningPlugin()->getLanguage()->translateString("form.menu.show"),
             [
                 new Input(
                     "page",
@@ -57,7 +57,7 @@ final class ShowSubCommand extends SubCommand
                 $player->chat("/bcp show {$response->getString("page")}:{$response->getString("lines")}");
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getPlugin(), $player));
+                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
             }
         ));
     }
@@ -108,7 +108,7 @@ final class ShowSubCommand extends SubCommand
             return;
         }
 
-        $pluginQueries = $this->getPlugin()->getDatabase()->getQueryManager()->getPluginQueries();
+        $pluginQueries = $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries();
         switch ($data->getQueryType()) {
             case LookupData::NEAR_LOG:
                 if ($sender instanceof Player) {
