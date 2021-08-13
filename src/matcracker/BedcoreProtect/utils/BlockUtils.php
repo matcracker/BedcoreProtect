@@ -34,8 +34,9 @@ use pocketmine\block\ItemFrame;
 use pocketmine\block\Lever;
 use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
-use pocketmine\World\Position;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\utils\AssumptionFailedError;
+use pocketmine\World\Position;
 use function is_a;
 
 final class BlockUtils
@@ -132,10 +133,10 @@ final class BlockUtils
      */
     public static function asTile(Position $position): ?Tile
     {
-        if (($world = $position->getWorld()) === null) {
+        try {
+            return $position->getWorld()->getTile($position->asVector3());
+        } catch (AssumptionFailedError) {
             return null;
         }
-
-        return $world->getTile($position->asVector3());
     }
 }

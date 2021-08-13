@@ -73,7 +73,7 @@ final class BlockListener extends BedcoreListener
                 }
             }
 
-            $this->blocksQueries->addBlockLogByEntity($player, $block, $this->air, Action::BREAK(), $blockPos);
+            $this->blocksQueries->addBlockLogByEntity($player, $block, VanillaBlocks::AIR(), Action::BREAK(), $blockPos);
 
             if ($this->config->getNaturalBreak()) {
                 $sides = [];
@@ -90,7 +90,7 @@ final class BlockListener extends BedcoreListener
                     function (array &$oldBlocks) use ($world, $sides): array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
-                            $updSide = $world->getBlock($side->asVector3());
+                            $updSide = $world->getBlock($side->getPos());
                             if ($updSide instanceof $side) {
                                 unset($oldBlocks[$key]);
                             } else {
@@ -126,13 +126,13 @@ final class BlockListener extends BedcoreListener
             } elseif ($block instanceof WaterLily && $replacedBlock instanceof Water) {
                 $upPos = $block->getSide(Facing::UP);
                 if ($upPos instanceof Air) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $this->air, $block, Action::PLACE(), $upPos->getPos());
+                    $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), $block, Action::PLACE(), $upPos->getPos());
                 }
             } else {
                 //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
                 $this->plugin->getScheduler()->scheduleDelayedTask(
                     new ClosureTask(
-                        function (int $currentTick) use ($replacedBlock, $block, $player, $world): void {
+                        function () use ($replacedBlock, $block, $player, $world): void {
                             //Update the block instance to get the real placed block data.
                             $updBlock = $world->getBlock($block->getPos());
 
@@ -191,7 +191,7 @@ final class BlockListener extends BedcoreListener
         $blockPos = $block->getPos();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld()) && $this->config->getBlockBurn()) {
-            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, $this->air, Action::BREAK(), $blockPos);
+            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, VanillaBlocks::AIR(), Action::BREAK(), $blockPos);
         }
     }
 

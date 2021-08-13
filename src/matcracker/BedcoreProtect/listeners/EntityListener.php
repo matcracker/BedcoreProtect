@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
-use pocketmine\block\BlockFactory;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Human;
 use pocketmine\entity\object\FallingBlock;
@@ -64,10 +63,10 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        $world = $entity->getWorldNonNull();
+        $world = $entity->getWorld();
         if ($this->config->isEnabledWorld($world)) {
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
-                $this->blocksQueries->addBlockLogByEntity($entity, BlockFactory::get($entity->getBlock(), $entity->getMeta()), $this->air, Action::BREAK(), $entity->asPosition());
+                $this->blocksQueries->addBlockLogByEntity($entity, $entity->getBlock(), VanillaBlocks::AIR(), Action::BREAK(), $entity->getPosition());
             }
         }
     }
@@ -86,7 +85,7 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->config->isEnabledWorld($entity->getWorldNonNull())) {
+        if ($this->config->isEnabledWorld($entity->getWorld())) {
             if ($entity instanceof Painting && $this->config->getBlockBreak()) {
                 $damager = $event->getDamager();
                 if ($damager !== null) {
@@ -109,7 +108,7 @@ final class EntityListener extends BedcoreListener
             return;
         }
 
-        if ($this->config->isEnabledWorld($entity->getWorldNonNull()) && $this->config->getEntityKills()) {
+        if ($this->config->isEnabledWorld($entity->getWorld()) && $this->config->getEntityKills()) {
             $damageEvent = $entity->getLastDamageCause();
             if ($damageEvent instanceof EntityDamageByEntityEvent) {
                 $damager = $damageEvent->getDamager();
@@ -131,8 +130,8 @@ final class EntityListener extends BedcoreListener
     public function trackEntityBlockChange(EntityBlockChangeEvent $event): void
     {
         $entity = $event->getEntity();
-        if ($this->config->isEnabledWorld($entity->getWorldNonNull()) && $this->config->getBlockMovement()) {
-            $this->blocksQueries->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->asPosition());
+        if ($this->config->isEnabledWorld($entity->getWorld()) && $this->config->getBlockMovement()) {
+            $this->blocksQueries->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->getPosition());
         }
     }
 }

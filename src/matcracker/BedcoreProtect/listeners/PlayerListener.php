@@ -24,24 +24,21 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
-use pocketmine\block\BlockFactory;
+use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Cake;
 use pocketmine\block\Dirt;
-use pocketmine\block\Farmland;
 use pocketmine\block\Fire;
 use pocketmine\block\Grass;
-use pocketmine\block\GrassPath;
 use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\ItemFrame;
-use pocketmine\block\Liquid;
 use pocketmine\block\TNT;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\object\Painting;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
@@ -74,31 +71,34 @@ final class PlayerListener extends BedcoreListener
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getBuckets()) {
+        $world = $player->getWorld();
+
+        if ($this->config->isEnabledWorld($world) && $this->config->getBuckets()) {
             $block = $event->getBlockClicked();
+            $blockPos = $block->getPos();
+
             $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
             $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getMeta() : $event->getItem()->getMeta();
-            /** @var Liquid $liquid */
-            $liquid = BlockFactory::get($bucketMeta);
+            $liquid = $bucketMeta === BlockLegacyIds::WATER ? VanillaBlocks::WATER() : VanillaBlocks::LAVA();
 
             if ($fireEmptyEvent) {
                 if (!$block instanceof $liquid) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $block->getPos());
+                    $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $blockPos);
                 }
             } else {
                 $face = $event->getBlockFace();
                 $liquidPos = match ($face) {
-                    Facing::DOWN => $block->getPos()->add(0, 1, 0),
-                    Facing::UP => $block->getPos()->add(0, -1, 0),
-                    Facing::NORTH => $block->getPos()->add(0, 0, 1),
-                    Facing::SOUTH => $block->getPos()->add(0, 0, -1),
-                    Facing::WEST => $block->getPos()->add(1, 0, 0),
-                    Facing::EAST => $block->getPos()->add(-1, 0, 0),
+                    Facing::DOWN => $blockPos->add(0, 1, 0),
+                    Facing::UP => $blockPos->add(0, -1, 0),
+                    Facing::NORTH => $blockPos->add(0, 0, 1),
+                    Facing::SOUTH => $blockPos->add(0, 0, -1),
+                    Facing::WEST => $blockPos->add(1, 0, 0),
+                    Facing::EAST => $blockPos->add(-1, 0, 0),
                     default => throw new PluginException("Unrecognized block face (Value: $face)."),
                 };
 
-                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $block->getWorld()));
+                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $world));
             }
         }
     }
@@ -118,33 +118,33 @@ final class PlayerListener extends BedcoreListener
             $itemInHand = $event->getItem();
             $face = $event->getFace();
             $clickedBlock = $event->getBlock();
+            $clickedBlockPos = $clickedBlock->getPos();
             $replacedBlock = $clickedBlock->getSide($face);
 
             if ($event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                 if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $this->air, Action::BREAK(), $replacedBlock->asPosition());
+                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, VanillaBlocks::AIR(), Action::BREAK(), $replacedBlock->getPos());
 
                 } elseif ($this->config->getPlayerInteractions() && $clickedBlock instanceof ItemFrame) {
-                    $tile = BlockUtils::asTile($clickedBlock->getPos());
-                    if ($tile instanceof TileItemFrame && $tile->hasItem()) {
+                    if (($item = $clickedBlock->getFramedItem()) !== null) {
                         //I consider the ItemFrame as a fake inventory holder to only log "removing" item.
-                        $this->blocksQueries->addItemFrameLogByPlayer($player, $tile, $tile->getItem(), Action::REMOVE());
+                        $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $item, Action::REMOVE());
                     }
                 }
             } elseif ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 if ($this->config->getBlockPlace()) {
                     if ($itemInHand instanceof FlintSteel) {
                         if ($clickedBlock instanceof TNT) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::AIR(), Action::BREAK(), $clickedBlockPos);
                             return;
                         } elseif ($replacedBlock instanceof Air) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $this->air, new Fire(), Action::PLACE(), $replacedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $replacedBlock->getPos());
                             return;
                         }
                     } elseif ($itemInHand instanceof PaintingItem) {
                         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
                             function () use ($player, $world, $replacedBlock): void {
-                                $entity = $world->getNearestEntity($replacedBlock, 1, Painting::class);
+                                $entity = $world->getNearestEntity($replacedBlock->getPos(), 1, Painting::class);
                                 if ($entity !== null) {
                                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
                                 }
@@ -157,31 +157,28 @@ final class PlayerListener extends BedcoreListener
                 if ($this->config->getPlayerInteractions()) {
                     if ($itemInHand instanceof Hoe) {
                         if ($clickedBlock instanceof Grass || $clickedBlock instanceof Dirt) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new Farmland(), Action::PLACE(), $clickedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::FARMLAND(), Action::PLACE(), $clickedBlockPos);
                             return;
                         }
                     } elseif ($itemInHand instanceof Shovel) {
                         if ($clickedBlock instanceof Grass) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, new GrassPath(), Action::PLACE(), $clickedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::GRASS_PATH(), Action::PLACE(), $clickedBlockPos);
                             return;
                         }
                     } elseif ($clickedBlock instanceof Cake) {
                         if ($player->isSurvival() && $clickedBlock->getMeta() > 5) {
-                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $this->air, Action::BREAK(), $clickedBlock->asPosition());
+                            $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::AIR(), Action::BREAK(), $clickedBlockPos);
                             return;
                         }
                     }
 
                     if (!$player->isSneaking() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
-                            $tile = BlockUtils::asTile($clickedBlock->getPos());
-                            if ($tile instanceof TileItemFrame) {
-                                if (!$tile->hasItem() && !$itemInHand->isNull()) {
-                                    //I consider the ItemFrame as a fake inventory holder to only log "adding" item.
-                                    $this->blocksQueries->addItemFrameLogByPlayer($player, $tile, $itemInHand->setCount(1), Action::ADD());
-                                } else {
-                                    $this->blocksQueries->addItemFrameLogByPlayer($player, $tile, $tile->getItem(), Action::CLICK());
-                                }
+                            if (($item = $clickedBlock->getFramedItem()) !== null && !$itemInHand->isNull()) {
+                                //I consider the ItemFrame as a fake inventory holder to only log "adding" item.
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $itemInHand->setCount(1), Action::ADD());
+                            } else {
+                                $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $item, Action::CLICK());
                             }
                         } else {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, $clickedBlock, Action::CLICK());

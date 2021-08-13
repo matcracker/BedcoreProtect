@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\event\block\LeavesDecayEvent;
 
 final class WorldListener extends BedcoreListener
@@ -36,7 +37,7 @@ final class WorldListener extends BedcoreListener
     {
         $block = $event->getBlock();
         if ($this->config->isEnabledWorld($block->getPos()->getWorld()) && $this->config->getLeavesDecay()) {
-            $this->blocksQueries->addBlockLogByBlock($block, $block, $this->air, Action::BREAK(), $block->getPos());
+            $this->blocksQueries->addBlockLogByBlock($block, $block, VanillaBlocks::AIR(), Action::BREAK(), $block->getPos());
         }
     }
 }

@@ -139,10 +139,10 @@ final class Inspector
                 if (isset($log["{$typeColumn}_amount"])) {
                     $amount = (int)$log["{$typeColumn}_amount"];
 
-                    $itemName = ItemFactory::get($id, $meta)->getVanillaName();
+                    $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
                     $to = "$amount x #$id:$meta ($itemName)";
                 } else {
-                    $blockName = BlockFactory::get($id, $meta)->getName();
+                    $blockName = BlockFactory::getInstance()->get($id, $meta)->getName();
                     $to = "#$id:$meta ($blockName)";
                 }
             } elseif (isset($log["entity_to"])) {
