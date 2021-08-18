@@ -50,9 +50,10 @@ use function mb_strtolower;
  */
 final class CommandParameter
 {
-    use EnumTrait {
+    use CustomEnumTrait {
         register as Enum_register;
         __construct as Enum___construct;
+        fromString as Enum_fromString;
     }
 
     /**
@@ -73,7 +74,7 @@ final class CommandParameter
     public static function fromString(string $name): ?CommandParameter
     {
         try {
-            return self::fromString($name);
+            return self::Enum_fromString($name);
         } catch (InvalidArgumentException) {
             foreach (self::getAll() as $enum) {
                 if (in_array(mb_strtolower($name), $enum->getAliases())) {

@@ -21,17 +21,13 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
-use pocketmine\block\Anvil;
 use pocketmine\block\Block;
-use pocketmine\block\BrewingStand;
-use pocketmine\block\BurningFurnace;
 use pocketmine\block\Button;
-use pocketmine\block\Chest;
 use pocketmine\block\Door;
-use pocketmine\block\EnchantingTable;
 use pocketmine\block\FenceGate;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Lever;
+use pocketmine\block\tile\Container;
 use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
 use pocketmine\nbt\tag\CompoundTag;
@@ -78,16 +74,8 @@ final class BlockUtils
      */
     public static function hasInventory(Block $block): bool
     {
-        static $blockClasses = [
-            Chest::class, BurningFurnace::class,
-            EnchantingTable::class, Anvil::class,
-            BrewingStand::class
-        ];
-
-        foreach ($blockClasses as $blockClass) {
-            if (is_a($block, $blockClass)) {
-                return true;
-            }
+        if (($tile = self::asTile($block->getPos())) !== null) {
+            return $tile instanceof Container;
         }
 
         return false;
@@ -119,7 +107,7 @@ final class BlockUtils
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
         if (($tile = self::asTile($block->getPos())) !== null) {
-            return clone $tile->saveNBT();
+            return $tile->saveNBT();
         }
 
         return null;

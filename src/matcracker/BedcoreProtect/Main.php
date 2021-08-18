@@ -138,8 +138,13 @@ final class Main extends PluginBase
         $version = $this->getVersion();
         $queryManager->init($version);
         $dbVersion = $this->database->getVersion();
+
         if (version_compare($version, $dbVersion) < 0) {
             $this->getLogger()->warning($this->language->translateString("database.version.higher"));
+            $pluginManager->disablePlugin($this);
+            return;
+        } elseif (version_compare("1.0.0", $dbVersion) > 0) {//Don't allow using plugin v1.0.0 with previous database versions.
+            $this->getLogger()->warning($this->language->translateString("database.version.incompatible"));
             $pluginManager->disablePlugin($this);
             return;
         }

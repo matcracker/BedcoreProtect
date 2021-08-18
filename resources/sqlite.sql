@@ -4,9 +4,8 @@
 -- #        {entities
 CREATE TABLE IF NOT EXISTS "entities"
 (
-    uuid             VARCHAR(36) PRIMARY KEY,
-    entity_name      VARCHAR(16) NOT NULL,
-    entity_classpath TEXT        NOT NULL
+    uuid        VARCHAR(36) PRIMARY KEY,
+    entity_name VARCHAR(16) NOT NULL
 );
 -- #        }
 -- #        {log_history
@@ -29,10 +28,8 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
 (
     history_id INTEGER PRIMARY KEY,
     old_id     INTEGER NOT NULL,
-    old_meta   INTEGER NOT NULL,
     old_nbt    BLOB DEFAULT NULL,
     new_id     INTEGER NOT NULL,
-    new_meta   INTEGER NOT NULL,
     new_nbt    BLOB DEFAULT NULL,
     CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
@@ -100,11 +97,10 @@ VACUUM;
 -- #        {entity
 -- #            :uuid string
 -- #            :name string
--- #            :path string
 INSERT OR
 REPLACE
-INTO "entities" (uuid, entity_name, entity_classpath)
-VALUES (:uuid, :name, :path);
+INTO "entities" (uuid, entity_name)
+VALUES (:uuid, :name);
 -- #        }
 -- #        {db_version
 -- #            :version string
@@ -127,14 +123,11 @@ VALUES ((SELECT uuid FROM entities WHERE uuid = :uuid), :x, :y, :z, :world_name,
 -- #            {block
 -- #                :log_id int
 -- #                :old_id int
--- #                :old_meta int
 -- #                :old_nbt ?string
 -- #                :new_id int
--- #                :new_meta int
 -- #                :new_nbt ?string
-INSERT INTO "blocks_log"(history_id, old_id, old_meta, old_nbt, new_id, new_meta, new_nbt)
-VALUES (:log_id, :old_id, :old_meta, :old_nbt, :new_id, :new_meta,
-        :new_nbt);
+INSERT INTO "blocks_log"(history_id, old_id, old_nbt, new_id, new_nbt)
+VALUES (:log_id, :old_id, :old_nbt, :new_id, :new_nbt);
 -- #            }
 -- #            {entity
 -- #                :log_id int
@@ -190,7 +183,6 @@ LIMIT 1;
 -- #                :log_ids list:int
 SELECT history_id,
        bl.old_id,
-       bl.old_meta,
        bl.old_nbt,
        x,
        y,
@@ -205,7 +197,6 @@ ORDER BY time DESC;
 -- #                :log_ids list:int
 SELECT history_id,
        bl.new_id,
-       bl.new_meta,
        bl.new_nbt,
        x,
        y,
@@ -251,7 +242,6 @@ ORDER BY time;
 -- #            {entities
 -- #                :log_ids list:int
 SELECT log_id,
-       e.entity_classpath,
        el.entityfrom_id,
        el.entityfrom_nbt,
        x,
@@ -276,10 +266,8 @@ ORDER BY time DESC;
 -- #                :offset int
 SELECT COUNT(*) OVER () AS cnt_rows,
        bl.old_id,
-       bl.old_meta,
        bl.old_nbt,
        bl.new_id,
-       bl.new_meta,
        bl.new_nbt,
        e.entity_name    AS entity_from,
        x,
@@ -344,10 +332,8 @@ LIMIT :limit OFFSET :offset;
 -- #                :offset int
 SELECT COUNT(*) OVER () AS cnt_rows,
        bl.old_id,
-       bl.old_meta,
        bl.old_nbt,
        bl.new_id,
-       bl.new_meta,
        bl.new_nbt,
        e1.entity_name   AS entity_from,
        e2.entity_name   AS entity_to,

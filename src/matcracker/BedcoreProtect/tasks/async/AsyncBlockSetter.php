@@ -22,44 +22,47 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
-use matcracker\BedcoreProtect\serializable\SerializableBlock;
 use matcracker\BedcoreProtect\utils\WorldUtils;
-use pocketmine\math\AxisAlignedBB;
-use pocketmine\network\mcpe\serializer\ChunkSerializer;
+use pocketmine\math\Vector3;
+use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\world\format\Chunk;
+use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\World;
-use Threaded;
+use function array_values;
 use function count;
+use function morton2d_decode;
 use function serialize;
 use function unserialize;
 
-class RollbackTask extends AsyncTask
+final class AsyncBlockSetter extends AsyncTask
 {
-    private string $serializedBlocks;
-    private Threaded $serializedChunks;
+    private string $serializedFullBlockIds;
+    private string $serializedPositions;
+    private string $serializedChunks;
 
     /**
      * RollbackTask constructor.
-     * @param string $senderName
+     * @param int[] $fullBlockIds
+     * @param Vector3[] $positions
      * @param string $worldName
-     * @param SerializableBlock[] $blocks
-     * @param bool $rollback
+     * @param array<int, string> $serializedChunks
      * @param Closure $onComplete
      */
     public function __construct(
-        protected string $senderName,
-        protected string $worldName,
-        private array $blocks,
-        protected bool $rollback,
-        Closure $onComplete)
+        private array  $fullBlockIds,
+        array          $positions,
+        private string $worldName,
+        array          $serializedChunks,
+        Closure        $onComplete)
     {
-        $this->serializedBlocks = serialize($blocks);
-
-        $this->serializedChunks = new Threaded();
-        foreach (WorldUtils::getChunks(WorldUtils::getNonNullWorldByName($worldName), $blocks) as $hash => $chunk) {
-            $this->serializedChunks[] = serialize([$hash, ChunkSerializer::serializeFullChunk($chunk)]);
+        if (count($fullBlockIds) !== count($positions)) {
+            throw new PluginException("The number of full block IDs is not the same of their positions.");
         }
+
+        $this->serializedFullBlockIds = serialize(array_values($fullBlockIds));
+        $this->serializedPositions = serialize(array_values($positions));
+        $this->serializedChunks = serialize($serializedChunks);
 
         $this->storeLocal("onComplete", $onComplete);
     }
@@ -69,16 +72,22 @@ class RollbackTask extends AsyncTask
         /** @var Chunk[] $chunks */
         $chunks = [];
 
-        foreach ($this->serializedChunks as $serializedChunk) {
-            [$hash, $serialChunk] = unserialize($serializedChunk);
-            $chunks[$hash] = World::fastDeserialize($serialChunk);
+        foreach (unserialize($this->serializedChunks) as $hash => $serializedChunk) {
+            $chunks[$hash] = FastChunkSerializer::deserialize($serializedChunk);
         }
 
-        /** @var SerializableBlock $block */
-        foreach (unserialize($this->serializedBlocks) as $block) {
-            $index = World::chunkHash($block->getX() >> 4, $block->getZ() >> 4);
+        /** @var Vector3[] $positions */
+        $positions = unserialize($this->serializedPositions);
+
+        /**
+         * @var int $idx
+         * @var int $fullBlockId
+         */
+        foreach (unserialize($this->serializedFullBlockIds) as $idx => $fullBlockId) {
+            $blockPos = $positions[$idx];
+            $index = World::chunkHash($blockPos->getX() >> 4, $blockPos->getZ() >> 4);
             if (isset($chunks[$index])) {
-                $chunks[$index]->setFullBlock($block->getX(), $block->getY(), $block->getZ(), $block->getId());
+                $chunks[$index]->setFullBlock($blockPos->getX() & 0x0f, $blockPos->getY(), $blockPos->getZ() & 0x0f, $fullBlockId);
             }
         }
 
@@ -91,29 +100,23 @@ class RollbackTask extends AsyncTask
 
         /** @var Chunk[] $chunks */
         $chunks = $this->getResult();
-        foreach ($chunks as $chunk) {
-            $world->setChunk($chunk->getX(), $chunk->getZ(), $chunk, false);
+        foreach ($chunks as $hash => $chunk) {
+            [$cx, $cz] = morton2d_decode($hash);
+            $world->setChunk($cx, $cz, $chunk, false);
         }
 
-        foreach ($this->blocks as $block) {
+        //TODO: I need to understand what to do here
+        /*foreach ($this->blocks as $block) {
             $pos = $block->asVector3();
             $world->updateAllLight($pos->x, $pos->y, $pos->z);
             foreach ($world->getNearbyEntities(new AxisAlignedBB($pos->x - 1, $pos->y - 1, $pos->z - 1, $pos->x + 2, $pos->y + 2, $pos->z + 2)) as $entity) {
                 $entity->onNearbyBlockChange();
             }
             $world->scheduleNeighbourBlockUpdates($pos);
-        }
+        }*/
 
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal("onComplete");
-        $onComplete([count($this->blocks), count($chunks)]);
-    }
-
-    /**
-     * @return SerializableBlock[]
-     */
-    public function getBlocks(): array
-    {
-        return $this->blocks;
+        $onComplete([count($this->fullBlockIds), count($chunks)]);
     }
 }

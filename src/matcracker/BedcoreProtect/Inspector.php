@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
+use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
@@ -133,6 +134,7 @@ final class Inspector
 
             $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
 
+            //TODO
             if (isset($log["{$typeColumn}_id"], $log["{$typeColumn}_meta"])) {
                 $id = (int)$log["{$typeColumn}_id"];
                 $meta = (int)$log["{$typeColumn}_meta"];
@@ -142,8 +144,8 @@ final class Inspector
                     $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
                     $to = "$amount x #$id:$meta ($itemName)";
                 } else {
-                    $blockName = BlockFactory::getInstance()->get($id, $meta)->getName();
-                    $to = "#$id:$meta ($blockName)";
+                    $block = BlockFactory::getInstance()->fromFullBlock($id);
+                    $to = "#$id:{$block->getMeta()} ({$block->getName()})";
                 }
             } elseif (isset($log["entity_to"])) {
                 $to = $log["entity_to"];

@@ -62,7 +62,6 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
             $blockPos = $block->getPos();
-
             if ($block instanceof Chest) {
                 $tileChest = BlockUtils::asTile($blockPos);
                 if ($tileChest instanceof TileChest) {
@@ -173,7 +172,7 @@ final class BlockListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($blockPos->getWorld())) {
             if ($source instanceof Liquid) {
-                $action = !$block instanceof Air ? Action::BREAK() : Action::PLACE();
+                $action = $block instanceof Air ? Action::PLACE() : Action::BREAK();
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, $action, $blockPos);
             }
         }

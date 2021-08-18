@@ -28,12 +28,11 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
-use pocketmine\World\World;
+use pocketmine\entity\EntityFactory;
 use pocketmine\Server;
+use pocketmine\World\World;
 use SOFe\AwaitGenerator\Await;
-use function class_exists;
 use function count;
-use function get_class;
 use function mb_strtolower;
 use function microtime;
 
@@ -68,16 +67,13 @@ class EntitiesQueries extends Query
     /**
      * @param string $uuid
      * @param string $name
-     * @param string $classPath
      * @return Generator
-     * @internal
      */
-    final public function addRawEntity(string $uuid, string $name, string $classPath = ""): Generator
+    final protected function addRawEntity(string $uuid, string $name): Generator
     {
         return yield $this->executeInsert(QueriesConst::ADD_ENTITY, [
             "uuid" => $uuid,
-            "name" => $name,
-            "path" => $classPath
+            "name" => $name
         ]);
     }
 
@@ -107,8 +103,7 @@ class EntitiesQueries extends Query
     {
         return yield $this->addRawEntity(
             EntityUtils::getUniqueId($entity),
-            EntityUtils::getName($entity),
-            get_class($entity)
+            EntityUtils::getName($entity)
         );
     }
 
@@ -157,21 +152,14 @@ class EntitiesQueries extends Query
                     ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
                     (!$rollback && $action->equals(Action::SPAWN()))
                 ) {
-                    $entityClass = (string)$row["entity_classpath"];
-                    if (class_exists($entityClass)) {
-                        $entity = Entity::createEntity($entityClass::NETWORK_ID, $world, Utils::deserializeNBT($row["entityfrom_nbt"]));
-                        if ($entity !== null) {
-                            yield $this->updateEntityId((int)$row["log_id"], $entity);
-                            $entity->spawnToAll();
-                        }
-                    } else {
-                        $this->plugin->getLogger()->debug("Could not find entity \"$entityClass\".");
+                    $entity = EntityFactory::getInstance()->createFromData($world, Utils::deserializeNBT($row["entityfrom_nbt"]));
+                    if ($entity !== null) {
+                        yield $this->updateEntityId((int)$row["log_id"], $entity);
+                        $entity->spawnToAll();
                     }
                 } else {
                     $entity = $world->getEntity((int)$row["entityfrom_id"]);
-                    if ($entity !== null) {
-                        $entity->close();
-                    }
+                    $entity?->close();
                 }
             }
         }

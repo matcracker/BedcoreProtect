@@ -26,14 +26,14 @@ use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use matcracker\BedcoreProtect\tasks\async\RollbackTask;
+use matcracker\BedcoreProtect\tasks\async\AsyncBlockSetter;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
-use pocketmine\block\tile\Tile;
+use pocketmine\block\tile\TileFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
 use pocketmine\inventory\InventoryHolder;
@@ -43,6 +43,7 @@ use pocketmine\player\Player;
 use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
+use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
@@ -51,6 +52,7 @@ use function array_map;
 use function array_values;
 use function count;
 use function microtime;
+use function serialize;
 use function strlen;
 
 /**
@@ -102,11 +104,9 @@ class BlocksQueries extends Query
 
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
             "log_id" => $lastId,
-            "old_id" => $oldBlock->getId(),
-            "old_meta" => $oldBlock->getMeta(),
+            "old_id" => $oldBlock->getFullId(),
             "old_nbt" => $oldNbt,
-            "new_id" => $newBlock->getId(),
-            "new_meta" => $newBlock->getMeta(),
+            "new_id" => $newBlock->getFullId(),
             "new_nbt" => $newNbt
         ]);
     }
@@ -217,10 +217,8 @@ class BlocksQueries extends Query
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
             "log_id" => $lastId,
             "old_id" => $oldBlock->getId(),
-            "old_meta" => $oldBlock->getMeta(),
             "old_nbt" => $oldBlock->getSerializedNbt(),
             "new_id" => $newBlock->getId(),
-            "new_meta" => $newBlock->getMeta(),
             "new_nbt" => $newBlock->getSerializedNbt()
         ]);
     }
@@ -266,24 +264,23 @@ class BlocksQueries extends Query
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
         $item = clone $item;
-        $oldNbt = Utils::serializeNBT($nbt = $itemFrame->saveNBT());
+        $oldNbt = Utils::serializeNBT($nbt = $itemFrame->saveNbt());
 
         $nbt->setTag($item->nbtSerialize(-1, ItemFrame::TAG_ITEM));
         if ($action->equals(Action::CLICK())) {
-            $nbt->setByte(ItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % 8);
+            $itemFrame->setItemRotation(($itemFrame->getItemRotation() + 1) % ItemFrame::ROTATIONS);
         }
         $newNbt = Utils::serializeNBT($nbt);
 
-        $itemFrameBlock = $itemFrame->getBlock();
-        $position = $itemFrame->asVector3();
-        $worldName = $itemFrame->getWorldNonNull()->getFolderName();
+        $position = $itemFrame->getPos();
+        $worldName = $position->getWorld()->getFolderName();
 
         Await::g2c(
             $this->addRawBlockLog(
                 EntityUtils::getUniqueId($player),
-                $itemFrameBlock,
+                $itemFrame,
                 $oldNbt,
-                $itemFrameBlock,
+                $itemFrame,
                 $newNbt,
                 $position,
                 $worldName,
@@ -317,9 +314,6 @@ class BlocksQueries extends Query
 
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
-        /** @var SerializableBlock[] $blocks */
-        $blocks = [];
-
         if ($rollback) {
             $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ["log_ids" => $logIds]);
             $prefix = "old";
@@ -328,38 +322,53 @@ class BlocksQueries extends Query
             $prefix = "new";
         }
 
+        /** @var int[] $fullBlockIds */
+        $fullBlockIds = [];
+        /** @var Vector3[] $blocksPosition */
+        $blocksPosition = [];
+        /** @var string[] $chunks */
+        $chunks = [];
+
         foreach ($blockRows as $row) {
+            $fullBlockIds[] = (int)$row["{$prefix}_id"];
+            $blocksPosition[] = $currBlockPos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
             $serializedNBT = (string)$row["{$prefix}_nbt"];
-            $id = (int)$row["{$prefix}_id"];
-            $pos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-            $blocks[] = new SerializableBlock("", $id, (int)$row["{$prefix}_meta"], $pos, (string)$row["world_name"], $serializedNBT);
 
-            if (strlen($serializedNBT) > 0) {
-                $cx = $pos->x >> 4;
-                $cz = $pos->z >> 4;
-                if ($world->loadChunk($cx, $cz, false)) {
-                    $nbt = Utils::deserializeNBT($serializedNBT);
-                    $tileName = $nbt->getString(Tile::TAG_ID);
+            $chunkX = $currBlockPos->getX() >> 4;
+            $chunkZ = $currBlockPos->getZ() >> 4;
 
-                    $tile = Tile::createTile($tileName, $world, $nbt);
+            if (($chunk = $world->getOrLoadChunkAtPosition($currBlockPos)) !== null) {
+                $chunks[World::chunkHash($chunkX, $chunkZ)] = FastChunkSerializer::serialize($chunk);
+            } else {
+                $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");
+            }
+
+            if (strlen($serializedNBT) > 0 && $chunk !== null) {
+                if ($world->getOrLoadChunkAtPosition($currBlockPos) !== null) {
+                    $tile = TileFactory::getInstance()->createFromData($world, Utils::deserializeNBT($serializedNBT));
                     if ($tile !== null) {
                         if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                             $tile->getInventory()->clearAll();
                         }
                     } else {
-                        $this->plugin->getLogger()->debug("Could not find tile \"$tileName\".");
+                        $this->plugin->getLogger()->debug("Could not create tile at $currBlockPos.");
                     }
-                } else {
-                    $this->plugin->getLogger()->debug("Could not load chunk at [$cx;$cz]");
                 }
             } else {
-                if (($tile = $world->getTile($pos)) !== null) {
+                if (($tile = $world->getTile($currBlockPos)) !== null) {
                     $world->removeTile($tile);
                 }
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new RollbackTask($sender->getName(), $world->getFolderName(), $blocks, $rollback, yield));
+        Server::getInstance()->getAsyncPool()->submitTask(new AsyncBlockSetter(
+            $fullBlockIds,
+            $blocksPosition,
+            $world->getFolderName(),
+            $chunks,
+            yield
+        ));
+
         yield Await::REJECT;
 
         return yield Await::ONCE;

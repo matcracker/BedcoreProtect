@@ -32,7 +32,6 @@ use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\player\Player;
@@ -142,10 +141,8 @@ class InventoriesQueries extends Query
 
         $contents = $inventory->getContents();
 
-        $airItem = ItemFactory::get(ItemIds::AIR);
-
         $this->getMutex()->putClosure(
-            function () use ($player, $worldName, $time, $contents, $inventoryPosition, $airItem): Generator {
+            function () use ($player, $worldName, $time, $contents, $inventoryPosition): Generator {
                 yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                 /**
@@ -157,7 +154,7 @@ class InventoriesQueries extends Query
                         EntityUtils::getUniqueId($player),
                         $slot,
                         $content,
-                        $airItem,
+                        ItemFactory::air(),
                         $inventoryPosition,
                         $worldName,
                         Action::REMOVE(),
@@ -188,7 +185,7 @@ class InventoriesQueries extends Query
                 if (($nbt = $row["{$prefix}_nbt"]) !== null) {
                     $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
                 }
-                $item = ItemFactory::get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
+                $item = ItemFactory::getInstance()->get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
                 $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
                 if ($tile instanceof InventoryHolder) {
