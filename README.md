@@ -263,7 +263,7 @@ Examples:
 ---
 
 # Donate
-You can contribute to the development and maintenance of BedcoreProtect through the following options:
+You can contribute to the development and maintenance of BedcoreProtect through the following payment methods:
 - Bitcoin (BTC): `37BCe87gveKRNPzbcLLyAk2kLVqE53MSZc`
 - Bitcoin Cash (BCH): `qpgs398kps5c0nrkq982ppk4x7frmwhq9y7fam6xtw`
 - Ethereum (ETH): `0xd96123D794fb72eb34fC40820f8DAf73b9baf899`
