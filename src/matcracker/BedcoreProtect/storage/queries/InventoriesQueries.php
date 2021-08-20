@@ -200,8 +200,7 @@ class InventoriesQueries extends Query
                 $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
                 if ($tile instanceof InventoryHolder) {
-                    $inv = $tile instanceof Chest ? $tile->getRealInventory() : $tile->getInventory();
-                    $inv->setItem((int)$row["slot"], $item);
+                    $tile->getInventory()->setItem((int)$row["slot"], $item);
                 }
             }
         }
