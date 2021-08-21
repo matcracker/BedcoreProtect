@@ -43,6 +43,7 @@ final class Utils
 {
     private function __construct()
     {
+        //NOOP
     }
 
     /**
@@ -119,10 +120,6 @@ final class Utils
 
     /**
      * It serializes the CompoundTag to a Base64 string.
-     *
-     * @param CompoundTag $tag
-     *
-     * @return string
      */
     public static function serializeNBT(CompoundTag $tag): string
     {
@@ -131,11 +128,7 @@ final class Utils
     }
 
     /**
-     * It de-serializes the CompoundTag to a Base64 string.
-     *
-     * @param string $encodedData
-     *
-     * @return CompoundTag
+     * It deserializes a Base64 string to a CompoundTag.
      */
     public static function deserializeNBT(string $encodedData): CompoundTag
     {

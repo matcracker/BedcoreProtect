@@ -22,11 +22,8 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\utils;
 
 use InvalidStateException;
-use matcracker\BedcoreProtect\serializable\SerializableBlock;
-use pocketmine\World\format\Chunk;
-use pocketmine\World\World;
-use pocketmine\math\Vector3;
 use pocketmine\Server;
+use pocketmine\World\World;
 use function array_map;
 
 final class WorldUtils
@@ -34,27 +31,6 @@ final class WorldUtils
     private function __construct()
     {
         //NOOP
-    }
-
-    /**
-     * @param World $world
-     * @param SerializableBlock[]|Vector3[] $positions
-     * @return Chunk[]
-     */
-    public static function getChunks(World $world, array $positions): array
-    {
-        $touchedChunks = [];
-        foreach ($positions as $position) {
-            $x = $position->getX() >> 4;
-            $z = $position->getZ() >> 4;
-            $chunk = $world->getChunk($x, $z);
-            if ($chunk === null) {
-                continue;
-            }
-            $touchedChunks[World::chunkHash($x, $z)] = $chunk;
-        }
-
-        return $touchedChunks;
     }
 
     public static function getNonNullWorldByName(string $worldName): World

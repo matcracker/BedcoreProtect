@@ -26,7 +26,6 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\inventory\BlockInventory;
-use pocketmine\block\tile\Chest;
 use pocketmine\command\CommandSender;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
@@ -39,7 +38,9 @@ use pocketmine\World\Position;
 use pocketmine\World\World;
 use SOFe\AwaitGenerator\Await;
 use function count;
+use function get_class;
 use function microtime;
+use function var_dump;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -182,12 +183,10 @@ class InventoriesQueries extends Query
 
             foreach ($inventoryRows as $row) {
                 /** @var CompoundTag|null $nbt */
-                if (($nbt = $row["{$prefix}_nbt"]) !== null) {
-                    $nbt = Utils::deserializeNBT($row["{$prefix}_nbt"]);
-                }
+                $nbt = isset($row["{$prefix}_nbt"]) ? Utils::deserializeNBT($row["{$prefix}_nbt"]) : null;
                 $item = ItemFactory::getInstance()->get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
-                $tile = $world->getTile(new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]));
 
+                $tile = $world->getTileAt((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                 if ($tile instanceof InventoryHolder) {
                     $tile->getInventory()->setItem((int)$row["slot"], $item);
                 }

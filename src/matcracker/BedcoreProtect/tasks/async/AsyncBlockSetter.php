@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\AsyncTask;
+use pocketmine\Server;
 use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\World;
@@ -96,7 +97,11 @@ final class AsyncBlockSetter extends AsyncTask
 
     public function onCompletion(): void
     {
-        $world = WorldUtils::getNonNullWorldByName($this->worldName);
+        $world = Server::getInstance()->getWorldManager()->getWorldByName($this->worldName);
+        if($world === null){
+            //TODO: manage in case of missing world, also see QueryManager::rawRollback()
+            return;
+        }
 
         /** @var Chunk[] $chunks */
         $chunks = $this->getResult();

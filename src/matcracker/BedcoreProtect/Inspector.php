@@ -27,6 +27,7 @@ use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
+use pocketmine\item\LegacyStringToItemParser;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function count;
@@ -130,22 +131,20 @@ final class Inspector
             $action = Action::fromType((int)$log["action"]);
             $rollback = (bool)$log["rollback"];
 
-            $timeStamp = (int)$log["time"];
+            $timeStamp = Utils::timeAgo((int)$log["time"]);
 
-            $typeColumn = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
+            $prefix = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
 
-            //TODO
-            if (isset($log["{$typeColumn}_id"], $log["{$typeColumn}_meta"])) {
-                $id = (int)$log["{$typeColumn}_id"];
-                $meta = (int)$log["{$typeColumn}_meta"];
-                if (isset($log["{$typeColumn}_amount"])) {
-                    $amount = (int)$log["{$typeColumn}_amount"];
+            if (isset($log["{$prefix}_id"])){
+                $id = (int)$log["{$prefix}_id"];
+                if(isset($log["{$prefix}_meta"])) {
+                    $meta = (int)$log["{$prefix}_meta"];
+                    $amount = (int)$log["{$prefix}_amount"];
 
                     $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
-                    $to = "$amount x #$id:$meta ($itemName)";
-                } else {
-                    $block = BlockFactory::getInstance()->fromFullBlock($id);
-                    $to = "#$id:{$block->getMeta()} ({$block->getName()})";
+                    $to = "$itemName (x$amount)";
+                }else{
+                    $to = BlockFactory::getInstance()->fromFullBlock($id)->getName();
                 }
             } elseif (isset($log["entity_to"])) {
                 $to = $log["entity_to"];
@@ -154,8 +153,8 @@ final class Inspector
                 return;
             }
 
-            //TODO: Use strikethrough (&m) when MC fix it.
-            $inspector->sendMessage(($rollback ? TextFormat::ITALIC : "") . TextFormat::GRAY . Utils::timeAgo($timeStamp) . TextFormat::WHITE . " - " .
+            //TODO: Use strikethrough (&m) when MC fix it (https://bugs.mojang.com/browse/MCPE-41729).
+            $inspector->sendMessage(($rollback ? TextFormat::ITALIC : "") . TextFormat::GRAY . $timeStamp . TextFormat::WHITE . " - " .
                 TextFormat::DARK_AQUA . "$from " . TextFormat::WHITE . "{$action->getMessage()} " . TextFormat::DARK_AQUA . "$to " . TextFormat::WHITE . " - " .
                 TextFormat::GRAY . "(x$x/y$y/z$z/$worldName)" . TextFormat::WHITE . ".");
         }

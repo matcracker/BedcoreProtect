@@ -38,7 +38,8 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\Utils;
 use matcracker\BedcoreProtect\utils\WorldUtils;
 use pocketmine\command\CommandSender;
-use pocketmine\item\VanillaItems;
+use pocketmine\item\LegacyStringToItemParser;
+use pocketmine\item\LegacyStringToItemParserException;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
@@ -337,8 +338,8 @@ abstract class ParsableSubCommand extends SubCommand
         $itemMetas = [];
         foreach (explode(",", $str) as $strItem) {
             try {
-                $item = VanillaItems::fromString($strItem);
-            } catch (InvalidArgumentException) {
+                $item = LegacyStringToItemParser::getInstance()->parse($strItem);
+            } catch (LegacyStringToItemParserException) {
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-item-block", [$strItem]));
                 return null;
             }

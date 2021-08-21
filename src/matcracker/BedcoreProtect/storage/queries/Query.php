@@ -82,9 +82,9 @@ abstract class Query
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
             "uuid" => mb_strtolower($uuid),
-            "x" => $position->getFloorX(),
-            "y" => $position->getFloorY(),
-            "z" => $position->getFloorZ(),
+            "x" => $position->getX(),
+            "y" => $position->getY(),
+            "z" => $position->getZ(),
             "world_name" => $worldName,
             "action" => $action->getType(),
             "time" => $time

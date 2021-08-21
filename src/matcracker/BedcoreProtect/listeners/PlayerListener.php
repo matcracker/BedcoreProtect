@@ -174,7 +174,7 @@ final class PlayerListener extends BedcoreListener
 
                     if (!$player->isSneaking() && BlockUtils::canBeClicked($clickedBlock)) {
                         if ($clickedBlock instanceof ItemFrame) {
-                            if (($item = $clickedBlock->getFramedItem()) !== null && !$itemInHand->isNull()) {
+                            if (($item = $clickedBlock->getFramedItem()) === null && !$itemInHand->isNull()) {
                                 //I consider the ItemFrame as a fake inventory holder to only log "adding" item.
                                 $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $itemInHand->setCount(1), Action::ADD());
                             } else {
