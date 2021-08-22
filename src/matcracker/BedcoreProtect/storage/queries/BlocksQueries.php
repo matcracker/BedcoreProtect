@@ -26,6 +26,7 @@ use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\tasks\async\AsyncBlockSetter;
+use matcracker\BedcoreProtect\utils\ArrayUtils;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
@@ -50,11 +51,12 @@ use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
+use function array_map;
 use function array_values;
 use function count;
+use function get_class;
 use function microtime;
 use function strlen;
-use function var_dump;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -124,20 +126,50 @@ class BlocksQueries extends Query
         if (count($oldBlocks) === 0) {
             return;
         }
+        $oldBlocksNbt = array_map(fn(Block $block): ?string => BlockUtils::serializeTileTag($block), $oldBlocks);
 
         $time = microtime(true);
 
         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-            function () use ($entity, $oldBlocks, $action, $onTaskRun, $time): void {
+            function () use ($entity, $oldBlocks, $oldBlocksNbt, $action, $onTaskRun, $time): void {
                 /** @var Block[] $newBlocks */
-                $newBlocks = $onTaskRun($oldBlocks);
+                $newBlocks = $onTaskRun($oldBlocks, $oldBlocksNbt);
 
-                $this->addBlocksLogByEntity(
-                    $entity,
-                    $oldBlocks,
-                    $newBlocks,
-                    $action,
-                    $time
+                if (!ArrayUtils::checkSameDimension($oldBlocks, $oldBlocksNbt, $newBlocks)) {
+                    throw new PluginException("The number of old blocks must be the same as new blocks, or vice-versa.");
+                }
+
+                ArrayUtils::resetKeys($oldBlocks, $oldBlocksNbt, $newBlocks);
+
+                $newBlocksNbt = [];
+                for ($i = 0; $i < count($newBlocks); $i++) {
+                    $newBlocksNbt[$i] = BlockUtils::serializeTileTag($newBlocks[$i]);
+                }
+
+                self::getMutex()->putClosure(
+                    function () use ($entity, $oldBlocks, $oldBlocksNbt, $newBlocks, $newBlocksNbt, $action, $time): Generator {
+                        yield $this->entitiesQueries->addEntity($entity);
+
+                        yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+
+                        for ($i = 0; $i < count($oldBlocks); $i++) {
+                            $position = $oldBlocks[$i]->getPos();
+
+                            yield $this->addRawBlockLog(
+                                EntityUtils::getUniqueId($entity),
+                                $oldBlocks[$i]->getFullId(),
+                                $oldBlocksNbt[$i],
+                                $newBlocks[$i]->getFullId(),
+                                $newBlocksNbt[$i],
+                                $position->asVector3(),
+                                $position->getWorld()->getFolderName(),
+                                $action,
+                                $time
+                            );
+                        }
+
+                        yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+                    }
                 );
             }
         ), $delay);
@@ -150,19 +182,21 @@ class BlocksQueries extends Query
      */
     public function addExplosionLogByEntity(Entity $entity, array $oldBlocks, Action $action): void
     {
-        $cntOldBlocks = count($oldBlocks);
-
-        if ($cntOldBlocks === 0) {
+        if (($cntOldBlocks = count($oldBlocks)) === 0) {
             return;
         }
 
         $oldBlocks = array_values($oldBlocks);
-
+        /** @var string[] $oldBlocksNbt */
+        $oldBlocksNbt = [];
+        for ($i = 0; $i < $cntOldBlocks; $i++) {
+            $oldBlocksNbt[$i] = BlockUtils::serializeTileTag($oldBlocks[$i]);
+        }
         $uuidEntity = EntityUtils::getUniqueId($entity);
         $time = microtime(true);
 
         self::getMutex()->putClosure(
-            function () use ($entity, $uuidEntity, $oldBlocks, $cntOldBlocks, $action, $time): Generator {
+            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $cntOldBlocks, $action, $time): Generator {
                 yield $this->entitiesQueries->addEntity($entity);
 
                 yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
@@ -170,62 +204,16 @@ class BlocksQueries extends Query
                 $airFullId = VanillaBlocks::AIR()->getFullId();
 
                 for ($i = 0; $i < $cntOldBlocks; $i++) {
+                    $position = $oldBlocks[$i]->getPos();
+
                     yield $this->addRawBlockLog(
                         $uuidEntity,
                         $oldBlocks[$i]->getFullId(),
-                        BlockUtils::serializeTileTag($oldBlocks[$i]),
+                        $oldBlocksNbt[$i],
                         $airFullId,
                         null,
-                        $oldBlocks[$i]->getPos()->asVector3(),
-                        $oldBlocks[$i]->getPos()->getWorld()->getFolderName(),
-                        $action,
-                        $time
-                    );
-                }
-
-                yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
-            }
-        );
-    }
-
-    /**
-     * @param Entity $entity
-     * @param Block[] $oldBlocks
-     * @param Block[] $newBlocks
-     * @param Action $action
-     * @param float $time
-     */
-    public function addBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, float $time): void
-    {
-        $cntOldBlocks = count($oldBlocks);
-        $cntNewBlocks = count($newBlocks);
-
-        if ($cntOldBlocks === 0 || $cntNewBlocks === 0) {
-            return;
-        } elseif ($cntOldBlocks !== $cntNewBlocks) {
-            throw new PluginException("The number of old blocks must be the same as new blocks, or vice-versa. Got $cntOldBlocks <> $cntNewBlocks");
-        }
-
-        $oldBlocks = array_values($oldBlocks);
-        $newBlocks = array_values($newBlocks);
-
-        $uuidEntity = EntityUtils::getUniqueId($entity);
-
-        self::getMutex()->putClosure(
-            function () use ($entity, $uuidEntity, $oldBlocks, $newBlocks, $cntOldBlocks, $action, $time): Generator {
-                yield $this->entitiesQueries->addEntity($entity);
-
-                yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
-
-                for ($i = 0; $i < $cntOldBlocks; $i++) {
-                    yield $this->addRawBlockLog(
-                        $uuidEntity,
-                        $oldBlocks[$i]->getFullId(),
-                        BlockUtils::serializeTileTag($oldBlocks[$i]),
-                        $newBlocks[$i]->getFullId(),
-                        BlockUtils::serializeTileTag($newBlocks[$i]),
-                        $oldBlocks[$i]->getPos()->asVector3(),
-                        $oldBlocks[$i]->getPos()->getWorld()->getFolderName(),
+                        $position->asVector3(),
+                        $position->getWorld()->getFolderName(),
                         $action,
                         $time
                     );
@@ -277,19 +265,20 @@ class BlocksQueries extends Query
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
         $tileItemFrame = BlockUtils::asTile($itemFrame->getPos());
-        if (!$tileItemFrame instanceof TileItemFrame) {
+        if ($tileItemFrame === null) {
             return;
+        } elseif (!$tileItemFrame instanceof TileItemFrame) {
+            throw new PluginException("Expected ItemFrame tile class, got " . get_class($tileItemFrame));
         }
+
         $item = clone $item;
-        $oldNbt = Utils::serializeNBT($nbt = $tileItemFrame->saveNbt());
-        var_dump($nbt);
+        $oldNbt = Utils::serializeNBT($nbt = $tileItemFrame->saveNBT());
 
         $nbt->setTag(TileItemFrame::TAG_ITEM, $item->nbtSerialize());
         if ($action->equals(Action::CLICK())) {
             $nbt->setByte(TileItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % ItemFrame::ROTATIONS);
         }
         $newNbt = Utils::serializeNBT($nbt);
-        $itemFrame->writeStateToWorld();
 
         $position = $itemFrame->getPos();
         $worldName = $position->getWorld()->getFolderName();
@@ -347,32 +336,20 @@ class BlocksQueries extends Query
                 continue;
             }
 
-            $tile = $world->getTile($currBlockPos);
+            $world->getTile($currBlockPos)?->close();
 
             if (strlen($serializedNBT) > 0) {
-                $nbt = Utils::deserializeNBT($serializedNBT);
-
-                //This is necessary to prevent multiple tiles in the same position.
-                if ($tile === null) {
-                    /** @var Tile|null $tile */
-                    $tile = TileFactory::getInstance()->createFromData($world, $nbt);
-                    if ($tile !== null) {
-                        $world->addTile($tile);
-                    }
-                } else {
-                    $tile->readSaveData($nbt);
-                }
+                /** @var Tile|null $tile */
+                $tile = TileFactory::getInstance()->createFromData($world, Utils::deserializeNBT($serializedNBT));
 
                 if ($tile !== null) {
+                    $world->addTile($tile);
+
                     if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
                         $tile->getInventory()->clearAll();
                     }
                 } else {
                     $this->plugin->getLogger()->debug("Could not create tile at $currBlockPos.");
-                }
-            } else {
-                if ($tile !== null) {
-                    $world->removeTile($tile);
                 }
             }
         }

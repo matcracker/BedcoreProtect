@@ -32,7 +32,9 @@ use function strlen;
 
 abstract class SubCommand implements PluginOwned
 {
-    public function __construct(private Main $plugin){}
+    public function __construct(private Main $plugin)
+    {
+    }
 
     abstract public function getForm(Player $player): ?BaseForm;
 

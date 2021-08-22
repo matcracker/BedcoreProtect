@@ -63,10 +63,10 @@ final class CommandParameter
      * @param string $example
      */
     public function __construct(
-        string $enumName,
-        private array $aliases,
+        string                    $enumName,
+        private array             $aliases,
         private CustomFormElement $formElement,
-        private string $example)
+        private string            $example)
     {
         $this->Enum___construct($enumName);
     }

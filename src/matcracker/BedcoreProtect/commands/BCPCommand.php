@@ -79,6 +79,11 @@ final class BCPCommand extends Command implements PluginOwned
         $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
     }
 
+    public function getOwningPlugin(): Main
+    {
+        return $this->plugin;
+    }
+
     private function loadSubCommand(SubCommand $subCommand): void
     {
         self::$subCommands[$subCommand->getName()] = $subCommand;
@@ -139,10 +144,5 @@ final class BCPCommand extends Command implements PluginOwned
     public static function getForm(Main $plugin, Player $player): MainMenuForm
     {
         return new MainMenuForm($plugin, $player, self::$subCommands);
-    }
-
-    public function getOwningPlugin(): Main
-    {
-        return $this->plugin;
     }
 }

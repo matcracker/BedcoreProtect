@@ -31,7 +31,6 @@ use pocketmine\block\tile\Container;
 use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\utils\AssumptionFailedError;
 use pocketmine\World\Position;
 use function is_a;
 
@@ -74,11 +73,22 @@ final class BlockUtils
      */
     public static function hasInventory(Block $block): bool
     {
-        if (($tile = self::asTile($block->getPos())) !== null) {
-            return $tile instanceof Container;
-        }
+        return self::asTile($block->getPos()) instanceof Container;
+    }
 
-        return false;
+    /**
+     * Returns a Tile instance of the given block if it exists.
+     *
+     * @param Position $position
+     * @return Tile|null
+     */
+    public static function asTile(Position $position): ?Tile
+    {
+        if ($position->isValid()) {
+            return $position->getWorld()->getTile($position->asVector3());
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -106,25 +116,6 @@ final class BlockUtils
      */
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
-        if (($tile = self::asTile($block->getPos())) !== null) {
-            return $tile->saveNBT();
-        }
-
-        return null;
-    }
-
-    /**
-     * Returns a Tile instance of the given block if it exists.
-     *
-     * @param Position $position
-     * @return Tile|null
-     */
-    public static function asTile(Position $position): ?Tile
-    {
-        try {
-            return $position->getWorld()->getTile($position->asVector3());
-        } catch (AssumptionFailedError) {
-            return null;
-        }
+        return self::asTile($block->getPos())?->saveNBT();
     }
 }

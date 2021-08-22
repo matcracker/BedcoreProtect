@@ -41,4 +41,9 @@ trait CustomEnumTrait
         $result = self::_registryFromString($name);
         return $result;
     }
+
+    public function __toString(): string
+    {
+        return $this->enumName;
+    }
 }

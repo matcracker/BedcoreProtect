@@ -26,11 +26,9 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\Chest;
 use pocketmine\block\Door;
 use pocketmine\block\DoublePlant;
 use pocketmine\block\Liquid;
-use pocketmine\block\tile\Chest as TileChest;
 use pocketmine\block\utils\Fallable;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Water;
@@ -41,6 +39,7 @@ use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\event\block\SignChangeEvent;
+use pocketmine\inventory\InventoryHolder;
 use pocketmine\math\Facing;
 use pocketmine\scheduler\ClosureTask;
 use function array_merge;
@@ -62,13 +61,11 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
             $blockPos = $block->getPos();
-            if ($block instanceof Chest) {
-                $tileChest = BlockUtils::asTile($blockPos);
-                if ($tileChest instanceof TileChest) {
-                    $inventory = $tileChest->getRealInventory();
-                    if (count($inventory->getContents()) > 0) {
-                        $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $blockPos);
-                    }
+            $blockTile = BlockUtils::asTile($blockPos);
+            if ($blockTile instanceof InventoryHolder) {
+                $inventory = $blockTile->getInventory();
+                if (count($inventory->getContents()) > 0) {
+                    $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $blockPos);
                 }
             }
 
@@ -86,12 +83,12 @@ final class BlockListener extends BedcoreListener
                     $player,
                     $sides,
                     Action::BREAK(),
-                    function (array &$oldBlocks) use ($world, $sides): array {
+                    function (array &$oldBlocks, array &$oldBlocksNbt) use ($world, $sides): array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
                             $updSide = $world->getBlock($side->getPos());
                             if ($updSide instanceof $side) {
-                                unset($oldBlocks[$key]);
+                                unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                             } else {
                                 $newBlocks[$key] = $updSide;
                             }

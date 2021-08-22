@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
-use matcracker\BedcoreProtect\utils\WorldUtils;
+use matcracker\BedcoreProtect\utils\ArrayUtils;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\AsyncTask;
@@ -30,9 +30,7 @@ use pocketmine\Server;
 use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\World;
-use function array_values;
 use function count;
-use function morton2d_decode;
 use function serialize;
 use function unserialize;
 
@@ -43,7 +41,7 @@ final class AsyncBlockSetter extends AsyncTask
     private string $serializedChunks;
 
     /**
-     * RollbackTask constructor.
+     * AsyncBlockSetter constructor.
      * @param int[] $fullBlockIds
      * @param Vector3[] $positions
      * @param string $worldName
@@ -57,12 +55,13 @@ final class AsyncBlockSetter extends AsyncTask
         array          $serializedChunks,
         Closure        $onComplete)
     {
-        if (count($fullBlockIds) !== count($positions)) {
+        if (!ArrayUtils::checkSameDimension($fullBlockIds, $positions)) {
             throw new PluginException("The number of full block IDs is not the same of their positions.");
         }
 
-        $this->serializedFullBlockIds = serialize(array_values($fullBlockIds));
-        $this->serializedPositions = serialize(array_values($positions));
+        ArrayUtils::resetKeys($fullBlockIds, $positions);
+        $this->serializedFullBlockIds = serialize($fullBlockIds);
+        $this->serializedPositions = serialize($positions);
         $this->serializedChunks = serialize($serializedChunks);
 
         $this->storeLocal("onComplete", $onComplete);
@@ -86,10 +85,8 @@ final class AsyncBlockSetter extends AsyncTask
          */
         foreach (unserialize($this->serializedFullBlockIds) as $idx => $fullBlockId) {
             $blockPos = $positions[$idx];
-            $index = World::chunkHash($blockPos->getX() >> 4, $blockPos->getZ() >> 4);
-            if (isset($chunks[$index])) {
-                $chunks[$index]->setFullBlock($blockPos->getX() & 0x0f, $blockPos->getY(), $blockPos->getZ() & 0x0f, $fullBlockId);
-            }
+            $hash = World::chunkHash($blockPos->getX() >> 4, $blockPos->getZ() >> 4);
+            $chunks[$hash]?->setFullBlock($blockPos->getX() & 0x0f, $blockPos->getY(), $blockPos->getZ() & 0x0f, $fullBlockId);
         }
 
         $this->setResult($chunks);
@@ -98,7 +95,7 @@ final class AsyncBlockSetter extends AsyncTask
     public function onCompletion(): void
     {
         $world = Server::getInstance()->getWorldManager()->getWorldByName($this->worldName);
-        if($world === null){
+        if ($world === null) {
             //TODO: manage in case of missing world, also see QueryManager::rawRollback()
             return;
         }
@@ -106,8 +103,8 @@ final class AsyncBlockSetter extends AsyncTask
         /** @var Chunk[] $chunks */
         $chunks = $this->getResult();
         foreach ($chunks as $hash => $chunk) {
-            [$cx, $cz] = morton2d_decode($hash);
-            $world->setChunk($cx, $cz, $chunk, false);
+            World::getXZ($hash, $chunkX, $chunkZ);
+            $world->setChunk($chunkX, $chunkZ, $chunk, false);
         }
 
         //TODO: I need to understand what to do here

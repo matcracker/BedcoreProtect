@@ -73,10 +73,6 @@ final class EntityUtils
         }
     }
 
-    /**
-     * @param Entity $entity
-     * @return string
-     */
     public static function getSerializedNbt(Entity $entity): string
     {
         $entity->setFireTicks(0);

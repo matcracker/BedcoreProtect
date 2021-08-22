@@ -27,6 +27,7 @@ use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\inventory\BlockInventory;
 use pocketmine\command\CommandSender;
+use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
@@ -37,10 +38,7 @@ use pocketmine\player\Player;
 use pocketmine\World\Position;
 use pocketmine\World\World;
 use SOFe\AwaitGenerator\Await;
-use function count;
-use function get_class;
 use function microtime;
-use function var_dump;
 
 /**
  * It contains all the queries methods related to inventories.
@@ -135,7 +133,7 @@ class InventoriesQueries extends Query
         Await::g2c($this->addInventorySlotLog(EntityUtils::getUniqueId($player), 0, $item, $item, $position, $worldName, $action, microtime(true)));
     }
 
-    public function addInventoryLogByPlayer(Player $player, BlockInventory $inventory, Position $inventoryPosition): void
+    public function addInventoryLogByPlayer(Player $player, Inventory $inventory, Position $inventoryPosition): void
     {
         $worldName = $player->getWorld()->getFolderName();
         $time = microtime(true);
@@ -170,7 +168,7 @@ class InventoriesQueries extends Query
 
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
-        $inventoryRows = [];
+        $cntItems = 0;
 
         if ($this->configParser->getRollbackItems()) {
             if ($rollback) {
@@ -190,11 +188,13 @@ class InventoriesQueries extends Query
                 if ($tile instanceof InventoryHolder) {
                     $tile->getInventory()->setItem((int)$row["slot"], $item);
                 }
+
+                $cntItems += $item->getCount();
             }
         }
 
         //On success
-        (yield)(count($inventoryRows));
+        (yield)($cntItems);
         yield Await::REJECT;
 
         return yield Await::ONCE;

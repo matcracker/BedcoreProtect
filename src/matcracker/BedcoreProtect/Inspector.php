@@ -23,11 +23,9 @@ namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\block\Block;
 use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
 use pocketmine\item\ItemFactory;
-use pocketmine\item\LegacyStringToItemParser;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function count;
@@ -135,15 +133,15 @@ final class Inspector
 
             $prefix = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
 
-            if (isset($log["{$prefix}_id"])){
+            if (isset($log["{$prefix}_id"])) {
                 $id = (int)$log["{$prefix}_id"];
-                if(isset($log["{$prefix}_meta"])) {
+                if (isset($log["{$prefix}_meta"])) {
                     $meta = (int)$log["{$prefix}_meta"];
                     $amount = (int)$log["{$prefix}_amount"];
 
                     $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
                     $to = "$itemName (x$amount)";
-                }else{
+                } else {
                     $to = BlockFactory::getInstance()->fromFullBlock($id)->getName();
                 }
             } elseif (isset($log["entity_to"])) {
