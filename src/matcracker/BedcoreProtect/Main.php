@@ -89,6 +89,7 @@ final class Main extends PluginBase
         $this->oldConfigParser = $this->configParser;
         $this->reloadConfig();
         $this->configParser = new ConfigParser($this->getConfig());
+        $this->database->reloadConfiguration();
 
         foreach ($this->events as $event) {
             $event->config = $this->configParser;
