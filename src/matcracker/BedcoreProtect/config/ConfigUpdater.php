@@ -29,7 +29,7 @@ use function ucfirst;
 
 final class ConfigUpdater
 {
-    public const LAST_VERSION = 3;
+    public const LAST_VERSION = 4;
     private const KEY_NOT_PRESENT = -1;
 
     public function __construct(private Main $plugin)

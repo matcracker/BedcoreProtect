@@ -1,6 +1,6 @@
 ---
 # Configuration file version. DON'T EDIT!
-config-version: 3
+config-version: 4
 
 # Plugin language
 language: eng
@@ -118,4 +118,11 @@ item-transactions: true
 # Track player interactions, such as when a player opens a door, presses
 # a button, or opens a chest. Player interactions can't be rolled back.
 player-interactions: true
+
+# Enable or disable the plugin's debug mode (USE IT ONLY IF NECESSARY).
+# Allow showing logging queries and enabling hidden information.
+# This setting when enabled may result in a small decrease in performance.
+# NOTE: to fully use the feature, you must also set the debug level in the pocketmine.yml file
+# with a value greater than 1.
+debug-mode: false
 ...
