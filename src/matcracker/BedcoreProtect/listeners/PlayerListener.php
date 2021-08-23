@@ -41,6 +41,7 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
+use pocketmine\item\LiquidBucket;
 use pocketmine\item\PaintingItem;
 use pocketmine\item\Shovel;
 use pocketmine\math\Facing;
@@ -78,8 +79,9 @@ final class PlayerListener extends BedcoreListener
 
             $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
-            $bucketMeta = $fireEmptyEvent ? $event->getBucket()->getMeta() : $event->getItem()->getMeta();
-            $liquid = $bucketMeta === BlockLegacyIds::WATER ? VanillaBlocks::WATER() : VanillaBlocks::LAVA();
+            /** @var LiquidBucket $bucket */
+            $bucket = $fireEmptyEvent ? $event->getBucket() : $event->getItem();
+            $liquid = $bucket->getLiquid();
 
             if ($fireEmptyEvent) {
                 if (!$block instanceof $liquid) {
