@@ -73,7 +73,7 @@ final class BlockUtils
      */
     public static function hasInventory(Block $block): bool
     {
-        return self::asTile($block->getPos()) instanceof Container;
+        return self::asTile($block->getPosition()) instanceof Container;
     }
 
     /**
@@ -116,6 +116,6 @@ final class BlockUtils
      */
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
-        return self::asTile($block->getPos())?->saveNBT();
+        return self::asTile($block->getPosition())?->saveNBT();
     }
 }

@@ -88,7 +88,7 @@ class BlocksQueries extends Query
     {
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
-        $pos = $position ?? $newBlock->getPos();
+        $pos = $position ?? $newBlock->getPosition();
         $worldName = $pos->getWorld()->getFolderName();
         $time = microtime(true);
 
@@ -153,7 +153,7 @@ class BlocksQueries extends Query
                         yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                         for ($i = 0; $i < count($oldBlocks); $i++) {
-                            $position = $oldBlocks[$i]->getPos();
+                            $position = $oldBlocks[$i]->getPosition();
 
                             yield $this->addRawBlockLog(
                                 EntityUtils::getUniqueId($entity),
@@ -204,7 +204,7 @@ class BlocksQueries extends Query
                 $airFullId = VanillaBlocks::AIR()->getFullId();
 
                 for ($i = 0; $i < $cntOldBlocks; $i++) {
-                    $position = $oldBlocks[$i]->getPos();
+                    $position = $oldBlocks[$i]->getPosition();
 
                     yield $this->addRawBlockLog(
                         $uuidEntity,
@@ -241,7 +241,7 @@ class BlocksQueries extends Query
         } else {
             $name = "{$who->getName()}-uuid";
         }
-        $pos = $position ?? $newBlock->getPos();
+        $pos = $position ?? $newBlock->getPosition();
 
         Await::g2c($this->addRawBlockLog(
             $name,
@@ -264,7 +264,7 @@ class BlocksQueries extends Query
      */
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
-        $tileItemFrame = BlockUtils::asTile($itemFrame->getPos());
+        $tileItemFrame = BlockUtils::asTile($itemFrame->getPosition());
         if ($tileItemFrame === null) {
             return;
         } elseif (!$tileItemFrame instanceof TileItemFrame) {
@@ -280,7 +280,7 @@ class BlocksQueries extends Query
         }
         $newNbt = Utils::serializeNBT($nbt);
 
-        $position = $itemFrame->getPos();
+        $position = $itemFrame->getPosition();
         $worldName = $position->getWorld()->getFolderName();
 
         Await::g2c(

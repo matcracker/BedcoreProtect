@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
-use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Cake;
 use pocketmine\block\Dirt;
 use pocketmine\block\Fire;
@@ -75,7 +74,7 @@ final class PlayerListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($world) && $this->config->getBuckets()) {
             $block = $event->getBlockClicked();
-            $blockPos = $block->getPos();
+            $blockPos = $block->getPosition();
 
             $fireEmptyEvent = $event instanceof PlayerBucketEmptyEvent;
 
@@ -118,12 +117,12 @@ final class PlayerListener extends BedcoreListener
             $itemInHand = $event->getItem();
             $face = $event->getFace();
             $clickedBlock = $event->getBlock();
-            $clickedBlockPos = $clickedBlock->getPos();
+            $clickedBlockPos = $clickedBlock->getPosition();
             $replacedBlock = $clickedBlock->getSide($face);
 
             if ($event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                 if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
-                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, VanillaBlocks::AIR(), Action::BREAK(), $replacedBlock->getPos());
+                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, VanillaBlocks::AIR(), Action::BREAK(), $replacedBlock->getPosition());
 
                 } elseif ($this->config->getPlayerInteractions() && $clickedBlock instanceof ItemFrame) {
                     if (($item = $clickedBlock->getFramedItem()) !== null) {
@@ -138,13 +137,13 @@ final class PlayerListener extends BedcoreListener
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::AIR(), Action::BREAK(), $clickedBlockPos);
                             return;
                         } elseif ($replacedBlock instanceof Air) {
-                            $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $replacedBlock->getPos());
+                            $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), VanillaBlocks::FIRE(), Action::PLACE(), $replacedBlock->getPosition());
                             return;
                         }
                     } elseif ($itemInHand instanceof PaintingItem) {
                         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
                             function () use ($player, $world, $replacedBlock): void {
-                                $entity = $world->getNearestEntity($replacedBlock->getPos(), 1, Painting::class);
+                                $entity = $world->getNearestEntity($replacedBlock->getPosition(), 1, Painting::class);
                                 if ($entity !== null) {
                                     $this->entitiesQueries->addEntityLogByEntity($player, $entity, Action::SPAWN());
                                 }

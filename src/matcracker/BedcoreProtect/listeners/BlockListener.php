@@ -60,7 +60,7 @@ final class BlockListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
-            $blockPos = $block->getPos();
+            $blockPos = $block->getPosition();
             $blockTile = BlockUtils::asTile($blockPos);
             if ($blockTile instanceof InventoryHolder) {
                 $inventory = $blockTile->getInventory();
@@ -86,7 +86,7 @@ final class BlockListener extends BedcoreListener
                     function (array &$oldBlocks, array &$oldBlocksNbt) use ($world, $sides): array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
-                            $updSide = $world->getBlock($side->getPos());
+                            $updSide = $world->getBlock($side->getPosition());
                             if ($updSide instanceof $side) {
                                 unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                             } else {
@@ -122,7 +122,7 @@ final class BlockListener extends BedcoreListener
             } elseif ($block instanceof WaterLily && $replacedBlock instanceof Water) {
                 $upPos = $block->getSide(Facing::UP);
                 if ($upPos instanceof Air) {
-                    $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), $block, Action::PLACE(), $upPos->getPos());
+                    $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), $block, Action::PLACE(), $upPos->getPosition());
                 }
             } else {
                 //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
@@ -130,7 +130,7 @@ final class BlockListener extends BedcoreListener
                     new ClosureTask(
                         function () use ($replacedBlock, $block, $player, $world): void {
                             //Update the block instance to get the real placed block data.
-                            $updBlock = $world->getBlock($block->getPos());
+                            $updBlock = $world->getBlock($block->getPosition());
 
                             /** @var Block|null $otherHalfBlock */
                             $otherHalfBlock = null;
@@ -164,7 +164,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockSpread(BlockSpreadEvent $event): void
     {
         $block = $event->getBlock();
-        $blockPos = $block->getPos();
+        $blockPos = $block->getPosition();
         $source = $event->getSource();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld())) {
@@ -184,7 +184,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
         $block = $event->getBlock();
-        $blockPos = $block->getPos();
+        $blockPos = $block->getPosition();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld()) && $this->config->getBlockBurn()) {
             $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, VanillaBlocks::AIR(), Action::BREAK(), $blockPos);
@@ -200,7 +200,7 @@ final class BlockListener extends BedcoreListener
     public function trackBlockForm(BlockFormEvent $event): void
     {
         $block = $event->getBlock();
-        $blockPos = $block->getPos();
+        $blockPos = $block->getPosition();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld())) {
             if ($block instanceof Liquid && $this->config->getLiquidTracking()) {
@@ -222,7 +222,7 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
 
-        if ($this->config->isEnabledWorld($block->getPos()->getWorld()) && $this->config->getSignText()) {
+        if ($this->config->isEnabledWorld($block->getPosition()->getWorld()) && $this->config->getSignText()) {
             $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, Action::UPDATE());
         }
     }

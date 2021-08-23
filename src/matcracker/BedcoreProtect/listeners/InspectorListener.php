@@ -53,7 +53,7 @@ final class InspectorListener extends BedcoreListener
 
         //It checks the block clicked
         if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
-            $this->pluginQueries->requestBlockLog($player, $event->getBlock()->getPos());
+            $this->pluginQueries->requestBlockLog($player, $event->getBlock()->getPosition());
             $event->cancel();
         }
     }
@@ -69,7 +69,7 @@ final class InspectorListener extends BedcoreListener
 
         //It checks the block where the player places.
         if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
-            $this->pluginQueries->requestBlockLog($player, $event->getBlockReplaced()->getPos());
+            $this->pluginQueries->requestBlockLog($player, $event->getBlockReplaced()->getPosition());
             $event->cancel();
         }
     }
@@ -89,18 +89,18 @@ final class InspectorListener extends BedcoreListener
 
             if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $tileChest = BlockUtils::asTile($clickedBlock->getPos());
+                    $tileChest = BlockUtils::asTile($clickedBlock->getPosition());
                     //This is needed for double chest to get the position of its holder (the left chest).
                     if ($tileChest instanceof Chest) {
                         $position = $tileChest->getInventory()->getHolder();
                     } else {
-                        $position = $clickedBlock->getPos();
+                        $position = $clickedBlock->getPosition();
                     }
                     $this->pluginQueries->requestTransactionLog($player, $position);
                     $event->cancel();
 
                 } elseif (BlockUtils::canBeClicked($clickedBlock)) {
-                    $this->pluginQueries->requestBlockLog($player, $clickedBlock->getPos());
+                    $this->pluginQueries->requestBlockLog($player, $clickedBlock->getPosition());
                     $event->cancel();
                 }
             }

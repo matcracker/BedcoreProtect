@@ -120,7 +120,7 @@ class EntitiesQueries extends Query
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
-        $worldName = $block->getPos()->getWorld()->getFolderName();
+        $worldName = $block->getPosition()->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
@@ -132,7 +132,7 @@ class EntitiesQueries extends Query
                 yield $this->addRawEntity($uuid, "#$blockName");
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($uuid, $block->getPos(), $worldName, $action, $time);
+                $lastId = yield $this->addRawLog($uuid, $block->getPosition(), $worldName, $action, $time);
 
                 yield $this->addEntityLog($lastId, $entity, $serializedNbt);
             }
