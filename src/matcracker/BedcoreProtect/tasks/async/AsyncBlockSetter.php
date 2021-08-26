@@ -80,13 +80,14 @@ final class AsyncBlockSetter extends AsyncTask
         $positions = unserialize($this->serializedPositions);
 
         /**
-         * @var int $idx
+         * @var int $key
          * @var int $fullBlockId
          */
-        foreach (unserialize($this->serializedFullBlockIds) as $idx => $fullBlockId) {
-            $blockPos = $positions[$idx];
-            $hash = World::chunkHash($blockPos->getX() >> 4, $blockPos->getZ() >> 4);
-            $chunks[$hash]?->setFullBlock($blockPos->getX() & 0x0f, $blockPos->getY(), $blockPos->getZ() & 0x0f, $fullBlockId);
+        foreach (unserialize($this->serializedFullBlockIds) as $key => $fullBlockId) {
+            $x = $positions[$key]->getX();
+            $z = $positions[$key]->getZ();
+
+            $chunks[World::chunkHash($x >> 4, $z >> 4)]?->setFullBlock($x & 0x0f, $positions[$key]->getY(), $z & 0x0f, $fullBlockId);
         }
 
         $this->setResult($chunks);
