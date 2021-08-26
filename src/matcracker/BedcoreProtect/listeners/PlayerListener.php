@@ -55,7 +55,7 @@ final class PlayerListener extends BedcoreListener
     /**
      * @param PlayerJoinEvent $event
      *
-     * @priority LOWEST
+     * @priority MONITOR
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {
@@ -66,7 +66,6 @@ final class PlayerListener extends BedcoreListener
      * @param PlayerBucketEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackPlayerBucket(PlayerBucketEvent $event): void
     {
@@ -108,7 +107,6 @@ final class PlayerListener extends BedcoreListener
      * @param PlayerInteractEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackPlayerInteraction(PlayerInteractEvent $event): void
     {
@@ -194,7 +192,6 @@ final class PlayerListener extends BedcoreListener
      * @param InventoryTransactionEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackInventoryTransaction(InventoryTransactionEvent $event): void
     {

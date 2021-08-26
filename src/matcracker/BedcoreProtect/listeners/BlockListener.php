@@ -51,7 +51,6 @@ final class BlockListener extends BedcoreListener
      * @param BlockBreakEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockBreak(BlockBreakEvent $event): void
     {
@@ -106,7 +105,6 @@ final class BlockListener extends BedcoreListener
      * @param BlockPlaceEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockPlace(BlockPlaceEvent $event): void
     {
@@ -159,7 +157,6 @@ final class BlockListener extends BedcoreListener
      * @param BlockSpreadEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockSpread(BlockSpreadEvent $event): void
     {
@@ -179,7 +176,6 @@ final class BlockListener extends BedcoreListener
      * @param BlockBurnEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockBurn(BlockBurnEvent $event): void
     {
@@ -195,7 +191,6 @@ final class BlockListener extends BedcoreListener
      * @param BlockFormEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackBlockForm(BlockFormEvent $event): void
     {
@@ -216,7 +211,6 @@ final class BlockListener extends BedcoreListener
      * @param SignChangeEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackSignChange(SignChangeEvent $event): void
     {

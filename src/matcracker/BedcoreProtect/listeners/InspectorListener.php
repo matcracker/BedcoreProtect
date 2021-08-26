@@ -35,7 +35,7 @@ final class InspectorListener extends BedcoreListener
     /**
      * @param PlayerQuitEvent $event
      *
-     * @priority LOWEST
+     * @priority MONITOR
      */
     public function onInspectorQuit(PlayerQuitEvent $event): void
     {

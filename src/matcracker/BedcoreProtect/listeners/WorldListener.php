@@ -31,7 +31,6 @@ final class WorldListener extends BedcoreListener
      * @param LeavesDecayEvent $event
      *
      * @priority MONITOR
-     * @ignoreCancelled
      */
     public function trackLeavesDecay(LeavesDecayEvent $event): void
     {
