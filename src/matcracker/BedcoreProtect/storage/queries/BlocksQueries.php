@@ -321,20 +321,23 @@ class BlocksQueries extends Query
         $chunks = [];
 
         foreach ($blockRows as $row) {
-            $fullBlockIds[] = (int)$row["{$prefix}_id"];
-            $blocksPosition[] = $currBlockPos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-            $serializedNBT = (string)$row["{$prefix}_nbt"];
-
+            $currBlockPos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
             $chunkX = $currBlockPos->getX() >> 4;
             $chunkZ = $currBlockPos->getZ() >> 4;
 
+            $hash = World::chunkHash($chunkX, $chunkZ);
+
             $chunk = $world->getOrLoadChunkAtPosition($currBlockPos);
             if ($chunk !== null) {
-                $chunks[World::chunkHash($chunkX, $chunkZ)] = FastChunkSerializer::serialize($chunk);
+                $chunks[$hash] = FastChunkSerializer::serialize($chunk);
             } else {
                 $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");
                 continue;
             }
+
+            $fullBlockIds[$hash][] = (int)$row["{$prefix}_id"];
+            $blocksPosition[$hash][] = $currBlockPos;
+            $serializedNBT = (string)$row["{$prefix}_nbt"];
 
             $world->getTile($currBlockPos)?->close();
 

@@ -42,15 +42,15 @@ final class AsyncBlockSetter extends AsyncTask
 
     /**
      * AsyncBlockSetter constructor.
-     * @param int[] $fullBlockIds
-     * @param Vector3[] $positions
+     * @param array<int, array<int, int>> $fullBlockIds
+     * @param array<int, array<int, Vector3>> $positions
      * @param string $worldName
      * @param array<int, string> $serializedChunks
      * @param Closure $onComplete
      */
     public function __construct(
         private array  $fullBlockIds,
-        array          $positions,
+        private array  $positions,
         private string $worldName,
         array          $serializedChunks,
         Closure        $onComplete)
@@ -59,7 +59,6 @@ final class AsyncBlockSetter extends AsyncTask
             throw new PluginException("The number of full block IDs is not the same of their positions.");
         }
 
-        ArrayUtils::resetKeys($fullBlockIds, $positions);
         $this->serializedFullBlockIds = serialize($fullBlockIds);
         $this->serializedPositions = serialize($positions);
         $this->serializedChunks = serialize($serializedChunks);
@@ -69,25 +68,22 @@ final class AsyncBlockSetter extends AsyncTask
 
     public function onRun(): void
     {
-        /** @var Chunk[] $chunks */
-        $chunks = [];
-
-        foreach (unserialize($this->serializedChunks) as $hash => $serializedChunk) {
-            $chunks[$hash] = FastChunkSerializer::deserialize($serializedChunk);
-        }
-
-        /** @var Vector3[] $positions */
+        /** @var array<int, string> $serializedChunks */
+        $serializedChunks = unserialize($this->serializedChunks);
+        /** @var array<int, array<int, int>> $fullBlocksIds */
+        $fullBlocksIds = unserialize($this->serializedFullBlockIds);
+        /** @var array<int, array<int, Vector3>> $positions */
         $positions = unserialize($this->serializedPositions);
 
-        /**
-         * @var int $key
-         * @var int $fullBlockId
-         */
-        foreach (unserialize($this->serializedFullBlockIds) as $key => $fullBlockId) {
-            $x = $positions[$key]->getX();
-            $z = $positions[$key]->getZ();
 
-            $chunks[World::chunkHash($x >> 4, $z >> 4)]?->setFullBlock($x & 0x0f, $positions[$key]->getY(), $z & 0x0f, $fullBlockId);
+        /** @var array<int, Chunk> $chunks */
+        $chunks = [];
+        foreach ($serializedChunks as $hash => $serializedChunk) {
+            $chunks[$hash] = $chunk = FastChunkSerializer::deserialize($serializedChunk);
+            foreach ($fullBlocksIds[$hash] as $key => $fullBlockId) {
+                $pos = $positions[$hash][$key];
+                $chunk->setFullBlock($pos->getX() & 0x0f, $pos->getY(), $pos->getZ() & 0x0f, $fullBlockId);
+            }
         }
 
         $this->setResult($chunks);
@@ -101,7 +97,7 @@ final class AsyncBlockSetter extends AsyncTask
             return;
         }
 
-        /** @var Chunk[] $chunks */
+        /** @var array<int, Chunk> $chunks */
         $chunks = $this->getResult();
         foreach ($chunks as $hash => $chunk) {
             World::getXZ($hash, $chunkX, $chunkZ);
