@@ -49,8 +49,8 @@ final class AsyncBlockSetter extends AsyncTask
      * @param Closure $onComplete
      */
     public function __construct(
-        private array  $fullBlockIds,
-        private array  $positions,
+        array          $fullBlockIds,
+        array          $positions,
         private string $worldName,
         array          $serializedChunks,
         Closure        $onComplete)
@@ -75,7 +75,7 @@ final class AsyncBlockSetter extends AsyncTask
         /** @var array<int, array<int, Vector3>> $positions */
         $positions = unserialize($this->serializedPositions);
 
-
+        $blocks = 0;
         /** @var array<int, Chunk> $chunks */
         $chunks = [];
         foreach ($serializedChunks as $hash => $serializedChunk) {
@@ -83,10 +83,11 @@ final class AsyncBlockSetter extends AsyncTask
             foreach ($fullBlocksIds[$hash] as $key => $fullBlockId) {
                 $pos = $positions[$hash][$key];
                 $chunk->setFullBlock($pos->getX() & 0x0f, $pos->getY(), $pos->getZ() & 0x0f, $fullBlockId);
+                $blocks++;
             }
         }
 
-        $this->setResult($chunks);
+        $this->setResult([$chunks, $blocks]);
     }
 
     public function onCompletion(): void
@@ -98,7 +99,7 @@ final class AsyncBlockSetter extends AsyncTask
         }
 
         /** @var array<int, Chunk> $chunks */
-        $chunks = $this->getResult();
+        [$chunks, $blocks] = $this->getResult();
         foreach ($chunks as $hash => $chunk) {
             World::getXZ($hash, $chunkX, $chunkZ);
             $world->setChunk($chunkX, $chunkZ, $chunk, false);
@@ -116,6 +117,6 @@ final class AsyncBlockSetter extends AsyncTask
 
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal("onComplete");
-        $onComplete([count($this->fullBlockIds), count($chunks)]);
+        $onComplete([$blocks, count($chunks)]);
     }
 }
