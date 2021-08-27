@@ -158,8 +158,7 @@ class EntitiesQueries extends Query
                         $entity->spawnToAll();
                     }
                 } else {
-                    $entity = $world->getEntity((int)$row["entityfrom_id"]);
-                    $entity?->close();
+                    $world->getEntity((int)$row["entityfrom_id"])?->close();
                 }
             }
         }

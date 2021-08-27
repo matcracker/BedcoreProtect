@@ -82,7 +82,7 @@ final class BlockListener extends BedcoreListener
                     $player,
                     $sides,
                     Action::BREAK(),
-                    function (array &$oldBlocks, array &$oldBlocksNbt) use ($world, $sides): array {
+                    static function (array &$oldBlocks, array &$oldBlocksNbt) use ($world, $sides): array {
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
                             $updSide = $world->getBlock($side->getPosition());
