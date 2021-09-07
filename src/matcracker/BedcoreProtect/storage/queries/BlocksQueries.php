@@ -25,17 +25,15 @@ use Closure;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\tasks\async\AsyncBlockSetter;
 use matcracker\BedcoreProtect\utils\ArrayUtils;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
+use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\block\tile\ItemFrame as TileItemFrame;
-use pocketmine\block\tile\Tile;
-use pocketmine\block\tile\TileFactory;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
@@ -45,8 +43,6 @@ use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\ClosureTask;
-use pocketmine\Server;
-use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
@@ -313,54 +309,30 @@ class BlocksQueries extends Query
             $prefix = "new";
         }
 
-        /** @var int[] $fullBlockIds */
-        $fullBlockIds = [];
-        /** @var string[] $chunks */
+        /** @var array<int, null> $chunks */
         $chunks = [];
 
         foreach ($blockRows as $row) {
             $x = (int)$row["x"];
             $y = (int)$row["y"];
             $z = (int)$row["z"];
-            $chunkX = $x >> 4;
-            $chunkZ = $z >> 4;
 
-            $chunkHash = World::chunkHash($chunkX, $chunkZ);
+            //This is used only to count chunks
+            $chunks[World::chunkHash($x >> 4, $z >> 4)] = null;
 
-            if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
-                $chunks[$chunkHash] = FastChunkSerializer::serialize($chunk);
-            } else {
-                $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");
-                continue;
-            }
+            $world->setBlockAt($x, $y, $z, BlockFactory::getInstance()->fromFullBlock((int)$row["{$prefix}_id"]));
 
-            $blockHash = World::chunkBlockHash($x, $y, $z);
-            $fullBlockIds[$chunkHash][$blockHash][] = (int)$row["{$prefix}_id"];
+            if ($row["{$prefix}_nbt"] !== null && ($tile = $world->getTileAt($x, $y, $z)) !== null) {
+                $tile->readSaveData(Utils::deserializeNBT((string)$row["{$prefix}_nbt"]));
 
-            $world->getTileAt($x, $y, $z)?->close();
-
-            if (isset($row["{$prefix}_nbt"])) {
-                /** @var Tile|null $tile */
-                $tile = TileFactory::getInstance()->createFromData($world, Utils::deserializeNBT($row["{$prefix}_nbt"]));
-
-                if ($tile !== null) {
-                    $world->addTile($tile);
-
-                    if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
-                        $tile->getInventory()->clearAll();
-                    }
-                } else {
-                    $this->plugin->getLogger()->debug("Could not create tile at X:$x Y:$y Z:$z.");
+                //Always clear the inventory, the job will be done by InventoriesQueries class
+                if ($tile instanceof InventoryHolder) {
+                    $tile->getInventory()->clearAll();
                 }
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new AsyncBlockSetter(
-            $fullBlockIds,
-            $world->getFolderName(),
-            $chunks,
-            yield
-        ));
+        (yield)([count($blockRows), count($chunks)]);
         yield Await::REJECT;
 
         return yield Await::ONCE;
