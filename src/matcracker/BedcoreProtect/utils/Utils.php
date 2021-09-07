@@ -34,10 +34,12 @@ use function base64_encode;
 use function count;
 use function is_string;
 use function json_decode;
+use function mb_strpos;
 use function microtime;
 use function preg_match;
 use function preg_replace;
 use function strlen;
+use function zlib_decode;
 
 final class Utils
 {
@@ -132,6 +134,20 @@ final class Utils
      */
     public static function deserializeNBT(string $encodedData): CompoundTag
     {
-        return (new BigEndianNbtSerializer())->read(base64_decode($encodedData))->mustGetCompoundTag();
+        $data = base64_decode($encodedData);
+        /*
+         * This is necessary to maintain the compatibility with previous
+         * plugin versions which use a compressed NBT.
+         */
+        if (self::isCompressedString($data)) {
+            $data = zlib_decode($data);
+        }
+
+        return (new BigEndianNbtSerializer())->read($data)->mustGetCompoundTag();
+    }
+
+    private static function isCompressedString(string $str): bool
+    {
+        return mb_strpos($str, "\x1f\x8b\x08") === 0;
     }
 }
