@@ -45,9 +45,7 @@ use pocketmine\item\LiquidBucket;
 use pocketmine\item\PaintingItem;
 use pocketmine\item\Shovel;
 use pocketmine\math\Facing;
-use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\ClosureTask;
-use pocketmine\World\Position;
 use SOFe\AwaitGenerator\Await;
 
 final class PlayerListener extends BedcoreListener
@@ -87,18 +85,9 @@ final class PlayerListener extends BedcoreListener
                     $this->blocksQueries->addBlockLogByEntity($player, $block, $liquid, Action::PLACE(), $blockPos);
                 }
             } else {
-                $face = $event->getBlockFace();
-                $liquidPos = match ($face) {
-                    Facing::DOWN => $blockPos->add(0, 1, 0),
-                    Facing::UP => $blockPos->add(0, -1, 0),
-                    Facing::NORTH => $blockPos->add(0, 0, 1),
-                    Facing::SOUTH => $blockPos->add(0, 0, -1),
-                    Facing::WEST => $blockPos->add(1, 0, 0),
-                    Facing::EAST => $blockPos->add(-1, 0, 0),
-                    default => throw new PluginException("Unrecognized block face (Value: $face)."),
-                };
+                $liquidPos = $blockPos->getSide(Facing::opposite($event->getBlockFace()));
 
-                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), Position::fromObject($liquidPos, $world));
+                $this->blocksQueries->addBlockLogByEntity($player, $liquid, $block, Action::BREAK(), $liquidPos);
             }
         }
     }
