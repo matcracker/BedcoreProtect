@@ -22,45 +22,36 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
-use matcracker\BedcoreProtect\utils\ArrayUtils;
-use pocketmine\math\Vector3;
-use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\World;
 use function count;
+use function morton3d_decode;
 use function serialize;
 use function unserialize;
 
 final class AsyncBlockSetter extends AsyncTask
 {
     private string $serializedFullBlockIds;
-    private string $serializedPositions;
     private string $serializedChunks;
 
     /**
      * AsyncBlockSetter constructor.
-     * @param array<int, array<int, int>> $fullBlockIds
-     * @param array<int, array<int, Vector3>> $positions
+     * @param array<int, array<int, array<int, int>> $fullBlockIds
      * @param string $worldName
      * @param array<int, string> $serializedChunks
      * @param Closure $onComplete
      */
     public function __construct(
         array          $fullBlockIds,
-        array          $positions,
         private string $worldName,
         array          $serializedChunks,
-        Closure        $onComplete)
+        Closure        $onComplete
+    )
     {
-        if (!ArrayUtils::checkSameDimension($fullBlockIds, $positions)) {
-            throw new PluginException("The number of full block IDs is not the same of their positions.");
-        }
-
         $this->serializedFullBlockIds = serialize($fullBlockIds);
-        $this->serializedPositions = serialize($positions);
         $this->serializedChunks = serialize($serializedChunks);
 
         $this->storeLocal("onComplete", $onComplete);
@@ -70,24 +61,24 @@ final class AsyncBlockSetter extends AsyncTask
     {
         /** @var array<int, string> $serializedChunks */
         $serializedChunks = unserialize($this->serializedChunks);
-        /** @var array<int, array<int, int>> $fullBlocksIds */
+        /** @var array<int, array<int, array<int, int>>> $fullBlocksIds */
         $fullBlocksIds = unserialize($this->serializedFullBlockIds);
-        /** @var array<int, array<int, Vector3>> $positions */
-        $positions = unserialize($this->serializedPositions);
 
-        $blocks = 0;
+        $cntBlocks = 0;
         /** @var array<int, Chunk> $chunks */
         $chunks = [];
-        foreach ($serializedChunks as $hash => $serializedChunk) {
-            $chunks[$hash] = $chunk = FastChunkSerializer::deserialize($serializedChunk);
-            foreach ($fullBlocksIds[$hash] as $key => $fullBlockId) {
-                $pos = $positions[$hash][$key];
-                $chunk->setFullBlock($pos->getX() & 0x0f, $pos->getY(), $pos->getZ() & 0x0f, $fullBlockId);
-                $blocks++;
+        foreach ($serializedChunks as $chunkHash => $serializedChunk) {
+            $chunks[$chunkHash] = $chunk = FastChunkSerializer::deserialize($serializedChunk);
+            foreach ($fullBlocksIds[$chunkHash] as $blockHash => $arrFullBlocksIds) {
+                foreach ($arrFullBlocksIds as $fullBlockId) {
+                    [$x, $y, $z] = morton3d_decode($blockHash);
+                    $chunk->setFullBlock($x & 0x0f, $y, $z & 0x0f, $fullBlockId);
+                    $cntBlocks++;
+                }
             }
         }
 
-        $this->setResult([$chunks, $blocks]);
+        $this->setResult([$cntBlocks, $chunks]);
     }
 
     public function onCompletion(): void
@@ -98,8 +89,11 @@ final class AsyncBlockSetter extends AsyncTask
             return;
         }
 
-        /** @var array<int, Chunk> $chunks */
-        [$chunks, $blocks] = $this->getResult();
+        /**
+         * @var int $cntBlocks
+         * @var array<int, Chunk> $chunks
+         */
+        [$cntBlocks, $chunks] = $this->getResult();
         foreach ($chunks as $hash => $chunk) {
             World::getXZ($hash, $chunkX, $chunkZ);
             $world->setChunk($chunkX, $chunkZ, $chunk, false);
@@ -117,6 +111,6 @@ final class AsyncBlockSetter extends AsyncTask
 
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal("onComplete");
-        $onComplete([$blocks, count($chunks)]);
+        $onComplete([$cntBlocks, count($chunks)]);
     }
 }

@@ -56,7 +56,6 @@ use function array_values;
 use function count;
 use function get_class;
 use function microtime;
-use function strlen;
 
 /**
  * It contains all the queries methods related to blocks.
@@ -315,35 +314,33 @@ class BlocksQueries extends Query
 
         /** @var int[] $fullBlockIds */
         $fullBlockIds = [];
-        /** @var Vector3[] $blocksPosition */
-        $blocksPosition = [];
         /** @var string[] $chunks */
         $chunks = [];
 
         foreach ($blockRows as $row) {
-            $currBlockPos = new Vector3((int)$row["x"], (int)$row["y"], (int)$row["z"]);
-            $chunkX = $currBlockPos->getX() >> 4;
-            $chunkZ = $currBlockPos->getZ() >> 4;
+            $x = (int)$row["x"];
+            $y = (int)$row["y"];
+            $z = (int)$row["z"];
+            $chunkX = $x >> 4;
+            $chunkZ = $z >> 4;
 
-            $hash = World::chunkHash($chunkX, $chunkZ);
+            $chunkHash = World::chunkHash($chunkX, $chunkZ);
 
-            $chunk = $world->getOrLoadChunkAtPosition($currBlockPos);
-            if ($chunk !== null) {
-                $chunks[$hash] = FastChunkSerializer::serialize($chunk);
+            if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
+                $chunks[$chunkHash] = FastChunkSerializer::serialize($chunk);
             } else {
                 $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");
                 continue;
             }
 
-            $fullBlockIds[$hash][] = (int)$row["{$prefix}_id"];
-            $blocksPosition[$hash][] = $currBlockPos;
-            $serializedNBT = (string)$row["{$prefix}_nbt"];
+            $blockHash = World::chunkBlockHash($x, $y, $z);
+            $fullBlockIds[$chunkHash][$blockHash][] = (int)$row["{$prefix}_id"];
 
-            $world->getTile($currBlockPos)?->close();
+            $world->getTileAt($x, $y, $z)?->close();
 
-            if (strlen($serializedNBT) > 0) {
+            if (isset($row["{$prefix}_nbt"])) {
                 /** @var Tile|null $tile */
-                $tile = TileFactory::getInstance()->createFromData($world, Utils::deserializeNBT($serializedNBT));
+                $tile = TileFactory::getInstance()->createFromData($world, Utils::deserializeNBT($row["{$prefix}_nbt"]));
 
                 if ($tile !== null) {
                     $world->addTile($tile);
@@ -352,19 +349,17 @@ class BlocksQueries extends Query
                         $tile->getInventory()->clearAll();
                     }
                 } else {
-                    $this->plugin->getLogger()->debug("Could not create tile at $currBlockPos.");
+                    $this->plugin->getLogger()->debug("Could not create tile at X:$x Y:$y Z:$z.");
                 }
             }
         }
 
         Server::getInstance()->getAsyncPool()->submitTask(new AsyncBlockSetter(
             $fullBlockIds,
-            $blocksPosition,
             $world->getFolderName(),
             $chunks,
             yield
         ));
-
         yield Await::REJECT;
 
         return yield Await::ONCE;
