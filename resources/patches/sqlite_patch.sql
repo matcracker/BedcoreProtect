@@ -396,4 +396,56 @@ FROM status
 WHERE version = '0.8.2';
 -- #        }
 -- #    }
+-- #    {1.0.0
+-- #        {1
+UPDATE blocks_log
+SET old_id = ((old_id << 4) | old_meta);
+-- #        }
+-- #        {2
+UPDATE blocks_log
+SET new_id = ((new_id << 4) | new_meta);
+-- #        }
+-- #        {3
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    old_id     INTEGER NOT NULL,
+    old_nbt    BLOB DEFAULT NULL,
+    new_id     INTEGER NOT NULL,
+    new_nbt    BLOB DEFAULT NULL,
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {4
+INSERT INTO "temp"
+SELECT history_id, old_id, old_nbt, new_id, new_nbt
+FROM "blocks_log";
+-- #        }
+-- #        {5
+DROP TABLE "blocks_log";
+-- #        }
+-- #        {6
+ALTER TABLE "temp"
+    RENAME TO "blocks_log";
+-- #        }
+-- #        {7
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    uuid        VARCHAR(36) PRIMARY KEY,
+    entity_name VARCHAR(16) NOT NULL
+);
+-- #        }
+-- #        {8
+INSERT INTO "temp"
+SELECT uuid, entity_name
+FROM "entities";
+-- #        }
+-- #        {9
+DROP TABLE "entities";
+-- #        }
+-- #        {10
+ALTER TABLE "temp"
+    RENAME TO "entities";
+-- #        }
+-- #    }
 -- #}
