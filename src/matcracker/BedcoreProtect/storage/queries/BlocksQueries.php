@@ -265,6 +265,7 @@ class BlocksQueries extends Query
     {
         $tileItemFrame = BlockUtils::asTile($itemFrame->getPosition());
         if ($tileItemFrame === null) {
+            $this->plugin->getLogger()->debug("{$player->getName()} tried to interact with invalid Item Frame at {$player->getPosition()}");
             return;
         } elseif (!$tileItemFrame instanceof TileItemFrame) {
             throw new PluginException("Expected ItemFrame tile class, got " . get_class($tileItemFrame));
