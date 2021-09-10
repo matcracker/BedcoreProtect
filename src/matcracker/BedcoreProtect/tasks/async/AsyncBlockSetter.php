@@ -22,36 +22,38 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
+use pocketmine\math\Vector3;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\World;
 use function count;
-use function morton3d_decode;
 use function serialize;
 use function unserialize;
 
 final class AsyncBlockSetter extends AsyncTask
 {
-    private string $serializedFullBlockIds;
+    private string $serializedBlockData;
     private string $serializedChunks;
 
     /**
      * AsyncBlockSetter constructor.
-     * @param array<int, array<int, array<int, int>> $fullBlockIds
      * @param string $worldName
      * @param array<int, string> $serializedChunks
+     * @param array<int, array<int, array<int, int>>> $blockData
+     * @param array<int, array<int, CompoundTag>> $tilesData
      * @param Closure $onComplete
      */
     public function __construct(
-        array          $fullBlockIds,
         private string $worldName,
         array          $serializedChunks,
+        array          $blockData,
         Closure        $onComplete
     )
     {
-        $this->serializedFullBlockIds = serialize($fullBlockIds);
+        $this->serializedBlockData = serialize($blockData);
         $this->serializedChunks = serialize($serializedChunks);
 
         $this->storeLocal("onComplete", $onComplete);
@@ -61,24 +63,32 @@ final class AsyncBlockSetter extends AsyncTask
     {
         /** @var array<int, string> $serializedChunks */
         $serializedChunks = unserialize($this->serializedChunks);
-        /** @var array<int, array<int, array<int, int>>> $fullBlocksIds */
-        $fullBlocksIds = unserialize($this->serializedFullBlockIds);
+        /** @var array<int, array<int, array<int, int>>> $blockData */
+        $blockData = unserialize($this->serializedBlockData);
 
         $cntBlocks = 0;
         /** @var array<int, Chunk> $chunks */
         $chunks = [];
+        /** @var array<int, Vector3> $blockUpdatePos */
+        $blockUpdatePos = [];
+
         foreach ($serializedChunks as $chunkHash => $serializedChunk) {
             $chunks[$chunkHash] = $chunk = FastChunkSerializer::deserialize($serializedChunk);
-            foreach ($fullBlocksIds[$chunkHash] as $blockHash => $arrFullBlocksIds) {
-                foreach ($arrFullBlocksIds as $fullBlockId) {
-                    [$x, $y, $z] = morton3d_decode($blockHash);
-                    $chunk->setFullBlock($x & 0x0f, $y, $z & 0x0f, $fullBlockId);
+            foreach ($blockData[$chunkHash] as $blockHash => $fullBlockIds) {
+                World::getBlockXYZ($blockHash, $x, $y, $z);
+
+                if (!isset($blockUpdatePos[$blockHash])) {
+                    $blockUpdatePos[$blockHash] = new Vector3($x, $y, $z);
+                }
+
+                foreach ($fullBlockIds as $fullBlockId) {
+                    $chunk->setFullBlock($x & Chunk::COORD_MASK, $y, $z & Chunk::COORD_MASK, $fullBlockId);
                     $cntBlocks++;
                 }
             }
         }
 
-        $this->setResult([$cntBlocks, $chunks]);
+        $this->setResult([$cntBlocks, $chunks, $blockUpdatePos]);
     }
 
     public function onCompletion(): void
@@ -92,25 +102,16 @@ final class AsyncBlockSetter extends AsyncTask
         /**
          * @var int $cntBlocks
          * @var array<int, Chunk> $chunks
+         * @var array<int, Vector3> $blockUpdatePos
          */
-        [$cntBlocks, $chunks] = $this->getResult();
-        foreach ($chunks as $hash => $chunk) {
-            World::getXZ($hash, $chunkX, $chunkZ);
+        [$cntBlocks, $chunks, $blockUpdatePos] = $this->getResult();
+        foreach ($chunks as $chunkHash => $chunk) {
+            World::getXZ($chunkHash, $chunkX, $chunkZ);
             $world->setChunk($chunkX, $chunkZ, $chunk, false);
         }
 
-        //TODO: I need to understand what to do here
-        /*foreach ($this->blocks as $block) {
-            $pos = $block->asVector3();
-            $world->updateAllLight($pos->x, $pos->y, $pos->z);
-            foreach ($world->getNearbyEntities(new AxisAlignedBB($pos->x - 1, $pos->y - 1, $pos->z - 1, $pos->x + 2, $pos->y + 2, $pos->z + 2)) as $entity) {
-                $entity->onNearbyBlockChange();
-            }
-            $world->scheduleNeighbourBlockUpdates($pos);
-        }*/
-
         /**@var Closure $onComplete */
         $onComplete = $this->fetchLocal("onComplete");
-        $onComplete([$cntBlocks, count($chunks)]);
+        $onComplete([$cntBlocks, count($chunks), $blockUpdatePos]);
     }
 }

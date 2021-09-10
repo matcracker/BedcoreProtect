@@ -46,6 +46,7 @@ use pocketmine\player\Player;
 use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\Server;
+use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\World\Position;
 use pocketmine\World\World;
@@ -313,8 +314,8 @@ class BlocksQueries extends Query
             $prefix = "new";
         }
 
-        /** @var int[] $fullBlockIds */
-        $fullBlockIds = [];
+        /** @var array<int, array<int, array<int, int>>> $blockData */
+        $blockData = [];
         /** @var string[] $chunks */
         $chunks = [];
 
@@ -322,20 +323,23 @@ class BlocksQueries extends Query
             $x = (int)$row["x"];
             $y = (int)$row["y"];
             $z = (int)$row["z"];
-            $chunkX = $x >> 4;
-            $chunkZ = $z >> 4;
+            $chunkX = $x >> Chunk::COORD_BIT_SIZE;
+            $chunkZ = $z >> Chunk::COORD_BIT_SIZE;
 
             $chunkHash = World::chunkHash($chunkX, $chunkZ);
 
-            if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
-                $chunks[$chunkHash] = FastChunkSerializer::serialize($chunk);
-            } else {
-                $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");
-                continue;
+            if (!isset($chunks[$chunkHash])) {
+                if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
+                    $chunks[$chunkHash] = FastChunkSerializer::serialize($chunk);
+                    $world->unloadChunk($chunkX, $chunkZ, trySave: false);
+                } else {
+                    $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");
+                    continue;
+                }
             }
 
-            $blockHash = World::chunkBlockHash($x, $y, $z);
-            $fullBlockIds[$chunkHash][$blockHash][] = (int)$row["{$prefix}_id"];
+            $blockHash = World::blockHash($x, $y, $z);
+            $blockData[$chunkHash][$blockHash][] = (int)$row["{$prefix}_id"];
 
             $world->getTileAt($x, $y, $z)?->close();
 
@@ -346,19 +350,20 @@ class BlocksQueries extends Query
                 if ($tile !== null) {
                     $world->addTile($tile);
 
-                    if ($tile instanceof InventoryHolder && !$this->configParser->getRollbackItems()) {
+                    //Always clear the inventory, the job will be done by InventoriesQueries class
+                    if ($tile instanceof InventoryHolder) {
                         $tile->getInventory()->clearAll();
                     }
                 } else {
-                    $this->plugin->getLogger()->debug("Could not create tile at X:$x Y:$y Z:$z.");
+                    $this->plugin->getLogger()->debug("Could not create tile at $x $y $z.");
                 }
             }
         }
 
         Server::getInstance()->getAsyncPool()->submitTask(new AsyncBlockSetter(
-            $fullBlockIds,
             $world->getFolderName(),
             $chunks,
+            $blockData,
             yield
         ));
         yield Await::REJECT;

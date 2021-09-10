@@ -34,6 +34,7 @@ use matcracker\BedcoreProtect\utils\MathUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
+use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
@@ -41,6 +42,7 @@ use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 use function array_key_exists;
+use function array_merge;
 use function count;
 use function microtime;
 use function preg_match;
@@ -153,12 +155,15 @@ final class QueryManager
             function () use ($sender, $senderName, $cmdData, $world, $worldName, $bb, $rollback, $time, $startTime): Generator {
                 self::$activeRollbacks[$senderName] = [$bb, $worldName];
                 $executed = false;
+                /** @var array<int, Vector3> $blockUpdatesPos */
+                $blockUpdatesPos = [];
                 $blocks = $chunks = $items = $entities = 0;
 
                 while (count($logIds = yield $this->getRollbackLogIds($cmdData, $bb, $time, $rollback, self::ROLLBACK_ROWS_LIMIT)) !== 0) {
-                    [$tmpBlocks, $tmpChunks] = yield $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    [$tmpBlocks, $tmpChunks, $tmpBlockUpdPos] = yield $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
                     $blocks += $tmpBlocks;
                     $chunks += $tmpChunks;
+                    $blockUpdatesPos = array_merge($blockUpdatesPos, $tmpBlockUpdPos);
 
                     $items += yield $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds);
                     $entities += yield $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds);
@@ -169,6 +174,10 @@ final class QueryManager
                     ]);
 
                     $executed = true;
+                }
+
+                foreach ($blockUpdatesPos as $blockUpdatePos) {
+                    $world->notifyNeighbourBlockUpdate($blockUpdatePos);
                 }
 
                 if ($executed) {
