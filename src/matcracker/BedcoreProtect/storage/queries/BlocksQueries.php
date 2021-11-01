@@ -330,7 +330,7 @@ class BlocksQueries extends Query
 
             if (!isset($chunks[$chunkHash])) {
                 if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
-                    $chunks[$chunkHash] = FastChunkSerializer::serialize($chunk);
+                    $chunks[$chunkHash] = FastChunkSerializer::serializeTerrain($chunk);
                     $world->unloadChunk($chunkX, $chunkZ, trySave: false);
                 } else {
                     $this->plugin->getLogger()->debug("Could not load chunk at [$chunkX;$chunkZ]");

@@ -33,16 +33,6 @@ final class WorldUtils
         //NOOP
     }
 
-    public static function getNonNullWorldByName(string $worldName): World
-    {
-        $world = Server::getInstance()->getWorldManager()->getWorldByName($worldName);
-        if ($world === null) {
-            throw new InvalidStateException("World \"$worldName\" does not exist.");
-        }
-
-        return $world;
-    }
-
     public static function getWorldNames(): array
     {
         return array_map(static function (World $world): string {

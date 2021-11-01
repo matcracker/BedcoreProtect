@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\tasks\async;
 
 use Closure;
 use pocketmine\math\Vector3;
-use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use pocketmine\world\format\Chunk;
@@ -43,7 +42,6 @@ final class AsyncBlockSetter extends AsyncTask
      * @param string $worldName
      * @param array<int, string> $serializedChunks
      * @param array<int, array<int, array<int, int>>> $blockData
-     * @param array<int, array<int, CompoundTag>> $tilesData
      * @param Closure $onComplete
      */
     public function __construct(
@@ -73,7 +71,7 @@ final class AsyncBlockSetter extends AsyncTask
         $blockUpdatePos = [];
 
         foreach ($serializedChunks as $chunkHash => $serializedChunk) {
-            $chunks[$chunkHash] = $chunk = FastChunkSerializer::deserialize($serializedChunk);
+            $chunks[$chunkHash] = $chunk = FastChunkSerializer::deserializeTerrain($serializedChunk);
             foreach ($blockData[$chunkHash] as $blockHash => $fullBlockIds) {
                 World::getBlockXYZ($blockHash, $x, $y, $z);
 
@@ -107,7 +105,7 @@ final class AsyncBlockSetter extends AsyncTask
         [$cntBlocks, $chunks, $blockUpdatePos] = $this->getResult();
         foreach ($chunks as $chunkHash => $chunk) {
             World::getXZ($chunkHash, $chunkX, $chunkZ);
-            $world->setChunk($chunkX, $chunkZ, $chunk, false);
+            $world->setChunk($chunkX, $chunkZ, $chunk);
         }
 
         /**@var Closure $onComplete */
