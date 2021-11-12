@@ -114,8 +114,8 @@ final class Action
             new self("spawn", 3, $lang->translateString("action.place"), ["all", "block"]),
             new self("despawn", 4, $lang->translateString("action.break"), ["all", "block"]),
             new self("kill", 5, $lang->translateString("action.kill"), ["all", "kill"]),
-            new self("add", 6, $lang->translateString("action.add"), ["all", "container, +container"]),
-            new self("remove", 7, $lang->translateString("action.remove"), ["all", "container, -container"]),
+            new self("add", 6, $lang->translateString("action.add"), ["all", "container", "+container"]),
+            new self("remove", 7, $lang->translateString("action.remove"), ["all", "container", "-container"]),
             new self("update", 255, "update", [])
         );
     }
