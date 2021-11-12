@@ -298,7 +298,7 @@ abstract class ParsableSubCommand extends SubCommand
                     }
                     break;
                 case CommandParameter::EXCLUDE()->name():
-                    if (($exclusions = self::parseItemArgument($sender, $value)) === null) {
+                    if (($exclusions = $this->parseItemArgument($sender, $value)) === null) {
                         return null;
                     }
                     break;
