@@ -135,14 +135,15 @@ final class Inspector
 
             if (isset($log["{$prefix}_id"])) {
                 $id = (int)$log["{$prefix}_id"];
-                if (isset($log["{$prefix}_meta"])) {
-                    $meta = (int)$log["{$prefix}_meta"];
+                $meta = (int)$log["{$prefix}_meta"];
+                if (isset($log["{$prefix}_amount"])) {
                     $amount = (int)$log["{$prefix}_amount"];
 
                     $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
                     $to = "$itemName (x$amount)";
                 } else {
-                    $to = BlockFactory::getInstance()->fromFullBlock($id)->getName();
+                    $blockName = BlockFactory::getInstance()->get($id, $meta)->getName();
+                    $to = "$blockName (#$id:$meta)";
                 }
             } elseif (isset($log["entity_to"])) {
                 $to = $log["entity_to"];

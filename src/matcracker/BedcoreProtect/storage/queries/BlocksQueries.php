@@ -31,6 +31,7 @@ use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
+use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\block\tile\ItemFrame as TileItemFrame;
@@ -95,21 +96,35 @@ class BlocksQueries extends Query
         Await::f2c(
             function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
                 yield $this->entitiesQueries->addEntity($entity);
-                yield $this->addRawBlockLog(EntityUtils::getUniqueId($entity), $oldBlock->getFullId(), $oldNbt, $newBlock->getFullId(), $newNbt, $pos, $worldName, $action, $time);
+                yield $this->addRawBlockLog(
+                    EntityUtils::getUniqueId($entity),
+                    $oldBlock->getId(),
+                    $oldBlock->getMeta(),
+                    $oldNbt,
+                    $newBlock->getId(),
+                    $newBlock->getMeta(),
+                    $newNbt,
+                    $pos,
+                    $worldName,
+                    $action,
+                    $time
+                );
             }
         );
     }
 
-    final protected function addRawBlockLog(string $uuid, int $oldFullBlockId, ?string $oldNbt, int $newFullBlockId, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    final protected function addRawBlockLog(string $uuid, int $oldId, int $oldMeta, ?string $oldNbt, int $newId, int $newMeta, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
         $lastId = yield $this->addRawLog($uuid, $position->floor(), $worldName, $action, $time);
 
         return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
             "log_id" => $lastId,
-            "old_id" => $oldFullBlockId,
+            "old_id" => $oldId,
+            "old_meta" => $oldMeta,
             "old_nbt" => $oldNbt,
-            "new_id" => $newFullBlockId,
+            "new_id" => $newId,
+            "new_meta" => $newMeta,
             "new_nbt" => $newNbt
         ]);
     }
@@ -157,9 +172,11 @@ class BlocksQueries extends Query
 
                             yield $this->addRawBlockLog(
                                 EntityUtils::getUniqueId($entity),
-                                $oldBlocks[$i]->getFullId(),
+                                $oldBlocks[$i]->getId(),
+                                $oldBlocks[$i]->getMeta(),
                                 $oldBlocksNbt[$i],
-                                $newBlocks[$i]->getFullId(),
+                                $newBlocks[$i]->getId(),
+                                $newBlocks[$i]->getMeta(),
                                 $newBlocksNbt[$i],
                                 $position->asVector3(),
                                 $position->getWorld()->getFolderName(),
@@ -201,16 +218,18 @@ class BlocksQueries extends Query
 
                 yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
 
-                $airFullId = VanillaBlocks::AIR()->getFullId();
+                $airId = VanillaBlocks::AIR()->getId();
 
                 for ($i = 0; $i < $cntOldBlocks; $i++) {
                     $position = $oldBlocks[$i]->getPosition();
 
                     yield $this->addRawBlockLog(
                         $uuidEntity,
-                        $oldBlocks[$i]->getFullId(),
+                        $oldBlocks[$i]->getId(),
+                        $oldBlocks[$i]->getMeta(),
                         $oldBlocksNbt[$i],
-                        $airFullId,
+                        $airId,
+                        0,
                         null,
                         $position->asVector3(),
                         $position->getWorld()->getFolderName(),
@@ -245,9 +264,11 @@ class BlocksQueries extends Query
 
         Await::g2c($this->addRawBlockLog(
             $name,
-            $oldBlock->getFullId(),
+            $oldBlock->getId(),
+            $oldBlock->getMeta(),
             BlockUtils::serializeTileTag($oldBlock),
-            $newBlock->getFullId(),
+            $newBlock->getId(),
+            $newBlock->getMeta(),
             BlockUtils::serializeTileTag($newBlock),
             $pos->asVector3(),
             $pos->getWorld()->getFolderName(),
@@ -287,9 +308,11 @@ class BlocksQueries extends Query
         Await::g2c(
             $this->addRawBlockLog(
                 EntityUtils::getUniqueId($player),
-                $itemFrame->getFullId(),
+                $itemFrame->getId(),
+                $itemFrame->getMeta(),
                 $oldNbt,
-                $itemFrame->getFullId(),
+                $itemFrame->getId(),
+                $itemFrame->getMeta(),
                 $newNbt,
                 $position,
                 $worldName,
@@ -339,7 +362,10 @@ class BlocksQueries extends Query
             }
 
             $blockHash = World::blockHash($x, $y, $z);
-            $blockData[$chunkHash][$blockHash][] = (int)$row["{$prefix}_id"];
+            $blockData[$chunkHash][$blockHash][] = BlockFactory::getInstance()->get(
+                (int)$row["{$prefix}_id"],
+                (int)$row["{$prefix}_meta"]
+            )->getFullId();
 
             $world->getTileAt($x, $y, $z)?->close();
 
