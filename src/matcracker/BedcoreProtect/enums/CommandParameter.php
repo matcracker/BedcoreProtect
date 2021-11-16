@@ -170,9 +170,9 @@ final class CommandParameter
                 new Input(
                     "inclusions",
                     $plugin->getLanguage()->translateString("form.params.include"),
-                    "stone,dirt,2:0"
+                    "stone,dirt,grass,..."
                 ),
-                "[b=stone], [b=1,5,stained_glass:8]"
+                "[b=stone], [b=red_wool,dirt,tnt,...]"
             ),
             new self(
                 "exclude",
@@ -180,9 +180,9 @@ final class CommandParameter
                 new Input(
                     "exclusions",
                     $plugin->getLanguage()->translateString("form.params.exclude"),
-                    "stone,dirt,2:0"
+                    "stone,dirt,grass,..."
                 ),
-                "[e=stone], [e=1,5,stained_glass:8]"
+                "[e=stone], [e=red_wool,dirt,tnt,...]"
             )
         );
     }
