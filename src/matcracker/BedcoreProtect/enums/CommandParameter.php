@@ -182,7 +182,7 @@ final class CommandParameter
                     $plugin->getLanguage()->translateString("form.params.exclude"),
                     "stone,dirt,2:0"
                 ),
-                "[b=stone], [b=1,5,stained_glass:8]"
+                "[e=stone], [e=1,5,stained_glass:8]"
             )
         );
     }
