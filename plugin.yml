@@ -2,7 +2,7 @@
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
 version: 1.0.0
-api: 4.0.0-BETA9
+api: 4.0.0-BETA12
 
 load: POSTWORLD
 author: matcracker
