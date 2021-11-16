@@ -22,19 +22,17 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
-use InvalidStateException;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use pocketmine\plugin\PluginException;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use UnexpectedValueException;
 use function array_filter;
 use function copy;
 use function count;
 use function fclose;
-use function is_resource;
-use function is_string;
+use function is_array;
 use function stream_get_contents;
 use function version_compare;
 use function yaml_parse;
@@ -109,18 +107,21 @@ final class PatchManager
     private function getVersionsToPatch(string $db_version): array
     {
         $res = $this->plugin->getResource("patches/.patches");
-        if (!is_resource($res)) {
-            throw new InvalidStateException("Could not retrieve .patches file. Be sure to use the original PHAR plugin file.");
+        if ($res === null) {
+            throw new PluginException("Could not find \".patches\" file. Be sure to use the original .phar plugin file.");
         }
 
         $patchContent = stream_get_contents($res);
-
-        if (!is_string($patchContent)) {
-            throw new UnexpectedValueException("Could not get patch data.");
+        fclose($res);
+        if ($patchContent === false) {
+            throw new PluginException("Could not read \".patches\" file.");
         }
 
-        $patchConfig = yaml_parse($patchContent) ?? [];
-        fclose($res);
+        $patchConfig = yaml_parse($patchContent);
+        if (!is_array($patchConfig)) {
+            throw new PluginException("Could not parse \".patches\" file.");
+        }
+
         return array_filter($patchConfig, function (string $patchVersion) use ($db_version): bool {
             return version_compare($this->plugin->getVersion(), $db_version) > 0
                 && version_compare($patchVersion, $db_version) > 0;

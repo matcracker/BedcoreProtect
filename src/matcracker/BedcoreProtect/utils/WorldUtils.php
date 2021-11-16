@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\utils;
 
-use InvalidStateException;
 use pocketmine\Server;
 use pocketmine\World\World;
 use function array_map;
