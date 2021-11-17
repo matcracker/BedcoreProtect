@@ -75,9 +75,12 @@ final class EntityUtils
 
     public static function getSerializedNbt(Entity $entity): string
     {
-        $entity->setFireTicks(0);
-        $entity->setHealth($entity->getMaxHealth());
+        $nbt = $entity->saveNBT();
+        $nbt->setShort("Fire", 0);
+        if ($entity instanceof Living) {
+            $nbt->setFloat("Health", $entity->getMaxHealth());
+        }
 
-        return Utils::serializeNBT($entity->saveNBT());
+        return Utils::serializeNBT($nbt);
     }
 }
