@@ -5,8 +5,7 @@
 CREATE TABLE IF NOT EXISTS entities
 (
     uuid             VARCHAR(36) PRIMARY KEY,
-    entity_name      VARCHAR(16) NOT NULL,
-    entity_classpath TEXT        NOT NULL
+    entity_name      VARCHAR(16) NOT NULL
 );
 -- #        }
 -- #        {log_history
@@ -91,9 +90,8 @@ OPTIMIZE TABLE entities, log_history, blocks_log, entities_log, inventories_log,
 -- #        {entity
 -- #            :uuid string
 -- #            :name string
--- #            :path string
-INSERT INTO entities (uuid, entity_name, entity_classpath)
-VALUES (:uuid, :name, :path)
+INSERT INTO entities (uuid, entity_name)
+VALUES (:uuid, :name)
 ON DUPLICATE KEY UPDATE entity_name=:name;
 -- #        }
 -- #        {db_version
@@ -239,7 +237,6 @@ ORDER BY time;
 -- #            {entities
 -- #                :log_ids list:int
 SELECT log_id,
-       e.entity_classpath,
        el.entityfrom_id,
        el.entityfrom_nbt,
        x,
