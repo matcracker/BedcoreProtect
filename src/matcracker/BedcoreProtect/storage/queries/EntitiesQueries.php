@@ -146,19 +146,22 @@ class EntitiesQueries extends Query
         if ($this->configParser->getRollbackEntities()) {
             $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds]);
 
+            /** @var EntityFactory $factory */
+            $factory = EntityFactory::getInstance();
+
             foreach ($entityRows as $row) {
                 $action = Action::fromType((int)$row["action"]);
                 if (
                     ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
                     (!$rollback && $action->equals(Action::SPAWN()))
                 ) {
-                    $entity = EntityFactory::getInstance()->createFromData($world, Utils::deserializeNBT($row["entityfrom_nbt"]));
+                    $entity = $factory->createFromData($world, Utils::deserializeNBT($row["entityfrom_nbt"]));
                     if ($entity !== null) {
                         yield $this->updateEntityId((int)$row["log_id"], $entity);
                         $entity->spawnToAll();
                     }
                 } else {
-                    $world->getEntity((int)$row["entityfrom_id"])?->close();
+                    $world->getEntity((int)$row["entityfrom_id"])?->flagForDespawn();
                 }
             }
         }
