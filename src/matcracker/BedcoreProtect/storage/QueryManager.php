@@ -242,9 +242,13 @@ final class QueryManager
             $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.radius", [$cmdData->getRadius() ?? $this->plugin->getParsedConfig()->getMaxRadius()]));
         }
 
-        if ($blocks > 0) {
-            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.blocks", [$blocks]));
-            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.modified-chunks", [$chunks]));
+        if ($blocks + $items + $entities === 0) {
+            $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $this->plugin->getLanguage()->translateString("rollback.no-changes"));
+        }else{
+            if ($blocks > 0){
+                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.blocks", [$blocks]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.modified-chunks", [$chunks]));
+            }
 
             if ($items > 0) {
                 $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.items", [$items]));
@@ -253,9 +257,6 @@ final class QueryManager
             if ($entities > 0) {
                 $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.entities", [$entities]));
             }
-
-        } else {
-            $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $this->plugin->getLanguage()->translateString("rollback.no-changes"));
         }
 
         $diff = microtime(true) - $startTime;
