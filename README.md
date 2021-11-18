@@ -265,9 +265,7 @@ Examples:
 # Donate
 You can contribute to the development and maintenance of BedcoreProtect through the following payment methods:
 - Bitcoin (BTC): `37BCe87gveKRNPzbcLLyAk2kLVqE53MSZc`
-- Bitcoin Cash (BCH): `qpgs398kps5c0nrkq982ppk4x7frmwhq9y7fam6xtw`
-- Ethereum (ETH): `0xd96123D794fb72eb34fC40820f8DAf73b9baf899`
-- Stellar Lumens (XLM): `GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37`
+- Ethereum (ETH): `0x6C5c009d5EC990dA2bCFb7A7aeDD369E21C78087`
 
 Your help can make a difference. Thank you.
 
