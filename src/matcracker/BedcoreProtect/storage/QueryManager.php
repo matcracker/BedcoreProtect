@@ -244,8 +244,8 @@ final class QueryManager
 
         if ($blocks + $items + $entities === 0) {
             $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $this->plugin->getLanguage()->translateString("rollback.no-changes"));
-        }else{
-            if ($blocks > 0){
+        } else {
+            if ($blocks > 0) {
                 $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.blocks", [$blocks]));
                 $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.modified-chunks", [$chunks]));
             }
