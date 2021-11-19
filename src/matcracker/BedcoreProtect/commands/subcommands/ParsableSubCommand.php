@@ -335,8 +335,11 @@ abstract class ParsableSubCommand extends SubCommand
         $itemIds = [];
         /** @var int[] $itemMetas */
         $itemMetas = [];
+        /** @var StringToItemParser $itemParser */
+        $itemParser = StringToItemParser::getInstance();
+
         foreach (explode(",", $str) as $strItem) {
-            $item = StringToItemParser::getInstance()->parse($strItem);
+            $item = $itemParser->parse($strItem);
             if ($item == null) {
                 $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-item-block", [$strItem]));
                 return null;
