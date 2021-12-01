@@ -62,18 +62,6 @@ abstract class Query
      */
     abstract public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator;
 
-    /**
-     * @param bool $rollback
-     * @param int[] $logIds
-     */
-    final protected function updateRollbackStatus(bool $rollback, array $logIds): void
-    {
-        $this->connector->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
-            "rollback" => $rollback,
-            "log_ids" => $logIds
-        ]);
-    }
-
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
