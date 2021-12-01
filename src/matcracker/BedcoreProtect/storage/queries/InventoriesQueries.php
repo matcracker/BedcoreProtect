@@ -169,7 +169,7 @@ class InventoriesQueries extends Query
     {
         $cntItems = 0;
 
-        if ($this->configParser->getRollbackItems()) {
+        if ($this->plugin->getParsedConfig()->getRollbackItems()) {
             if ($rollback) {
                 $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ["log_ids" => $logIds]);
                 $prefix = "old";

@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
-use matcracker\BedcoreProtect\config\ConfigParser;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
@@ -40,12 +39,9 @@ abstract class Query
 
     private static AwaitMutex $mutex;
 
-    protected ConfigParser $configParser;
-
     public function __construct(protected Main $plugin, DataConnector $connector)
     {
         $this->DefQueriesConstr($connector);
-        $this->configParser = $plugin->getParsedConfig();
     }
 
     final protected static function getMutex(): AwaitMutex

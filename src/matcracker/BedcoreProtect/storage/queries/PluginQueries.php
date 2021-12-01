@@ -320,7 +320,7 @@ class PluginQueries extends Query
                 }
 
                 if ($optimize) {
-                    yield $this->executeGeneric($this->configParser->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
+                    yield $this->executeGeneric($this->plugin->getParsedConfig()->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
                 }
 
                 if ($onSuccess !== null) {

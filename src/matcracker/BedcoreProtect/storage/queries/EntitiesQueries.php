@@ -143,7 +143,7 @@ class EntitiesQueries extends Query
     {
         $entityRows = [];
 
-        if ($this->configParser->getRollbackEntities()) {
+        if ($this->plugin->getParsedConfig()->getRollbackEntities()) {
             $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds]);
 
             /** @var EntityFactory $factory */
