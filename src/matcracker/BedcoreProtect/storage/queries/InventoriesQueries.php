@@ -33,7 +33,6 @@ use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\math\Vector3;
-use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\player\Player;
 use pocketmine\World\Position;
 use pocketmine\World\World;
@@ -179,17 +178,22 @@ class InventoriesQueries extends Query
                 $prefix = "new";
             }
 
-            foreach ($inventoryRows as $row) {
-                /** @var CompoundTag|null $nbt */
-                $nbt = isset($row["{$prefix}_nbt"]) ? Utils::deserializeNBT($row["{$prefix}_nbt"]) : null;
-                $item = ItemFactory::getInstance()->get((int)$row["{$prefix}_id"], (int)$row["{$prefix}_meta"], (int)$row["{$prefix}_amount"], $nbt);
+            /** @var ItemFactory $itemFactory */
+            $itemFactory = ItemFactory::getInstance();
 
+            foreach ($inventoryRows as $row) {
                 $tile = $world->getTileAt((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                 if ($tile instanceof InventoryHolder) {
-                    $tile->getInventory()->setItem((int)$row["slot"], $item);
-                }
+                    $item = $itemFactory->get(
+                        (int)$row["{$prefix}_id"],
+                        (int)$row["{$prefix}_meta"],
+                        (int)$row["{$prefix}_amount"],
+                        Utils::deserializeNBT($row["{$prefix}_nbt"])
+                    );
 
-                $cntItems += $item->getCount();
+                    $tile->getInventory()->setItem((int)$row["slot"], $item);
+                    $cntItems += $item->getCount();
+                }
             }
         }
 
