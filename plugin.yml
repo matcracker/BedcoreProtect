@@ -1,7 +1,6 @@
 ---
 name: BedcoreProtect
 main: matcracker\BedcoreProtect\Main
-src-namespace-prefix: matcracker\BedcoreProtect
 version: 1.0.0
 api: 4.0.0
 
