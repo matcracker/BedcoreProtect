@@ -285,4 +285,10 @@ FROM status
 WHERE version = '0.8.2';
 -- #        }
 -- #    }
+-- #    {1.0.0
+-- #        {1
+ALTER TABLE entities
+    DROP COLUMN entity_classpath;
+-- #        }
+-- #    }
 -- #}

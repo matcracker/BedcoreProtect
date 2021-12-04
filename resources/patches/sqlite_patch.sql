@@ -396,4 +396,25 @@ FROM status
 WHERE version = '0.8.2';
 -- #        }
 -- #    }
+-- #    {1.0.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    uuid        VARCHAR(36) PRIMARY KEY,
+    entity_name VARCHAR(16) NOT NULL
+);
+-- #        }
+-- #        {2
+INSERT INTO "temp"
+SELECT uuid, entity_name
+FROM "entities";
+-- #        }
+-- #        {3
+DROP TABLE "entities";
+-- #        }
+-- #        {4
+ALTER TABLE "temp"
+    RENAME TO "entities";
+-- #        }
+-- #    }
 -- #}
