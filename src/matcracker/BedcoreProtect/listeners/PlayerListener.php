@@ -103,13 +103,14 @@ final class PlayerListener extends BedcoreListener
         $world = $player->getWorld();
 
         if ($this->config->isEnabledWorld($world)) {
+            $action = $event->getAction();
             $itemInHand = $event->getItem();
             $face = $event->getFace();
             $clickedBlock = $event->getBlock();
             $clickedBlockPos = $clickedBlock->getPosition();
             $replacedBlock = $clickedBlock->getSide($face);
 
-            if ($event->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+            if ($action === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
                 if ($this->config->getBlockBreak() && $replacedBlock instanceof Fire) {
                     $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, VanillaBlocks::AIR(), Action::BREAK(), $replacedBlock->getPosition());
 
@@ -119,7 +120,7 @@ final class PlayerListener extends BedcoreListener
                         $this->blocksQueries->addItemFrameLogByPlayer($player, $clickedBlock, $item, Action::REMOVE());
                     }
                 }
-            } elseif ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+            } elseif ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 if ($this->config->getBlockPlace()) {
                     if ($itemInHand instanceof FlintSteel) {
                         if ($clickedBlock instanceof TNT) {
