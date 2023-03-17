@@ -23,19 +23,18 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
+use Symfony\Component\Filesystem\Path;
 
 final class DatabaseManager
 {
-    use DefaultQueriesTrait {
-        __construct as DefQueriesConstr;
-    }
 
     private PatchManager $patchManager;
     private QueryManager $queryManager;
+    private DataConnector $connector;
 
     public function __construct(protected Main $plugin)
     {
@@ -62,9 +61,7 @@ final class DatabaseManager
             return false;
         }
 
-        $this->DefQueriesConstr($this->connector);
-
-        $patchResource = $this->plugin->getResource("patches/" . $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql");
+        $patchResource = $this->plugin->getResource(Path::join("patches", $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql"));
         if ($patchResource !== null) {
             $this->connector->loadQueryFile($patchResource);
         }
@@ -119,7 +116,7 @@ final class DatabaseManager
 
     public function getStatus(): Generator
     {
-        return $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
+        return yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
     }
 
     /**

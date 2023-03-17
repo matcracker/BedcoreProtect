@@ -31,7 +31,7 @@ use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
+use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\World\Position;
@@ -86,7 +86,7 @@ class InventoriesQueries extends Query
                         $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
                     }
                 } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
-                    yield $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, Action::REMOVE(), $time);
+                    yield from $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, Action::REMOVE(), $time);
                     $action = Action::ADD();
                 } elseif (!$sourceItem->isNull()) {
                     $action = Action::REMOVE();
@@ -94,7 +94,7 @@ class InventoriesQueries extends Query
                     $action = Action::ADD();
                 }
 
-                yield $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, $action, $time);
+                yield from $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, $action, $time);
             }
         );
     }
@@ -102,18 +102,16 @@ class InventoriesQueries extends Query
     final protected function addInventorySlotLog(string $uuid, int $slot, Item $oldItem, Item $newItem, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
-        $lastId = yield $this->addRawLog($uuid, $position, $worldName, $action, $time);
+        [$lastId] = yield from $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
-        return yield $this->executeInsert(QueriesConst::ADD_INVENTORY_LOG, [
+        return yield from $this->connector->asyncInsert(QueriesConst::ADD_INVENTORY_LOG, [
             "log_id" => $lastId,
             "slot" => $slot,
-            "old_id" => $oldItem->getId(),
-            "old_meta" => $oldItem->getMeta(),
-            "old_nbt" => Utils::serializeNBT($oldItem->getNamedTag()),
+            "old_name" => $oldItem->getName(),
+            "old_nbt" => $oldItem->isNull() ? null : Utils::serializeNBT($oldItem->nbtSerialize($slot)),
             "old_amount" => $oldItem->getCount(),
-            "new_id" => $newItem->getId(),
-            "new_meta" => $newItem->getMeta(),
-            "new_nbt" => Utils::serializeNBT($newItem->getNamedTag()),
+            "new_name" => $newItem->getName(),
+            "new_nbt" => $newItem->isNull() ? null : Utils::serializeNBT($newItem->nbtSerialize($slot)),
             "new_amount" => $newItem->getCount()
         ]);
     }
@@ -141,18 +139,18 @@ class InventoriesQueries extends Query
 
         $this->getMutex()->putClosure(
             function () use ($player, $worldName, $time, $contents, $inventoryPosition): Generator {
-                yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+                yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                 /**
                  * @var int $slot
                  * @var Item $content
                  */
                 foreach ($contents as $slot => $content) {
-                    yield $this->addInventorySlotLog(
+                    yield from $this->addInventorySlotLog(
                         EntityUtils::getUniqueId($player),
                         $slot,
                         $content,
-                        ItemFactory::air(),
+                        VanillaItems::AIR(),
                         $inventoryPosition,
                         $worldName,
                         Action::REMOVE(),
@@ -160,7 +158,7 @@ class InventoriesQueries extends Query
                     );
                 }
 
-                yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+                yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
             }
         );
     }
@@ -171,25 +169,25 @@ class InventoriesQueries extends Query
 
         if ($this->plugin->getParsedConfig()->getRollbackItems()) {
             if ($rollback) {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ["log_ids" => $logIds]);
+                /** @var array $rows */
+                $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_OLD_INVENTORIES, ["log_ids" => $logIds]);
                 $prefix = "old";
             } else {
-                $inventoryRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ["log_ids" => $logIds]);
+                /** @var array $rows */
+                $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_NEW_INVENTORIES, ["log_ids" => $logIds]);
                 $prefix = "new";
             }
 
-            /** @var ItemFactory $itemFactory */
-            $itemFactory = ItemFactory::getInstance();
-
-            foreach ($inventoryRows as $row) {
+            foreach ($rows as $row) {
                 $tile = $world->getTileAt((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                 if ($tile instanceof InventoryHolder) {
-                    $item = $itemFactory->get(
-                        (int)$row["{$prefix}_id"],
-                        (int)$row["{$prefix}_meta"],
-                        (int)$row["{$prefix}_amount"],
-                        Utils::deserializeNBT($row["{$prefix}_nbt"])
-                    );
+                    /** @var string|null $serializedNbt */
+                    $serializedNbt = $row["{$prefix}_nbt"];
+                    if ($serializedNbt !== null) {
+                        $item = Item::nbtDeserialize(Utils::deserializeNBT((string)$serializedNbt));
+                    } else {
+                        $item = VanillaItems::AIR();
+                    }
 
                     $tile->getInventory()->setItem((int)$row["slot"], $item);
                     $cntItems += $item->getCount();

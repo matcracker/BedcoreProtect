@@ -37,7 +37,9 @@ use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\generic\GenericStatementImpl;
 use poggit\libasynql\generic\GenericVariable;
+use poggit\libasynql\result\SqlSelectResult;
 use poggit\libasynql\SqlDialect;
+use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function count;
@@ -83,7 +85,7 @@ class PluginQueries extends Query
                 "limit" => $limit,
                 "offset" => $offset
             ],
-            self::onSuccessLog($queryType, $inspector, $position, $cmdData, $limit, $offset)
+            $this->onSuccessLog($queryType, $inspector, $position, $cmdData, $limit, $offset)
         );
     }
 
@@ -104,7 +106,7 @@ class PluginQueries extends Query
     public function requestLookup(CommandSender $inspector, CommandData $cmdData, ?Position $position, int $limit = 4, int $offset = 0): void
     {
         $query = "";
-        $args = [];
+        $args = [[]];
 
         if (($radius = $cmdData->getRadius()) !== null) {
             $bb = MathUtils::getRangedVector($position, $radius);
@@ -114,10 +116,16 @@ class PluginQueries extends Query
 
         $this->buildLookupQuery($query, $args, $cmdData, $bb, $limit, $offset);
 
-        $this->connector->executeSelectRaw(
-            $query,
+        $this->connector->executeImplRaw(
+            [$query],
             $args,
-            self::onSuccessLog(LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset)
+            [SqlThread::MODE_SELECT],
+            /** @var SqlSelectResult[] $results */
+            function (array $results) use ($inspector, $position, $cmdData, $limit, $offset): void {
+                $result = $results[count($results) - 1];
+                $this->onSuccessLog(LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset)($result->getRows());
+            },
+            null
         );
     }
 
@@ -128,35 +136,21 @@ class PluginQueries extends Query
             FROM
             (SELECT tmp_logs.*,
                  CASE
-                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_id
-                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_id
+                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_name
+                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_name
                     ELSE
-                        new_id
-                END AS id,
-                CASE
-                    WHEN tmp_logs.action = 0 OR tmp_logs.action = 6 THEN tmp_logs.new_meta
-                    WHEN tmp_logs.action = 1 OR tmp_logs.action = 7 THEN tmp_logs.old_meta
-                    ELSE
-                        new_meta
-                END AS meta
+                        new_name
+                END AS name
                 FROM
                 (SELECT log_history.*, old_amount, new_amount,
                     CASE
-                        WHEN il.old_id IS NULL THEN bl.old_id
-                        WHEN bl.old_id IS NULL THEN il.old_id
-                    END AS old_id,
+                        WHEN il.old_name IS NULL THEN bl.old_name
+                        WHEN bl.old_name IS NULL THEN il.old_name
+                    END AS old_name,
                     CASE
-                        WHEN il.old_meta IS NULL THEN bl.old_meta
-                        WHEN bl.old_meta IS NULL THEN il.old_meta
-                    END AS old_meta,
-                    CASE
-                        WHEN il.new_id IS NULL THEN bl.new_id
-                        WHEN bl.new_id IS NULL THEN il.new_id
-                    END AS new_id,
-                    CASE
-                        WHEN il.new_meta IS NULL THEN bl.new_meta
-                        WHEN bl.new_meta IS NULL THEN il.new_meta
-                    END AS new_meta
+                        WHEN il.new_name IS NULL THEN bl.new_name
+                        WHEN bl.new_name IS NULL THEN il.new_name
+                    END AS new_name
                 FROM log_history
                 LEFT JOIN blocks_log bl ON log_history.log_id = bl.history_id
                 LEFT JOIN inventories_log il ON log_history.log_id = il.history_id
@@ -241,26 +235,29 @@ class PluginQueries extends Query
         }
 
         if (($inclusions = $commandData->getInclusions()) !== null) {
-            $variables["inclusions_ids"] = new GenericVariable("inclusions_ids", "list:int", null);
-            $params["inclusions_ids"] = $inclusions["ids"];
-            $variables["inclusions_metas"] = new GenericVariable("inclusions_metas", "list:int", null);
-            $params["inclusions_metas"] = $inclusions["metas"];
+            $variables["inclusions"] = new GenericVariable("inclusions", "list:string", null);
+            $params["inclusions"] = $inclusions;
 
-            $query .= "(id IN :inclusions_ids AND meta IN :inclusions_metas) AND ";
+            $query .= "(name IN :inclusions) AND ";
         }
 
         if (($exclusions = $commandData->getExclusions()) !== null) {
-            $variables["exclusions_ids"] = new GenericVariable("exclusions_ids", "list:int", null);
-            $params["exclusions_ids"] = $exclusions["ids"];
-            $variables["exclusions_metas"] = new GenericVariable("exclusions_metas", "list:int", null);
-            $params["exclusions_metas"] = $exclusions["metas"];
+            $variables["exclusions"] = new GenericVariable("exclusions", "list:string", null);
+            $params["exclusions"] = $exclusions;
 
-            $query .= "(id NOT IN :exclusions_ids OR meta NOT IN :exclusions_metas) AND ";
+            $query .= "(name NOT IN :exclusions) AND ";
         }
 
         $query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
     }
 
+    /**
+     * @param string $query
+     * @param array[] $args
+     * @param string $statementName
+     * @param GenericVariable[] $variables
+     * @param array $parameters
+     */
     private function asGenericStatement(string &$query, array &$args, string $statementName, array $variables, array $parameters): void
     {
         $isSQLite = $this->plugin->getParsedConfig()->isSQLite();
@@ -268,14 +265,14 @@ class PluginQueries extends Query
         $statement = GenericStatementImpl::forDialect(
             $isSQLite ? SqlDialect::SQLITE : SqlDialect::MYSQL,
             $statementName,
-            $query,
+            [$query],
             "",
             $variables,
             null,
             0
         );
 
-        $query = $statement->format($parameters, $isSQLite ? "" : "?", $args);
+        [$query] = $statement->format($parameters, $isSQLite ? "" : "?", $args);
     }
 
     public function requestTransactionLog(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
@@ -310,17 +307,17 @@ class PluginQueries extends Query
             function () use ($time, $worldName, $optimize, $onSuccess) {
                 if ($worldName !== null) {
                     /** @var int $affectedRows */
-                    $affectedRows = yield $this->executeChange(QueriesConst::PURGE_WORLD, [
+                    $affectedRows = yield from $this->connector->asyncChange(QueriesConst::PURGE_WORLD, [
                         "time" => $time,
                         "world_name" => $worldName
                     ]);
                 } else {
                     /** @var int $affectedRows */
-                    $affectedRows = yield $this->executeChange(QueriesConst::PURGE_TIME, ["time" => $time]);
+                    $affectedRows = yield from $this->connector->asyncChange(QueriesConst::PURGE_TIME, ["time" => $time]);
                 }
 
                 if ($optimize) {
-                    yield $this->executeGeneric($this->plugin->getParsedConfig()->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
+                    yield from $this->connector->asyncGeneric($this->plugin->getParsedConfig()->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
                 }
 
                 if ($onSuccess !== null) {
@@ -347,13 +344,9 @@ class PluginQueries extends Query
                 FROM 
                 (SELECT log_history.*,
                     CASE
-                        WHEN old_id = 0 THEN new_id
-                        WHEN new_id = 0 THEN old_id
-                    END AS id,
-                    CASE
-                        WHEN old_id = 0 THEN new_meta
-                        WHEN new_id = 0 THEN old_meta
-                    END AS meta
+                        WHEN old_name = \"\" THEN new_name
+                        WHEN new_name = \"\" THEN old_name
+                    END AS name,
                 FROM log_history INNER JOIN blocks_log ON log_history.log_id = history_id
                 ) AS tmp_logs
                 WHERE rollback = :rollback AND ";

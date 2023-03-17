@@ -24,12 +24,8 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
-use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\Door;
-use pocketmine\block\DoublePlant;
 use pocketmine\block\Liquid;
-use pocketmine\block\utils\Fallable;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Water;
 use pocketmine\block\WaterLily;
@@ -41,7 +37,6 @@ use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\event\block\SignChangeEvent;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\math\Facing;
-use pocketmine\scheduler\ClosureTask;
 use function array_merge;
 use function count;
 
@@ -86,7 +81,7 @@ final class BlockListener extends BedcoreListener
                         $newBlocks = [];
                         foreach ($sides as $key => $side) {
                             $updSide = $world->getBlock($side->getPosition());
-                            if ($updSide instanceof $side) {
+                            if ($updSide->isSameType($side)) {
                                 unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                             } else {
                                 $newBlocks[$key] = $updSide;
@@ -95,7 +90,7 @@ final class BlockListener extends BedcoreListener
 
                         return $newBlocks;
                     },
-                    2
+                    1
                 );
             }
         }
@@ -112,43 +107,23 @@ final class BlockListener extends BedcoreListener
         $world = $player->getWorld();
 
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockPlace()) {
-            $replacedBlock = $event->getBlockReplaced();
-            $block = $event->getBlock();
+            /**
+             * @var int $x
+             * @var int $y
+             * @var int $z
+             * @var Block $block
+             */
+            foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
+                $replacedBlock = $world->getBlockAt($x, $y, $z);
 
-            if ($block instanceof Fallable) {
-                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
-            } elseif ($block instanceof WaterLily && $replacedBlock instanceof Water) {
-                $upPos = $block->getSide(Facing::UP);
-                if ($upPos instanceof Air) {
-                    $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), $block, Action::PLACE(), $upPos->getPosition());
+                if ($block instanceof WaterLily && $replacedBlock instanceof Water) {
+                    $upPos = $block->getSide(Facing::UP);
+                    if ($upPos instanceof Air) {
+                        $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), $block, Action::PLACE(), $upPos->getPosition());
+                    }
+                } else {
+                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
                 }
-            } else {
-                //HACK: Remove when issue PMMP#1760 is fixed (never). Remember to use Block::getAffectedBlocks()
-                $this->plugin->getScheduler()->scheduleDelayedTask(
-                    new ClosureTask(
-                        function () use ($replacedBlock, $block, $player, $world): void {
-                            //Update the block instance to get the real placed block data.
-                            $updBlock = $world->getBlock($block->getPosition());
-
-                            /** @var Block|null $otherHalfBlock */
-                            $otherHalfBlock = null;
-                            if ($updBlock instanceof Bed) {
-                                $otherHalfBlock = $updBlock->getOtherHalf();
-                            } elseif ($updBlock instanceof Door || $updBlock instanceof DoublePlant) {
-                                $otherHalfBlock = $updBlock->getSide(Facing::UP);
-                            }
-
-                            if ($updBlock instanceof $block) { //HACK: Fixes issue #9 (always related to PMMP#1760)
-                                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $updBlock, Action::PLACE());
-
-                                if ($otherHalfBlock !== null) {
-                                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $otherHalfBlock, Action::PLACE());
-                                }
-                            }
-                        }
-                    ),
-                    1
-                );
             }
         }
     }

@@ -25,7 +25,6 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
@@ -39,6 +38,8 @@ use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
+use poggit\libasynql\result\SqlSelectResult;
+use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 use function array_key_exists;
@@ -50,9 +51,6 @@ use function round;
 
 final class QueryManager
 {
-    use DefaultQueriesTrait {
-        __construct as DefQueriesConstr;
-    }
 
     private const ROLLBACK_ROWS_LIMIT = 25000;
 
@@ -65,10 +63,8 @@ final class QueryManager
     private EntitiesQueries $entitiesQueries;
     private InventoriesQueries $inventoriesQueries;
 
-    public function __construct(private Main $plugin, DataConnector $connector)
+    public function __construct(private Main $plugin, private DataConnector $connector)
     {
-        $this->DefQueriesConstr($connector);
-
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
         $this->inventoriesQueries = new InventoriesQueries($plugin, $connector);
@@ -84,21 +80,21 @@ final class QueryManager
         Await::f2c(
             function () use ($pluginVersion): Generator {
                 if ($this->plugin->getParsedConfig()->isSQLite()) {
-                    yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
-                    yield $this->executeGeneric(QueriesConst::SET_SYNC_NORMAL);
+                    yield from $this->connector->asyncGeneric(QueriesConst::ENABLE_WAL_MODE);
+                    yield from $this->connector->asyncGeneric(QueriesConst::SET_SYNC_NORMAL);
                 }
 
-                yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
+                yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
                 foreach (QueriesConst::INIT_TABLES as $queryTable) {
-                    yield $this->executeGeneric($queryTable);
+                    yield from $this->connector->asyncGeneric($queryTable);
                 }
 
                 /** @var array $rows */
-                $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
+                $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
 
                 if (count($rows) === 0) {
-                    yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
+                    yield from $this->connector->asyncInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
                 }
             }
         );
@@ -159,16 +155,17 @@ final class QueryManager
                 $blockUpdatesPos = [];
                 $blocks = $chunks = $items = $entities = 0;
 
-                while (count($logIds = yield $this->getRollbackLogIds($cmdData, $bb, $time, $rollback, self::ROLLBACK_ROWS_LIMIT)) !== 0) {
-                    [$tmpBlocks, $tmpChunks, $tmpBlockUpdPos] = yield $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
+                /** @var int[] $logIds */
+                while (count($logIds = yield from $this->getRollbackLogIds($cmdData, $bb, $time, $rollback, self::ROLLBACK_ROWS_LIMIT)) !== 0) {
+                    [$tmpBlocks, $tmpChunks, $tmpBlockUpdPos] = yield from $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
                     $blocks += $tmpBlocks;
                     $chunks += $tmpChunks;
                     $blockUpdatesPos = array_merge($blockUpdatesPos, $tmpBlockUpdPos);
 
-                    $items += yield $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds);
-                    $entities += yield $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    $items += yield from $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    $entities += yield from $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds);
 
-                    yield $this->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+                    yield from $this->connector->asyncChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
                         "rollback" => $rollback,
                         "log_ids" => $logIds
                     ]);
@@ -197,20 +194,22 @@ final class QueryManager
     private function getRollbackLogIds(CommandData $cmdData, ?AxisAlignedBB $bb, float $currTime, bool $rollback, int $limit): Generator
     {
         $query = "";
-        $args = [];
+        $args = [[]];
         $this->pluginQueries->buildLogsSelectionQuery($query, $args, $cmdData, $bb, $currTime, $rollback, $limit);
 
-        $onSuccess = yield;
-        $wrapOnSuccess = static function (array $rows) use ($onSuccess): void {
+        $onSuccess = yield Await::RESOLVE;
+        /** @var SqlSelectResult[] $results */
+        $wrapOnSuccess = static function (array $results) use ($onSuccess): void {
+            $result = $results[count($results) - 1];
             /** @var int[] $logIds */
             $logIds = [];
-            foreach ($rows as $row) {
+            foreach ($result->getRows() as $row) {
                 $logIds[] = (int)$row["log_id"];
             }
             $onSuccess($logIds);
         };
 
-        $this->connector->executeSelectRaw($query, $args, $wrapOnSuccess, yield Await::REJECT);
+        $this->connector->executeImplRaw([$query], $args, [SqlThread::MODE_SELECT], $wrapOnSuccess, yield Await::REJECT);
         return yield Await::ONCE;
     }
 

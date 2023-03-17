@@ -44,7 +44,8 @@ final class StatusSubCommand extends SubCommand
             function () use ($sender): Generator {
                 $description = $this->getOwningPlugin()->getDescription();
                 $pluginVersion = $description->getVersion();
-                $dbVersions = (yield $this->getOwningPlugin()->getDatabase()->getStatus())[0];
+                /** @var array $dbVersions */
+                [$dbVersions] = (yield from $this->getOwningPlugin()->getDatabase()->getStatus());
                 $dbVersion = (string)$dbVersions["version"];
                 $initDbVersion = (string)$dbVersions["init_version"];
 

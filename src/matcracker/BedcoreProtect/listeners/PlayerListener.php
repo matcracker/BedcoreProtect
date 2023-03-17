@@ -155,7 +155,7 @@ final class PlayerListener extends BedcoreListener
                             return;
                         }
                     } elseif ($clickedBlock instanceof Cake) {
-                        if ($player->isSurvival() && $clickedBlock->getMeta() > 5) {
+                        if ($player->isSurvival() && $clickedBlock->getBites() >= Cake::MAX_BITES) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::AIR(), Action::BREAK(), $clickedBlockPos);
                             return;
                         }

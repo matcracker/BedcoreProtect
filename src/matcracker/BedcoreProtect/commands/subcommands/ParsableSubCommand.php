@@ -327,14 +327,14 @@ abstract class ParsableSubCommand extends SubCommand
     /**
      * @param CommandSender $sender
      * @param string $str
-     * @return array<string, array<int, int>>|null
+     * @return string[]|null
      */
     private function parseItemArgument(CommandSender $sender, string $str): ?array
     {
-        /** @var int[] $itemIds */
-        $itemIds = [];
-        /** @var int[] $itemMetas */
-        $itemMetas = [];
+        //TODO: transform the function to Generator
+
+        /** @var string[] $itemNames */
+        $itemNames = [];
         /** @var StringToItemParser $itemParser */
         $itemParser = StringToItemParser::getInstance();
 
@@ -345,13 +345,9 @@ abstract class ParsableSubCommand extends SubCommand
                 return null;
             }
 
-            $itemIds[] = $item->getId();
-            $itemMetas[] = $item->getMeta();
+            $itemNames[] = $item->getName();
         }
 
-        return [
-            "ids" => $itemIds,
-            "metas" => $itemMetas
-        ];
+        return $itemNames;
     }
 }

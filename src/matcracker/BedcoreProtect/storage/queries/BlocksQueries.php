@@ -26,12 +26,10 @@ use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\tasks\async\AsyncBlockSetter;
-use matcracker\BedcoreProtect\utils\ArrayUtils;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\Leaves;
 use pocketmine\block\tile\ItemFrame as TileItemFrame;
@@ -53,7 +51,6 @@ use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function array_map;
 use function array_values;
 use function count;
 use function get_class;
@@ -68,8 +65,8 @@ use function microtime;
 class BlocksQueries extends Query
 {
     public function __construct(
-        Main                         $plugin,
-        DataConnector                $connector,
+        protected Main               $plugin,
+        protected DataConnector      $connector,
         protected EntitiesQueries    $entitiesQueries,
         protected InventoriesQueries $inventoriesQueries)
     {
@@ -89,22 +86,20 @@ class BlocksQueries extends Query
     {
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
-        $pos = $position ?? $newBlock->getPosition();
-        $worldName = $pos->getWorld()->getFolderName();
+        $position ??= $newBlock->getPosition();
+        $worldName = $position->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
-            function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $pos, $worldName, $action, $time): Generator {
-                yield $this->entitiesQueries->addEntity($entity);
-                yield $this->addRawBlockLog(
+            function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $position, $worldName, $action, $time): Generator {
+                yield from $this->entitiesQueries->addEntity($entity);
+                yield from $this->addRawBlockLog(
                     EntityUtils::getUniqueId($entity),
-                    $oldBlock->getId(),
-                    $oldBlock->getMeta(),
+                    $oldBlock,
                     $oldNbt,
-                    $newBlock->getId(),
-                    $newBlock->getMeta(),
+                    $newBlock,
                     $newNbt,
-                    $pos,
+                    $position,
                     $worldName,
                     $action,
                     $time
@@ -113,18 +108,18 @@ class BlocksQueries extends Query
         );
     }
 
-    final protected function addRawBlockLog(string $uuid, int $oldId, int $oldMeta, ?string $oldNbt, int $newId, int $newMeta, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         /** @var int $lastId */
-        $lastId = yield $this->addRawLog($uuid, $position->floor(), $worldName, $action, $time);
+        [$lastId] = yield from $this->addRawLog($uuid, $position->floor(), $worldName, $action, $time);
 
-        return yield $this->executeInsert(QueriesConst::ADD_BLOCK_LOG, [
+        return yield from $this->connector->asyncInsert(QueriesConst::ADD_BLOCK_LOG, [
             "log_id" => $lastId,
-            "old_id" => $oldId,
-            "old_meta" => $oldMeta,
+            "old_name" => $oldBlock->getName(),
+            "old_state" => BlockUtils::serializeBlock($oldBlock),
             "old_nbt" => $oldNbt,
-            "new_id" => $newId,
-            "new_meta" => $newMeta,
+            "new_name" => $newBlock->getName(),
+            "new_state" => BlockUtils::serializeBlock($newBlock),
             "new_nbt" => $newNbt
         ]);
     }
@@ -141,51 +136,54 @@ class BlocksQueries extends Query
         if (count($oldBlocks) === 0) {
             return;
         }
-        $oldBlocksNbt = array_map(fn(Block $block): ?string => BlockUtils::serializeTileTag($block), $oldBlocks);
+
+        $oldBlocks = array_values($oldBlocks);
+
+        /** @var string[] $oldBlocksNbt */
+        $oldBlocksNbt = [];
+        /** @var Position[] $oldPositions */
+        $oldPos = [];
+
+        foreach ($oldBlocks as $oldBlock) {
+            $oldBlocksNbt[] = BlockUtils::serializeTileTag($oldBlock);
+            $oldPos[] = $oldBlock->getPosition();
+        }
 
         $time = microtime(true);
 
         $this->plugin->getScheduler()->scheduleDelayedTask(new ClosureTask(
-            function () use ($entity, $oldBlocks, $oldBlocksNbt, $action, $onTaskRun, $time): void {
+            function () use ($entity, $oldBlocks, $oldBlocksNbt, $oldPos, $action, $onTaskRun, $time): void {
                 /** @var Block[] $newBlocks */
                 $newBlocks = $onTaskRun($oldBlocks, $oldBlocksNbt);
 
-                if (!ArrayUtils::checkSameDimension($oldBlocks, $oldBlocksNbt, $newBlocks)) {
-                    throw new PluginException("The number of old blocks must be the same as new blocks, or vice-versa.");
-                }
-
-                ArrayUtils::resetKeys($oldBlocks, $oldBlocksNbt, $newBlocks);
-
+                /** @var string[]|null[] $newBlocksNbt */
                 $newBlocksNbt = [];
-                for ($i = 0; $i < count($newBlocks); $i++) {
-                    $newBlocksNbt[$i] = BlockUtils::serializeTileTag($newBlocks[$i]);
+
+                foreach ($newBlocks as $newBlock) {
+                    $newBlocksNbt[] = BlockUtils::serializeTileTag($newBlock);
                 }
 
                 self::getMutex()->putClosure(
-                    function () use ($entity, $oldBlocks, $oldBlocksNbt, $newBlocks, $newBlocksNbt, $action, $time): Generator {
-                        yield $this->entitiesQueries->addEntity($entity);
+                    function () use ($entity, $oldBlocks, $oldBlocksNbt, $oldPos, $newBlocks, $newBlocksNbt, $action, $time): Generator {
+                        yield from $this->entitiesQueries->addEntity($entity);
 
-                        yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
+                        yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                         for ($i = 0; $i < count($oldBlocks); $i++) {
-                            $position = $oldBlocks[$i]->getPosition();
-
-                            yield $this->addRawBlockLog(
+                            yield from $this->addRawBlockLog(
                                 EntityUtils::getUniqueId($entity),
-                                $oldBlocks[$i]->getId(),
-                                $oldBlocks[$i]->getMeta(),
+                                $oldBlocks[$i],
                                 $oldBlocksNbt[$i],
-                                $newBlocks[$i]->getId(),
-                                $newBlocks[$i]->getMeta(),
+                                $newBlocks[$i],
                                 $newBlocksNbt[$i],
-                                $position->asVector3(),
-                                $position->getWorld()->getFolderName(),
+                                $oldPos[$i]->asVector3(),
+                                $oldPos[$i]->getWorld()->getFolderName(),
                                 $action,
                                 $time
                             );
                         }
 
-                        yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+                        yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
                     }
                 );
             }
@@ -203,42 +201,42 @@ class BlocksQueries extends Query
             return;
         }
 
-        $oldBlocks = array_values($oldBlocks);
         /** @var string[] $oldBlocksNbt */
         $oldBlocksNbt = [];
-        for ($i = 0; $i < $cntOldBlocks; $i++) {
-            $oldBlocksNbt[$i] = BlockUtils::serializeTileTag($oldBlocks[$i]);
+        /** @var Position[] $oldPos */
+        $oldPos = [];
+
+        $oldBlocks = array_values($oldBlocks);
+
+        foreach ($oldBlocks as $oldBlock) {
+            $oldBlocksNbt[] = BlockUtils::serializeTileTag($oldBlock);
+            $oldPos[] = $oldBlock->getPosition();
         }
+
         $uuidEntity = EntityUtils::getUniqueId($entity);
         $time = microtime(true);
 
         self::getMutex()->putClosure(
-            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $cntOldBlocks, $action, $time): Generator {
-                yield $this->entitiesQueries->addEntity($entity);
+            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $oldPos, $cntOldBlocks, $action, $time): Generator {
+                yield from $this->entitiesQueries->addEntity($entity);
 
-                yield $this->executeGeneric(QueriesConst::BEGIN_TRANSACTION);
-
-                $airId = VanillaBlocks::AIR()->getId();
+                yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                 for ($i = 0; $i < $cntOldBlocks; $i++) {
-                    $position = $oldBlocks[$i]->getPosition();
-
-                    yield $this->addRawBlockLog(
+                    yield from $this->addRawBlockLog(
                         $uuidEntity,
-                        $oldBlocks[$i]->getId(),
-                        $oldBlocks[$i]->getMeta(),
+                        $oldBlocks[$i],
                         $oldBlocksNbt[$i],
-                        $airId,
-                        0,
+                        VanillaBlocks::AIR(),
                         null,
-                        $position->asVector3(),
-                        $position->getWorld()->getFolderName(),
+                        $oldPos[$i]->asVector3(),
+                        $oldPos[$i]->getWorld()->getFolderName(),
                         $action,
                         $time
                     );
                 }
 
-                yield $this->executeGeneric(QueriesConst::END_TRANSACTION);
+                yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
             }
         );
     }
@@ -260,18 +258,16 @@ class BlocksQueries extends Query
         } else {
             $name = "{$who->getName()}-uuid";
         }
-        $pos = $position ?? $newBlock->getPosition();
+        $position ??= $newBlock->getPosition();
 
         Await::g2c($this->addRawBlockLog(
             $name,
-            $oldBlock->getId(),
-            $oldBlock->getMeta(),
+            $oldBlock,
             BlockUtils::serializeTileTag($oldBlock),
-            $newBlock->getId(),
-            $newBlock->getMeta(),
+            $newBlock,
             BlockUtils::serializeTileTag($newBlock),
-            $pos->asVector3(),
-            $pos->getWorld()->getFolderName(),
+            $position->asVector3(),
+            $position->getWorld()->getFolderName(),
             $action,
             microtime(true)
         ));
@@ -308,11 +304,9 @@ class BlocksQueries extends Query
         Await::g2c(
             $this->addRawBlockLog(
                 EntityUtils::getUniqueId($player),
-                $itemFrame->getId(),
-                $itemFrame->getMeta(),
+                $itemFrame,
                 $oldNbt,
-                $itemFrame->getId(),
-                $itemFrame->getMeta(),
+                $itemFrame,
                 $newNbt,
                 $position,
                 $worldName,
@@ -330,10 +324,12 @@ class BlocksQueries extends Query
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
         if ($rollback) {
-            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ["log_ids" => $logIds]);
+            /** @var array $rows */
+            $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_OLD_BLOCKS, ["log_ids" => $logIds]);
             $prefix = "old";
         } else {
-            $blockRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ["log_ids" => $logIds]);
+            /** @var array $rows */
+            $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_NEW_BLOCKS, ["log_ids" => $logIds]);
             $prefix = "new";
         }
 
@@ -342,7 +338,7 @@ class BlocksQueries extends Query
         /** @var string[] $chunks */
         $chunks = [];
 
-        foreach ($blockRows as $row) {
+        foreach ($rows as $row) {
             $x = (int)$row["x"];
             $y = (int)$row["y"];
             $z = (int)$row["z"];
@@ -362,10 +358,7 @@ class BlocksQueries extends Query
             }
 
             $blockHash = World::blockHash($x, $y, $z);
-            $blockData[$chunkHash][$blockHash][] = BlockFactory::getInstance()->get(
-                (int)$row["{$prefix}_id"],
-                (int)$row["{$prefix}_meta"]
-            )->getFullId();
+            $blockData[$chunkHash][$blockHash][] = BlockUtils::deserializeBlock($row["{$prefix}_state"])->getStateId();
 
             $world->getTileAt($x, $y, $z)?->close();
 

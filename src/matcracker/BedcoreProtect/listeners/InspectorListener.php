@@ -23,12 +23,15 @@ namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
+use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\tile\Chest;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\math\Vector3;
+use pocketmine\world\Position;
 
 final class InspectorListener extends BedcoreListener
 {
@@ -66,10 +69,20 @@ final class InspectorListener extends BedcoreListener
     public function onInspectBlockPlace(BlockPlaceEvent $event): void
     {
         $player = $event->getPlayer();
+        $world = $player->getWorld();
 
         //It checks the block where the player places.
-        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
-            $this->pluginQueries->requestBlockLog($player, $event->getBlockReplaced()->getPosition());
+        if (Inspector::isInspector($player) && $this->config->isEnabledWorld($world)) {
+            /**
+             * @var int $x
+             * @var int $y
+             * @var int $z
+             * @var Block $block
+             */
+            foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]){
+                $position = Position::fromObject(new Vector3($x, $y, $z), $world);
+                $this->pluginQueries->requestBlockLog($player, $position);
+            }
             $event->cancel();
         }
     }

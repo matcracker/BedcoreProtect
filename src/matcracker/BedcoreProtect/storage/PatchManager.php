@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use pocketmine\plugin\PluginException;
 use poggit\libasynql\DataConnector;
@@ -39,13 +38,9 @@ use function yaml_parse;
 
 final class PatchManager
 {
-    use DefaultQueriesTrait {
-        __construct as DefQueriesConstr;
-    }
 
-    public function __construct(private Main $plugin, DataConnector $connector)
+    public function __construct(private Main $plugin, private DataConnector $connector)
     {
-        $this->DefQueriesConstr($connector);
     }
 
     /**
@@ -56,17 +51,17 @@ final class PatchManager
         $patchVersion = null;
         Await::f2c(
             function () use (&$patchVersion): Generator {
-                /** @var array $rows */
-                $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
+                /** @var array $row */
+                [$row] = yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
 
-                $versions = $this->getVersionsToPatch($rows[0]["version"]);
+                $versions = $this->getVersionsToPatch($row["version"]);
                 if (count($versions) > 0) { //This means the database is not updated.
                     $parsedConfig = $this->plugin->getParsedConfig();
                     $dbType = $parsedConfig->getDatabaseType();
 
                     if ($parsedConfig->isSQLite()) { //Backup
                         $dbFilePath = $this->plugin->getDataFolder() . $parsedConfig->getDatabaseFileName();
-                        if (!copy($dbFilePath, $dbFilePath . "." . $rows[0]["version"] . ".bak")) {
+                        if (!copy($dbFilePath, $dbFilePath . "." . $row["version"] . ".bak")) {
                             $this->plugin->getLogger()->warning($this->plugin->getLanguage()->translateString("database.version.backup-failed"));
                         }
                     }
@@ -83,13 +78,13 @@ final class PatchManager
 
                         $this->plugin->getLogger()->info($this->plugin->getLanguage()->translateString("database.version.upgrading", [$version]));
 
-                        yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => false]);
+                        yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => false]);
                         for ($i = 1; $i <= $patchNumbers; $i++) {
-                            yield $this->executeGeneric(QueriesConst::VERSION_PATCH($version, $i));
+                            yield from $this->connector->asyncGeneric(QueriesConst::VERSION_PATCH($version, $i));
                         }
-                        yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
+                        yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
-                        yield $this->executeChange(QueriesConst::ADD_DATABASE_VERSION, ["version" => $version]);
+                        yield from $this->connector->asyncChange(QueriesConst::ADD_DATABASE_VERSION, ["version" => $version]);
                         $patchVersion = $version;
                     }
                 }

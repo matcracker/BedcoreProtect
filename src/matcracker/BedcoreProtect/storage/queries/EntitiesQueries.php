@@ -57,9 +57,9 @@ class EntitiesQueries extends Query
                 "leaves-uuid" => "#Decay"
             ];
 
-            yield $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
+            yield from $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
             foreach ($map as $uuid => $name) {
-                yield $this->addRawEntity($uuid, $name);
+                yield from $this->addRawEntity($uuid, $name);
             }
         });
     }
@@ -71,7 +71,7 @@ class EntitiesQueries extends Query
      */
     final protected function addRawEntity(string $uuid, string $name): Generator
     {
-        return yield $this->executeInsert(QueriesConst::ADD_ENTITY, [
+        return yield from $this->connector->asyncInsert(QueriesConst::ADD_ENTITY, [
             "uuid" => $uuid,
             "name" => $name
         ]);
@@ -84,12 +84,12 @@ class EntitiesQueries extends Query
         $time = microtime(true);
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
-                yield $this->addEntity($damager);
-                yield $this->addEntity($entity);
+                yield from $this->addEntity($damager);
+                yield from $this->addEntity($entity);
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->getPosition(), $worldName, $action, $time);
-                yield $this->addEntityLog($lastId, $entity, $entityNbt);
+                [$lastId] = yield from $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->getPosition(), $worldName, $action, $time);
+                yield from $this->addEntityLog($lastId, $entity, $entityNbt);
             }
         );
     }
@@ -101,7 +101,7 @@ class EntitiesQueries extends Query
      */
     final public function addEntity(Entity $entity): Generator
     {
-        return yield $this->addRawEntity(
+        return yield from $this->addRawEntity(
             EntityUtils::getUniqueId($entity),
             EntityUtils::getName($entity)
         );
@@ -109,7 +109,7 @@ class EntitiesQueries extends Query
 
     final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
-        return yield $this->executeInsert(QueriesConst::ADD_ENTITY_LOG, [
+        return yield from $this->connector->asyncInsert(QueriesConst::ADD_ENTITY_LOG, [
             "log_id" => $logId,
             "uuid" => EntityUtils::getUniqueId($entity),
             "id" => $entity->getId(),
@@ -125,31 +125,29 @@ class EntitiesQueries extends Query
 
         Await::f2c(
             function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
-                yield $this->addEntity($entity);
+                yield from $this->addEntity($entity);
 
                 $blockName = $block->getName();
                 $uuid = mb_strtolower("$blockName-uuid");
-                yield $this->addRawEntity($uuid, "#$blockName");
+                yield from $this->addRawEntity($uuid, "#$blockName");
 
                 /** @var int $lastId */
-                $lastId = yield $this->addRawLog($uuid, $block->getPosition(), $worldName, $action, $time);
+                [$lastId] = yield from $this->addRawLog($uuid, $block->getPosition(), $worldName, $action, $time);
 
-                yield $this->addEntityLog($lastId, $entity, $serializedNbt);
+                yield from $this->addEntityLog($lastId, $entity, $serializedNbt);
             }
         );
     }
 
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
-        $entityRows = [];
-
         if ($this->plugin->getParsedConfig()->getRollbackEntities()) {
-            $entityRows = yield $this->executeSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds]);
+            $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds]);
 
             /** @var EntityFactory $factory */
             $factory = EntityFactory::getInstance();
 
-            foreach ($entityRows as $row) {
+            foreach ($rows as $row) {
                 $action = Action::fromType((int)$row["action"]);
                 if (
                     ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
@@ -157,24 +155,26 @@ class EntitiesQueries extends Query
                 ) {
                     $entity = $factory->createFromData($world, Utils::deserializeNBT($row["entityfrom_nbt"]));
                     if ($entity !== null) {
-                        yield $this->updateEntityId((int)$row["log_id"], $entity);
+                        yield from $this->updateEntityId((int)$row["log_id"], $entity);
                         $entity->spawnToAll();
                     }
                 } else {
                     $world->getEntity((int)$row["entityfrom_id"])?->flagForDespawn();
                 }
             }
+        } else {
+            $rows = [];
         }
 
         //On success
-        (yield)(count($entityRows));
+        (yield)(count($rows));
         yield Await::REJECT;
         return yield Await::ONCE;
     }
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator
     {
-        return yield $this->executeInsert(QueriesConst::UPDATE_ENTITY_ID, [
+        return yield from $this->connector->asyncInsert(QueriesConst::UPDATE_ENTITY_ID, [
             "log_id" => $logId,
             "entity_id" => $entity->getId()
         ]);
