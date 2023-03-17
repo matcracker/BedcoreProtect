@@ -26,7 +26,6 @@ use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
-use function array_key_exists;
 use function count;
 use function intdiv;
 
@@ -134,9 +133,10 @@ final class Inspector
 
             if (isset($log["{$prefix}_name"])) {
                 $name = $log["{$prefix}_name"];
-                if (array_key_exists("{$prefix}_nbt", $log)) { //It is an item
-                    $amount = $log["{$prefix}_amount"];
-                    $to = "$name (x{$amount})";
+
+                if (isset($log["{$prefix}_amount"])) { //It is an item
+                    $amount = (int)$log["{$prefix}_amount"];
+                    $to = "$name (x$amount)";
                 } else {
                     $to = $name;
                 }
