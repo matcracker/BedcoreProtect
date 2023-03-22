@@ -25,10 +25,10 @@ use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
+use pocketmine\block\BlockTypeIds;
 use pocketmine\block\Liquid;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Water;
-use pocketmine\block\WaterLily;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockBurnEvent;
 use pocketmine\event\block\BlockFormEvent;
@@ -36,7 +36,6 @@ use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\event\block\SignChangeEvent;
 use pocketmine\inventory\InventoryHolder;
-use pocketmine\math\Facing;
 use function array_merge;
 use function count;
 
@@ -63,35 +62,27 @@ final class BlockListener extends BedcoreListener
                 }
             }
 
-            $this->blocksQueries->addBlockLogByEntity($player, $block, VanillaBlocks::AIR(), Action::BREAK(), $blockPos);
+            $this->blocksQueries->addExplosionLogByEntity($player, $block->getAffectedBlocks(), Action::BREAK());
 
             if ($this->config->getNaturalBreak()) {
                 $sides = [];
                 foreach ($block->getAllSides() as $side) {
-                    if (!$side instanceof Air) {
-                        $sides = array_merge($sides, $side->getAffectedBlocks());
+                    if ($side->getTypeId() === BlockTypeIds::AIR) {
+                        continue;
                     }
-                }
-
-                $this->blocksQueries->addScheduledBlocksLogByEntity(
-                    $player,
-                    $sides,
-                    Action::BREAK(),
-                    static function (array &$oldBlocks, array &$oldBlocksNbt) use ($world, $sides): array {
-                        $newBlocks = [];
-                        foreach ($sides as $key => $side) {
-                            $updSide = $world->getBlock($side->getPosition());
-                            if ($updSide->isSameType($side)) {
-                                unset($oldBlocks[$key], $oldBlocksNbt[$key]);
-                            } else {
-                                $newBlocks[$key] = $updSide;
+                    if (count($block->getAffectedBlocks()) > 1) {
+                        foreach ($block->getAffectedBlocks() as $affectedBlock) {
+                            if ($affectedBlock->getPosition()->equals($side->getPosition())) {
+                                continue 2;
                             }
                         }
+                    }
 
-                        return $newBlocks;
-                    },
-                    1
-                );
+                    $sides = array_merge($sides, $side->getAffectedBlocks());
+                }
+
+                //This is necessary because it is not possible to predict which blocks will be broken
+                $this->blocksQueries->addScheduledBlocksLogByEntity($player, $sides, Action::BREAK(), 2);
             }
         }
     }
@@ -115,15 +106,7 @@ final class BlockListener extends BedcoreListener
              */
             foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
                 $replacedBlock = $world->getBlockAt($x, $y, $z);
-
-                if ($block instanceof WaterLily && $replacedBlock instanceof Water) {
-                    $upPos = $block->getSide(Facing::UP);
-                    if ($upPos instanceof Air) {
-                        $this->blocksQueries->addBlockLogByEntity($player, VanillaBlocks::AIR(), $block, Action::PLACE(), $upPos->getPosition());
-                    }
-                } else {
-                    $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
-                }
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
             }
         }
     }
