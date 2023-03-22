@@ -29,6 +29,7 @@ use pocketmine\block\inventory\BlockInventory;
 use pocketmine\command\CommandSender;
 use pocketmine\inventory\Inventory;
 use pocketmine\inventory\InventoryHolder;
+use pocketmine\inventory\TemporaryInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
@@ -51,7 +52,7 @@ class InventoriesQueries extends Query
     {
         $inventory = $slotAction->getInventory();
 
-        if (!$inventory instanceof BlockInventory) {
+        if (!$inventory instanceof BlockInventory || $inventory instanceof TemporaryInventory) {
             return;
         }
 
