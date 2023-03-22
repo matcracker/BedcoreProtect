@@ -79,7 +79,7 @@ final class InspectorListener extends BedcoreListener
              * @var int $z
              * @var Block $block
              */
-            foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]){
+            foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
                 $position = Position::fromObject(new Vector3($x, $y, $z), $world);
                 $this->pluginQueries->requestBlockLog($player, $position);
             }
