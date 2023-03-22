@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
 use pocketmine\block\BlockTypeIds;
@@ -35,7 +34,6 @@ use pocketmine\event\block\BlockFormEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\event\block\SignChangeEvent;
-use pocketmine\inventory\InventoryHolder;
 use function array_merge;
 use function count;
 
@@ -53,14 +51,6 @@ final class BlockListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
-            $blockPos = $block->getPosition();
-            $blockTile = BlockUtils::asTile($blockPos);
-            if ($blockTile instanceof InventoryHolder) {
-                $inventory = $blockTile->getInventory();
-                if (count($inventory->getContents()) > 0) {
-                    $this->inventoriesQueries->addInventoryLogByPlayer($player, $inventory, $blockPos);
-                }
-            }
 
             $this->blocksQueries->addExplosionLogByEntity($player, $block->getAffectedBlocks(), Action::BREAK());
 

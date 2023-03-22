@@ -38,7 +38,6 @@ use pocketmine\block\tile\TileFactory;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
-use pocketmine\inventory\InventoryHolder;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -376,11 +375,6 @@ class BlocksQueries extends Query
 
                 if ($tile !== null) {
                     $world->addTile($tile);
-
-                    //Always clear the inventory, the job will be done by InventoriesQueries class
-                    if ($tile instanceof InventoryHolder) {
-                        $tile->getInventory()->clearAll();
-                    }
                 } else {
                     $this->plugin->getLogger()->debug("Could not create tile at $x $y $z.");
                 }
