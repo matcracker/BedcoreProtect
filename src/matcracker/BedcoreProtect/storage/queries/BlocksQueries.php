@@ -383,7 +383,7 @@ class BlocksQueries extends Query
             $world->getFolderName(),
             $chunks,
             $blockData,
-            yield
+            yield Await::RESOLVE
         ));
         yield Await::REJECT;
 

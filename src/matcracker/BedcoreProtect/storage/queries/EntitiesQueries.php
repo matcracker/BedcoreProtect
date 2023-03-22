@@ -167,8 +167,11 @@ class EntitiesQueries extends Query
         }
 
         //On success
-        (yield)(count($rows));
+        $onSuccess = yield Await::RESOLVE;
+        $onSuccess(count($rows));
+
         yield Await::REJECT;
+
         return yield Await::ONCE;
     }
 

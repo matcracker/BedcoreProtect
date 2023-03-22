@@ -196,7 +196,8 @@ class InventoriesQueries extends Query
         }
 
         //On success
-        (yield)($cntItems);
+        $onSuccess = yield Await::RESOLVE;
+        $onSuccess($cntItems);
         yield Await::REJECT;
 
         return yield Await::ONCE;
