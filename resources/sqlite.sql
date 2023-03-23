@@ -195,7 +195,7 @@ ORDER BY time DESC;
 -- #            {new_blocks
 -- #                :log_ids list:int
 SELECT history_id,
-       bl.new_state,
+       bl.new_name,
        bl.new_state,
        bl.new_nbt,
        x,
