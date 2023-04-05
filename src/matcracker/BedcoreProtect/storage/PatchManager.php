@@ -26,7 +26,6 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use pocketmine\plugin\PluginException;
 use poggit\libasynql\DataConnector;
-use SOFe\AwaitGenerator\Await;
 use function array_filter;
 use function copy;
 use function count;
@@ -46,52 +45,50 @@ final class PatchManager
     /**
      * Returns the last applied patch version or null if the patch is not applied.
      */
-    public function patch(): ?string
+    public function patch(): Generator
     {
+        /** @var string|null $patchVersion */
         $patchVersion = null;
-        Await::f2c(
-            function () use (&$patchVersion): Generator {
-                /** @var array $row */
-                [$row] = yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
 
-                $versions = $this->getVersionsToPatch($row["version"]);
-                if (count($versions) > 0) { //This means the database is not updated.
-                    $parsedConfig = $this->plugin->getParsedConfig();
-                    $dbType = $parsedConfig->getDatabaseType();
+        /** @var array $row */
+        [$row] = yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
 
-                    if ($parsedConfig->isSQLite()) { //Backup
-                        $dbFilePath = $this->plugin->getDataFolder() . $parsedConfig->getDatabaseFileName();
-                        if (!copy($dbFilePath, $dbFilePath . "." . $row["version"] . ".bak")) {
-                            $this->plugin->getLogger()->warning($this->plugin->getLanguage()->translateString("database.version.backup-failed"));
-                        }
-                    }
+        $versions = $this->getVersionsToPatch($row["version"]);
+        if (count($versions) > 0) { //This means the database is not updated.
+            $parsedConfig = $this->plugin->getParsedConfig();
+            $dbType = $parsedConfig->getDatabaseType();
 
-                    /**
-                     * @var string $version
-                     */
-                    foreach ($versions as $version => $dbTypes) {
-                        $patchNumbers = $dbTypes[$dbType] ?? 0;
-                        if ($patchNumbers <= 0) {
-                            $this->plugin->getLogger()->debug("Skipped patch update v$version of $dbType.");
-                            continue;
-                        }
-
-                        $this->plugin->getLogger()->info($this->plugin->getLanguage()->translateString("database.version.upgrading", [$version]));
-
-                        yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => false]);
-                        for ($i = 1; $i <= $patchNumbers; $i++) {
-                            yield from $this->connector->asyncGeneric(QueriesConst::VERSION_PATCH($version, $i));
-                        }
-                        yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
-
-                        yield from $this->connector->asyncChange(QueriesConst::ADD_DATABASE_VERSION, ["version" => $version]);
-                        $patchVersion = $version;
-                    }
+            if ($parsedConfig->isSQLite()) { //Backup
+                $dbFilePath = $this->plugin->getDataFolder() . $parsedConfig->getDatabaseFileName();
+                if (!copy($dbFilePath, $dbFilePath . "." . $row["version"] . ".bak")) {
+                    $this->plugin->getLogger()->warning($this->plugin->getLanguage()->translateString("database.version.backup-failed"));
                 }
             }
-        );
-        //Pause the main thread until all the patches are applied.
-        $this->connector->waitAll();
+
+            /**
+             * @var string $version
+             */
+            foreach ($versions as $version => $dbTypes) {
+                $maxPatchId = $dbTypes[$dbType] ?? 0;
+                if ($maxPatchId <= 0) {
+                    $this->plugin->getLogger()->debug("Skipped patch update v$version of $dbType.");
+                    continue;
+                }
+
+                $this->plugin->getLogger()->info($this->plugin->getLanguage()->translateString("database.version.upgrading", [$version]));
+
+                yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => false]);
+
+                for ($patchId = 1; $patchId <= $maxPatchId; $patchId++) {
+                    yield from $this->connector->asyncGeneric(QueriesConst::VERSION_PATCH($version, $patchId));
+                }
+                yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
+
+                yield from $this->connector->asyncChange(QueriesConst::ADD_DATABASE_VERSION, ["version" => $version]);
+                $patchVersion = $version;
+            }
+        }
+
         return $patchVersion;
     }
 

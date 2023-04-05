@@ -41,12 +41,10 @@ use poggit\libasynql\DataConnector;
 use poggit\libasynql\result\SqlSelectResult;
 use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
-use UnexpectedValueException;
 use function array_key_exists;
 use function array_merge;
 use function count;
 use function microtime;
-use function preg_match;
 use function round;
 
 final class QueryManager
@@ -69,43 +67,6 @@ final class QueryManager
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
         $this->inventoriesQueries = new InventoriesQueries($plugin, $connector);
         $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
-    }
-
-    public function init(string $pluginVersion): void
-    {
-        if (!preg_match("/^(\d+\.)?(\d+\.)?(\*|\d+)$/", $pluginVersion)) {
-            throw new UnexpectedValueException("The field $pluginVersion must be a version.");
-        }
-
-        Await::f2c(
-            function () use ($pluginVersion): Generator {
-                if ($this->plugin->getParsedConfig()->isSQLite()) {
-                    yield from $this->connector->asyncGeneric(QueriesConst::ENABLE_WAL_MODE);
-                    yield from $this->connector->asyncGeneric(QueriesConst::SET_SYNC_NORMAL);
-                }
-
-                yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
-
-                foreach (QueriesConst::INIT_TABLES as $queryTable) {
-                    yield from $this->connector->asyncGeneric($queryTable);
-                }
-
-                /** @var array $rows */
-                $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
-
-                if (count($rows) === 0) {
-                    yield from $this->connector->asyncInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
-                }
-            }
-        );
-
-        $this->connector->waitAll();
-    }
-
-    public function setupDefaultData(): void
-    {
-        $this->entitiesQueries->addDefaultEntities();
-        $this->connector->waitAll();
     }
 
     public function rollback(CommandSender $sender, CommandData $cmdData): void

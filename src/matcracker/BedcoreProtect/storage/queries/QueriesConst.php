@@ -21,22 +21,9 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\storage\queries;
 
-final class QueriesConst
+abstract class QueriesConst
 {
-    public const INIT_ENTITY = "bcp.table.entities";
-    public const INIT_LOG_HISTORY = "bcp.table.log_history";
-    public const INIT_BLOCKS_LOG = "bcp.table.blocks_log";
-    public const INIT_ENTITIES_LOG = "bcp.table.entities_log";
-    public const INIT_INVENTORIES_LOG = "bcp.table.inventories_log";
-    public const INIT_DATABASE_STATUS = "bcp.table.db_status";
-    //The tables queries must be in this order due to relations between them.
-    public const INIT_TABLES = [
-        self::INIT_ENTITY, self::INIT_LOG_HISTORY,
-        self::INIT_BLOCKS_LOG, self::INIT_ENTITIES_LOG,
-        self::INIT_INVENTORIES_LOG, self::INIT_DATABASE_STATUS
-    ];
-    public const ENABLE_WAL_MODE = "bcp.generic.enable_wal_mode";
-    public const SET_SYNC_NORMAL = "bcp.generic.set_sync_normal";
+    public const INIT_TABLES = "bcp.table.init";
     public const SET_FOREIGN_KEYS = "bcp.generic.set_foreign_keys";
     public const BEGIN_TRANSACTION = "bcp.generic.begin_transaction";
     public const END_TRANSACTION = "bcp.generic.end_transaction";
@@ -62,11 +49,6 @@ final class QueriesConst
     public const GET_TRANSACTION_LOG = "bcp.get.log.transaction";
     public const PURGE_TIME = "bcp.purge.time";
     public const PURGE_WORLD = "bcp.purge.world";
-
-    private function __construct()
-    {
-        //NOOP
-    }
 
     public static function VERSION_PATCH(string $version, int $patchNumber): string
     {

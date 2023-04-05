@@ -44,24 +44,26 @@ use function microtime;
  */
 class EntitiesQueries extends Query
 {
-    public function addDefaultEntities(): void
+    public function addDefaultEntities(): Generator
     {
-        Await::f2c(function (): Generator {
-            static $map = [
-                "flow-uuid" => "#Flow",
-                "water-uuid" => "#Water",
-                "still water-uuid" => "#Water",
-                "lava-uuid" => "#Lava",
-                "still lava-uuid" => "#Lava",
-                "fire block-uuid" => "#Fire",
-                "leaves-uuid" => "#Decay"
-            ];
+        static $map = [
+            "flow-uuid" => "#Flow",
+            "water-uuid" => "#Water",
+            "still water-uuid" => "#Water",
+            "lava-uuid" => "#Lava",
+            "still lava-uuid" => "#Lava",
+            "fire block-uuid" => "#Fire",
+            "leaves-uuid" => "#Decay"
+        ];
 
-            yield from $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
-            foreach ($map as $uuid => $name) {
-                yield from $this->addRawEntity($uuid, $name);
-            }
-        });
+        yield from $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
+
+        $queries = [];
+        foreach ($map as $uuid => $name) {
+            $queries[] = yield from $this->addRawEntity($uuid, $name);
+        }
+
+        Await::all($queries);
     }
 
     /**

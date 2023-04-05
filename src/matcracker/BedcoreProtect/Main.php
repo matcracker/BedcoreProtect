@@ -34,10 +34,12 @@ use matcracker\BedcoreProtect\listeners\WorldListener;
 use matcracker\BedcoreProtect\storage\DatabaseManager;
 use pocketmine\lang\Language;
 use pocketmine\plugin\PluginBase;
+use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\utils\TextFormat;
+use SOFe\AwaitGenerator\Await;
+use function mb_strtolower;
 use function mkdir;
-use function version_compare;
 
 final class Main extends PluginBase
 {
@@ -51,7 +53,7 @@ final class Main extends PluginBase
     private ConfigParser $oldConfigParser;
     private BCPCommand $bcpCommand;
     /** @var BedcoreListener[] */
-    private array $events;
+    private array $listeners = [];
 
     public static function getInstance(): Main
     {
@@ -91,8 +93,8 @@ final class Main extends PluginBase
         $this->configParser = new ConfigParser($this->getConfig());
         $this->database->reloadConfiguration();
 
-        foreach ($this->events as $event) {
-            $event->config = $this->configParser;
+        foreach ($this->listeners as $listener) {
+            $listener->config = $this->configParser;
         }
         $this->language = new Language($this->configParser->getLanguage(), $this->getFile() . "resources/languages/");
 
@@ -107,10 +109,8 @@ final class Main extends PluginBase
 
         $confUpdater = new ConfigUpdater($this);
 
-        if ($confUpdater->checkUpdate()) {
-            if (!$confUpdater->update()) {
-                $this->getLogger()->critical("Could not save the new configuration file.");
-            }
+        if ($confUpdater->checkUpdate() && !$confUpdater->update()) {
+            $this->getLogger()->critical("Could not save the new configuration file.");
         }
 
         $this->configParser = new ConfigParser($this->getConfig());
@@ -126,56 +126,41 @@ final class Main extends PluginBase
     public function onEnable(): void
     {
         $this->database = new DatabaseManager($this);
+        $this->bcpCommand = new BCPCommand($this);
+        $this->getServer()->getCommandMap()->register(mb_strtolower($this->getName()), $this->bcpCommand);
 
-        $pluginManager = $this->getServer()->getPluginManager();
         //Database connection
         if (!$this->database->connect()) {
-            $pluginManager->disablePlugin($this);
-            return;
+            throw new PluginException($this->getLanguage()->translateString("database.connection.fail"));
         }
 
-        $queryManager = $this->database->getQueryManager();
-
-        $version = $this->getVersion();
-        $queryManager->init($version);
-        $dbVersion = $this->database->getVersion();
-
-        if (version_compare($version, $dbVersion) < 0) {
-            $this->getLogger()->warning($this->language->translateString("database.version.higher"));
-            $pluginManager->disablePlugin($this);
-            return;
-        }
-
-        if (($lastPatch = $this->database->getPatchManager()->patch()) !== null) {
-            $this->getLogger()->info($this->language->translateString("database.version.updated", [$dbVersion, $lastPatch]));
-        }
-
-        $queryManager->setupDefaultData();
-
-        if ($this->configParser->isSQLite()) {
-            static $hourTicks = 20 * 60 * 60 * 8;
-            $this->getScheduler()->scheduleDelayedRepeatingTask(new ClosureTask(
-                function (): void {
-                    $this->database->optimize();
+        Await::g2c(
+            $this->database->init(),
+            function () {
+                if ($this->configParser->isSQLite()) {
+                    static $hourTicks = 20 * 60 * 60 * 8;
+                    $this->getScheduler()->scheduleDelayedRepeatingTask(
+                        new ClosureTask(fn() => $this->database->optimize()),
+                        $hourTicks,
+                        $hourTicks
+                    );
                 }
-            ), $hourTicks, $hourTicks);
-        }
 
-        $this->bcpCommand = new BCPCommand($this);
-        $this->getServer()->getCommandMap()->register("bedcoreprotect", $this->bcpCommand);
+                //Registering events from listener
+                $this->listeners = [
+                    new BlockListener($this),
+                    new EntityListener($this),
+                    new PlayerListener($this),
+                    new WorldListener($this),
+                    new InspectorListener($this)
+                ];
 
-        //Registering events
-        $this->events = [
-            new BlockListener($this),
-            new EntityListener($this),
-            new PlayerListener($this),
-            new WorldListener($this),
-            new InspectorListener($this)
-        ];
-
-        foreach ($this->events as $event) {
-            $pluginManager->registerEvents($event, $this);
-        }
+                $pluginManager = $this->getServer()->getPluginManager();
+                foreach ($this->listeners as $listener) {
+                    $pluginManager->registerEvents($listener, $this);
+                }
+            }
+        );
     }
 
     /**

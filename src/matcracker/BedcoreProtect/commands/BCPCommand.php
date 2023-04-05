@@ -125,6 +125,11 @@ final class BCPCommand extends Command implements PluginOwned
             return true;
         }
 
+        if (!$this->plugin->getDatabase()->isReady()){
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::YELLOW . $this->plugin->getLanguage()->translateString("database.connection.not-ready"));
+            return true;
+        }
+
         $subCommandName = mb_strtolower(array_shift($args));
 
         if (isset(self::$subCommands[$subCommandName])) {

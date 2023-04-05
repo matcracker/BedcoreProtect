@@ -1,14 +1,13 @@
 -- #!mysql
 -- #{bcp
 -- #    {table
--- #        {entities
+-- #        {init
 CREATE TABLE IF NOT EXISTS entities
 (
     uuid        VARCHAR(36) PRIMARY KEY,
     entity_name VARCHAR(16) NOT NULL
 );
--- #        }
--- #        {log_history
+-- # &
 CREATE TABLE IF NOT EXISTS log_history
 (
     log_id     BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -22,8 +21,7 @@ CREATE TABLE IF NOT EXISTS log_history
     rollback   BOOLEAN DEFAULT FALSE NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES entities (uuid)
 );
--- #        }
--- #        {blocks_log
+-- # &
 CREATE TABLE IF NOT EXISTS blocks_log
 (
     history_id BIGINT PRIMARY KEY,
@@ -35,8 +33,7 @@ CREATE TABLE IF NOT EXISTS blocks_log
     new_nbt    LONGBLOB DEFAULT NULL,
     CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
--- #        }
--- #        {entities_log
+-- # &
 CREATE TABLE IF NOT EXISTS entities_log
 (
     history_id      BIGINT PRIMARY KEY,
@@ -46,8 +43,7 @@ CREATE TABLE IF NOT EXISTS entities_log
     CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE,
     CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES entities (uuid)
 );
--- #        }
--- #        {inventories_log
+-- # &
 CREATE TABLE IF NOT EXISTS inventories_log
 (
     history_id BIGINT PRIMARY KEY,
@@ -60,8 +56,7 @@ CREATE TABLE IF NOT EXISTS inventories_log
     new_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL,
     CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
--- #        }
--- #        {db_status
+-- # &
 CREATE TABLE IF NOT EXISTS status
 (
     version     VARCHAR(20) PRIMARY KEY             NOT NULL,

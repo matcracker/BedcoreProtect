@@ -1,14 +1,17 @@
 -- #!sqlite
 -- #{bcp
 -- #    {table
--- #        {entities
+-- #        {init
+PRAGMA journal_mode = WAL;
+-- # &
+PRAGMA synchronous = NORMAL;
+-- # &
 CREATE TABLE IF NOT EXISTS "entities"
 (
     uuid        VARCHAR(36) PRIMARY KEY,
     entity_name VARCHAR(16) NOT NULL
 );
--- #        }
--- #        {log_history
+-- # &
 CREATE TABLE IF NOT EXISTS "log_history"
 (
     log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,8 +25,7 @@ CREATE TABLE IF NOT EXISTS "log_history"
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
--- #        }
--- #        {blocks_log
+-- # &
 CREATE TABLE IF NOT EXISTS "blocks_log"
 (
     history_id INTEGER PRIMARY KEY,
@@ -35,8 +37,7 @@ CREATE TABLE IF NOT EXISTS "blocks_log"
     new_nbt    BLOB DEFAULT NULL,
     CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
--- #        }
--- #        {entities_log
+-- # &
 CREATE TABLE IF NOT EXISTS "entities_log"
 (
     history_id      INTEGER PRIMARY KEY,
@@ -46,8 +47,7 @@ CREATE TABLE IF NOT EXISTS "entities_log"
     CONSTRAINT fk_entities_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE,
     CONSTRAINT fk_entities_entityfrom FOREIGN KEY (entityfrom_uuid) REFERENCES "entities" (uuid)
 );
--- #        }
--- #        {inventories_log
+-- # &
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
     history_id INTEGER PRIMARY KEY,
@@ -60,8 +60,7 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
     new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
     CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
--- #        }
--- #        {db_status
+-- # &
 CREATE TABLE IF NOT EXISTS status
 (
     version     VARCHAR(20) PRIMARY KEY NOT NULL,
@@ -70,12 +69,6 @@ CREATE TABLE IF NOT EXISTS status
 -- #        }
 -- #    }
 -- #    {generic
--- #        {enable_wal_mode
-PRAGMA journal_mode = WAL;
--- #        }
--- #        {set_sync_normal
-PRAGMA synchronous = NORMAL;
--- #        }
 -- #        {set_foreign_keys
 -- #            :flag bool
 PRAGMA foreign_keys = :flag;
