@@ -82,7 +82,7 @@ final class Utils
             "d" => $value * 24 * 60 * 60,
             "h" => $value * 60 * 60,
             "m" => $value * 60,
-            "s" => $value,
+            "s" => $value
         };
 
         return (int)$time;
