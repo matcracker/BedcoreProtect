@@ -52,7 +52,7 @@ final class NearSubCommand extends SubCommand
                 $player->chat("/bcp near $radius");
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
+                $player->sendForm($this->getForm($player));
             }
         ));
     }

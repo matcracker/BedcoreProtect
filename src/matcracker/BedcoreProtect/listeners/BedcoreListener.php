@@ -42,9 +42,11 @@ abstract class BedcoreListener implements Listener
     )
     {
         $this->config = $plugin->getParsedConfig();
-        $this->pluginQueries = $plugin->getDatabase()->getQueryManager()->getPluginQueries();
-        $this->blocksQueries = $plugin->getDatabase()->getQueryManager()->getBlocksQueries();
-        $this->entitiesQueries = $plugin->getDatabase()->getQueryManager()->getEntitiesQueries();
-        $this->inventoriesQueries = $plugin->getDatabase()->getQueryManager()->getInventoriesQueries();
+
+        $queryManager = $plugin->getDatabase()->getQueryManager();
+        $this->pluginQueries = $queryManager->getPluginQueries();
+        $this->blocksQueries = $queryManager->getBlocksQueries();
+        $this->entitiesQueries = $queryManager->getEntitiesQueries();
+        $this->inventoriesQueries = $queryManager->getInventoriesQueries();
     }
 }

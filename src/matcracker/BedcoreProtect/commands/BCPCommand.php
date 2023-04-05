@@ -74,9 +74,10 @@ final class BCPCommand extends Command implements PluginOwned
 
     public function updateTranslations(): void
     {
-        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.bcp.usage"));
-        $this->setDescription($this->getOwningPlugin()->getLanguage()->translateString("command.bcp.description"));
-        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getOwningPlugin()->getLanguage()->translateString("command.bcp.no-permission"));
+        $language = $this->plugin->getLanguage();
+        $this->setUsage(Main::MESSAGE_PREFIX . TextFormat::RED . $language->translateString("command.bcp.usage"));
+        $this->setDescription($language->translateString("command.bcp.description"));
+        $this->setPermissionMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $language->translateString("command.bcp.no-permission"));
     }
 
     public function getOwningPlugin(): Main
@@ -107,7 +108,7 @@ final class BCPCommand extends Command implements PluginOwned
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool
     {
-        if (!$this->getOwningPlugin()->isEnabled()) {
+        if (!$this->plugin->isEnabled()) {
             return true;
         }
 
@@ -115,8 +116,8 @@ final class BCPCommand extends Command implements PluginOwned
             return true;
         }
 
-        if (!isset($args[0]) && $sender instanceof Player && $this->getOwningPlugin()->getParsedConfig()->isEnabledUI()) {
-            $sender->sendForm(self::getForm($this->getOwningPlugin(), $sender));
+        if (!isset($args[0]) && $sender instanceof Player && $this->plugin->getParsedConfig()->isEnabledUI()) {
+            $sender->sendForm($this->getForm($sender));
             return true;
         }
 
@@ -146,8 +147,8 @@ final class BCPCommand extends Command implements PluginOwned
         return true;
     }
 
-    public static function getForm(Main $plugin, Player $player): MainMenuForm
+    public function getForm(Player $player): MainMenuForm
     {
-        return new MainMenuForm($plugin, $player, self::$subCommands);
+        return new MainMenuForm($this->plugin, $player, self::$subCommands);
     }
 }

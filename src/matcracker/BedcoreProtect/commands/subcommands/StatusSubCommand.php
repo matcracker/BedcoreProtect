@@ -44,10 +44,10 @@ final class StatusSubCommand extends SubCommand
             function () use ($sender): Generator {
                 $description = $this->getOwningPlugin()->getDescription();
                 $pluginVersion = $description->getVersion();
-                /** @var array $dbVersions */
-                [$dbVersions] = (yield from $this->getOwningPlugin()->getDatabase()->getStatus());
-                $dbVersion = (string)$dbVersions["version"];
-                $initDbVersion = (string)$dbVersions["init_version"];
+                /** @var array $status */
+                [$status] = yield from $this->getOwningPlugin()->getDatabase()->getStatus();
+                $dbVersion = (string)$status["version"];
+                $initDbVersion = (string)$status["init_version"];
 
                 if ($dbVersion !== $initDbVersion) {
                     //Database version could be minor respect the plugin, in this case I apply a BC suffix (Backward Compatibility)

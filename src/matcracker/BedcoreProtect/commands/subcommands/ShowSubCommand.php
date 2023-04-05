@@ -57,7 +57,7 @@ final class ShowSubCommand extends SubCommand
                 $player->chat("/bcp show {$response->getString("page")}:{$response->getString("lines")}");
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
+                $player->sendForm($this->getForm($player));
             }
         ));
     }

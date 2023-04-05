@@ -147,7 +147,7 @@ abstract class ParsableSubCommand extends SubCommand
                 $player->chat($command);
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
+                $player->sendForm($this->getForm($player));
             }
         ));
     }
