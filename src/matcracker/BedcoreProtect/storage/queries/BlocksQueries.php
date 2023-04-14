@@ -340,7 +340,7 @@ class BlocksQueries extends Query
             $prefix = "new";
         }
 
-        /** @var array<int, array<int, array<int, int>>> $blockData */
+        /** @var array<int, array<int, int>> $blockData */
         $blockData = [];
         /** @var string[] $chunks */
         $chunks = [];
@@ -365,7 +365,7 @@ class BlocksQueries extends Query
             }
 
             $blockHash = World::blockHash($x, $y, $z);
-            $blockData[$chunkHash][$blockHash][] = BlockUtils::deserializeBlock($row["{$prefix}_state"])->getStateId();
+            $blockData[$chunkHash][$blockHash] = BlockUtils::deserializeBlock($row["{$prefix}_state"])->getStateId();
 
             $world->getTileAt($x, $y, $z)?->close();
 

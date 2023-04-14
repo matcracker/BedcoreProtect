@@ -25,23 +25,23 @@ use Closure;
 use pocketmine\math\Vector3;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+use pocketmine\thread\NonThreadSafeValue;
 use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\World;
 use function count;
-use function serialize;
-use function unserialize;
 
 final class AsyncBlockSetter extends AsyncTask
 {
-    private string $serializedBlockData;
-    private string $serializedChunks;
+    private const TLS_KEY_ON_COMPLETION = "onComplete";
+    private NonThreadSafeValue $serializedBlockData;
+    private NonThreadSafeValue $serializedChunks;
 
     /**
      * AsyncBlockSetter constructor.
      * @param string $worldName
      * @param array<int, string> $serializedChunks
-     * @param array<int, array<int, array<int, int>>> $blockData
+     * @param array<int, array<int, int>> $blockData
      * @param Closure $onComplete
      */
     public function __construct(
@@ -51,18 +51,18 @@ final class AsyncBlockSetter extends AsyncTask
         Closure        $onComplete
     )
     {
-        $this->serializedBlockData = serialize($blockData);
-        $this->serializedChunks = serialize($serializedChunks);
+        $this->serializedBlockData = new NonThreadSafeValue($blockData);
+        $this->serializedChunks = new NonThreadSafeValue($serializedChunks);
 
-        $this->storeLocal("onComplete", $onComplete);
+        $this->storeLocal(self::TLS_KEY_ON_COMPLETION, $onComplete);
     }
 
     public function onRun(): void
     {
         /** @var array<int, string> $serializedChunks */
-        $serializedChunks = unserialize($this->serializedChunks);
-        /** @var array<int, array<int, array<int, int>>> $blockData */
-        $blockData = unserialize($this->serializedBlockData);
+        $serializedChunks = $this->serializedChunks->deserialize();
+        /** @var array<int, array<int, int>> $blockData */
+        $blockData = $this->serializedBlockData->deserialize();
 
         $cntBlocks = 0;
         /** @var array<int, Chunk> $chunks */
@@ -72,17 +72,15 @@ final class AsyncBlockSetter extends AsyncTask
 
         foreach ($serializedChunks as $chunkHash => $serializedChunk) {
             $chunks[$chunkHash] = $chunk = FastChunkSerializer::deserializeTerrain($serializedChunk);
-            foreach ($blockData[$chunkHash] as $blockHash => $stateIds) {
+            foreach ($blockData[$chunkHash] as $blockHash => $stateId) {
                 World::getBlockXYZ($blockHash, $x, $y, $z);
 
                 if (!isset($blockUpdatePos[$blockHash])) {
                     $blockUpdatePos[$blockHash] = new Vector3($x, $y, $z);
                 }
 
-                foreach ($stateIds as $stateId) {
-                    $chunk->setBlockStateId($x & Chunk::COORD_MASK, $y, $z & Chunk::COORD_MASK, $stateId);
-                    $cntBlocks++;
-                }
+                $chunk->setBlockStateId($x & Chunk::COORD_MASK, $y, $z & Chunk::COORD_MASK, $stateId);
+                $cntBlocks++;
             }
         }
 
@@ -109,7 +107,7 @@ final class AsyncBlockSetter extends AsyncTask
         }
 
         /**@var Closure $onComplete */
-        $onComplete = $this->fetchLocal("onComplete");
+        $onComplete = $this->fetchLocal(self::TLS_KEY_ON_COMPLETION);
         $onComplete([$cntBlocks, count($chunks), $blockUpdatePos]);
     }
 }
