@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use poggit\libasynql\DataConnector;
+use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
 
 trait DefaultQueriesTrait
@@ -52,18 +53,6 @@ trait DefaultQueriesTrait
     final protected function executeSelect(string $query, array $args = []): Generator
     {
         $this->connector->executeSelect($query, $args, yield, yield Await::REJECT);
-        return yield Await::ONCE;
-    }
-
-    /**
-     * @param string $query
-     * @param array $args
-     * @param bool $multiParams if true, returns all parameters of callable 'onInserted(int $insertId, int $affectedRows)' instead of only $insertId.
-     * @return Generator
-     */
-    final protected function executeInsertRaw(string $query, array $args = [], bool $multiParams = false): Generator
-    {
-        $this->connector->executeInsertRaw($query, $args, yield ($multiParams ? Await::RESOLVE_MULTI : Await::RESOLVE), yield Await::REJECT);
         return yield Await::ONCE;
     }
 }

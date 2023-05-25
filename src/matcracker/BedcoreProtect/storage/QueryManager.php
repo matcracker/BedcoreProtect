@@ -39,6 +39,8 @@ use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use poggit\libasynql\DataConnector;
+use poggit\libasynql\result\SqlSelectResult;
+use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
 use UnexpectedValueException;
 use function array_key_exists;
@@ -197,20 +199,22 @@ final class QueryManager
     private function getRollbackLogIds(CommandData $cmdData, ?AxisAlignedBB $bb, float $currTime, bool $rollback, int $limit): Generator
     {
         $query = "";
-        $args = [];
+        $args = [[]];
         $this->pluginQueries->buildLogsSelectionQuery($query, $args, $cmdData, $bb, $currTime, $rollback, $limit);
 
         $onSuccess = yield;
-        $wrapOnSuccess = static function (array $rows) use ($onSuccess): void {
+        /** @var SqlSelectResult[] $results */
+        $wrapOnSuccess = static function (array $results) use ($onSuccess): void {
+            $result = $results[count($results) - 1];
             /** @var int[] $logIds */
             $logIds = [];
-            foreach ($rows as $row) {
+            foreach ($result->getRows() as $row) {
                 $logIds[] = (int)$row["log_id"];
             }
             $onSuccess($logIds);
         };
 
-        $this->connector->executeSelectRaw($query, $args, $wrapOnSuccess, yield Await::REJECT);
+        $this->connector->executeImplRaw([$query], $args, [SqlThread::MODE_SELECT], $wrapOnSuccess, yield Await::REJECT);
         return yield Await::ONCE;
     }
 

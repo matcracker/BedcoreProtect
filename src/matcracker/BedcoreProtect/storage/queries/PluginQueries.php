@@ -37,7 +37,9 @@ use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\generic\GenericStatementImpl;
 use poggit\libasynql\generic\GenericVariable;
+use poggit\libasynql\result\SqlSelectResult;
 use poggit\libasynql\SqlDialect;
+use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function count;
@@ -104,7 +106,7 @@ class PluginQueries extends Query
     public function requestLookup(CommandSender $inspector, CommandData $cmdData, ?Position $position, int $limit = 4, int $offset = 0): void
     {
         $query = "";
-        $args = [];
+        $args = [[]];
 
         if (($radius = $cmdData->getRadius()) !== null) {
             $bb = MathUtils::getRangedVector($position, $radius);
@@ -114,10 +116,16 @@ class PluginQueries extends Query
 
         $this->buildLookupQuery($query, $args, $cmdData, $bb, $limit, $offset);
 
-        $this->connector->executeSelectRaw(
-            $query,
+        $this->connector->executeImplRaw(
+            [$query],
             $args,
-            self::onSuccessLog(LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset)
+            [SqlThread::MODE_SELECT],
+            /** @var SqlSelectResult[] $results */
+            function (array $results) use ($inspector, $position, $cmdData, $limit, $offset): void {
+                $result = $results[count($results) - 1];
+                $this->onSuccessLog(LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset)($result->getRows());
+            },
+            null
         );
     }
 
@@ -268,14 +276,14 @@ class PluginQueries extends Query
         $statement = GenericStatementImpl::forDialect(
             $isSQLite ? SqlDialect::SQLITE : SqlDialect::MYSQL,
             $statementName,
-            $query,
+            [$query],
             "",
             $variables,
             null,
             0
         );
 
-        $query = $statement->format($parameters, $isSQLite ? "" : "?", $args);
+        [$query] = $statement->format($parameters, $isSQLite ? "" : "?", $args);
     }
 
     public function requestTransactionLog(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
