@@ -154,7 +154,7 @@ class BlocksQueries extends Query
                 foreach ($oldBlocks as $key => $oldBlock) {
                     $pos = $oldBlock->getPosition();
                     $newBlock = $pos->getWorld()->getBlock($pos, addToCache: false);
-                    if ($newBlock->isSameType($oldBlock)) {
+                    if ($newBlock->isSameState($oldBlock)) {
                         unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                     } else {
                         $newBlocks[] = $newBlock;
