@@ -146,7 +146,6 @@ class EntitiesQueries extends Query
         if ($this->plugin->getParsedConfig()->getRollbackEntities()) {
             $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_ROLLBACK_ENTITIES, ["log_ids" => $logIds]);
 
-            /** @var EntityFactory $factory */
             $factory = EntityFactory::getInstance();
 
             foreach ($rows as $row) {

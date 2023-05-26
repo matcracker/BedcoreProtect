@@ -29,7 +29,6 @@ use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Label;
 use dktapps\pmforms\element\Toggle;
 use InvalidArgumentException;
-use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
@@ -64,7 +63,7 @@ abstract class ParsableSubCommand extends SubCommand
      * @param Main $plugin
      * @param CommandParameter[] $requiredParams
      */
-    public function __construct(Main $plugin, private array $requiredParams)
+    public function __construct(Main $plugin, private readonly array $requiredParams)
     {
         parent::__construct($plugin);
         $this->requiredParamsNames = array_map(static function (CommandParameter $parameter): string {
@@ -335,7 +334,6 @@ abstract class ParsableSubCommand extends SubCommand
 
         /** @var string[] $itemNames */
         $itemNames = [];
-        /** @var StringToItemParser $itemParser */
         $itemParser = StringToItemParser::getInstance();
 
         foreach (explode(",", $str) as $strItem) {

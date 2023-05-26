@@ -61,7 +61,7 @@ final class QueryManager
     private EntitiesQueries $entitiesQueries;
     private InventoriesQueries $inventoriesQueries;
 
-    public function __construct(private Main $plugin, private DataConnector $connector)
+    public function __construct(private readonly Main $plugin, private readonly DataConnector $connector)
     {
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);

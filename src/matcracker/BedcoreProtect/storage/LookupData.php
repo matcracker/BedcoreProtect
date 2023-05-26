@@ -37,11 +37,11 @@ class LookupData
     private static array $lookupData = [];
 
     public function __construct(
-        private int            $queryType,
-        private int            $rows,
-        private ?CommandSender $sender,
-        private ?CommandData   $commandData,
-        private ?Position      $position)
+        private readonly int            $queryType,
+        private readonly int            $rows,
+        private readonly ?CommandSender $sender,
+        private readonly ?CommandData   $commandData,
+        private readonly ?Position      $position)
     {
     }
 

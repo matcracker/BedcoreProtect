@@ -45,10 +45,10 @@ final class AsyncBlockSetter extends AsyncTask
      * @param Closure $onComplete
      */
     public function __construct(
-        private string $worldName,
-        array          $serializedChunks,
-        array          $blockData,
-        Closure        $onComplete
+        private readonly string $worldName,
+        array                   $serializedChunks,
+        array                   $blockData,
+        Closure                 $onComplete
     )
     {
         $this->serializedBlockData = new NonThreadSafeValue($blockData);

@@ -62,10 +62,6 @@ class InventoriesQueries extends Query
          * @see DoubleChestInventory::getHolder()
          */
         $holder = $inventory->getHolder();
-        if (!($holder instanceof Vector3)) {
-            return;
-        }
-
         $playerUuid = EntityUtils::getUniqueId($player);
         $worldName = $player->getWorld()->getFolderName();
         $time = microtime(true);

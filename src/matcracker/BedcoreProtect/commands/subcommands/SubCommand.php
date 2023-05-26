@@ -32,7 +32,7 @@ use function strlen;
 
 abstract class SubCommand implements PluginOwned
 {
-    public function __construct(private Main $plugin)
+    public function __construct(private readonly Main $plugin)
     {
     }
 

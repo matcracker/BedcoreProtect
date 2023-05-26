@@ -39,14 +39,14 @@ class CommandData
      * @param AdditionalParameter[] $additionalParams
      */
     public function __construct(
-        private ?array  $users = null,
-        private ?int    $time = null,
-        private ?string $world = null,
-        private ?int    $radius = null,
-        private ?array  $actions = null,
-        private ?array  $inclusions = null,
-        private ?array  $exclusions = null,
-        private array   $additionalParams = [])
+        private readonly ?array  $users = null,
+        private readonly ?int    $time = null,
+        private readonly ?string $world = null,
+        private readonly ?int    $radius = null,
+        private readonly ?array  $actions = null,
+        private readonly ?array  $inclusions = null,
+        private readonly ?array  $exclusions = null,
+        private readonly array   $additionalParams = [])
     {
     }
 

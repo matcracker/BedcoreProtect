@@ -38,7 +38,7 @@ use function yaml_parse;
 final class PatchManager
 {
 
-    public function __construct(private Main $plugin, private DataConnector $connector)
+    public function __construct(private readonly Main $plugin, private readonly DataConnector $connector)
     {
     }
 

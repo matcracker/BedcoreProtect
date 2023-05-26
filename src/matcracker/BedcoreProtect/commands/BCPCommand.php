@@ -53,7 +53,7 @@ final class BCPCommand extends Command implements PluginOwned
     /** @var SubCommand[] */
     private static array $subCommandsAlias = [];
 
-    public function __construct(private Main $plugin)
+    public function __construct(private readonly Main $plugin)
     {
         parent::__construct("bedcoreprotect", aliases: ["core", "co", "bcp"]);
         $this->setPermission("bcp.command.bedcoreprotect");
@@ -126,7 +126,7 @@ final class BCPCommand extends Command implements PluginOwned
             return true;
         }
 
-        if (!$this->plugin->getDatabase()->isReady()){
+        if (!$this->plugin->getDatabase()->isReady()) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::YELLOW . $this->plugin->getLanguage()->translateString("database.connection.not-ready"));
             return true;
         }
