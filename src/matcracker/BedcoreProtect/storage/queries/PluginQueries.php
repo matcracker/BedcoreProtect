@@ -29,6 +29,7 @@ use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\LookupData;
 use matcracker\BedcoreProtect\utils\MathUtils;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\player\Player;
@@ -339,14 +340,16 @@ class PluginQueries extends Query
         ];
 
         if ($commandData->getInclusions() !== null || $commandData->getExclusions() !== null) {
+            $airName = VanillaBlocks::AIR()->getName();
+
             $query = /**@lang text */
-                "SELECT log_id, id, meta
+                "SELECT log_id, name
                 FROM 
                 (SELECT log_history.*,
                     CASE
-                        WHEN old_name = \"\" THEN new_name
-                        WHEN new_name = \"\" THEN old_name
-                    END AS name,
+                        WHEN old_name = \"$airName\" THEN new_name
+                        WHEN new_name = \"$airName\" THEN old_name
+                    END AS name
                 FROM log_history INNER JOIN blocks_log ON log_history.log_id = history_id
                 ) AS tmp_logs
                 WHERE rollback = :rollback AND ";
