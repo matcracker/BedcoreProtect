@@ -2,7 +2,7 @@
 branches:
   - stable
   - experimental
-  - PM4
+  - pm5
 pulls: false
 projects:
   BedcoreProtect:
