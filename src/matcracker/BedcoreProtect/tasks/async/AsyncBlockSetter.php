@@ -72,15 +72,11 @@ final class AsyncBlockSetter extends AsyncTask
 
         foreach ($serializedChunks as $chunkHash => $serializedChunk) {
             $chunks[$chunkHash] = $chunk = FastChunkSerializer::deserializeTerrain($serializedChunk);
+            $cntBlocks += count($blockData[$chunkHash]);
             foreach ($blockData[$chunkHash] as $blockHash => $stateId) {
                 World::getBlockXYZ($blockHash, $x, $y, $z);
-
-                if (!isset($blockUpdatePos[$blockHash])) {
-                    $blockUpdatePos[$blockHash] = new Vector3($x, $y, $z);
-                }
-
+                $blockUpdatePos[$blockHash] = new Vector3($x, $y, $z);
                 $chunk->setBlockStateId($x & Chunk::COORD_MASK, $y, $z & Chunk::COORD_MASK, $stateId);
-                $cntBlocks++;
             }
         }
 

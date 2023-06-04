@@ -342,6 +342,8 @@ class BlocksQueries extends Query
 
         /** @var int[][] $blockData */
         $blockData = [];
+        /** @var string[] $blockData */
+        $tilesData = [];
         /** @var string[] $chunks */
         $chunks = [];
 
@@ -355,7 +357,9 @@ class BlocksQueries extends Query
             $chunkHash = World::chunkHash($chunkX, $chunkZ);
 
             if (!isset($chunks[$chunkHash])) {
-                if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
+                if (($chunk = $world->getChunk($chunkX, $chunkZ)) !== null) {
+                    $chunks[$chunkHash] = FastChunkSerializer::serializeTerrain($chunk);
+                } else if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
                     $chunks[$chunkHash] = FastChunkSerializer::serializeTerrain($chunk);
                     $world->unloadChunk($chunkX, $chunkZ, trySave: false);
                 } else {
@@ -367,17 +371,23 @@ class BlocksQueries extends Query
             $blockHash = World::blockHash($x, $y, $z);
             $blockData[$chunkHash][$blockHash] = BlockUtils::deserializeBlock($row["{$prefix}_state"])->getStateId();
 
-            $world->getTileAt($x, $y, $z)?->close();
-
             if (isset($row["{$prefix}_nbt"])) {
-                /** @var Tile|null $tile */
-                $tile = TileFactory::getInstance()->createFromData($world, Utils::deserializeNBT($row["{$prefix}_nbt"]));
+                $tilesData[$blockHash] = $row["{$prefix}_nbt"];
+            }
+        }
 
-                if ($tile !== null) {
-                    $world->addTile($tile);
-                } else {
-                    $this->plugin->getLogger()->debug("Could not create tile at $x $y $z.");
-                }
+        $tileFactory = TileFactory::getInstance();
+        foreach ($tilesData as $blockHash => $tileData) {
+            World::getBlockXYZ($blockHash, $x, $y, $z);
+
+            $world->getTileAt($x, $y, $z)?->close();
+            /** @var Tile|null $tile */
+            $tile = $tileFactory->createFromData($world, Utils::deserializeNBT($tileData));
+
+            if ($tile !== null) {
+                $world->addTile($tile);
+            } else {
+                $this->plugin->getLogger()->debug("Could not create tile at $x $y $z.");
             }
         }
 
