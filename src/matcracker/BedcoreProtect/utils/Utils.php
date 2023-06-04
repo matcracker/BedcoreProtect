@@ -35,6 +35,7 @@ use function count;
 use function is_string;
 use function json_decode;
 use function mb_strpos;
+use function mb_strtolower;
 use function microtime;
 use function preg_match;
 use function preg_replace;
@@ -58,7 +59,7 @@ final class Utils
     public static function parseTime(string $strDate): ?int
     {
         /** @var string[] $matches */
-        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", $strDate, $matches);
+        preg_match("/([0-9]+)(?i)([smhdw])(?-i)/", mb_strtolower($strDate), $matches);
 
         if (count($matches) === 0) {
             return null;
@@ -82,7 +83,8 @@ final class Utils
             "d" => $value * 24 * 60 * 60,
             "h" => $value * 60 * 60,
             "m" => $value * 60,
-            "s" => $value
+            "s" => $value,
+            default => null
         };
 
         return (int)$time;
