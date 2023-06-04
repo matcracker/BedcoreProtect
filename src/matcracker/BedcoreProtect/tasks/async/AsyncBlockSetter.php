@@ -40,8 +40,8 @@ final class AsyncBlockSetter extends AsyncTask
     /**
      * AsyncBlockSetter constructor.
      * @param string $worldName
-     * @param array<int, string> $serializedChunks
-     * @param array<int, array<int, int>> $blockData
+     * @param string[] $serializedChunks
+     * @param int[][] $blockData
      * @param Closure $onComplete
      */
     public function __construct(
@@ -59,15 +59,15 @@ final class AsyncBlockSetter extends AsyncTask
 
     public function onRun(): void
     {
-        /** @var array<int, string> $serializedChunks */
+        /** @var string[] $serializedChunks */
         $serializedChunks = $this->serializedChunks->deserialize();
-        /** @var array<int, array<int, int>> $blockData */
+        /** @var int[][] $blockData */
         $blockData = $this->serializedBlockData->deserialize();
 
         $cntBlocks = 0;
-        /** @var array<int, Chunk> $chunks */
+        /** @var Chunk[] $chunks */
         $chunks = [];
-        /** @var array<int, Vector3> $blockUpdatePos */
+        /** @var Vector3[] $blockUpdatePos */
         $blockUpdatePos = [];
 
         foreach ($serializedChunks as $chunkHash => $serializedChunk) {
@@ -97,8 +97,8 @@ final class AsyncBlockSetter extends AsyncTask
 
         /**
          * @var int $cntBlocks
-         * @var array<int, Chunk> $chunks
-         * @var array<int, Vector3> $blockUpdatePos
+         * @var Chunk[] $chunks
+         * @var Vector3[] $blockUpdatePos
          */
         [$cntBlocks, $chunks, $blockUpdatePos] = $this->getResult();
         foreach ($chunks as $chunkHash => $chunk) {

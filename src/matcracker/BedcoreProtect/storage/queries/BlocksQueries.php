@@ -340,7 +340,7 @@ class BlocksQueries extends Query
             $prefix = "new";
         }
 
-        /** @var array<int, array<int, int>> $blockData */
+        /** @var int[][] $blockData */
         $blockData = [];
         /** @var string[] $chunks */
         $chunks = [];
