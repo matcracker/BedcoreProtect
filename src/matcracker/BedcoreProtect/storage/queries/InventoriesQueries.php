@@ -138,6 +138,7 @@ class InventoriesQueries extends Query
             function () use ($player, $worldName, $time, $contents, $inventoryPosition): Generator {
                 yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
+                $airItem = VanillaItems::AIR();
                 /**
                  * @var int $slot
                  * @var Item $content
@@ -147,7 +148,7 @@ class InventoriesQueries extends Query
                         EntityUtils::getUniqueId($player),
                         $slot,
                         $content,
-                        VanillaItems::AIR(),
+                        $airItem,
                         $inventoryPosition,
                         $worldName,
                         Action::REMOVE(),
@@ -175,6 +176,8 @@ class InventoriesQueries extends Query
                 $prefix = "new";
             }
 
+            $airItem = VanillaItems::AIR();
+
             foreach ($rows as $row) {
                 $tile = $world->getTileAt((int)$row["x"], (int)$row["y"], (int)$row["z"]);
                 if ($tile instanceof InventoryHolder) {
@@ -183,7 +186,7 @@ class InventoriesQueries extends Query
                     if ($serializedNbt !== null) {
                         $item = Item::nbtDeserialize(Utils::deserializeNBT((string)$serializedNbt));
                     } else {
-                        $item = VanillaItems::AIR();
+                        $item = $airItem;
                     }
 
                     $tile->getInventory()->setItem((int)$row["slot"], $item);
