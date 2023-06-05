@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\storage\patches\PatchManager;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use pocketmine\plugin\PluginException;
 use poggit\libasynql\DataConnector;

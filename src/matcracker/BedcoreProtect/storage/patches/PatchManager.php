@@ -19,13 +19,14 @@
 
 declare(strict_types=1);
 
-namespace matcracker\BedcoreProtect\storage;
+namespace matcracker\BedcoreProtect\storage\patches;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use pocketmine\plugin\PluginException;
 use poggit\libasynql\DataConnector;
+use poggit\libasynql\SqlDialect;
 use function array_filter;
 use function copy;
 use function count;
@@ -37,9 +38,30 @@ use function yaml_parse;
 
 final class PatchManager
 {
+    /** @var array<string, PluginPatch> $patches */
+    private array $patches = [];
 
     public function __construct(private readonly Main $plugin, private readonly DataConnector $connector)
     {
+    }
+
+    private function registerPluginPatch(PluginPatch $patch): void
+    {
+        $this->patches[$patch->getVersion()] = $patch;
+    }
+
+    public function isRegisteredPluginPatch(string $version): bool
+    {
+        return isset($this->patches[$version]);
+    }
+
+    public function getPluginPatch(string $version): ?PluginPatch
+    {
+        if ($this->isRegisteredPluginPatch($version)) {
+            return $this->patches[$version];
+        }
+
+        return null;
     }
 
     /**
@@ -81,6 +103,12 @@ final class PatchManager
 
                 for ($patchId = 1; $patchId <= $maxPatchId; $patchId++) {
                     yield from $this->connector->asyncGeneric(QueriesConst::VERSION_PATCH($version, $patchId));
+                    if (($pluginPatch = $this->getPluginPatch($version)) !== null) {
+                        match ($dbType) {
+                            SqlDialect::SQLITE => yield from $pluginPatch->asyncPatchSQLite($patchId),
+                            SqlDialect::MYSQL => yield from $pluginPatch->asyncPatchMySQL($patchId)
+                        };
+                    }
                 }
                 yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
 
