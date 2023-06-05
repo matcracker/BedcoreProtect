@@ -30,7 +30,9 @@ use pocketmine\block\Lever;
 use pocketmine\block\tile\Container;
 use pocketmine\block\tile\Tile;
 use pocketmine\block\Trapdoor;
+use pocketmine\data\bedrock\block\BlockStateData;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\world\format\io\GlobalBlockStateHandlers;
 use pocketmine\World\Position;
 use function is_a;
 
@@ -89,6 +91,31 @@ final class BlockUtils
         } else {
             return null;
         }
+    }
+
+    /**
+     * Serializes a block state data compound tag into base64.
+     *
+     * @param Block $block
+     *
+     * @return string
+     */
+    public static function serializeBlock(Block $block): string
+    {
+        return Utils::serializeNBT(GlobalBlockStateHandlers::getSerializer()->serializeBlock($block)->toNbt());
+    }
+
+    /**
+     * Serializes a block state data compound tag into base64.
+     *
+     * @param string $encodedState
+     * @return Block
+     */
+    public static function deserializeBlock(string $encodedState): Block
+    {
+        $state = BlockStateData::fromNbt(Utils::deserializeNBT($encodedState));
+
+        return GlobalBlockStateHandlers::getDeserializer()->deserializeBlock($state);
     }
 
     /**

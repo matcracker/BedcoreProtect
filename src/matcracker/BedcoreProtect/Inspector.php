@@ -23,9 +23,7 @@ namespace matcracker\BedcoreProtect;
 
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
-use pocketmine\block\BlockFactory;
 use pocketmine\command\CommandSender;
-use pocketmine\item\ItemFactory;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function count;
@@ -98,6 +96,7 @@ final class Inspector
     public static function sendLogReport(CommandSender $inspector, array $logs, int $limit, int $offset): void
     {
         $lang = Main::getInstance()->getLanguage();
+
         if (count($logs) === 0) {
             $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("subcommand.show.empty-data"));
             return;
@@ -108,13 +107,12 @@ final class Inspector
             return;
         }
 
-        //Default
-        $rows = (int)$logs[0]["cnt_rows"];
+        $totalRows = (int)$logs[0]["cnt_rows"];
 
         $page = intdiv($offset, $limit) + 1;
-        $pages = intdiv($rows, $limit);
+        $pages = intdiv($totalRows, $limit);
 
-        if ($rows % $limit !== 0) {
+        if ($totalRows % $limit !== 0) {
             $pages++;
         }
 
@@ -133,17 +131,14 @@ final class Inspector
 
             $prefix = ($action->equals(Action::BREAK()) || $action->equals(Action::REMOVE())) ? "old" : "new";
 
-            if (isset($log["{$prefix}_id"])) {
-                $id = (int)$log["{$prefix}_id"];
-                $meta = (int)$log["{$prefix}_meta"];
-                if (isset($log["{$prefix}_amount"])) {
-                    $amount = (int)$log["{$prefix}_amount"];
+            if (isset($log["{$prefix}_name"])) {
+                $name = $log["{$prefix}_name"];
 
-                    $itemName = ItemFactory::getInstance()->get($id, $meta)->getVanillaName();
-                    $to = "$itemName (x$amount)";
+                if (isset($log["{$prefix}_amount"])) { //It is an item
+                    $amount = (int)$log["{$prefix}_amount"];
+                    $to = "$name (x$amount)";
                 } else {
-                    $blockName = BlockFactory::getInstance()->get($id, $meta)->getName();
-                    $to = "$blockName (#$id:$meta)";
+                    $to = $name;
                 }
             } elseif (isset($log["entity_to"])) {
                 $to = $log["entity_to"];
@@ -154,7 +149,7 @@ final class Inspector
 
             //TODO: Use strikethrough (&m) when MC fix it (https://bugs.mojang.com/browse/MCPE-41729).
             $inspector->sendMessage(($rollback ? TextFormat::ITALIC : "") . TextFormat::GRAY . $timeStamp . TextFormat::WHITE . " - " .
-                TextFormat::DARK_AQUA . "$from " . TextFormat::WHITE . "{$action->getMessage()} " . TextFormat::DARK_AQUA . "$to " . TextFormat::WHITE . " - " .
+                TextFormat::DARK_AQUA . "$from " . TextFormat::WHITE . "{$action->getMessage()} " . TextFormat::DARK_AQUA . "$to" . TextFormat::WHITE . " - " .
                 TextFormat::GRAY . "(x$x/y$y/z$z/$worldName)" . TextFormat::WHITE . ".");
         }
 

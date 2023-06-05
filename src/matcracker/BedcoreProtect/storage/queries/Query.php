@@ -29,28 +29,20 @@ use pocketmine\command\CommandSender;
 use pocketmine\math\Vector3;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
+use SOFe\AwaitGenerator\Mutex;
 use function mb_strtolower;
 
 abstract class Query
 {
-    use DefaultQueriesTrait {
-        __construct as DefQueriesConstr;
+    private static Mutex $mutex;
+
+    public function __construct(protected Main $plugin, protected DataConnector $connector)
+    {
     }
 
-    private static AwaitMutex $mutex;
-
-    public function __construct(protected Main $plugin, DataConnector $connector)
+    final protected static function getMutex(): Mutex
     {
-        $this->DefQueriesConstr($connector);
-    }
-
-    final protected static function getMutex(): AwaitMutex
-    {
-        if (!isset(self::$mutex)) {
-            self::$mutex = new AwaitMutex();
-        }
-
-        return self::$mutex;
+        return self::$mutex ??= new Mutex();
     }
 
     /**
@@ -64,7 +56,7 @@ abstract class Query
 
     final protected function addRawLog(string $uuid, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
-        return $this->executeInsert(QueriesConst::ADD_HISTORY_LOG, [
+        return yield from $this->connector->asyncInsert(QueriesConst::ADD_HISTORY_LOG, [
             "uuid" => mb_strtolower($uuid),
             "x" => $position->getX(),
             "y" => $position->getY(),

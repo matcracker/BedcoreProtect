@@ -34,22 +34,25 @@ class CommandData
      * @param string|null $world
      * @param int|null $radius
      * @param Action[]|null $actions
-     * @param array<string, array<int, int>>|null $inclusions
-     * @param array<string, array<int, int>>|null $exclusions
+     * @param string[]|null $inclusions
+     * @param string[]|null $exclusions
      * @param AdditionalParameter[] $additionalParams
      */
     public function __construct(
-        private ?array  $users = null,
-        private ?int    $time = null,
-        private ?string $world = null,
-        private ?int    $radius = null,
-        private ?array  $actions = null,
-        private ?array  $inclusions = null,
-        private ?array  $exclusions = null,
-        private array   $additionalParams = [])
+        private readonly ?array  $users = null,
+        private readonly ?int    $time = null,
+        private readonly ?string $world = null,
+        private readonly ?int    $radius = null,
+        private readonly ?array  $actions = null,
+        private readonly ?array  $inclusions = null,
+        private readonly ?array  $exclusions = null,
+        private readonly array   $additionalParams = [])
     {
     }
 
+    /**
+     * @return string[]|null
+     */
     public function getUsers(): ?array
     {
         return $this->users;
@@ -75,21 +78,33 @@ class CommandData
         return $this->radius === self::GLOBAL_RADIUS;
     }
 
+    /**
+     * @return Action[]|null
+     */
     public function getActions(): ?array
     {
         return $this->actions;
     }
 
+    /**
+     * @return string[]|null
+     */
     public function getInclusions(): ?array
     {
         return $this->inclusions;
     }
 
+    /**
+     * @return string[]|null
+     */
     public function getExclusions(): ?array
     {
         return $this->exclusions;
     }
 
+    /**
+     * @return AdditionalParameter[]
+     */
     public function getAdditionalParams(): array
     {
         return $this->additionalParams;

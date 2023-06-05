@@ -29,7 +29,6 @@ use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Label;
 use dktapps\pmforms\element\Toggle;
 use InvalidArgumentException;
-use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
@@ -64,7 +63,7 @@ abstract class ParsableSubCommand extends SubCommand
      * @param Main $plugin
      * @param CommandParameter[] $requiredParams
      */
-    public function __construct(Main $plugin, private array $requiredParams)
+    public function __construct(Main $plugin, private readonly array $requiredParams)
     {
         parent::__construct($plugin);
         $this->requiredParamsNames = array_map(static function (CommandParameter $parameter): string {
@@ -147,7 +146,7 @@ abstract class ParsableSubCommand extends SubCommand
                 $player->chat($command);
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
+                $player->sendForm($this->getForm($player));
             }
         ));
     }
@@ -327,15 +326,14 @@ abstract class ParsableSubCommand extends SubCommand
     /**
      * @param CommandSender $sender
      * @param string $str
-     * @return array<string, array<int, int>>|null
+     * @return string[]|null
      */
     private function parseItemArgument(CommandSender $sender, string $str): ?array
     {
-        /** @var int[] $itemIds */
-        $itemIds = [];
-        /** @var int[] $itemMetas */
-        $itemMetas = [];
-        /** @var StringToItemParser $itemParser */
+        //TODO: transform the function to Generator
+
+        /** @var string[] $itemNames */
+        $itemNames = [];
         $itemParser = StringToItemParser::getInstance();
 
         foreach (explode(",", $str) as $strItem) {
@@ -345,13 +343,9 @@ abstract class ParsableSubCommand extends SubCommand
                 return null;
             }
 
-            $itemIds[] = $item->getId();
-            $itemMetas[] = $item->getMeta();
+            $itemNames[] = $item->getName();
         }
 
-        return [
-            "ids" => $itemIds,
-            "metas" => $itemMetas
-        ];
+        return $itemNames;
     }
 }

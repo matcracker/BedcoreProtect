@@ -23,19 +23,22 @@ namespace matcracker\BedcoreProtect\storage;
 
 use Generator;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
+use matcracker\BedcoreProtect\storage\patches\PatchManager;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
+use pocketmine\plugin\PluginException;
+use poggit\libasynql\DataConnector;
 use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
+use Symfony\Component\Filesystem\Path;
+use function count;
+use function version_compare;
 
 final class DatabaseManager
 {
-    use DefaultQueriesTrait {
-        __construct as DefQueriesConstr;
-    }
-
+    private bool $ready = false;
     private PatchManager $patchManager;
     private QueryManager $queryManager;
+    private DataConnector $connector;
 
     public function __construct(protected Main $plugin)
     {
@@ -58,13 +61,10 @@ final class DatabaseManager
                 $this->plugin->getParsedConfig()->getDebugMode()
             );
         } catch (SqlError) {
-            $this->plugin->getLogger()->critical($this->plugin->getLanguage()->translateString("database.connection.fail"));
             return false;
         }
 
-        $this->DefQueriesConstr($this->connector);
-
-        $patchResource = $this->plugin->getResource("patches/" . $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql");
+        $patchResource = $this->plugin->getResource(Path::join("patches", $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql"));
         if ($patchResource !== null) {
             $this->connector->loadQueryFile($patchResource);
         }
@@ -72,6 +72,44 @@ final class DatabaseManager
         $this->queryManager = new QueryManager($this->plugin, $this->connector);
 
         return true;
+    }
+
+    public function isReady(): bool
+    {
+        return $this->ready;
+    }
+
+    public function init(): Generator
+    {
+        yield from $this->connector->asyncGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
+
+        yield from $this->connector->asyncGeneric(QueriesConst::INIT_TABLES);
+
+        /** @var array $rows */
+        $rows = yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
+
+        $pluginVersion = $this->plugin->getVersion();
+
+        if (count($rows) === 0) {
+            $dbVersion = $pluginVersion;
+            yield from $this->connector->asyncInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $dbVersion]);
+        } else {
+            $dbVersion = $rows[0]["version"];
+        }
+
+        $language = $this->plugin->getLanguage();
+
+        if (version_compare($pluginVersion, $dbVersion) < 0) {
+            throw new PluginException($language->translateString("database.version.higher"));
+        }
+
+        if (($lastPatch = yield from $this->getPatchManager()->patch()) !== null) {
+            $this->plugin->getLogger()->info($language->translateString("database.version.updated", [$dbVersion, $lastPatch]));
+        }
+
+        yield from $this->queryManager->getEntitiesQueries()->addDefaultEntities();
+
+        $this->ready = true;
     }
 
     public function reloadConfiguration(): void
@@ -119,26 +157,16 @@ final class DatabaseManager
 
     public function getStatus(): Generator
     {
-        return $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
+        return yield from $this->connector->asyncSelect(QueriesConst::GET_DATABASE_STATUS);
     }
 
     /**
      * Returns the database version.
-     * @return string
-     * @internal
+     * @return Generator
      */
-    public function getVersion(): string
+    public function getVersion(): Generator
     {
-        $version = "";
-
-        $this->connector->executeSelect(
-            QueriesConst::GET_DATABASE_STATUS,
-            [],
-            static function (array $rows) use (&$version): void {
-                $version = (string)$rows[0]["version"];
-            }
-        );
-        $this->connector->waitAll();
-        return $version;
+        [$status] = yield from $this->getStatus();
+        return $status["version"];
     }
 }

@@ -32,9 +32,9 @@ final class UndoRollbackData
      * @param float $startTime
      */
     public function __construct(
-        private bool        $rollback,
-        private CommandData $commandData,
-        private float       $startTime)
+        private bool                 $rollback,
+        private readonly CommandData $commandData,
+        private readonly float       $startTime)
     {
         $this->rollback = !$rollback;
     }

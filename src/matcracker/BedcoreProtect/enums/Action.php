@@ -74,10 +74,10 @@ final class Action
      * @param string[] $commandArguments
      */
     public function __construct(
-        string         $enumName,
-        private int    $type,
-        private string $message,
-        private array  $commandArguments
+        string                  $enumName,
+        private readonly int    $type,
+        private readonly string $message,
+        private readonly array  $commandArguments
     )
     {
         $this->Enum___construct($enumName);

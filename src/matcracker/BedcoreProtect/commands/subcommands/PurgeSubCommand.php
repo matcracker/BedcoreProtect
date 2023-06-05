@@ -27,7 +27,6 @@ use dktapps\pmforms\CustomFormResponse;
 use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Input;
 use dktapps\pmforms\element\Toggle;
-use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\forms\WorldDropDown;
@@ -105,7 +104,7 @@ final class PurgeSubCommand extends ParsableSubCommand
                 $player->chat($command);
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
+                $player->sendForm($this->getForm($player));
             }
         ));
     }

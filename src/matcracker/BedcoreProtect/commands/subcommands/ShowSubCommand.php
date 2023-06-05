@@ -25,12 +25,12 @@ use dktapps\pmforms\BaseForm;
 use dktapps\pmforms\CustomForm;
 use dktapps\pmforms\CustomFormResponse;
 use dktapps\pmforms\element\Input;
-use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\LookupData;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
+use SOFe\AwaitGenerator\Await;
 use function explode;
 
 final class ShowSubCommand extends SubCommand
@@ -57,7 +57,7 @@ final class ShowSubCommand extends SubCommand
                 $player->chat("/bcp show {$response->getString("page")}:{$response->getString("lines")}");
             },
             function (Player $player): void {
-                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
+                $player->sendForm($this->getForm($player));
             }
         ));
     }
@@ -126,7 +126,7 @@ final class ShowSubCommand extends SubCommand
                 }
                 break;
             case LookupData::LOOKUP_LOG:
-                $pluginQueries->requestLookup($sender, $data->getCommandData(), $data->getPosition(), $lines, $offset);
+                Await::g2c($pluginQueries->requestLookup($sender, $data->getCommandData(), $data->getPosition(), $lines, $offset));
                 break;
         }
     }

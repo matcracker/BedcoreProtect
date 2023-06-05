@@ -4,15 +4,15 @@
 -- #        {1
 CREATE TABLE IF NOT EXISTS "temp"
 (
-    log_id     INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
-    who        VARCHAR(36)                              NOT NULL,
-    x          BIGINT                                   NOT NULL,
-    y          TINYINT UNSIGNED                         NOT NULL,
-    z          BIGINT                                   NOT NULL,
-    world_name VARCHAR(255)                             NOT NULL,
-    action     TINYINT UNSIGNED                         NOT NULL,
+    log_id     INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT                               NOT NULL,
+    who        VARCHAR(36)                                                            NOT NULL,
+    x          BIGINT                                                                 NOT NULL,
+    y          TINYINT UNSIGNED                                                       NOT NULL,
+    z          BIGINT                                                                 NOT NULL,
+    world_name VARCHAR(255)                                                           NOT NULL,
+    action     TINYINT UNSIGNED                                                       NOT NULL,
     time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
-    "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
+    "rollback" TINYINT(1) DEFAULT 0                                                   NOT NULL,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
 -- #        }
@@ -79,8 +79,8 @@ ALTER TABLE "temp"
 -- #        {13
 CREATE TABLE IF NOT EXISTS "temp"
 (
-    history_id UNSIGNED BIG INT UNIQUE NOT NULL,
-    slot       UNSIGNED TINYINT        NOT NULL,
+    history_id UNSIGNED BIG INT UNIQUE       NOT NULL,
+    slot       UNSIGNED TINYINT              NOT NULL,
     old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
     old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
     old_nbt    BLOB                DEFAULT NULL,
@@ -158,7 +158,7 @@ ALTER TABLE "temp"
 CREATE TABLE IF NOT EXISTS "temp"
 (
     history_id UNSIGNED BIG INT PRIMARY KEY,
-    slot       UNSIGNED TINYINT NOT NULL,
+    slot       UNSIGNED TINYINT              NOT NULL,
     old_id     UNSIGNED INTEGER    DEFAULT 0 NOT NULL,
     old_meta   UNSIGNED TINYINT(2) DEFAULT 0 NOT NULL,
     old_nbt    BLOB                DEFAULT NULL,
@@ -186,14 +186,14 @@ ALTER TABLE "temp"
 CREATE TABLE IF NOT EXISTS "temp"
 (
     log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    who        VARCHAR(36)      NOT NULL,
-    x          BIGINT           NOT NULL,
-    y          TINYINT UNSIGNED NOT NULL,
-    z          BIGINT           NOT NULL,
-    world_name VARCHAR(255)     NOT NULL,
-    action     TINYINT UNSIGNED NOT NULL,
+    who        VARCHAR(36)                                                            NOT NULL,
+    x          BIGINT                                                                 NOT NULL,
+    y          TINYINT UNSIGNED                                                       NOT NULL,
+    z          BIGINT                                                                 NOT NULL,
+    world_name VARCHAR(255)                                                           NOT NULL,
+    action     TINYINT UNSIGNED                                                       NOT NULL,
     time       TIMESTAMP  DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%f', 'now', 'localtime')) NOT NULL,
-    "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
+    "rollback" TINYINT(1) DEFAULT 0                                                   NOT NULL,
     FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
 -- #        }
@@ -237,13 +237,13 @@ ALTER TABLE "entities_new"
 CREATE TABLE IF NOT EXISTS "temp"
 (
     log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    who        VARCHAR(36)      NOT NULL,
-    x          INTEGER          NOT NULL,
-    y          SMALLINT         NOT NULL,
-    z          INTEGER          NOT NULL,
-    world_name VARCHAR(255)     NOT NULL,
-    action     TINYINT UNSIGNED NOT NULL,
-    time       BIGINT           NOT NULL,
+    who        VARCHAR(36)          NOT NULL,
+    x          INTEGER              NOT NULL,
+    y          SMALLINT             NOT NULL,
+    z          INTEGER              NOT NULL,
+    world_name VARCHAR(255)         NOT NULL,
+    action     TINYINT UNSIGNED     NOT NULL,
+    time       BIGINT               NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
@@ -316,7 +316,7 @@ ALTER TABLE "temp"
 CREATE TABLE IF NOT EXISTS "temp"
 (
     history_id INTEGER PRIMARY KEY,
-    slot       UNSIGNED TINYINT NOT NULL,
+    slot       UNSIGNED TINYINT           NOT NULL,
     old_id     INTEGER          DEFAULT 0 NOT NULL,
     old_meta   INTEGER          DEFAULT 0 NOT NULL,
     old_nbt    BLOB             DEFAULT NULL,
@@ -346,13 +346,13 @@ ALTER TABLE "temp"
 CREATE TABLE IF NOT EXISTS "temp"
 (
     log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    who        VARCHAR(36)      NOT NULL,
-    x          INTEGER          NOT NULL,
-    y          SMALLINT         NOT NULL,
-    z          INTEGER          NOT NULL,
-    world_name VARCHAR(255)     NOT NULL,
-    action     TINYINT UNSIGNED NOT NULL,
-    time       DOUBLE PRECISION NOT NULL,
+    who        VARCHAR(36)          NOT NULL,
+    x          INTEGER              NOT NULL,
+    y          SMALLINT             NOT NULL,
+    z          INTEGER              NOT NULL,
+    world_name VARCHAR(255)         NOT NULL,
+    action     TINYINT UNSIGNED     NOT NULL,
+    time       DOUBLE PRECISION     NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
@@ -372,7 +372,7 @@ ALTER TABLE "temp"
 -- #        {5
 CREATE TABLE IF NOT EXISTS "temp"
 (
-    version     VARCHAR(20) PRIMARY KEY NOT NULL,
+    version     VARCHAR(20) PRIMARY KEY                                               NOT NULL,
     upgraded_on TIMESTAMP DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%S', 'now', 'localtime')) NOT NULL
 );
 -- #        }
@@ -415,6 +415,49 @@ DROP TABLE "entities";
 -- #        {4
 ALTER TABLE "temp"
     RENAME TO "entities";
+-- #        }
+-- #    }
+-- #    {1.1.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    old_name   TEXT NOT NULL,
+    old_state  BLOB NOT NULL,
+    old_nbt    BLOB DEFAULT NULL,
+    new_name   TEXT NOT NULL,
+    new_state  BLOB NOT NULL,
+    new_nbt    BLOB DEFAULT NULL,
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {2
+DROP TABLE "blocks_log";
+-- #        }
+-- #        {3
+ALTER TABLE "temp"
+    RENAME TO "blocks_log";
+-- #        }
+-- #        {4
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    slot       UNSIGNED TINYINT           NOT NULL,
+    old_name   TEXT                       NOT NULL,
+    old_nbt    BLOB             DEFAULT NULL,
+    old_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    new_name   TEXT                       NOT NULL,
+    new_nbt    BLOB             DEFAULT NULL,
+    new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {5
+DROP TABLE "inventories_log";
+-- #        }
+-- #        {6
+ALTER TABLE "temp"
+    RENAME TO "inventories_log";
 -- #        }
 -- #    }
 -- #}

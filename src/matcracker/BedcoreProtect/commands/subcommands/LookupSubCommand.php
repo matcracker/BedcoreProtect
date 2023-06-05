@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
+use SOFe\AwaitGenerator\Await;
 
 final class LookupSubCommand extends ParsableSubCommand
 {
@@ -41,7 +42,7 @@ final class LookupSubCommand extends ParsableSubCommand
 
         $cmdData = $this->parseArguments($sender, $args, $default);
         if ($cmdData !== null) {
-            $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestLookup($sender, $cmdData, $pos);
+            Await::g2c($this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestLookup($sender, $cmdData, $pos));
         }
     }
 

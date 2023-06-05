@@ -25,7 +25,6 @@ use Generator;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
-use matcracker\BedcoreProtect\storage\queries\DefaultQueriesTrait;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
@@ -42,19 +41,14 @@ use poggit\libasynql\DataConnector;
 use poggit\libasynql\result\SqlSelectResult;
 use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
-use UnexpectedValueException;
 use function array_key_exists;
 use function array_merge;
 use function count;
 use function microtime;
-use function preg_match;
 use function round;
 
 final class QueryManager
 {
-    use DefaultQueriesTrait {
-        __construct as DefQueriesConstr;
-    }
 
     private const ROLLBACK_ROWS_LIMIT = 25000;
 
@@ -67,51 +61,12 @@ final class QueryManager
     private EntitiesQueries $entitiesQueries;
     private InventoriesQueries $inventoriesQueries;
 
-    public function __construct(private Main $plugin, DataConnector $connector)
+    public function __construct(private readonly Main $plugin, private readonly DataConnector $connector)
     {
-        $this->DefQueriesConstr($connector);
-
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
         $this->inventoriesQueries = new InventoriesQueries($plugin, $connector);
         $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
-    }
-
-    public function init(string $pluginVersion): void
-    {
-        if (!preg_match("/^(\d+\.)?(\d+\.)?(\*|\d+)$/", $pluginVersion)) {
-            throw new UnexpectedValueException("The field $pluginVersion must be a version.");
-        }
-
-        Await::f2c(
-            function () use ($pluginVersion): Generator {
-                if ($this->plugin->getParsedConfig()->isSQLite()) {
-                    yield $this->executeGeneric(QueriesConst::ENABLE_WAL_MODE);
-                    yield $this->executeGeneric(QueriesConst::SET_SYNC_NORMAL);
-                }
-
-                yield $this->executeGeneric(QueriesConst::SET_FOREIGN_KEYS, ["flag" => true]);
-
-                foreach (QueriesConst::INIT_TABLES as $queryTable) {
-                    yield $this->executeGeneric($queryTable);
-                }
-
-                /** @var array $rows */
-                $rows = yield $this->executeSelect(QueriesConst::GET_DATABASE_STATUS);
-
-                if (count($rows) === 0) {
-                    yield $this->executeInsert(QueriesConst::ADD_DATABASE_VERSION, ["version" => $pluginVersion]);
-                }
-            }
-        );
-
-        $this->connector->waitAll();
-    }
-
-    public function setupDefaultData(): void
-    {
-        $this->entitiesQueries->addDefaultEntities();
-        $this->connector->waitAll();
     }
 
     public function rollback(CommandSender $sender, CommandData $cmdData): void
@@ -161,16 +116,21 @@ final class QueryManager
                 $blockUpdatesPos = [];
                 $blocks = $chunks = $items = $entities = 0;
 
-                while (count($logIds = yield $this->getRollbackLogIds($cmdData, $bb, $time, $rollback, self::ROLLBACK_ROWS_LIMIT)) !== 0) {
-                    [$tmpBlocks, $tmpChunks, $tmpBlockUpdPos] = yield $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
+                /** @var int[] $logIds */
+                while (count($logIds = yield from $this->getRollbackLogIds($cmdData, $bb, $time, $rollback, self::ROLLBACK_ROWS_LIMIT)) !== 0) {
+                    [$tmpBlocks, $tmpChunks, $tmpBlockUpdPos] = yield from $this->getBlocksQueries()->onRollback($sender, $world, $rollback, $logIds);
                     $blocks += $tmpBlocks;
                     $chunks += $tmpChunks;
                     $blockUpdatesPos = array_merge($blockUpdatesPos, $tmpBlockUpdPos);
 
-                    $items += yield $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds);
-                    $entities += yield $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    [$tmpItems, $tmpEntities] = yield from Await::all([
+                        $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds),
+                        $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds)
+                    ]);
+                    $items += $tmpItems;
+                    $entities += $tmpEntities;
 
-                    yield $this->executeChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
+                    yield from $this->connector->asyncChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
                         "rollback" => $rollback,
                         "log_ids" => $logIds
                     ]);
@@ -202,7 +162,7 @@ final class QueryManager
         $args = [[]];
         $this->pluginQueries->buildLogsSelectionQuery($query, $args, $cmdData, $bb, $currTime, $rollback, $limit);
 
-        $onSuccess = yield;
+        $onSuccess = yield Await::RESOLVE;
         /** @var SqlSelectResult[] $results */
         $wrapOnSuccess = static function (array $results) use ($onSuccess): void {
             $result = $results[count($results) - 1];
@@ -236,37 +196,38 @@ final class QueryManager
     private function sendRollbackReport(CommandSender $sender, CommandData $cmdData, bool $rollback, int $blocks, int $chunks, int $items, int $entities, float $startTime): void
     {
         $date = Utils::timeAgo((int)microtime(true) - $cmdData->getTime());
+        $lang = $this->plugin->getLanguage();
 
         $sender->sendMessage(TextFormat::WHITE . "--- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . TextFormat::GRAY . " " . $this->plugin->getLanguage()->translateString("rollback.report") . TextFormat::WHITE . " ---");
-        $sender->sendMessage(TextFormat::WHITE . $this->plugin->getLanguage()->translateString(($rollback ? "rollback" : "restore") . ".completed", [$cmdData->getWorld()]));
-        $sender->sendMessage(TextFormat::WHITE . $this->plugin->getLanguage()->translateString(($rollback ? "rollback" : "restore") . ".date", [$date]));
+        $sender->sendMessage(TextFormat::WHITE . $lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$cmdData->getWorld()]));
+        $sender->sendMessage(TextFormat::WHITE . $lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date]));
         if ($cmdData->isGlobalRadius()) {
-            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.global-radius"));
+            $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.global-radius"));
         } else {
-            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.radius", [$cmdData->getRadius() ?? $this->plugin->getParsedConfig()->getMaxRadius()]));
+            $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.radius", [$cmdData->getRadius() ?? $this->plugin->getParsedConfig()->getMaxRadius()]));
         }
 
         if ($blocks + $items + $entities === 0) {
             $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $this->plugin->getLanguage()->translateString("rollback.no-changes"));
         } else {
             if ($blocks > 0) {
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.blocks", [$blocks]));
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.modified-chunks", [$chunks]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.blocks", [$blocks]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.modified-chunks", [$chunks]));
             }
 
             if ($items > 0) {
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.items", [$items]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.items", [$items]));
             }
 
             if ($entities > 0) {
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.entities", [$entities]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.entities", [$entities]));
             }
         }
 
         $diff = microtime(true) - $startTime;
         $duration = round($diff, 2);
 
-        $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.time-taken", [$duration]));
+        $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.time-taken", [$duration]));
         $sender->sendMessage(TextFormat::WHITE . "------");
     }
 

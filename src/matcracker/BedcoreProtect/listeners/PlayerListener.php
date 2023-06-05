@@ -28,7 +28,6 @@ use pocketmine\block\Cake;
 use pocketmine\block\Dirt;
 use pocketmine\block\Fire;
 use pocketmine\block\Grass;
-use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\TNT;
 use pocketmine\block\VanillaBlocks;
@@ -155,7 +154,7 @@ final class PlayerListener extends BedcoreListener
                             return;
                         }
                     } elseif ($clickedBlock instanceof Cake) {
-                        if ($player->isSurvival() && $clickedBlock->getMeta() > 5) {
+                        if ($player->isSurvival() && $clickedBlock->getBites() >= Cake::MAX_BITES) {
                             $this->blocksQueries->addBlockLogByEntity($player, $clickedBlock, VanillaBlocks::AIR(), Action::BREAK(), $clickedBlockPos);
                             return;
                         }
@@ -193,9 +192,8 @@ final class PlayerListener extends BedcoreListener
             $actions = $transaction->getActions();
 
             foreach ($actions as $action) {
-                if ($action instanceof SlotChangeAction && $action->getInventory() instanceof BlockInventory) {
+                if ($action instanceof SlotChangeAction) {
                     $this->inventoriesQueries->addInventorySlotLogByPlayer($player, $action);
-                    break;
                 }
             }
         }
