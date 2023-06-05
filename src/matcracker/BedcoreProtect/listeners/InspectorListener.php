@@ -24,8 +24,9 @@ namespace matcracker\BedcoreProtect\listeners;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use pocketmine\block\Block;
+use pocketmine\block\inventory\BlockInventory;
 use pocketmine\block\ItemFrame;
-use pocketmine\block\tile\Chest;
+use pocketmine\block\tile\Container;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerInteractEvent;
@@ -97,23 +98,26 @@ final class InspectorListener extends BedcoreListener
         $player = $event->getPlayer();
 
         if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
-            $clickedBlock = $event->getBlock();
-            $action = $event->getAction();
+            if ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+                $clickedBlock = $event->getBlock();
+                $player->sendMessage($clickedBlock->getName());
+                $position = $clickedBlock->getPosition();
+                $tile = BlockUtils::asTile($position);
 
-            if ($action === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
-                if (BlockUtils::hasInventory($clickedBlock) || $clickedBlock instanceof ItemFrame) {
-                    $tileChest = BlockUtils::asTile($clickedBlock->getPosition());
+                if ($tile instanceof Container) {
+                    $inventory = $tile->getInventory();
                     //This is needed for double chest to get the position of its holder (the left chest).
-                    if ($tileChest instanceof Chest) {
-                        $position = $tileChest->getInventory()->getHolder();
-                    } else {
-                        $position = $clickedBlock->getPosition();
+                    if ($inventory instanceof BlockInventory) {
+                        $position = $inventory->getHolder();
                     }
+
                     $this->pluginQueries->requestTransactionLog($player, $position);
                     $event->cancel();
-
+                } elseif ($clickedBlock instanceof ItemFrame) {
+                    $this->pluginQueries->requestTransactionLog($player, $position);
+                    $event->cancel();
                 } elseif (BlockUtils::canBeClicked($clickedBlock)) {
-                    $this->pluginQueries->requestBlockLog($player, $clickedBlock->getPosition());
+                    $this->pluginQueries->requestBlockLog($player, $position);
                     $event->cancel();
                 }
             }
