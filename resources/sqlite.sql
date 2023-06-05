@@ -15,13 +15,13 @@ CREATE TABLE IF NOT EXISTS "entities"
 CREATE TABLE IF NOT EXISTS "log_history"
 (
     log_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    who        VARCHAR(36)      NOT NULL,
-    x          INTEGER          NOT NULL,
-    y          SMALLINT         NOT NULL,
-    z          INTEGER          NOT NULL,
-    world_name VARCHAR(255)     NOT NULL,
-    action     TINYINT UNSIGNED NOT NULL,
-    time       DOUBLE PRECISION NOT NULL,
+    who        VARCHAR(36)          NOT NULL,
+    x          INTEGER              NOT NULL,
+    y          SMALLINT             NOT NULL,
+    z          INTEGER              NOT NULL,
+    world_name VARCHAR(255)         NOT NULL,
+    action     TINYINT UNSIGNED     NOT NULL,
+    time       DOUBLE PRECISION     NOT NULL,
     "rollback" TINYINT(1) DEFAULT 0 NOT NULL,
     CONSTRAINT fk_log_who FOREIGN KEY (who) REFERENCES "entities" (uuid)
 );
@@ -51,11 +51,11 @@ CREATE TABLE IF NOT EXISTS "entities_log"
 CREATE TABLE IF NOT EXISTS "inventories_log"
 (
     history_id INTEGER PRIMARY KEY,
-    slot       UNSIGNED TINYINT NOT NULL,
-    old_name   TEXT             NOT NULL,
+    slot       UNSIGNED TINYINT           NOT NULL,
+    old_name   TEXT                       NOT NULL,
     old_nbt    BLOB             DEFAULT NULL,
     old_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
-    new_name   TEXT             NOT NULL,
+    new_name   TEXT                       NOT NULL,
     new_nbt    BLOB             DEFAULT NULL,
     new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
     CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
 -- # &
 CREATE TABLE IF NOT EXISTS status
 (
-    version     VARCHAR(20) PRIMARY KEY NOT NULL,
+    version     VARCHAR(20) PRIMARY KEY                                               NOT NULL,
     upgraded_on TIMESTAMP DEFAULT (STRFTIME('%Y-%m-%d %H:%M:%S', 'now', 'localtime')) NOT NULL
 );
 -- #        }
