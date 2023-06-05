@@ -27,6 +27,7 @@ use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\Inspector;
 use matcracker\BedcoreProtect\Main;
+use matcracker\BedcoreProtect\storage\DataConnectorHelper;
 use matcracker\BedcoreProtect\storage\LookupData;
 use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\block\VanillaBlocks;
@@ -174,7 +175,14 @@ class PluginQueries extends Query
 
         $query .= " ORDER BY time DESC LIMIT :limit OFFSET :offset;";
 
-        $this->asGenericStatement($query, $args, "dyn-lookup-query", $variables, $parameters);
+        DataConnectorHelper::asGenericStatement(
+            $this->plugin->getParsedConfig()->getDatabaseType(),
+            $query,
+            $args,
+            "dyn-lookup-query",
+            $variables,
+            $parameters
+        );
     }
 
     /**
@@ -250,30 +258,6 @@ class PluginQueries extends Query
         }
 
         $query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
-    }
-
-    /**
-     * @param string $query
-     * @param array[] $args
-     * @param string $statementName
-     * @param GenericVariable[] $variables
-     * @param array $parameters
-     */
-    private function asGenericStatement(string &$query, array &$args, string $statementName, array $variables, array $parameters): void
-    {
-        $isSQLite = $this->plugin->getParsedConfig()->isSQLite();
-
-        $statement = GenericStatementImpl::forDialect(
-            $isSQLite ? SqlDialect::SQLITE : SqlDialect::MYSQL,
-            $statementName,
-            [$query],
-            "",
-            $variables,
-            null,
-            0
-        );
-
-        [$query] = $statement->format($parameters, $isSQLite ? "" : "?", $args);
     }
 
     public function requestTransactionLog(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
@@ -362,7 +346,14 @@ class PluginQueries extends Query
 
         $query .= " ORDER BY time" . ($rollback ? " DESC" : "") . " LIMIT :limit;";
 
-        $this->asGenericStatement($query, $args, "dyn-log-selection-query", $variables, $parameters);
+        DataConnectorHelper::asGenericStatement(
+            $this->plugin->getParsedConfig()->getDatabaseType(),
+            $query,
+            $args,
+            "dyn-log-selection-query",
+            $variables,
+            $parameters
+        );
     }
 
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator

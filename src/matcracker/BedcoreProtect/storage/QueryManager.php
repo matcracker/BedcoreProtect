@@ -196,37 +196,38 @@ final class QueryManager
     private function sendRollbackReport(CommandSender $sender, CommandData $cmdData, bool $rollback, int $blocks, int $chunks, int $items, int $entities, float $startTime): void
     {
         $date = Utils::timeAgo((int)microtime(true) - $cmdData->getTime());
+        $lang = $this->plugin->getLanguage();
 
         $sender->sendMessage(TextFormat::WHITE . "--- " . TextFormat::DARK_AQUA . Main::PLUGIN_NAME . TextFormat::GRAY . " " . $this->plugin->getLanguage()->translateString("rollback.report") . TextFormat::WHITE . " ---");
-        $sender->sendMessage(TextFormat::WHITE . $this->plugin->getLanguage()->translateString(($rollback ? "rollback" : "restore") . ".completed", [$cmdData->getWorld()]));
-        $sender->sendMessage(TextFormat::WHITE . $this->plugin->getLanguage()->translateString(($rollback ? "rollback" : "restore") . ".date", [$date]));
+        $sender->sendMessage(TextFormat::WHITE . $lang->translateString(($rollback ? "rollback" : "restore") . ".completed", [$cmdData->getWorld()]));
+        $sender->sendMessage(TextFormat::WHITE . $lang->translateString(($rollback ? "rollback" : "restore") . ".date", [$date]));
         if ($cmdData->isGlobalRadius()) {
-            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.global-radius"));
+            $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.global-radius"));
         } else {
-            $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.radius", [$cmdData->getRadius() ?? $this->plugin->getParsedConfig()->getMaxRadius()]));
+            $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.radius", [$cmdData->getRadius() ?? $this->plugin->getParsedConfig()->getMaxRadius()]));
         }
 
         if ($blocks + $items + $entities === 0) {
             $sender->sendMessage(TextFormat::WHITE . "- " . TextFormat::DARK_AQUA . $this->plugin->getLanguage()->translateString("rollback.no-changes"));
         } else {
             if ($blocks > 0) {
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.blocks", [$blocks]));
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.modified-chunks", [$chunks]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.blocks", [$blocks]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.modified-chunks", [$chunks]));
             }
 
             if ($items > 0) {
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.items", [$items]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.items", [$items]));
             }
 
             if ($entities > 0) {
-                $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.entities", [$entities]));
+                $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.entities", [$entities]));
             }
         }
 
         $diff = microtime(true) - $startTime;
         $duration = round($diff, 2);
 
-        $sender->sendMessage(TextFormat::WHITE . "- " . $this->plugin->getLanguage()->translateString("rollback.time-taken", [$duration]));
+        $sender->sendMessage(TextFormat::WHITE . "- " . $lang->translateString("rollback.time-taken", [$duration]));
         $sender->sendMessage(TextFormat::WHITE . "------");
     }
 

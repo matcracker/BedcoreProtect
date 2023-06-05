@@ -68,15 +68,6 @@ final class DataConnectorHelper
      */
     public static function asGenericStatement(string $dialect, string &$query, array &$args, string $statementName, array $variables, array $parameters): void
     {
-        if ($dialect !== SqlDialect::SQLITE && $dialect !== SqlDialect::MYSQL) {
-            throw new InvalidArgumentException("Invalid dialect $dialect");
-        }
-
-        $placeholder = match ($dialect) {
-            SqlDialect::SQLITE => null,
-            SqlDialect::MYSQL => "?"
-        };
-
         $statement = GenericStatementImpl::forDialect(
             $dialect,
             $statementName,
@@ -87,6 +78,10 @@ final class DataConnectorHelper
             0
         );
 
-        [$query] = $statement->format($parameters, $placeholder, $args);
+        [$query] = $statement->format($parameters, match ($dialect) {
+            SqlDialect::SQLITE => null,
+            SqlDialect::MYSQL => "?",
+            default => throw new InvalidArgumentException("Unsupported SQL dialect $dialect")
+        }, $args);
     }
 }
