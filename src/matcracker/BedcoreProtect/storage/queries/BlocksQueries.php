@@ -170,7 +170,7 @@ class BlocksQueries extends Query
 
                 ArrayUtils::resetKeys($oldBlocks, $oldBlocksNbt);
 
-                self::getMutex()->putClosure(
+                Await::g2c(self::getMutex()->runClosure(
                     function () use ($entity, $oldBlocks, $oldBlocksNbt, $newBlocks, $newBlocksNbt, $action, $time): Generator {
                         yield from $this->entitiesQueries->addEntity($entity);
 
@@ -194,7 +194,7 @@ class BlocksQueries extends Query
 
                         yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
                     }
-                );
+                ));
             }
         ), $delay);
     }
@@ -221,7 +221,7 @@ class BlocksQueries extends Query
         $uuidEntity = EntityUtils::getUniqueId($entity);
         $time = microtime(true);
 
-        self::getMutex()->putClosure(
+        Await::g2c(self::getMutex()->runClosure(
             function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $action, $time): Generator {
                 yield from $this->entitiesQueries->addEntity($entity);
 
@@ -245,7 +245,7 @@ class BlocksQueries extends Query
 
                 yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
             }
-        );
+        ));
     }
 
     /**

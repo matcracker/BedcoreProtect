@@ -29,23 +29,20 @@ use pocketmine\command\CommandSender;
 use pocketmine\math\Vector3;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
+use SOFe\AwaitGenerator\Mutex;
 use function mb_strtolower;
 
 abstract class Query
 {
-    private static AwaitMutex $mutex;
+    private static Mutex $mutex;
 
     public function __construct(protected Main $plugin, protected DataConnector $connector)
     {
     }
 
-    final protected static function getMutex(): AwaitMutex
+    final protected static function getMutex(): Mutex
     {
-        if (!isset(self::$mutex)) {
-            self::$mutex = new AwaitMutex();
-        }
-
-        return self::$mutex;
+        return self::$mutex ??= new Mutex();
     }
 
     /**

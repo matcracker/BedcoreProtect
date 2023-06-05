@@ -134,7 +134,7 @@ class InventoriesQueries extends Query
 
         $contents = $inventory->getContents();
 
-        $this->getMutex()->putClosure(
+        Await::g2c(self::getMutex()->runClosure(
             function () use ($player, $worldName, $time, $contents, $inventoryPosition): Generator {
                 yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
@@ -157,7 +157,7 @@ class InventoriesQueries extends Query
 
                 yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
             }
-        );
+        ));
     }
 
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
