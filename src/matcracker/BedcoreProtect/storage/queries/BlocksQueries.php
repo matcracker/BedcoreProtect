@@ -175,11 +175,11 @@ class BlocksQueries extends Query
                         yield from $this->entitiesQueries->addEntity($entity);
 
                         yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
-
+                        $generators = [];
                         foreach ($oldBlocks as $key => $oldBlock) {
                             $oldPosition = $oldBlock->getPosition();
 
-                            yield from $this->addRawBlockLog(
+                            $generators[] = $this->addRawBlockLog(
                                 EntityUtils::getUniqueId($entity),
                                 $oldBlock,
                                 $oldBlocksNbt[$key],
@@ -191,6 +191,7 @@ class BlocksQueries extends Query
                                 $time
                             );
                         }
+                        yield from Await::all($generators);
 
                         yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
                     }
@@ -227,10 +228,11 @@ class BlocksQueries extends Query
 
                 yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
+                $generators = [];
                 foreach ($oldBlocks as $key => $oldBlock) {
                     $oldPos = $oldBlock->getPosition();
 
-                    yield from $this->addRawBlockLog(
+                    $generators[] = $this->addRawBlockLog(
                         $uuidEntity,
                         $oldBlock,
                         $oldBlocksNbt[$key],
@@ -242,6 +244,7 @@ class BlocksQueries extends Query
                         $time
                     );
                 }
+                yield from Await::all($generators);
 
                 yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
             }
@@ -391,14 +394,10 @@ class BlocksQueries extends Query
             }
         }
 
-        Server::getInstance()->getAsyncPool()->submitTask(new AsyncBlockSetter(
-            $world->getFolderName(),
-            $chunks,
-            $blockData,
-            yield Await::RESOLVE
-        ));
-        yield Await::REJECT;
+        $pool = Server::getInstance()->getAsyncPool();
 
-        return yield Await::ONCE;
+        return yield from Await::promise(
+            static fn($resolve, $reject) => $pool->submitTask(new AsyncBlockSetter($world->getFolderName(), $chunks, $blockData, $resolve))
+        );
     }
 }

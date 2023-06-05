@@ -123,8 +123,12 @@ final class QueryManager
                     $chunks += $tmpChunks;
                     $blockUpdatesPos = array_merge($blockUpdatesPos, $tmpBlockUpdPos);
 
-                    $items += yield from $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds);
-                    $entities += yield from $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds);
+                    [$tmpItems, $tmpEntities] = yield from Await::all([
+                        $this->getInventoriesQueries()->onRollback($sender, $world, $rollback, $logIds),
+                        $this->getEntitiesQueries()->onRollback($sender, $world, $rollback, $logIds)
+                    ]);
+                    $items += $tmpItems;
+                    $entities += $tmpEntities;
 
                     yield from $this->connector->asyncChange(QueriesConst::UPDATE_ROLLBACK_STATUS, [
                         "rollback" => $rollback,

@@ -86,8 +86,10 @@ class EntitiesQueries extends Query
         $time = microtime(true);
         Await::f2c(
             function () use ($damager, $entity, $entityNbt, $worldName, $action, $time): Generator {
-                yield from $this->addEntity($damager);
-                yield from $this->addEntity($entity);
+                yield from Await::all([
+                    $this->addEntity($damager),
+                    $this->addEntity($entity)
+                ]);
 
                 /** @var int $lastId */
                 [$lastId] = yield from $this->addRawLog(EntityUtils::getUniqueId($damager), $entity->getPosition(), $worldName, $action, $time);
@@ -167,13 +169,7 @@ class EntitiesQueries extends Query
             $rows = [];
         }
 
-        //On success
-        $onSuccess = yield Await::RESOLVE;
-        $onSuccess(count($rows));
-
-        yield Await::REJECT;
-
-        return yield Await::ONCE;
+        return yield from Await::promise(static fn($resolve, $reject) => $resolve(count($rows)));
     }
 
     final protected function updateEntityId(int $logId, Entity $entity): Generator
