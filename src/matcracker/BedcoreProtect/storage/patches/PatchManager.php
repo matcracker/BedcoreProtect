@@ -43,6 +43,7 @@ final class PatchManager
 
     public function __construct(private readonly Main $plugin, private readonly DataConnector $connector)
     {
+        $this->registerPluginPatch(new PluginPatchV110($this->connector, $this->plugin->getLogger()));
     }
 
     private function registerPluginPatch(PluginPatch $patch): void

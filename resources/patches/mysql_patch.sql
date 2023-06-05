@@ -291,4 +291,53 @@ ALTER TABLE entities
     DROP COLUMN entity_classpath;
 -- #        }
 -- #    }
+-- #    {1.1.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS temp
+(
+    history_id BIGINT PRIMARY KEY,
+    old_name   TINYTEXT NOT NULL,
+    old_state  BLOB     NOT NULL,
+    old_nbt    LONGBLOB DEFAULT NULL,
+    new_name   TINYTEXT NOT NULL,
+    new_state  BLOB     NOT NULL,
+    new_nbt    LONGBLOB DEFAULT NULL
+);
+-- #        }
+-- #        {2
+DROP TABLE blocks_log;
+-- #        }
+-- #        {3
+ALTER TABLE temp
+    RENAME TO blocks_log;
+-- #        }
+-- #        {4
+ALTER TABLE blocks_log
+    ADD CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
+-- #        }
+-- #        {5
+CREATE TABLE IF NOT EXISTS temp
+(
+    history_id BIGINT PRIMARY KEY,
+    slot       TINYINT UNSIGNED           NOT NULL,
+    old_name   TINYTEXT                   NOT NULL,
+    old_nbt    LONGBLOB         DEFAULT NULL,
+    old_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+    new_name   TINYTEXT                   NOT NULL,
+    new_nbt    LONGBLOB         DEFAULT NULL,
+    new_amount TINYINT UNSIGNED DEFAULT 0 NOT NULL
+);
+-- #        }
+-- #        {6
+DROP TABLE inventories_log;
+-- #        }
+-- #        {7
+ALTER TABLE temp
+    RENAME TO inventories_log;
+-- #        }
+-- #        {8
+ALTER TABLE inventories_log
+    ADD CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE;
+-- #        }
+-- #    }
 -- #}

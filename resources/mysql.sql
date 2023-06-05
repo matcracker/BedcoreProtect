@@ -383,6 +383,12 @@ LIMIT :limit OFFSET :offset;
 -- #        }
 -- #    }
 -- #    {purge
+-- #        {id
+-- #            :log_id int
+DELETE
+FROM log_history
+WHERE log_id = :log_id;
+-- #        }
 -- #        {time
 -- #            :time float
 DELETE

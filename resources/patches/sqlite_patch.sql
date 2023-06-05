@@ -417,4 +417,47 @@ ALTER TABLE "temp"
     RENAME TO "entities";
 -- #        }
 -- #    }
+-- #    {1.1.0
+-- #        {1
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    old_name   TEXT NOT NULL,
+    old_state  BLOB NOT NULL,
+    old_nbt    BLOB DEFAULT NULL,
+    new_name   TEXT NOT NULL,
+    new_state  BLOB NOT NULL,
+    new_nbt    BLOB DEFAULT NULL,
+    CONSTRAINT fk_blocks_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {2
+DROP TABLE "blocks_log";
+-- #        }
+-- #        {3
+ALTER TABLE "temp"
+    RENAME TO "blocks_log";
+-- #        }
+-- #        {4
+CREATE TABLE IF NOT EXISTS "temp"
+(
+    history_id INTEGER PRIMARY KEY,
+    slot       UNSIGNED TINYINT           NOT NULL,
+    old_name   TEXT                       NOT NULL,
+    old_nbt    BLOB             DEFAULT NULL,
+    old_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    new_name   TEXT                       NOT NULL,
+    new_nbt    BLOB             DEFAULT NULL,
+    new_amount UNSIGNED TINYINT DEFAULT 0 NOT NULL,
+    CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- #        }
+-- #        {5
+DROP TABLE "inventories_log";
+-- #        }
+-- #        {6
+ALTER TABLE "temp"
+    RENAME TO "inventories_log";
+-- #        }
+-- #    }
 -- #}
