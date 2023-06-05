@@ -37,11 +37,7 @@ use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use pocketmine\World\Position;
 use pocketmine\World\World;
-use poggit\libasynql\generic\GenericStatementImpl;
 use poggit\libasynql\generic\GenericVariable;
-use poggit\libasynql\result\SqlSelectResult;
-use poggit\libasynql\SqlDialect;
-use poggit\libasynql\SqlThread;
 use SOFe\AwaitGenerator\Await;
 use function array_map;
 use function count;
@@ -58,7 +54,7 @@ class PluginQueries extends Query
 {
     public function requestNearLog(Player $inspector, int $radius, int $limit = 4, int $offset = 0): void
     {
-        $this->requestLog(
+        Await::g2c($this->requestLog(
             QueriesConst::GET_NEAR_LOG,
             LookupData::NEAR_LOG,
             $inspector,
@@ -66,15 +62,15 @@ class PluginQueries extends Query
             new CommandData(null, null, $inspector->getWorld()->getFolderName(), $radius),
             $limit,
             $offset
-        );
+        ));
     }
 
-    private function requestLog(string $queryName, int $queryType, CommandSender $inspector, Position $position, CommandData $cmdData, int $limit = 4, int $offset = 0): void
+    private function requestLog(string $queryName, int $queryType, CommandSender $inspector, Position $position, CommandData $cmdData, int $limit = 4, int $offset = 0): Generator
     {
         $bb = MathUtils::getRangedVector($position, $cmdData->getRadius() ?? 0);
         MathUtils::floorBoundingBox($bb);
 
-        $this->connector->executeSelect(
+        $rows = yield from $this->connector->asyncSelect(
             $queryName,
             [
                 "min_x" => $bb->minX,
@@ -86,29 +82,27 @@ class PluginQueries extends Query
                 "world_name" => $position->getWorld()->getFolderName(),
                 "limit" => $limit,
                 "offset" => $offset
-            ],
-            $this->onSuccessLog($queryType, $inspector, $position, $cmdData, $limit, $offset)
+            ]
         );
+
+        $this->onSuccessLog($rows, $queryType, $inspector, $position, $cmdData, $limit, $offset);
     }
 
-    private function onSuccessLog(int $queryType, CommandSender $inspector, ?Position $position, CommandData $cmdData, int $limit, int $offset): callable
+    private function onSuccessLog(array $rows, int $queryType, CommandSender $inspector, ?Position $position, CommandData $cmdData, int $limit, int $offset): void
     {
-        return function (array $rows) use ($queryType, $inspector, $cmdData, $position, $limit, $offset): void {
-            if (count($rows) === 0) {
-                $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("subcommand.show.empty-data"));
+        if (count($rows) === 0) {
+            $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("subcommand.show.empty-data"));
+            return;
+        }
 
-                return;
-            }
-
-            LookupData::storeData($inspector, new LookupData($queryType, (int)$rows[0]["cnt_rows"], $inspector, $cmdData, $position));
-            Inspector::sendLogReport($inspector, $rows, $limit, $offset);
-        };
+        LookupData::storeData($inspector, new LookupData($queryType, (int)$rows[0]["cnt_rows"], $inspector, $cmdData, $position));
+        Inspector::sendLogReport($inspector, $rows, $limit, $offset);
     }
 
-    public function requestLookup(CommandSender $inspector, CommandData $cmdData, ?Position $position, int $limit = 4, int $offset = 0): void
+    public function requestLookup(CommandSender $inspector, CommandData $cmdData, ?Position $position, int $limit = 4, int $offset = 0): Generator
     {
         $query = "";
-        $args = [[]];
+        $args = [];
 
         if (($radius = $cmdData->getRadius()) !== null) {
             $bb = MathUtils::getRangedVector($position, $radius);
@@ -118,17 +112,8 @@ class PluginQueries extends Query
 
         $this->buildLookupQuery($query, $args, $cmdData, $bb, $limit, $offset);
 
-        $this->connector->executeImplRaw(
-            [$query],
-            $args,
-            [SqlThread::MODE_SELECT],
-            /** @var SqlSelectResult[] $results */
-            function (array $results) use ($inspector, $position, $cmdData, $limit, $offset): void {
-                $result = $results[count($results) - 1];
-                $this->onSuccessLog(LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset)($result->getRows());
-            },
-            null
-        );
+        $rows = yield from DataConnectorHelper::asyncSelectRaw($this->connector, $query, $args[0]);
+        $this->onSuccessLog($rows, LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset);
     }
 
     private function buildLookupQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, int $limit = 4, int $offset = 0): void
@@ -262,7 +247,7 @@ class PluginQueries extends Query
 
     public function requestTransactionLog(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
     {
-        $this->requestLog(
+        Await::g2c($this->requestLog(
             QueriesConst::GET_TRANSACTION_LOG,
             LookupData::TRANSACTION_LOG,
             $inspector,
@@ -270,12 +255,12 @@ class PluginQueries extends Query
             new CommandData(null, null, $position->getWorld()->getFolderName(), $radius),
             $limit,
             $offset
-        );
+        ));
     }
 
     public function requestBlockLog(Player $inspector, Position $blockPos, int $radius = 0, int $limit = 4, int $offset = 0): void
     {
-        $this->requestLog(
+        Await::g2c($this->requestLog(
             QueriesConst::GET_BLOCK_LOG,
             LookupData::BLOCK_LOG,
             $inspector,
@@ -283,7 +268,7 @@ class PluginQueries extends Query
             new CommandData(null, null, $blockPos->getWorld()->getFolderName(), $radius),
             $limit,
             $offset
-        );
+        ));
     }
 
     public function purge(float $time, ?string $worldName, bool $optimize, ?Closure $onSuccess = null): void
