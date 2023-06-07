@@ -30,7 +30,7 @@ use dktapps\pmforms\element\Label;
 use dktapps\pmforms\element\Toggle;
 use InvalidArgumentException;
 use matcracker\BedcoreProtect\commands\CommandData;
-use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
@@ -120,7 +120,13 @@ abstract class ParsableSubCommand extends SubCommand
                 if ($response->getBool("global-radius")) {
                     $command .= " r=#global";
                 } else {
-                    if (($radius = (int)$response->getFloat("radius")) > 0) {
+                    if ($this->getOwningPlugin()->getParsedConfig()->getMaxRadius() > 0) {
+                        $radius = (int)$response->getFloat("radius");
+                    } else {
+                        $radius = (int)$response->getString("radius");
+                    }
+
+                    if ($radius > 0) {
                         $command .= " r=$radius";
                     }
                 }
@@ -284,9 +290,9 @@ abstract class ParsableSubCommand extends SubCommand
                     }
                     break;
                 case CommandParameter::ACTIONS()->name():
-                    $actions = Action::fromCommandArgument(mb_strtolower($value));
+                    $actions = ActionType::fromCommandArgument(mb_strtolower($value));
                     if ($actions === null) {
-                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-action", [$value, implode(", ", Action::COMMAND_ARGUMENTS)]));
+                        $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-action", [$value, implode(", ", ActionType::COMMAND_ARGUMENTS)]));
                         return null;
                     }
 

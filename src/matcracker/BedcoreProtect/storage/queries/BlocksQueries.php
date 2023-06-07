@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\tasks\async\AsyncBlockSetter;
 use matcracker\BedcoreProtect\utils\ArrayUtils;
@@ -303,7 +304,7 @@ class BlocksQueries extends Query
         $oldNbt = Utils::serializeNBT($nbt = $tileItemFrame->saveNBT());
 
         $nbt->setTag(TileItemFrame::TAG_ITEM, $item->nbtSerialize());
-        if ($action->equals(Action::CLICK())) {
+        if ($action === ActionType::CLICK()) {
             $nbt->setByte(TileItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % ItemFrame::ROTATIONS);
         }
         $newNbt = Utils::serializeNBT($nbt);
@@ -324,7 +325,7 @@ class BlocksQueries extends Query
                 microtime(true)
             ),
             function () use ($player, $item, $action, $position, $worldName): void {
-                if (!$action->equals(Action::CLICK())) {
+                if ($action !== ActionType::CLICK()) {
                     $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $position, $worldName);
                 }
             }

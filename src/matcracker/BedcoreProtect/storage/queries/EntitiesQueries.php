@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
@@ -151,10 +152,10 @@ class EntitiesQueries extends Query
             $factory = EntityFactory::getInstance();
 
             foreach ($rows as $row) {
-                $action = Action::fromType((int)$row["action"]);
+                $action = ActionType::fromId((int)$row["action"]);
                 if (
-                    ($rollback && ($action->equals(Action::KILL()) || $action->equals(Action::DESPAWN()))) ||
-                    (!$rollback && $action->equals(Action::SPAWN()))
+                    ($rollback && ($action === ActionType::KILL() || $action === ActionType::DESPAWN()) ||
+                    (!$rollback && $action === ActionType::SPAWN()))
                 ) {
                     $entity = $factory->createFromData($world, Utils::deserializeNBT($row["entityfrom_nbt"]));
                     if ($entity !== null) {

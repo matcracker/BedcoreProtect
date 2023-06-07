@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\ActionType;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\Human;
 use pocketmine\entity\object\FallingBlock;
@@ -44,7 +44,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->config->isEnabledWorld($entity->getWorld()) && $this->config->getExplosions()) {
-            $this->blocksQueries->addExplosionLogByEntity($entity, $event->getBlockList(), Action::BREAK());
+            $this->blocksQueries->addExplosionLogByEntity($entity, $event->getBlockList(), ActionType::BREAK());
         }
     }
 
@@ -64,7 +64,7 @@ final class EntityListener extends BedcoreListener
         $world = $entity->getWorld();
         if ($this->config->isEnabledWorld($world)) {
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
-                $this->blocksQueries->addBlockLogByEntity($entity, $entity->getBlock(), VanillaBlocks::AIR(), Action::BREAK(), $entity->getPosition());
+                $this->blocksQueries->addBlockLogByEntity($entity, $entity->getBlock(), VanillaBlocks::AIR(), ActionType::BREAK(), $entity->getPosition());
             }
         }
     }
@@ -86,7 +86,7 @@ final class EntityListener extends BedcoreListener
             if ($entity instanceof Painting && $this->config->getBlockBreak()) {
                 $damager = $event->getDamager();
                 if ($damager !== null) {
-                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::DESPAWN());
+                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, ActionType::DESPAWN());
                 }
             }
         }
@@ -109,10 +109,10 @@ final class EntityListener extends BedcoreListener
             if ($damageEvent instanceof EntityDamageByEntityEvent) {
                 $damager = $damageEvent->getDamager();
                 if ($damager !== null) {
-                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, Action::KILL());
+                    $this->entitiesQueries->addEntityLogByEntity($damager, $entity, ActionType::KILL());
                 }
             } elseif ($damageEvent instanceof EntityDamageByBlockEvent) {
-                $this->entitiesQueries->addEntityLogByBlock($entity, $damageEvent->getDamager(), Action::KILL());
+                $this->entitiesQueries->addEntityLogByBlock($entity, $damageEvent->getDamager(), ActionType::KILL());
             }
         }
     }
@@ -126,7 +126,7 @@ final class EntityListener extends BedcoreListener
     {
         $entity = $event->getEntity();
         if ($this->config->isEnabledWorld($entity->getWorld()) && $this->config->getBlockMovement()) {
-            $this->blocksQueries->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), Action::PLACE(), $entity->getPosition());
+            $this->blocksQueries->addBlockLogByEntity($entity, $event->getBlock(), $event->getTo(), ActionType::PLACE(), $entity->getPosition());
         }
     }
 }

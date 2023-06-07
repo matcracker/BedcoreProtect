@@ -222,7 +222,7 @@ class PluginQueries extends Query
         if (($actions = $commandData->getActions()) !== null) {
             $variables["actions"] = new GenericVariable("actions", "list:int", null);
             $params["actions"] = array_map(static function (Action $action): int {
-                return $action->getType();
+                return $action->getId();
             }, $actions);
 
             $query .= "(action IN :actions) AND ";

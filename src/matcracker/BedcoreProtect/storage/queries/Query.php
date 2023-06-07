@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\AwaitMutex;
 use pocketmine\command\CommandSender;
@@ -62,7 +63,7 @@ abstract class Query
             "y" => $position->getY(),
             "z" => $position->getZ(),
             "world_name" => $worldName,
-            "action" => $action->getType(),
+            "action" => $action->getId(),
             "time" => $time
         ]);
     }

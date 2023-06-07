@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\enums\Action;
+use matcracker\BedcoreProtect\enums\ActionType;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
 use pocketmine\block\BlockTypeIds;
@@ -52,7 +52,7 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
-            $this->blocksQueries->addExplosionLogByEntity($player, $block->getAffectedBlocks(), Action::BREAK());
+            $this->blocksQueries->addExplosionLogByEntity($player, $block->getAffectedBlocks(), ActionType::BREAK());
 
             if ($this->config->getNaturalBreak()) {
                 $sides = [];
@@ -72,7 +72,7 @@ final class BlockListener extends BedcoreListener
                 }
 
                 //This is necessary because it is not possible to predict which blocks will be broken
-                $this->blocksQueries->addScheduledBlocksLogByEntity($player, $sides, Action::BREAK(), 2);
+                $this->blocksQueries->addScheduledBlocksLogByEntity($player, $sides, ActionType::BREAK(), 2);
             }
         }
     }
@@ -96,7 +96,7 @@ final class BlockListener extends BedcoreListener
              */
             foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
                 $replacedBlock = $world->getBlockAt($x, $y, $z);
-                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE());
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, ActionType::PLACE());
             }
         }
     }
@@ -114,7 +114,7 @@ final class BlockListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($blockPos->getWorld())) {
             if ($source instanceof Liquid) {
-                $action = $block instanceof Air ? Action::PLACE() : Action::BREAK();
+                $action = $block instanceof Air ? ActionType::PLACE() : ActionType::BREAK();
                 $this->blocksQueries->addBlockLogByBlock($source, $block, $source, $action, $blockPos);
             }
         }
@@ -131,7 +131,7 @@ final class BlockListener extends BedcoreListener
         $blockPos = $block->getPosition();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld()) && $this->config->getBlockBurn()) {
-            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, VanillaBlocks::AIR(), Action::BREAK(), $blockPos);
+            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, VanillaBlocks::AIR(), ActionType::BREAK(), $blockPos);
         }
     }
 
@@ -150,7 +150,7 @@ final class BlockListener extends BedcoreListener
                 $result = $event->getNewState();
 
                 $liquid = $block instanceof Water ? VanillaBlocks::LAVA() : VanillaBlocks::WATER();
-                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, Action::PLACE(), $blockPos);
+                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, ActionType::PLACE(), $blockPos);
             }
         }
     }
@@ -165,7 +165,7 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
 
         if ($this->config->isEnabledWorld($block->getPosition()->getWorld()) && $this->config->getSignText()) {
-            $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, Action::UPDATE());
+            $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, ActionType::UPDATE());
         }
     }
 }

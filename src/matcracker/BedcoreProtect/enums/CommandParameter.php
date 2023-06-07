@@ -160,7 +160,7 @@ final class CommandParameter
                 new Dropdown(
                     "action",
                     $plugin->getLanguage()->translateString("form.params.actions"),
-                    Action::COMMAND_ARGUMENTS
+                    ActionType::COMMAND_ARGUMENTS
                 ),
                 "[a=block], [a=+block], [a=-block], [a=click,container], [a=block,kill]"
             ),
