@@ -25,6 +25,7 @@ use InvalidArgumentException;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\utils\EnumTrait;
 use pocketmine\utils\RegistryTrait;
+use function mb_strtolower;
 
 /**
  * This doc-block is generated automatically, do not modify it manually.
@@ -82,7 +83,7 @@ final class ActionType
     public static function fromCommandArgument(string $argument): ?array
     {
         self::checkInit();
-        return self::$commandMap[$argument] ?? null;
+        return self::$commandMap[mb_strtolower($argument)] ?? throw new InvalidArgumentException("Unknown argument $argument");
     }
 
     protected static function setup(): void
@@ -104,7 +105,7 @@ final class ActionType
         self::_registryRegister($name, $action);
         self::$idMap[$action->getId()] = $action;
         foreach ($action->getArguments() as $argument) {
-            self::$commandMap[$argument][] = $action;
+            self::$commandMap[mb_strtolower($argument)][] = $action;
         }
     }
 }

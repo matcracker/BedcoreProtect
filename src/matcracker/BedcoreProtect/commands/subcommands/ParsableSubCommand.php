@@ -290,8 +290,9 @@ abstract class ParsableSubCommand extends SubCommand
                     }
                     break;
                 case CommandParameter::ACTIONS()->name():
-                    $actions = ActionType::fromCommandArgument(mb_strtolower($value));
-                    if ($actions === null) {
+                    try {
+                        $actions = ActionType::fromCommandArgument(mb_strtolower($value));
+                    } catch (InvalidArgumentException) {
                         $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("parser.invalid-action", [$value, implode(", ", ActionType::COMMAND_ARGUMENTS)]));
                         return null;
                     }
