@@ -60,10 +60,10 @@ class EntitiesQueries extends Query
 
         $queries = [];
         foreach ($map as $uuid => $name) {
-            $queries[] = yield from $this->addRawEntity($uuid, $name);
+            $queries[] = $this->addRawEntity($uuid, $name);
         }
 
-        Await::all($queries);
+        yield from Await::all($queries);
     }
 
     /**
