@@ -28,31 +28,18 @@ use pocketmine\utils\EnumTrait;
  * This must be regenerated whenever enum members are added, removed or changed.
  * @see EnumTrait::_generateMethodAnnotations()
  *
- * @method static self OPTIMIZE()
+ * @method static AdditionalParameter OPTIMIZE()
  */
 final class AdditionalParameter
 {
+    use CustomEnumTrait;
+
     public const KEY_CHAR = "#";
-
-    use CustomEnumTrait {
-        register as Enum_register;
-        __construct as Enum___construct;
-    }
-
-    public function __construct(string $enumName)
-    {
-        $this->Enum___construct($enumName);
-    }
 
     protected static function setup(): void
     {
         self::registerAll(
             new self("optimize")
         );
-    }
-
-    protected static function register(self $member): void
-    {
-        self::Enum_register($member);
     }
 }
