@@ -6,7 +6,7 @@
  *   / _  / -_) _  / __/ _ \/ __/ -_) ___/ __/ _ \/ __/ -_) __/ __/
  *  /____/\__/\_,_/\__/\___/_/  \__/_/  /_/  \___/\__/\__/\__/\__/
  *
- * Copyright (C) 2019-2021
+ * Copyright (C) 2019-2023
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -136,6 +136,12 @@ abstract class ParsableSubCommand extends SubCommand
                 /** @var string $world */
                 $world = $worldDropDown->getOption($response->getInt("world"));
                 $command .= " w=$world";
+
+                /** @var Dropdown $actionsDropDown */
+                $actionsDropDown = $elements["actions"];
+                /** @var string $action */
+                $action = $actionsDropDown->getOption($response->getInt("action"));
+                $command .= " a=$action";
 
                 if (strlen($users = $response->getString("users")) > 0) {
                     $command .= " u=$users";
