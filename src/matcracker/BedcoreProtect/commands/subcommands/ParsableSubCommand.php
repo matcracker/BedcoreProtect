@@ -137,6 +137,12 @@ abstract class ParsableSubCommand extends SubCommand
                 $world = $worldDropDown->getOption($response->getInt("world"));
                 $command .= " w=$world";
 
+                /** @var Dropdown $actionsDropDown */
+                $actionsDropDown = $elements["actions"];
+                /** @var string $action */
+                $action = $actionsDropDown->getOption($response->getInt("action"));
+                $command .= " a=$action";
+
                 if (strlen($users = $response->getString("users")) > 0) {
                     $command .= " u=$users";
                 }
