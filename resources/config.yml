@@ -119,6 +119,9 @@ item-transactions: true
 # a button, or opens a chest. Player interactions can't be rolled back.
 player-interactions: true
 
+# Logs the logins and logouts of players.
+player-sessions: true
+
 # Enable or disable the plugin's debug mode (USE IT ONLY IF NECESSARY).
 # Allow showing logging queries and enabling hidden information.
 # This setting when enabled may result in a small decrease in performance.

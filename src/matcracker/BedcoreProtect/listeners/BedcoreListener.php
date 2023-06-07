@@ -26,6 +26,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
+use matcracker\BedcoreProtect\storage\queries\PlayerQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use pocketmine\event\Listener;
 
@@ -35,6 +36,7 @@ abstract class BedcoreListener implements Listener
     protected PluginQueries $pluginQueries;
     protected BlocksQueries $blocksQueries;
     protected EntitiesQueries $entitiesQueries;
+    protected PlayerQueries $playerQueries;
     protected InventoriesQueries $inventoriesQueries;
 
     public function __construct(
@@ -46,6 +48,7 @@ abstract class BedcoreListener implements Listener
         $queryManager = $plugin->getDatabase()->getQueryManager();
         $this->pluginQueries = $queryManager->getPluginQueries();
         $this->blocksQueries = $queryManager->getBlocksQueries();
+        $this->playerQueries = $queryManager->getPlayerQueries();
         $this->entitiesQueries = $queryManager->getEntitiesQueries();
         $this->inventoriesQueries = $queryManager->getInventoriesQueries();
     }

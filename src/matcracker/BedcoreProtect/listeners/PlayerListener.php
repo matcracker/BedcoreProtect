@@ -37,6 +37,7 @@ use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
@@ -56,7 +57,23 @@ final class PlayerListener extends BedcoreListener
      */
     public function onPlayerJoin(PlayerJoinEvent $event): void
     {
-        Await::g2c($this->entitiesQueries->addEntity($event->getPlayer()));
+        $player = $event->getPlayer();
+        if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getPlayerSessions()) {
+            Await::g2c($this->playerQueries->addSessionJoin($player));
+        }
+    }
+
+    /**
+     * @param PlayerQuitEvent $event
+     *
+     * @priority MONITOR
+     */
+    public function onPlayerQuit(PlayerQuitEvent $event): void
+    {
+        $player = $event->getPlayer();
+        if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getPlayerSessions()) {
+            Await::g2c($this->playerQueries->addSessionLeft($player));
+        }
     }
 
     /**

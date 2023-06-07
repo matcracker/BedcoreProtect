@@ -128,28 +128,35 @@ final class Inspector
             $rollback = (bool)$log["rollback"];
 
             $timeStamp = Utils::timeAgo((int)$log["time"]);
+            switch ($action) {
+                case ActionType::SESSION_JOIN():
+                case ActionType::SESSION_LEFT():
+                    $to = "";
+                    break;
+                default:
+                    $prefix = ($action === ActionType::BREAK() || $action === ActionType::REMOVE()) ? "old" : "new";
 
-            $prefix = ($action === ActionType::BREAK() || $action === ActionType::REMOVE()) ? "old" : "new";
+                    if (isset($log["{$prefix}_name"])) {
+                        $name = $log["{$prefix}_name"];
 
-            if (isset($log["{$prefix}_name"])) {
-                $name = $log["{$prefix}_name"];
-
-                if (isset($log["{$prefix}_amount"])) { //It is an item
-                    $amount = (int)$log["{$prefix}_amount"];
-                    $to = "$name (x$amount)";
-                } else {
-                    $to = $name;
-                }
-            } elseif (isset($log["entity_to"])) {
-                $to = $log["entity_to"];
-            } else {
-                $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("subcommand.show.corrupted-data"));
-                return;
+                        if (isset($log["{$prefix}_amount"])) { //It is an item
+                            $amount = (int)$log["{$prefix}_amount"];
+                            $to = "$name (x$amount) ";
+                        } else {
+                            $to = "$name ";
+                        }
+                    } elseif (isset($log["entity_to"])) {
+                        $to = "${$log["entity_to"]} ";
+                    } else {
+                        $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("subcommand.show.corrupted-data"));
+                        return;
+                    }
+                    break;
             }
 
             //TODO: Use strikethrough (&m) when MC fix it (https://bugs.mojang.com/browse/MCPE-41729).
             $inspector->sendMessage(($rollback ? TextFormat::ITALIC : "") . TextFormat::GRAY . $timeStamp . TextFormat::WHITE . " - " .
-                TextFormat::DARK_AQUA . "$from " . TextFormat::WHITE . "{$action->getMessage()} " . TextFormat::DARK_AQUA . "$to" . TextFormat::WHITE . " - " .
+                TextFormat::DARK_AQUA . "$from " . TextFormat::WHITE . "{$action->getMessage()} " . TextFormat::DARK_AQUA . "$to" . TextFormat::WHITE . "- " .
                 TextFormat::GRAY . "(x$x/y$y/z$z/$worldName)" . TextFormat::WHITE . ".");
         }
 

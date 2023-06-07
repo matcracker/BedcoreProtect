@@ -97,6 +97,8 @@ final class ActionType
         self::register("kill", new Action(5, $lang->translateString("action.kill"), ["all", "kill"]));
         self::register("add", new Action(6, $lang->translateString("action.add"), ["all", "container", "+container"]));
         self::register("remove", new Action(7, $lang->translateString("action.remove"), ["all", "container", "-container"]));
+        self::register("session_join", new Action(8, $lang->translateString("action.join"), ["all", "session", "+session"]));
+        self::register("session_left", new Action(9, $lang->translateString("action.left"), ["all", "session", "-session"]));
         self::register("update", new Action(255, "update", []));
     }
 

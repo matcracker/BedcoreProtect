@@ -27,6 +27,7 @@ use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\queries\BlocksQueries;
 use matcracker\BedcoreProtect\storage\queries\EntitiesQueries;
 use matcracker\BedcoreProtect\storage\queries\InventoriesQueries;
+use matcracker\BedcoreProtect\storage\queries\PlayerQueries;
 use matcracker\BedcoreProtect\storage\queries\PluginQueries;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\MathUtils;
@@ -59,6 +60,8 @@ final class QueryManager
     private PluginQueries $pluginQueries;
     private BlocksQueries $blocksQueries;
     private EntitiesQueries $entitiesQueries;
+    private PlayerQueries $playerQueries;
+
     private InventoriesQueries $inventoriesQueries;
 
     public function __construct(private readonly Main $plugin, private readonly DataConnector $connector)
@@ -66,6 +69,7 @@ final class QueryManager
         $this->pluginQueries = new PluginQueries($plugin, $connector);
         $this->entitiesQueries = new EntitiesQueries($plugin, $connector);
         $this->inventoriesQueries = new InventoriesQueries($plugin, $connector);
+        $this->playerQueries = new PlayerQueries($this->plugin, $this->connector, $this->entitiesQueries);
         $this->blocksQueries = new BlocksQueries($plugin, $connector, $this->entitiesQueries, $this->inventoriesQueries);
     }
 
@@ -186,6 +190,11 @@ final class QueryManager
     public function getInventoriesQueries(): InventoriesQueries
     {
         return $this->inventoriesQueries;
+    }
+
+    public function getPlayerQueries(): PlayerQueries
+    {
+        return $this->playerQueries;
     }
 
     public function getEntitiesQueries(): EntitiesQueries
