@@ -35,6 +35,7 @@ abstract class QueriesConst
     public const ADD_BLOCK_LOG = "bcp.add.log.block";
     public const ADD_ENTITY_LOG = "bcp.add.log.entity";
     public const ADD_INVENTORY_LOG = "bcp.add.log.inventory";
+    public const ADD_CHAT_LOG = "bcp.add.log.chat";
     public const UPDATE_ENTITY_ID = "bcp.update.entity_id";
     public const UPDATE_ROLLBACK_STATUS = "bcp.update.rollback_status";
     public const GET_DATABASE_STATUS = "bcp.get.db_status";

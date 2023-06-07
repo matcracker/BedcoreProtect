@@ -61,6 +61,13 @@ CREATE TABLE IF NOT EXISTS "inventories_log"
     CONSTRAINT fk_inventories_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
 );
 -- # &
+CREATE TABLE IF NOT EXISTS "chat_log"
+(
+    history_id INTEGER PRIMARY KEY,
+    message    TEXT NOT NULL,
+    CONSTRAINT fk_chat_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+);
+-- # &
 CREATE TABLE IF NOT EXISTS status
 (
     version     VARCHAR(20) PRIMARY KEY                                               NOT NULL,
@@ -143,6 +150,12 @@ VALUES (:log_id, (SELECT uuid FROM entities WHERE uuid = :uuid), :id, :nbt);
 -- #                :new_amount int 0
 INSERT INTO "inventories_log"(history_id, slot, old_name, old_nbt, old_amount, new_name, new_nbt, new_amount)
 VALUES (:log_id, :slot, :old_name, :old_nbt, :old_amount, :new_name, :new_nbt, :new_amount);
+-- #            }
+-- #            {chat
+-- #                :log_id int
+-- #                :message string
+INSERT INTO "chat_log"(history_id, message)
+VALUES (:log_id, :message);
 -- #            }
 -- #        }
 -- #    }

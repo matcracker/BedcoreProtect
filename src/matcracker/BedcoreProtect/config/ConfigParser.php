@@ -177,6 +177,16 @@ final class ConfigParser
         return (bool)$this->data["player-interactions"];
     }
 
+    public function getPlayerMessages(): bool
+    {
+        return (bool)$this->data["player-messages"];
+    }
+
+    public function getPlayerCommands(): bool
+    {
+        return (bool)$this->data["player-commands"];
+    }
+
     public function getPlayerSessions(): bool
     {
         return (bool)$this->data["player-sessions"];

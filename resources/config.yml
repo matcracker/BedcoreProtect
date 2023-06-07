@@ -1,6 +1,6 @@
 ---
 # Configuration file version. DON'T EDIT!
-config-version: 4
+config-version: 5
 
 # Plugin language
 language: eng
@@ -118,6 +118,12 @@ item-transactions: true
 # Track player interactions, such as when a player opens a door, presses
 # a button, or opens a chest. Player interactions can't be rolled back.
 player-interactions: true
+
+# Logs messages that players send in the chat.
+player-messages: true
+
+# Logs all commands used by players.
+player-commands: true
 
 # Logs the logins and logouts of players.
 player-sessions: true

@@ -119,7 +119,11 @@ class PluginQueries extends Query
     private function buildLookupQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, int $limit = 4, int $offset = 0): void
     {
         $query = /**@lang text */
-            "SELECT COUNT(*) OVER () AS cnt_rows, tmp_ids.*, e1.entity_name AS entity_from, e2.entity_name AS entity_to                
+            "SELECT 
+                COUNT(*) OVER () AS cnt_rows, 
+                tmp_ids.*, 
+                e1.entity_name AS entity_from, e2.entity_name AS entity_to,
+                cl.message AS message
             FROM
             (SELECT tmp_logs.*,
                  CASE
@@ -145,7 +149,8 @@ class PluginQueries extends Query
             ) AS tmp_ids
             LEFT JOIN entities_log el ON tmp_ids.log_id = el.history_id
             LEFT JOIN entities e1 ON tmp_ids.who = e1.uuid
-            LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid WHERE ";
+            LEFT JOIN entities e2 ON el.entityfrom_uuid = e2.uuid
+            LEFT JOIN chat_log cl ON tmp_ids.log_id = cl.history_id WHERE ";
 
         $variables = [
             "limit" => new GenericVariable("limit", GenericVariable::TYPE_INT, null),

@@ -129,6 +129,10 @@ final class Inspector
 
             $timeStamp = Utils::timeAgo((int)$log["time"]);
             switch ($action) {
+                case ActionType::CHAT():
+                case ActionType::COMMAND():
+                    $to = "{$log["message"]} ";
+                    break;
                 case ActionType::SESSION_JOIN():
                 case ActionType::SESSION_LEFT():
                     $to = "";

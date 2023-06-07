@@ -60,7 +60,12 @@ final class ActionType
         "container",
         "+container",
         "-container",
-        "kill"
+        "kill",
+        "session",
+        "+session",
+        "-session",
+        "chat",
+        "command"
     ];
 
     /** @var Action[] */
@@ -99,6 +104,8 @@ final class ActionType
         self::register("remove", new Action(7, $lang->translateString("action.remove"), ["all", "container", "-container"]));
         self::register("session_join", new Action(8, $lang->translateString("action.join"), ["all", "session", "+session"]));
         self::register("session_left", new Action(9, $lang->translateString("action.left"), ["all", "session", "-session"]));
+        self::register("chat", new Action(10, $lang->translateString("action.chat"), ["all", "chat"]));
+        self::register("command", new Action(11, $lang->translateString("action.command"), ["all", "command"]));
         self::register("update", new Action(255, "update", []));
     }
 

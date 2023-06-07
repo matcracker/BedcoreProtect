@@ -69,6 +69,27 @@ class PlayerQueries extends Query
         yield from $this->addSession($player, ActionType::SESSION_LEFT());
     }
 
+    public function addMessage(Player $player, string $message, Action $action): Generator
+    {
+        $position = $player->getPosition();
+
+        yield from $this->entitiesQueries->addEntity($player);
+
+        /** @var $lastId int */
+        [$lastId] = yield from $this->addRawLog(
+            EntityUtils::getUniqueId($player),
+            $position->floor(),
+            $position->getWorld()->getFolderName(),
+            $action,
+            microtime(true)
+        );
+
+        return yield from $this->connector->asyncInsert(QueriesConst::ADD_CHAT_LOG, [
+            "log_id" => $lastId,
+            "message" => $message
+        ]);
+    }
+
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
     {
         0 && yield;

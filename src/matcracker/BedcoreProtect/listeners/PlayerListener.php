@@ -35,9 +35,11 @@ use pocketmine\entity\object\Painting;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketEvent;
+use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\event\server\CommandEvent;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\item\FlintSteel;
 use pocketmine\item\Hoe;
@@ -45,6 +47,7 @@ use pocketmine\item\LiquidBucket;
 use pocketmine\item\PaintingItem;
 use pocketmine\item\Shovel;
 use pocketmine\math\Facing;
+use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
 use SOFe\AwaitGenerator\Await;
 
@@ -213,6 +216,38 @@ final class PlayerListener extends BedcoreListener
                     $this->inventoriesQueries->addInventorySlotLogByPlayer($player, $action);
                 }
             }
+        }
+    }
+
+    /**
+     * @param PlayerChatEvent $event
+     *
+     * @priority MONITOR
+     */
+    public function trackChat(PlayerChatEvent $event): void
+    {
+        $player = $event->getPlayer();
+
+        if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getPlayerMessages()) {
+            Await::g2c($this->playerQueries->addMessage($player, $event->getMessage(), ActionType::CHAT()));
+        }
+    }
+
+    /**
+     * @param CommandEvent $event
+     *
+     * @priority MONITOR
+     */
+    public function trackCommand(CommandEvent $event): void
+    {
+        $sender = $event->getSender();
+
+        if (!$sender instanceof Player) {
+            return;
+        }
+
+        if ($this->config->isEnabledWorld($sender->getWorld()) && $this->config->getPlayerCommands()) {
+            Await::g2c($this->playerQueries->addMessage($sender, "/{$event->getCommand()}", ActionType::COMMAND()));
         }
     }
 }
