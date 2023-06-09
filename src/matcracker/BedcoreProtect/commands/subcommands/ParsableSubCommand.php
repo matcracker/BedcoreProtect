@@ -29,6 +29,7 @@ use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Label;
 use dktapps\pmforms\element\Toggle;
 use InvalidArgumentException;
+use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
@@ -158,7 +159,7 @@ abstract class ParsableSubCommand extends SubCommand
                 $player->chat($command);
             },
             function (Player $player): void {
-                $player->sendForm($this->getForm($player));
+                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
             }
         ));
     }

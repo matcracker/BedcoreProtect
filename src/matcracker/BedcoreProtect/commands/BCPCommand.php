@@ -117,7 +117,7 @@ final class BCPCommand extends Command implements PluginOwned
         }
 
         if (!isset($args[0]) && $sender instanceof Player && $this->plugin->getParsedConfig()->isEnabledUI()) {
-            $sender->sendForm($this->getForm($sender));
+            $sender->sendForm(self::getForm($this->plugin, $sender));
             return true;
         }
 
@@ -147,8 +147,8 @@ final class BCPCommand extends Command implements PluginOwned
         return true;
     }
 
-    public function getForm(Player $player): MainMenuForm
+    public static function getForm(Main $plugin, Player $player): MainMenuForm
     {
-        return new MainMenuForm($this->plugin, $player, self::$subCommands);
+        return new MainMenuForm($plugin, $player, self::$subCommands);
     }
 }

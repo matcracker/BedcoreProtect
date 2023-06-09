@@ -22,38 +22,15 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands\subcommands;
 
 use dktapps\pmforms\BaseForm;
-use dktapps\pmforms\CustomForm;
-use dktapps\pmforms\CustomFormResponse;
-use dktapps\pmforms\element\Slider;
-use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
-use pocketmine\utils\TextFormat;
 
 final class NearSubCommand extends SubCommand
 {
     public function getForm(Player $player): ?BaseForm
     {
-        return (new CustomForm(
-            TextFormat::DARK_AQUA . TextFormat::BOLD . $this->getLang()->translateString("form.menu.near"),
-            [
-                new Slider(
-                    "radius",
-                    $this->getLang()->translateString("form.params.radius"),
-                    1,
-                    $this->getOwningPlugin()->getParsedConfig()->getMaxRadius(),
-                    1.0,
-                    $this->getOwningPlugin()->getParsedConfig()->getDefaultRadius(),
-                ),
-            ],
-            static function (Player $player, CustomFormResponse $response): void {
-                $radius = (int)$response->getFloat("radius");
-                $player->chat("/bcp near $radius");
-            },
-            function (Player $player): void {
-                $player->sendForm($this->getForm($player));
-            }
-        ));
+        $player->chat("/bcp near");
+        return null;
     }
 
     /**
@@ -62,23 +39,7 @@ final class NearSubCommand extends SubCommand
      */
     public function onExecute(CommandSender $sender, array $args): void
     {
-        if (isset($args[0])) {
-            if (!ctype_digit($args[0])) {
-                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.error.no-numeric-value"));
-                return;
-            }
-
-            $near = (int)$args[0];
-            $maxRadius = $this->getOwningPlugin()->getParsedConfig()->getMaxRadius();
-            if ($near < 0 || $near > $maxRadius) {
-                $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.near.out-of-range", [0, $maxRadius]));
-                return;
-            }
-        } else {
-            $near = $this->getOwningPlugin()->getParsedConfig()->getDefaultRadius();
-        }
-
-        $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestNearLog($sender, $near);
+        $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestNearLog($sender, 5);
     }
 
     public function isPlayerCommand(): bool
