@@ -25,6 +25,7 @@ use dktapps\pmforms\BaseForm;
 use dktapps\pmforms\CustomForm;
 use dktapps\pmforms\CustomFormResponse;
 use dktapps\pmforms\element\Input;
+use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\LookupData;
 use pocketmine\command\CommandSender;
@@ -57,7 +58,7 @@ final class ShowSubCommand extends SubCommand
                 $player->chat("/bcp show {$response->getString("page")}:{$response->getString("lines")}");
             },
             function (Player $player): void {
-                $player->sendForm($this->getForm($player));
+                $player->sendForm(BCPCommand::getForm($this->getOwningPlugin(), $player));
             }
         ));
     }
