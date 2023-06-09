@@ -109,6 +109,27 @@ final class CommandParameter
     protected static function setup(): void
     {
         $plugin = Main::getInstance();
+        $lang = $plugin->getLanguage();
+        $config = $plugin->getParsedConfig();
+        $defaultRadius = $config->getDefaultRadius();
+
+        if (($maxRadius = $config->getMaxRadius()) === 0) {
+            $radiusElement = new Input(
+                "radius",
+                $lang->translateString("form.params.radius"),
+                "5",
+                $defaultRadius > 0 ? "$defaultRadius" : ""
+            );
+        } else {
+            $radiusElement = new Slider(
+                "radius",
+                $lang->translateString("form.params.radius"),
+                0,
+                $maxRadius,
+                1.0,
+                $defaultRadius,
+            );
+        }
 
         self::registerAll(
             new self(
@@ -116,8 +137,8 @@ final class CommandParameter
                 ["user", "u"],
                 new Input(
                     "users",
-                    $plugin->getLanguage()->translateString("form.params.users"),
-                    $plugin->getLanguage()->translateString("form.params.users-placeholder")
+                    $lang->translateString("form.params.users"),
+                    $lang->translateString("form.params.users-placeholder")
                 ),
                 "[u=shoghicp], [u=shoghicp,#zombie]"
             ),
@@ -126,7 +147,7 @@ final class CommandParameter
                 ["t"],
                 new Input(
                     "time",
-                    $plugin->getLanguage()->translateString("form.params.time"),
+                    $lang->translateString("form.params.time"),
                     "1h3m10s"
                 ),
                 "[t=2w5d7h2m10s], [t=5d2h]"
@@ -136,7 +157,7 @@ final class CommandParameter
                 ["w"],
                 new WorldDropDown(
                     "world",
-                    $plugin->getLanguage()->translateString("form.params.world"),
+                    $lang->translateString("form.params.world"),
                     WorldUtils::getWorldNames()
                 ),
                 "[w=my_world], [w=faction]"
@@ -144,14 +165,7 @@ final class CommandParameter
             new self(
                 "radius",
                 ["r"],
-                new Slider(
-                    "radius",
-                    $plugin->getLanguage()->translateString("form.params.radius"),
-                    0,
-                    $plugin->getParsedConfig()->getMaxRadius(),
-                    1.0,
-                    $plugin->getParsedConfig()->getDefaultRadius(),
-                ),
+                $radiusElement,
                 "[r=15]"
             ),
             new self(
@@ -159,7 +173,7 @@ final class CommandParameter
                 ["action", "a"],
                 new Dropdown(
                     "action",
-                    $plugin->getLanguage()->translateString("form.params.actions"),
+                    $lang->translateString("form.params.actions"),
                     ActionType::COMMAND_ARGUMENTS
                 ),
                 "[a=block], [a=+block], [a=-block], [a=click,container], [a=block,kill]"
@@ -169,7 +183,7 @@ final class CommandParameter
                 ["i"],
                 new Input(
                     "inclusions",
-                    $plugin->getLanguage()->translateString("form.params.include"),
+                    $lang->translateString("form.params.include"),
                     "stone,dirt,grass,..."
                 ),
                 "[b=stone], [b=red_wool,dirt,tnt,...]"
@@ -179,7 +193,7 @@ final class CommandParameter
                 ["e"],
                 new Input(
                     "exclusions",
-                    $plugin->getLanguage()->translateString("form.params.exclude"),
+                    $lang->translateString("form.params.exclude"),
                     "stone,dirt,grass,..."
                 ),
                 "[e=stone], [e=red_wool,dirt,tnt,...]"
