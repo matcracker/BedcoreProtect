@@ -23,9 +23,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\Main;
-use matcracker\BedcoreProtect\utils\AwaitMutex;
 use pocketmine\command\CommandSender;
 use pocketmine\math\Vector3;
 use pocketmine\World\World;
