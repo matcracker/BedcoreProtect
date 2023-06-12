@@ -48,6 +48,7 @@ abstract class QueriesConst
     public const GET_ENTITY_LOG = "bcp.get.log.entity";
     public const GET_NEAR_LOG = "bcp.get.log.near";
     public const GET_TRANSACTION_LOG = "bcp.get.log.transaction";
+    public const GET_PLAYER_TRACKING_POS = "bcp.get.player_tracking.position";
     public const PURGE_ID = "bcp.purge.id";
     public const PURGE_TIME = "bcp.purge.time";
     public const PURGE_WORLD = "bcp.purge.world";

@@ -31,6 +31,7 @@ use pocketmine\math\Vector3;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Mutex;
+use function count;
 use function mb_strtolower;
 
 abstract class Query
@@ -66,5 +67,25 @@ abstract class Query
             "action" => $action->getId(),
             "time" => $time
         ]);
+    }
+
+    final protected function getUuidByPosition(Vector3 $position, string $worldName): Generator
+    {
+        /** @var array $rows */
+        $rows = yield from $this->connector->asyncSelect(
+            QueriesConst::GET_PLAYER_TRACKING_POS,
+            [
+                "x" => $position->getX(),
+                "y" => $position->getY(),
+                "z" => $position->getZ(),
+                "world_name" => $worldName
+            ]
+        );
+
+        if (count($rows) > 0) {
+            return $rows[0]["uuid"];
+        } else {
+            return null;
+        }
     }
 }

@@ -22,8 +22,12 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\listeners;
 
 use matcracker\BedcoreProtect\enums\ActionType;
+use pocketmine\block\Block;
+use pocketmine\block\Sapling;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\event\block\LeavesDecayEvent;
+use pocketmine\event\block\StructureGrowEvent;
+use pocketmine\math\Vector3;
 
 final class WorldListener extends BedcoreListener
 {
@@ -37,6 +41,39 @@ final class WorldListener extends BedcoreListener
         $block = $event->getBlock();
         if ($this->config->isEnabledWorld($block->getPosition()->getWorld()) && $this->config->getLeavesDecay()) {
             $this->blocksQueries->addBlockLogByBlock($block, $block, VanillaBlocks::AIR(), ActionType::BREAK(), $block->getPosition());
+        }
+    }
+
+    /**
+     * @param StructureGrowEvent $event
+     *
+     * @priority MONITOR
+     */
+    public function trackStructureGrowth(StructureGrowEvent $event): void
+    {
+        $block = $event->getBlock();
+        $position = $block->getPosition();
+        $world = $position->getWorld();
+
+        if ($this->config->isEnabledWorld($world) && $this->config->getTreeGrowth()) {
+            $player = $event->getPlayer();
+
+            /**
+             * @var int $x
+             * @var int $y
+             * @var int $z
+             * @var Block $block
+             */
+            $sourcePos = null;
+            foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
+                $replacedBlock = $world->getBlockAt($x, $y, $z);
+                if ($sourcePos === null && $replacedBlock instanceof Sapling) {
+                    $sourcePos = new Vector3($x, $y, $z);
+                }
+
+                //TODO: create function for log blocks transaction, this is too heavy. See explosions.
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, ActionType::PLACE(), $replacedBlock->getPosition(), $sourcePos);
+            }
         }
     }
 }

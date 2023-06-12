@@ -83,7 +83,7 @@ class BlocksQueries extends Query
      * @param Action $action
      * @param Position|null $position
      */
-    public function addBlockLogByEntity(Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
+    public function addBlockLogByEntity(?Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null, ?Vector3 $sourcePos = null): void
     {
         $oldNbt = BlockUtils::serializeTileTag($oldBlock);
         $newNbt = BlockUtils::serializeTileTag($newBlock);
@@ -92,19 +92,30 @@ class BlocksQueries extends Query
         $time = microtime(true);
 
         Await::f2c(
-            function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $position, $worldName, $action, $time): Generator {
-                yield from $this->entitiesQueries->addEntity($entity);
-                yield from $this->addRawBlockLog(
-                    EntityUtils::getUniqueId($entity),
-                    $oldBlock,
-                    $oldNbt,
-                    $newBlock,
-                    $newNbt,
-                    $position,
-                    $worldName,
-                    $action,
-                    $time
-                );
+            function () use ($entity, $oldBlock, $oldNbt, $newBlock, $newNbt, $position, $worldName, $sourcePos, $action, $time): Generator {
+                if ($entity !== null) {
+                    yield from $this->entitiesQueries->addEntity($entity);
+                    $uuid = EntityUtils::getUniqueId($entity);
+                } elseif ($sourcePos !== null) {
+                    /** @var string|null $uuid */
+                    $uuid = yield from $this->getUuidByPosition($sourcePos, $worldName);
+                } else {
+                    $uuid = null;
+                }
+
+                if ($uuid !== null) {
+                    yield from $this->addRawBlockLog(
+                        $uuid,
+                        $oldBlock,
+                        $oldNbt,
+                        $newBlock,
+                        $newNbt,
+                        $position,
+                        $worldName,
+                        $action,
+                        $time
+                    );
+                }
             }
         );
     }

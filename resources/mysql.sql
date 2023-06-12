@@ -394,6 +394,23 @@ ORDER BY time DESC
 LIMIT :limit OFFSET :offset;
 -- #            }
 -- #        }
+-- #        {player_tracking
+-- #            {position
+-- #                :x int
+-- #                :y int
+-- #                :z int
+-- #                :world_name string
+SELECT el.uuid AS uuid
+FROM log_history
+         INNER JOIN "entities" el ON log_history.who = el.uuid
+WHERE x = :x
+  AND y = :y
+  AND z = :z
+  AND world_name = :world_name
+ORDER BY time DESC
+LIMIT 1;
+-- #            }
+-- #        }
 -- #    }
 -- #    {purge
 -- #        {id

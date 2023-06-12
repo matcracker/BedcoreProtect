@@ -162,6 +162,11 @@ final class ConfigParser
         return (bool)$this->data["leaves-decay"];
     }
 
+    public function getTreeGrowth(): bool
+    {
+        return (bool)$this->data["tree-growth"];
+    }
+
     public function getLiquidTracking(): bool
     {
         return (bool)$this->data["liquid-tracking"];

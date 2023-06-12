@@ -89,7 +89,7 @@ buckets: true
 # Logs natural tree leaves decay.
 leaves-decay: true
 
-# Logs tree growth. Trees are linked to the player who planted the sappling. (NOT IMPLEMENTED IN POCKETMINE YET)
+# Logs tree growth. Trees are linked to the player who planted the sappling.
 tree-growth: true
 
 # Logs mushroom growth. (NOT IMPLEMENTED IN POCKETMINE YET)
