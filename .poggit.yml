@@ -1,17 +1,11 @@
 ---
-branches:
-  - stable
-  - experimental
-  - pm5
-pulls: false
 projects:
   BedcoreProtect:
     path: ""
     icon: resources/bedcoreprotect_logo.png
     libs:
       - src: poggit/libasynql/libasynql
-        version: ~4.1.0
-        branch: pm5
+        version: ~4.2.0
       - src: SOF3/await-generator/await-generator
         version: ~3.5.0
       - src: ifera-mc/UpdateNotifier/UpdateNotifier
