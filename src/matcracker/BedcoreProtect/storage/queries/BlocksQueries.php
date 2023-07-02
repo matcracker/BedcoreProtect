@@ -323,24 +323,24 @@ class BlocksQueries extends Query
         $position = $itemFrame->getPosition();
         $worldName = $position->getWorld()->getFolderName();
 
-        Await::g2c(
-            $this->addRawBlockLog(
-                EntityUtils::getUniqueId($player),
-                $itemFrame,
-                $oldNbt,
-                $itemFrame,
-                $newNbt,
-                $position,
-                $worldName,
-                $action,
-                microtime(true)
-            ),
-            function () use ($player, $item, $action, $position, $worldName): void {
+        Await::f2c(
+            function () use ($player, $item, $itemFrame, $oldNbt, $newNbt, $position, $worldName, $action): Generator {
+                yield from $this->addRawBlockLog(
+                    EntityUtils::getUniqueId($player),
+                    $itemFrame,
+                    $oldNbt,
+                    $itemFrame,
+                    $newNbt,
+                    $position,
+                    $worldName,
+                    $action,
+                    microtime(true)
+                );
+
                 if ($action !== ActionType::CLICK()) {
                     $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $position, $worldName);
                 }
-            }
-        );
+            });
     }
 
     public function onRollback(CommandSender $sender, World $world, bool $rollback, array $logIds): Generator
