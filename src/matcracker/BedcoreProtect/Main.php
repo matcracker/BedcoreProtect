@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
+use Generator;
 use JackMD\UpdateNotifier\UpdateNotifier;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\config\ConfigParser;
@@ -134,9 +135,10 @@ final class Main extends PluginBase
             throw new PluginException($this->getLanguage()->translateString("database.connection.fail"));
         }
 
-        Await::g2c(
-            $this->database->init(),
-            function () {
+        Await::f2c(
+            function (): Generator {
+                yield from $this->database->init();
+
                 if ($this->configParser->isSQLite()) {
                     static $hourTicks = 20 * 60 * 60 * 8;
                     $this->getScheduler()->scheduleDelayedRepeatingTask(
