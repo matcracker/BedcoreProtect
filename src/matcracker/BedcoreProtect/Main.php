@@ -135,34 +135,32 @@ final class Main extends PluginBase
             throw new PluginException($this->getLanguage()->translateString("database.connection.fail"));
         }
 
-        Await::f2c(
-            function (): Generator {
-                yield from $this->database->init();
+        Await::f2c(function (): Generator {
+            yield from $this->database->init();
 
-                if ($this->configParser->isSQLite()) {
-                    static $hourTicks = 20 * 60 * 60 * 8;
-                    $this->getScheduler()->scheduleDelayedRepeatingTask(
-                        new ClosureTask(fn() => $this->database->optimize()),
-                        $hourTicks,
-                        $hourTicks
-                    );
-                }
-
-                //Registering events from listener
-                $this->listeners = [
-                    new BlockListener($this),
-                    new EntityListener($this),
-                    new PlayerListener($this),
-                    new WorldListener($this),
-                    new InspectorListener($this)
-                ];
-
-                $pluginManager = $this->getServer()->getPluginManager();
-                foreach ($this->listeners as $listener) {
-                    $pluginManager->registerEvents($listener, $this);
-                }
+            if ($this->configParser->isSQLite()) {
+                static $hourTicks = 20 * 60 * 60 * 8;
+                $this->getScheduler()->scheduleDelayedRepeatingTask(
+                    new ClosureTask(fn() => $this->database->optimize()),
+                    $hourTicks,
+                    $hourTicks
+                );
             }
-        );
+
+            //Registering events from listener
+            $this->listeners = [
+                new BlockListener($this),
+                new EntityListener($this),
+                new PlayerListener($this),
+                new WorldListener($this),
+                new InspectorListener($this)
+            ];
+
+            $pluginManager = $this->getServer()->getPluginManager();
+            foreach ($this->listeners as $listener) {
+                $pluginManager->registerEvents($listener, $this);
+            }
+        });
     }
 
     /**
