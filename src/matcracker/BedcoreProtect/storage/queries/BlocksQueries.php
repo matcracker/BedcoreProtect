@@ -271,28 +271,42 @@ class BlocksQueries extends Query
      * @param Block $newBlock
      * @param Action $action
      * @param Position|null $position
+     * @param Vector3|null $sourcePos
      */
-    public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null): void
+    public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null, ?Vector3 $sourcePos = null): void
     {
-        //Particular blocks
-        if ($who instanceof Leaves) {
-            $name = "leaves-uuid";
-        } else {
-            $name = "{$who->getName()}-uuid";
-        }
+        $oldNbt = BlockUtils::serializeTileTag($oldBlock);
+        $newNbt = BlockUtils::serializeTileTag($newBlock);
         $position ??= $newBlock->getPosition();
+        $worldName = $position->getWorld()->getFolderName();
+        $time = microtime(true);
 
-        Await::g2c($this->addRawBlockLog(
-            $name,
-            $oldBlock,
-            BlockUtils::serializeTileTag($oldBlock),
-            $newBlock,
-            BlockUtils::serializeTileTag($newBlock),
-            $position->asVector3(),
-            $position->getWorld()->getFolderName(),
-            $action,
-            microtime(true)
-        ));
+        Await::f2c(function () use ($who, $oldBlock, $oldNbt, $newBlock, $newNbt, $action, $time, $position, $worldName, $sourcePos): Generator {
+            if ($who instanceof Leaves) {
+                $blockUuid = "leaves-uuid";
+            } else {
+                $blockUuid = "{$who->getName()}-uuid";
+            }
+
+            if ($sourcePos !== null) {
+                /** @var string|null $uuid */
+                $uuid = (yield from $this->getUuidByPosition($sourcePos, $worldName)) ?? $blockUuid;
+            } else {
+                $uuid = $blockUuid;
+            }
+
+            yield from $this->addRawBlockLog(
+                $uuid,
+                $oldBlock,
+                $oldNbt,
+                $newBlock,
+                $newNbt,
+                $position->asVector3(),
+                $worldName,
+                $action,
+                $time
+            );
+        });
     }
 
     /**

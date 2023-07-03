@@ -110,12 +110,15 @@ final class BlockListener extends BedcoreListener
     {
         $block = $event->getBlock();
         $blockPos = $block->getPosition();
-        $source = $event->getSource();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld())) {
-            if ($source instanceof Liquid) {
+            $newState = $event->getNewState();
+            if ($newState instanceof Liquid) {
                 $action = $block instanceof Air ? ActionType::PLACE() : ActionType::BREAK();
-                $this->blocksQueries->addBlockLogByBlock($source, $block, $source, $action, $blockPos);
+
+                $sourcePos = $newState->getPosition()->subtractVector($newState->getFlowVector()->floor());
+
+                $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, $action, $blockPos, $sourcePos);
             }
         }
     }
@@ -150,7 +153,8 @@ final class BlockListener extends BedcoreListener
                 $result = $event->getNewState();
 
                 $liquid = $block instanceof Water ? VanillaBlocks::LAVA() : VanillaBlocks::WATER();
-                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, ActionType::PLACE(), $blockPos);
+
+                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, ActionType::PLACE(), $blockPos, $blockPos);
             }
         }
     }
