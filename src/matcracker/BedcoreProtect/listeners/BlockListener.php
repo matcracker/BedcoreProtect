@@ -25,6 +25,7 @@ use matcracker\BedcoreProtect\enums\ActionType;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
 use pocketmine\block\BlockTypeIds;
+use pocketmine\block\Fire;
 use pocketmine\block\Liquid;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Water;
@@ -119,6 +120,8 @@ final class BlockListener extends BedcoreListener
                 $sourcePos = $newState->getPosition()->subtractVector($newState->getFlowVector()->floor());
 
                 $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, $action, $blockPos, $sourcePos);
+            } elseif ($newState instanceof Fire) {
+                $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, ActionType::PLACE(), $blockPos, $newState->getPosition());
             }
         }
     }
@@ -134,7 +137,8 @@ final class BlockListener extends BedcoreListener
         $blockPos = $block->getPosition();
 
         if ($this->config->isEnabledWorld($blockPos->getWorld()) && $this->config->getBlockBurn()) {
-            $this->blocksQueries->addBlockLogByBlock($event->getCausingBlock(), $block, VanillaBlocks::AIR(), ActionType::BREAK(), $blockPos);
+            $causingBlock = $event->getCausingBlock();
+            $this->blocksQueries->addBlockLogByBlock($causingBlock, $block, VanillaBlocks::AIR(), ActionType::BREAK(), $blockPos, $causingBlock->getPosition());
         }
     }
 
