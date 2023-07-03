@@ -100,7 +100,6 @@ final class InspectorListener extends BedcoreListener
         if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
             if ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 $clickedBlock = $event->getBlock();
-                $player->sendMessage($clickedBlock->getName());
                 $position = $clickedBlock->getPosition();
                 $tile = BlockUtils::asTile($position);
 
