@@ -77,11 +77,12 @@ class BlocksQueries extends Query
     /**
      * It logs the entity who makes the action for block.
      *
-     * @param Entity $entity
+     * @param Entity|null $entity
      * @param Block $oldBlock
      * @param Block $newBlock
      * @param Action $action
      * @param Position|null $position
+     * @param Vector3|null $sourcePos
      */
     public function addBlockLogByEntity(?Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null, ?Vector3 $sourcePos = null): void
     {
@@ -216,8 +217,9 @@ class BlocksQueries extends Query
      * @param Entity $entity
      * @param Block[] $oldBlocks
      * @param Action $action
+     * @param Vector3|null $sourcePos
      */
-    public function addExplosionLogByEntity(Entity $entity, array $oldBlocks, Action $action): void
+    public function addExplosionLogByEntity(Entity $entity, array $oldBlocks, Action $action, ?Vector3 $sourcePos = null): void
     {
         if (count($oldBlocks) === 0) {
             return;
@@ -232,11 +234,18 @@ class BlocksQueries extends Query
         }
 
         $uuidEntity = EntityUtils::getUniqueId($entity);
+        $worldName = $entity->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::g2c(self::getMutex()->runClosure(
-            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $action, $time): Generator {
+            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $action, $time, $worldName, $sourcePos): Generator {
                 yield from $this->entitiesQueries->addEntity($entity);
+
+                if ($sourcePos !== null) {
+                    $uuid = (yield from $this->getUuidByPosition($sourcePos, $worldName)) ?? $uuidEntity;
+                } else {
+                    $uuid = $uuidEntity;
+                }
 
                 yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
@@ -245,7 +254,7 @@ class BlocksQueries extends Query
                     $oldPos = $oldBlock->getPosition();
 
                     $generators[] = $this->addRawBlockLog(
-                        $uuidEntity,
+                        $uuid,
                         $oldBlock,
                         $oldBlocksNbt[$key],
                         VanillaBlocks::AIR(),
@@ -289,7 +298,6 @@ class BlocksQueries extends Query
             }
 
             if ($sourcePos !== null) {
-                /** @var string|null $uuid */
                 $uuid = (yield from $this->getUuidByPosition($sourcePos, $worldName)) ?? $blockUuid;
             } else {
                 $uuid = $blockUuid;
