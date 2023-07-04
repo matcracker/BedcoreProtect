@@ -27,7 +27,7 @@ use pocketmine\block\Sapling;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\event\block\LeavesDecayEvent;
 use pocketmine\event\block\StructureGrowEvent;
-use pocketmine\math\Vector3;
+use pocketmine\world\Position;
 
 final class WorldListener extends BedcoreListener
 {
@@ -58,17 +58,19 @@ final class WorldListener extends BedcoreListener
         if ($this->config->isEnabledWorld($world) && $this->config->getTreeGrowth()) {
             $player = $event->getPlayer();
 
+            /** @var Position|null $sourcePos */
+            $sourcePos = null;
+
             /**
              * @var int $x
              * @var int $y
              * @var int $z
              * @var Block $block
              */
-            $sourcePos = null;
             foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
                 $replacedBlock = $world->getBlockAt($x, $y, $z);
-                if ($sourcePos === null && $replacedBlock instanceof Sapling) {
-                    $sourcePos = new Vector3($x, $y, $z);
+                if ($player === null && $sourcePos === null && $replacedBlock instanceof Sapling) {
+                    $sourcePos = $replacedBlock->getPosition();
                 }
 
                 //TODO: create function for log blocks transaction, this is too heavy. See explosions.
