@@ -64,7 +64,10 @@ final class EntityListener extends BedcoreListener
         $world = $entity->getWorld();
         if ($this->config->isEnabledWorld($world)) {
             if ($entity instanceof FallingBlock && $this->config->getBlockMovement()) {
-                $this->blocksQueries->addBlockLogByEntity($entity, $entity->getBlock(), VanillaBlocks::AIR(), ActionType::BREAK(), $entity->getPosition());
+                $block = $entity->getBlock();
+                $blockPos = $block->getPosition();
+
+                $this->blocksQueries->addBlockLogByEntity($entity, $block, VanillaBlocks::AIR(), ActionType::BREAK(), $blockPos, $blockPos);
             }
         }
     }
