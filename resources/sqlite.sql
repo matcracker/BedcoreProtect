@@ -401,9 +401,7 @@ WHERE (x BETWEEN :min_x AND :max_x)
 ORDER BY time DESC
 LIMIT :limit OFFSET :offset;
 -- #            }
--- #        }
--- #        {player_tracking
--- #            {position
+-- #            {uuid
 -- #                :x int
 -- #                :y int
 -- #                :z int

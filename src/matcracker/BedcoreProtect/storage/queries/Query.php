@@ -71,7 +71,7 @@ abstract class Query
     {
         /** @var array $rows */
         $rows = yield from $this->connector->asyncSelect(
-            QueriesConst::GET_PLAYER_TRACKING_POS,
+            QueriesConst::GET_UUID_BY_POSITION,
             [
                 "x" => $position->getX(),
                 "y" => $position->getY(),
