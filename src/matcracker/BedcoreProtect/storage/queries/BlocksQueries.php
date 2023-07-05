@@ -398,9 +398,7 @@ class BlocksQueries extends Query
             $chunkHash = World::chunkHash($chunkX, $chunkZ);
 
             if (!isset($chunks[$chunkHash])) {
-                if (($chunk = $world->getChunk($chunkX, $chunkZ)) !== null) {
-                    $chunks[$chunkHash] = FastChunkSerializer::serializeTerrain($chunk);
-                } else if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
+                if (($chunk = $world->loadChunk($chunkX, $chunkZ)) !== null) {
                     $chunks[$chunkHash] = FastChunkSerializer::serializeTerrain($chunk);
                     $world->unloadChunk($chunkX, $chunkZ, trySave: false);
                 } else {
