@@ -38,6 +38,7 @@ use pocketmine\block\tile\Tile;
 use pocketmine\block\tile\TileFactory;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\command\CommandSender;
+use pocketmine\data\bedrock\block\BlockStateSerializeException;
 use pocketmine\entity\Entity;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
@@ -127,16 +128,24 @@ class BlocksQueries extends Query
 
     final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
+        try {
+            $oldState = BlockUtils::serializeBlock($oldBlock);
+            $newState = BlockUtils::serializeBlock($newBlock);
+        } catch (BlockStateSerializeException $e) {
+            $this->plugin->getLogger()->debug("Could not log block: {$e->getMessage()}");
+            return 0 && yield;
+        }
+
         /** @var int $lastId */
         [$lastId] = yield from $this->addRawLog($uuid, $position->floor(), $worldName, $action, $time);
 
         return yield from $this->connector->asyncInsert(QueriesConst::ADD_BLOCK_LOG, [
             "log_id" => $lastId,
             "old_name" => $oldBlock->getName(),
-            "old_state" => BlockUtils::serializeBlock($oldBlock),
+            "old_state" => $oldState,
             "old_nbt" => $oldNbt,
             "new_name" => $newBlock->getName(),
-            "new_state" => BlockUtils::serializeBlock($newBlock),
+            "new_state" => $newState,
             "new_nbt" => $newNbt
         ]);
     }
