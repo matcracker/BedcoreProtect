@@ -150,7 +150,7 @@ final class Inspector
                             $to = "$name ";
                         }
                     } elseif (isset($log["entity_to"])) {
-                        $to = "${$log["entity_to"]} ";
+                        $to = "{$log["entity_to"]} ";
                     } else {
                         $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $lang->translateString("subcommand.show.corrupted-data"));
                         return;
