@@ -117,7 +117,13 @@ final class BlockListener extends BedcoreListener
             if ($newState instanceof Liquid) {
                 $action = $block instanceof Air ? ActionType::PLACE() : ActionType::BREAK();
 
-                $sourcePos = $newState->getPosition()->subtractVector($newState->getFlowVector()->floor());
+                $flowVector = $newState->getFlowVector()->floor();
+                //In case of vertical falling water we need to point to the replaced block position
+                if ($flowVector->getY() !== 0) {
+                    $sourcePos = $blockPos->subtractVector($flowVector);
+                } else {
+                    $sourcePos = $newState->getPosition()->subtractVector($flowVector);
+                }
 
                 $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, $action, $blockPos, $sourcePos);
             } elseif ($newState instanceof Fire) {
