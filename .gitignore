@@ -1,5 +1,4 @@
 /.idea
-/libs
 /scripts
+/vendor
 /.php_cs.cache
-TODO
