@@ -24,6 +24,7 @@ namespace matcracker\BedcoreProtect\storage\queries;
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\enums\ActionType;
+use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
@@ -34,7 +35,6 @@ use pocketmine\Server;
 use pocketmine\World\World;
 use SOFe\AwaitGenerator\Await;
 use function count;
-use function mb_strtolower;
 use function microtime;
 
 /**
@@ -47,24 +47,7 @@ class EntitiesQueries extends Query
 {
     public function addDefaultEntities(): Generator
     {
-        static $map = [
-            "flow-uuid" => "#Flow",
-            "water-uuid" => "#Water",
-            "still water-uuid" => "#Water",
-            "lava-uuid" => "#Lava",
-            "still lava-uuid" => "#Lava",
-            "fire block-uuid" => "#Fire",
-            "leaves-uuid" => "#Decay"
-        ];
-
-        yield from $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#console");
-
-        $queries = [];
-        foreach ($map as $uuid => $name) {
-            $queries[] = $this->addRawEntity($uuid, $name);
-        }
-
-        yield from Await::all($queries);
+        yield from $this->addRawEntity(Server::getInstance()->getServerUniqueId()->toString(), "#Console");
     }
 
     /**
@@ -112,6 +95,19 @@ class EntitiesQueries extends Query
         );
     }
 
+    /**
+     * @param Block $block
+     * @return Generator
+     * @internal
+     */
+    final public function addBlock(Block $block): Generator
+    {
+        return yield from $this->addRawEntity(
+            BlockUtils::getUniqueId($block),
+            BlockUtils::getAliasName($block)
+        );
+    }
+
     final protected function addEntityLog(int $logId, Entity $entity, ?string $serializedNbt): Generator
     {
         return yield from $this->connector->asyncInsert(QueriesConst::ADD_ENTITY_LOG, [
@@ -125,19 +121,18 @@ class EntitiesQueries extends Query
     public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
-        $worldName = $block->getPosition()->getWorld()->getFolderName();
+        $position = $entity->getPosition();
+        $worldName = $position->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
-            function () use ($entity, $serializedNbt, $block, $worldName, $action, $time): Generator {
+            function () use ($entity, $position, $serializedNbt, $block, $worldName, $action, $time): Generator {
                 yield from $this->addEntity($entity);
-
-                $blockName = $block->getName();
-                $uuid = mb_strtolower("$blockName-uuid");
-                yield from $this->addRawEntity($uuid, "#$blockName");
+                $blockUuid = BlockUtils::getUniqueId($block);
+                yield from $this->addBlock($block);
 
                 /** @var int $lastId */
-                [$lastId] = yield from $this->addRawLog($uuid, $block->getPosition(), $worldName, $action, $time);
+                [$lastId] = yield from $this->addRawLog($blockUuid, $position, $worldName, $action, $time);
 
                 yield from $this->addEntityLog($lastId, $entity, $serializedNbt);
             }

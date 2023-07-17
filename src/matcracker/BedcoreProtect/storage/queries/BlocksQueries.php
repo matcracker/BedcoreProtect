@@ -32,7 +32,6 @@ use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;
-use pocketmine\block\Leaves;
 use pocketmine\block\tile\ItemFrame as TileItemFrame;
 use pocketmine\block\tile\Tile;
 use pocketmine\block\tile\TileFactory;
@@ -304,17 +303,15 @@ class BlocksQueries extends Query
         $time = microtime(true);
 
         Await::f2c(function () use ($who, $oldBlock, $oldNbt, $newBlock, $newNbt, $action, $time, $position, $worldName, $sourcePos): Generator {
-            if ($who instanceof Leaves) {
-                $blockUuid = "leaves-uuid";
-            } else {
-                $blockUuid = "{$who->getName()}-uuid";
-            }
+            $blockUuid = BlockUtils::getUniqueId($who);
 
             if ($sourcePos !== null) {
                 $uuid = (yield from $this->getUuidByPosition($sourcePos, $worldName)) ?? $blockUuid;
             } else {
                 $uuid = $blockUuid;
             }
+
+            yield from $this->entitiesQueries->addBlock($who);
 
             yield from $this->addRawBlockLog(
                 $uuid,

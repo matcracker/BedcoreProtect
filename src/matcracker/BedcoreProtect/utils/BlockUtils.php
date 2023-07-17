@@ -25,7 +25,9 @@ use pocketmine\block\Block;
 use pocketmine\block\Button;
 use pocketmine\block\Door;
 use pocketmine\block\FenceGate;
+use pocketmine\block\Fire;
 use pocketmine\block\ItemFrame;
+use pocketmine\block\Leaves;
 use pocketmine\block\Lever;
 use pocketmine\block\tile\Container;
 use pocketmine\block\tile\Tile;
@@ -40,6 +42,24 @@ final class BlockUtils
 {
     private function __construct()
     {
+    }
+
+    public static function getUniqueId(Block $block): string
+    {
+        return GlobalBlockStateHandlers::getSerializer()->serializeBlock($block)->getName();
+    }
+
+    public static function getAliasName(Block $block): string
+    {
+        if ($block instanceof Leaves) {
+            $name = "#Decay";
+        } elseif ($block instanceof Fire) {
+            $name = "#Fire";
+        } else {
+            $name = "#{$block->getName()}";
+        }
+
+        return $name;
     }
 
     /**
