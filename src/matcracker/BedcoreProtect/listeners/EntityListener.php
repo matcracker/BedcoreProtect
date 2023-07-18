@@ -29,6 +29,7 @@ use pocketmine\entity\object\Painting;
 use pocketmine\event\entity\EntityBlockChangeEvent;
 use pocketmine\event\entity\EntityDamageByBlockEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
+use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityDeathEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
 use pocketmine\event\entity\EntitySpawnEvent;
@@ -116,6 +117,23 @@ final class EntityListener extends BedcoreListener
                 }
             } elseif ($damageEvent instanceof EntityDamageByBlockEvent) {
                 $this->entitiesQueries->addEntityLogByBlock($entity, $damageEvent->getDamager(), ActionType::KILL());
+            } else {
+                $skipData = $this->config->getSkipGenericData();
+
+                switch ($damageEvent->getCause()) {
+                    case EntityDamageEvent::CAUSE_SUFFOCATION:
+                    case EntityDamageEvent::CAUSE_DROWNING:
+                        $position = $entity->getPosition();
+                        $block = $position->getWorld()->getBlock($position);
+                        $this->entitiesQueries->addEntityLogByBlock($entity, $block, ActionType::KILL(), trackBlockUuid: !$skipData);
+                        break;
+                    case EntityDamageEvent::CAUSE_FIRE_TICK:
+                        if (!$skipData) {
+                            $this->entitiesQueries->addEntityLogByBlock($entity, VanillaBlocks::FIRE(), ActionType::KILL(), $entity->getPosition());
+                        }
+
+                        break;
+                }
             }
         }
     }

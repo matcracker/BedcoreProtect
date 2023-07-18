@@ -112,6 +112,11 @@ final class ConfigParser
         return (bool)$this->data["rollback-entities"];
     }
 
+    public function getSkipGenericData(): bool
+    {
+        return (bool)$this->data["skip-generic-data"];
+    }
+
     public function getBlockPlace(): bool
     {
         return (bool)$this->data["block-place"];

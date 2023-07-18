@@ -32,6 +32,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntityFactory;
 use pocketmine\Server;
+use pocketmine\world\Position;
 use pocketmine\World\World;
 use SOFe\AwaitGenerator\Await;
 use function count;
@@ -118,21 +119,25 @@ class EntitiesQueries extends Query
         ]);
     }
 
-    public function addEntityLogByBlock(Entity $entity, Block $block, Action $action): void
+    public function addEntityLogByBlock(Entity $entity, Block $block, Action $action, ?Position $position = null, bool $trackBlockUuid = true): void
     {
         $serializedNbt = EntityUtils::getSerializedNbt($entity);
-        $position = $entity->getPosition();
+        $position ??= $block->getPosition();
         $worldName = $position->getWorld()->getFolderName();
         $time = microtime(true);
 
         Await::f2c(
-            function () use ($entity, $position, $serializedNbt, $block, $worldName, $action, $time): Generator {
+            function () use ($entity, $position, $serializedNbt, $block, $worldName, $action, $time, $trackBlockUuid): Generator {
                 yield from $this->addEntity($entity);
-                $blockUuid = BlockUtils::getUniqueId($block);
-                yield from $this->addBlock($block);
+
+                $uuid = yield from $this->getUuidByPosition($position, $worldName);
+                if ($uuid === null && $trackBlockUuid) {
+                    $uuid = BlockUtils::getUniqueId($block);
+                    yield from $this->addBlock($block);
+                }
 
                 /** @var int $lastId */
-                [$lastId] = yield from $this->addRawLog($blockUuid, $position, $worldName, $action, $time);
+                [$lastId] = yield from $this->addRawLog($uuid, $position, $worldName, $action, $time);
 
                 yield from $this->addEntityLog($lastId, $entity, $serializedNbt);
             }

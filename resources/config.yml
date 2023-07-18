@@ -1,6 +1,6 @@
 ---
 # Configuration file version. DON'T EDIT!
-config-version: 5
+config-version: 6
 
 # Plugin language
 language: eng
@@ -51,6 +51,9 @@ rollback-items: true
 
 # If enabled, entities, such as killed animals, will be included in rollbacks.
 rollback-entities: true
+
+# If enabled, generic data, like zombies burning in daylight, won't be logged.
+skip-generic-data: true
 
 # Logs blocks placed by players.
 block-place: true
