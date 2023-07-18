@@ -27,7 +27,7 @@ database:
   # Recommended: 1 for sqlite, 2 for MySQL. You may want to further increase this value if your MySQL connection is very slow.
   worker-limit: 1
 
-# Allow to use plugin commands through an user interface.
+# Allow to use plugin commands through a user interface.
 # To use the UI, you need to type in-game the command "/bedcoreprotect" or its aliases.
 enable-ui-menu: true
 
@@ -46,7 +46,7 @@ default-radius: 10
 # To run a rollback or restore without a radius, you can use "r:#global".
 max-radius: 100
 
-# If enabled, items taken from containers (etc) will be included in rollbacks.
+# If enabled, items taken from containers (etc.) will be included in rollbacks.
 rollback-items: true
 
 # If enabled, entities, such as killed animals, will be included in rollbacks.
