@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS chat_log
 (
     history_id INTEGER PRIMARY KEY,
     message    TEXT NOT NULL,
-    CONSTRAINT fk_chat_log_id FOREIGN KEY (history_id) REFERENCES "log_history" (log_id) ON DELETE CASCADE
+    CONSTRAINT fk_chat_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
 -- # &
 CREATE TABLE IF NOT EXISTS status
