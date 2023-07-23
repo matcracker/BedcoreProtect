@@ -27,8 +27,7 @@ use matcracker\BedcoreProtect\storage\DataConnectorHelper;
 use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\data\bedrock\block\BlockStateDeserializeException;
-use pocketmine\data\bedrock\block\convert\UnsupportedBlockStateException;
-use pocketmine\data\bedrock\item\ItemTypeSerializeException;
+use pocketmine\data\bedrock\item\ItemTypeDeserializeException;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\item\VanillaItems;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
@@ -116,7 +115,7 @@ final class PluginPatchV110 extends PluginPatch
 
             try {
                 $oldBlock = $deserializer->deserializeBlock($oldState);
-            } catch (UnsupportedBlockStateException) {
+            } catch (BlockStateDeserializeException) {
                 $this->getLogger()->debug("Found unregistered old block \"{$oldState->getName()}\"");
                 yield from $this->connector->asyncChange(QueriesConst::PURGE_ID, ["log_id" => $logId]);
                 continue;
@@ -134,7 +133,7 @@ final class PluginPatchV110 extends PluginPatch
 
             try {
                 $newBlock = $deserializer->deserializeBlock($newState);
-            } catch (UnsupportedBlockStateException) {
+            } catch (BlockStateDeserializeException) {
                 $this->getLogger()->debug("Found unregistered new block \"{$newState->getName()}\"");
                 yield from $this->connector->asyncChange(QueriesConst::PURGE_ID, ["log_id" => $logId]);
                 continue;
@@ -228,8 +227,8 @@ final class PluginPatchV110 extends PluginPatch
 
                 try {
                     $oldItem = $deserializer->deserializeStack($oldItemStack);
-                } catch (ItemTypeSerializeException $e) {
-                    $this->getLogger()->debug($e->getMessage());
+                } catch (ItemTypeDeserializeException) {
+                    $this->getLogger()->debug("Found unregistered old item \"{$oldItemStack->getTypeData()->getName()}\"");
                     yield from $this->connector->asyncChange(QueriesConst::PURGE_ID, ["log_id" => $logId]);
                     continue;
                 }
@@ -253,8 +252,8 @@ final class PluginPatchV110 extends PluginPatch
 
                 try {
                     $newItem = $deserializer->deserializeStack($newItemStack);
-                } catch (ItemTypeSerializeException $e) {
-                    $this->getLogger()->debug($e->getMessage());
+                } catch (ItemTypeDeserializeException) {
+                    $this->getLogger()->debug("Found unregistered new item \"{$newItemStack->getTypeData()->getName()}\"");
                     yield from $this->connector->asyncChange(QueriesConst::PURGE_ID, ["log_id" => $logId]);
                     continue;
                 }
