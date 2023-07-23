@@ -400,7 +400,7 @@ LIMIT :limit OFFSET :offset;
 -- #                :world_name string
 SELECT el.uuid AS uuid
 FROM log_history
-         INNER JOIN "entities" el ON log_history.who = el.uuid
+         INNER JOIN entities el ON log_history.who = el.uuid
 WHERE x = :x
   AND y = :y
   AND z = :z
