@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS inventories_log
 -- # &
 CREATE TABLE IF NOT EXISTS chat_log
 (
-    history_id INTEGER PRIMARY KEY,
+    history_id BIGINT PRIMARY KEY,
     message    TEXT NOT NULL,
     CONSTRAINT fk_chat_log_id FOREIGN KEY (history_id) REFERENCES log_history (log_id) ON DELETE CASCADE
 );
