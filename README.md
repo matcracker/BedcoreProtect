@@ -81,7 +81,7 @@ The **command permission** is _bcp.command.bedcoreprotect_ (default: operator).
 ### Command shortcuts
 | Command   | Description                                       | Permission          | Permission default |
 |-----------|---------------------------------------------------|---------------------|:------------------:|
-| /bcp near | Performs a lookup with radius 10                  | bcp.subcommand.near | Operator           |
+| /bcp near | Performs a lookup with radius 5                   | bcp.subcommand.near | Operator           |
 | /bcp undo | Revert a rollback/restore via the opposite action | bcp.subcommand.undo | Operator           |
 
 ## Command details
@@ -137,7 +137,7 @@ Enable the inspector. Type the command again to disable it.
 ---
 
 ### /bcp restore \<parameters\>
-Perform a rollback. _Rollbacks can be used to revert player actions._
+Perform a restore. _Restoring can be used to undo rollbacks or to restore player actions._
 
 > **Alias:** /bcp rs \<parameters\>
 
@@ -153,7 +153,7 @@ Perform a rollback. _Rollbacks can be used to revert player actions._
 ---
 
 ### /bcp rollback \<parameters\>
-Perform a restore. _Restoring can be used to undo rollbacks or to restore player actions._
+Perform a rollback. _Rollbacks can be used to revert player actions._
 
 > **Alias:** /bcp rb \<parameters\>
 
@@ -211,6 +211,7 @@ _You can specify weeks, days, hours, minutes, and seconds._
 Examples:
 - `t=4w5d2h7m20s`
 - `t=5d2h`
+- `t=1y`
 ---
 
 ### r=\<radius\>
@@ -218,7 +219,7 @@ _A numeric radius targets within that many blocks of your player location._
 
 Examples:
 - `r=20` _(target within 20 blocks of your location)_
-- `r=#global` _(target the entire server)_
+- `r=#global` _(target the entire world)_
 ---
 
 ### w=\<world\>
@@ -242,6 +243,11 @@ _Restrict the command to a specific action._
 | +container | Items put in chests               |
 | -container | Items taken from chests           |
 | kill       | Mobs killed                       |
+| session    | Player join/left the server       |
+| +session   | Player join the server            |
+| -session   | Player left the server            |
+| chat       | Player write in chat              |
+| command    | Player executes a command         |
 
 > For example, if you want to only rollback blocks placed, you would use `a=+block`
 ---
@@ -261,13 +267,6 @@ _Can be used to exclude a blocks/items._
 Examples:
 - `e=tnt` _(only excludes TNT)_
 ---
-
-# Donate
-You can contribute to the development and maintenance of BedcoreProtect through the following payment methods:
-- Bitcoin (BTC): `37BCe87gveKRNPzbcLLyAk2kLVqE53MSZc`
-- Ethereum (ETH): `0x6C5c009d5EC990dA2bCFb7A7aeDD369E21C78087`
-
-Your help can make a difference. Thank you.
 
 # FAQ
 - **I found a bug, where can I report it?**
