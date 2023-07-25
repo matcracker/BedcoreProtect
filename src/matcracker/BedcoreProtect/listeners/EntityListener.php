@@ -110,6 +110,11 @@ final class EntityListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($entity->getWorld()) && $this->config->getEntityKills()) {
             $damageEvent = $entity->getLastDamageCause();
+
+            if ($damageEvent === null){
+                return;
+            }
+
             if ($damageEvent instanceof EntityDamageByEntityEvent) {
                 $damager = $damageEvent->getDamager();
                 if ($damager !== null) {
