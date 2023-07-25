@@ -131,9 +131,13 @@ class EntitiesQueries extends Query
                 yield from $this->addEntity($entity);
 
                 $uuid = yield from $this->getUuidByPosition($position, $worldName);
-                if ($uuid === null && $trackBlockUuid) {
-                    $uuid = BlockUtils::getUniqueId($block);
-                    yield from $this->addBlock($block);
+                if ($uuid === null) {
+                    if ($trackBlockUuid) {
+                        $uuid = BlockUtils::getUniqueId($block);
+                        yield from $this->addBlock($block);
+                    } else {
+                        return 0 && yield;
+                    }
                 }
 
                 /** @var int $lastId */
