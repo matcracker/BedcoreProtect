@@ -35,7 +35,6 @@ use pocketmine\block\Trapdoor;
 use pocketmine\data\bedrock\block\BlockStateData;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
-use pocketmine\World\Position;
 use function is_a;
 
 final class BlockUtils
@@ -95,22 +94,19 @@ final class BlockUtils
      */
     public static function hasInventory(Block $block): bool
     {
-        return self::asTile($block->getPosition()) instanceof Container;
+        return self::asTile($block) instanceof Container;
     }
 
     /**
      * Returns a Tile instance of the given block if it exists.
      *
-     * @param Position $position
+     * @param Block $block
      * @return Tile|null
      */
-    public static function asTile(Position $position): ?Tile
+    public static function asTile(Block $block): ?Tile
     {
-        if ($position->isValid()) {
-            return $position->getWorld()->getTile($position->asVector3());
-        } else {
-            return null;
-        }
+        $position = $block->getPosition();
+        return $position->getWorld()->getTileAt($position->x, $position->y, $position->z);
     }
 
     /**
@@ -139,7 +135,7 @@ final class BlockUtils
     }
 
     /**
-     * Serializes a block (tile) compound tag into base64. Returns null if block doesn"t contain NBT.
+     * Serializes a block (tile) compound tag into base64. Returns null if block doesn't contain NBT.
      *
      * @param Block $block
      *
@@ -163,6 +159,6 @@ final class BlockUtils
      */
     public static function getCompoundTag(Block $block): ?CompoundTag
     {
-        return self::asTile($block->getPosition())?->saveNBT();
+        return self::asTile($block)?->saveNBT();
     }
 }

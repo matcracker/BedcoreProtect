@@ -140,12 +140,14 @@ class InventoriesQueries extends Query
                 yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
 
                 $airItem = VanillaItems::AIR();
+
+                $generators = [];
                 /**
                  * @var int $slot
                  * @var Item $content
                  */
                 foreach ($contents as $slot => $content) {
-                    yield from $this->addInventorySlotLog(
+                    $generators[] = $this->addInventorySlotLog(
                         EntityUtils::getUniqueId($player),
                         $slot,
                         $content,
@@ -156,6 +158,8 @@ class InventoriesQueries extends Query
                         $time
                     );
                 }
+
+                yield from Await::all($generators);
 
                 yield from $this->connector->asyncGeneric(QueriesConst::END_TRANSACTION);
             }

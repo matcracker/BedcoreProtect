@@ -335,7 +335,7 @@ class BlocksQueries extends Query
      */
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
-        $tileItemFrame = BlockUtils::asTile($itemFrame->getPosition());
+        $tileItemFrame = BlockUtils::asTile($itemFrame);
         if ($tileItemFrame === null) {
             $this->plugin->getLogger()->debug("{$player->getName()} tried to interact with invalid Item Frame at {$player->getPosition()}");
             return;

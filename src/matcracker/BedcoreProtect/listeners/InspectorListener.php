@@ -101,7 +101,7 @@ final class InspectorListener extends BedcoreListener
             if ($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
                 $clickedBlock = $event->getBlock();
                 $position = $clickedBlock->getPosition();
-                $tile = BlockUtils::asTile($position);
+                $tile = BlockUtils::asTile($clickedBlock);
 
                 if ($tile instanceof Container) {
                     $inventory = $tile->getInventory();
