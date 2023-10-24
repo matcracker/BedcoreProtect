@@ -49,7 +49,6 @@ use pocketmine\item\Shovel;
 use pocketmine\math\Facing;
 use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
-use SOFe\AwaitGenerator\Await;
 
 final class PlayerListener extends BedcoreListener
 {
@@ -62,7 +61,7 @@ final class PlayerListener extends BedcoreListener
     {
         $player = $event->getPlayer();
         if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getPlayerSessions()) {
-            Await::g2c($this->playerQueries->addSessionJoin($player));
+            $this->playerQueries->addSessionJoin($player);
         }
     }
 
@@ -75,7 +74,7 @@ final class PlayerListener extends BedcoreListener
     {
         $player = $event->getPlayer();
         if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getPlayerSessions()) {
-            Await::g2c($this->playerQueries->addSessionLeft($player));
+            $this->playerQueries->addSessionLeft($player);
         }
     }
 
@@ -229,7 +228,7 @@ final class PlayerListener extends BedcoreListener
         $player = $event->getPlayer();
 
         if ($this->config->isEnabledWorld($player->getWorld()) && $this->config->getPlayerMessages()) {
-            Await::g2c($this->playerQueries->addMessage($player, $event->getMessage(), ActionType::CHAT()));
+            $this->playerQueries->addMessage($player, $event->getMessage(), ActionType::CHAT());
         }
     }
 
@@ -247,7 +246,7 @@ final class PlayerListener extends BedcoreListener
         }
 
         if ($this->config->isEnabledWorld($sender->getWorld()) && $this->config->getPlayerCommands()) {
-            Await::g2c($this->playerQueries->addMessage($sender, "/{$event->getCommand()}", ActionType::COMMAND()));
+            $this->playerQueries->addMessage($sender, "/{$event->getCommand()}", ActionType::COMMAND());
         }
     }
 }

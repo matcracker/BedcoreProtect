@@ -27,9 +27,11 @@ use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use pocketmine\command\CommandSender;
+use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
+use SOFe\AwaitGenerator\Await;
 use function microtime;
 
 class PlayerQueries extends Query
@@ -44,44 +46,70 @@ class PlayerQueries extends Query
         parent::__construct($plugin, $connector);
     }
 
-    private function addSession(Player $player, Action $action): Generator
+    protected function addRawSession(Player $player, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
-        $position = $player->getPosition();
-
         yield from $this->entitiesQueries->addEntity($player);
 
         yield from $this->addRawLog(
             EntityUtils::getUniqueId($player),
             $position->floor(),
-            $position->getWorld()->getFolderName(),
+            $worldName,
             $action,
-            microtime(true)
+            $time
         );
     }
 
-    public function addSessionJoin(Player $player): Generator
-    {
-        yield from $this->addSession($player, ActionType::SESSION_JOIN());
-    }
-
-    public function addSessionLeft(Player $player): Generator
-    {
-        yield from $this->addSession($player, ActionType::SESSION_LEFT());
-    }
-
-    public function addMessage(Player $player, string $message, Action $action): Generator
+    public function addSessionJoin(Player $player): void
     {
         $position = $player->getPosition();
 
+        Await::g2c($this->addRawSession(
+            $player,
+            $position->floor(),
+            $position->getWorld()->getFolderName(),
+            ActionType::SESSION_JOIN(),
+            microtime(true)
+        ));
+    }
+
+    public function addSessionLeft(Player $player): void
+    {
+        $position = $player->getPosition();
+
+        Await::g2c($this->addRawSession(
+            $player,
+            $position->floor(),
+            $position->getWorld()->getFolderName(),
+            ActionType::SESSION_LEFT(),
+            microtime(true)
+        ));
+    }
+
+    public function addMessage(Player $player, string $message, Action $action): void
+    {
+        $position = $player->getPosition();
+
+        Await::g2c($this->addRawMessage(
+            $player,
+            $message,
+            $position,
+            $position->getWorld()->getFolderName(),
+            $action,
+            microtime(true)
+        ));
+    }
+
+    protected function addRawMessage(Player $player, string $message, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    {
         yield from $this->entitiesQueries->addEntity($player);
 
         /** @var $lastId int */
         [$lastId] = yield from $this->addRawLog(
             EntityUtils::getUniqueId($player),
             $position->floor(),
-            $position->getWorld()->getFolderName(),
+            $worldName,
             $action,
-            microtime(true)
+            $time
         );
 
         return yield from $this->connector->asyncInsert(QueriesConst::ADD_CHAT_LOG, [
