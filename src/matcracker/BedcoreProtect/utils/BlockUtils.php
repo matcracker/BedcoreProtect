@@ -106,7 +106,11 @@ final class BlockUtils
     public static function asTile(Block $block): ?Tile
     {
         $position = $block->getPosition();
-        return $position->getWorld()->getTileAt($position->x, $position->y, $position->z);
+        if ($position->isValid()) {
+            return $position->getWorld()->getTileAt($position->x, $position->y, $position->z);
+        } else {
+            return null;
+        }
     }
 
     /**
