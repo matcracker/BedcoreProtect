@@ -30,31 +30,31 @@ class CommandData
     public const GLOBAL_RADIUS = -1;
 
     /**
-     * @param string[]|null $users
+     * @param string[] $users
      * @param int|null $time
-     * @param string|null $world
+     * @param string $world
      * @param int|null $radius
-     * @param ActionType[]|null $actions
-     * @param string[]|null $inclusions
-     * @param string[]|null $exclusions
+     * @param ActionType[] $actions
+     * @param string[] $inclusions
+     * @param string[] $exclusions
      * @param AdditionalParameter[] $additionalParams
      */
     public function __construct(
-        private readonly ?array  $users = null,
-        private readonly ?int    $time = null,
-        private readonly ?string $world = null,
-        private readonly ?int    $radius = null,
-        private readonly ?array  $actions = null,
-        private readonly ?array  $inclusions = null,
-        private readonly ?array  $exclusions = null,
-        private readonly array   $additionalParams = [])
+        private readonly array  $users,
+        private readonly ?int    $time,
+        private readonly string $world,
+        private readonly ?int    $radius,
+        private readonly array  $actions,
+        private readonly array  $inclusions,
+        private readonly array  $exclusions,
+        private readonly array   $additionalParams)
     {
     }
 
     /**
-     * @return string[]|null
+     * @return string[]
      */
-    public function getUsers(): ?array
+    public function getUsers(): array
     {
         return $this->users;
     }
@@ -64,7 +64,7 @@ class CommandData
         return $this->time;
     }
 
-    public function getWorld(): ?string
+    public function getWorld(): string
     {
         return $this->world;
     }
@@ -80,25 +80,25 @@ class CommandData
     }
 
     /**
-     * @return Action[]|null
+     * @return Action[]
      */
-    public function getActions(): ?array
+    public function getActions(): array
     {
         return $this->actions;
     }
 
     /**
-     * @return string[]|null
+     * @return string[]
      */
-    public function getInclusions(): ?array
+    public function getInclusions(): array
     {
         return $this->inclusions;
     }
 
     /**
-     * @return string[]|null
+     * @return string[]
      */
-    public function getExclusions(): ?array
+    public function getExclusions(): array
     {
         return $this->exclusions;
     }

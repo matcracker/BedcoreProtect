@@ -52,6 +52,7 @@ abstract class QueriesConst
     public const PURGE_ID = "bcp.purge.id";
     public const PURGE_TIME = "bcp.purge.time";
     public const PURGE_WORLD = "bcp.purge.world";
+    public const DYN_LOOKUP_QUERY = "dyn-lookup-query";
 
     public static function VERSION_PATCH(string $version, int $patchNumber): string
     {

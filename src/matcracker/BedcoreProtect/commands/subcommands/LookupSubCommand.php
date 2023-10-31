@@ -42,7 +42,8 @@ final class LookupSubCommand extends ParsableSubCommand
 
         $cmdData = $this->parseArguments($sender, $args, $default);
         if ($cmdData !== null) {
-            Await::g2c($this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->requestLookup($sender, $cmdData, $pos));
+            $pluginQueries = $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries();
+            $pluginQueries->requestLookup($sender, $cmdData, $pos);
         }
     }
 

@@ -57,7 +57,7 @@ final class InspectorListener extends BedcoreListener
 
         //It checks the block clicked
         if (Inspector::isInspector($player) && $this->config->isEnabledWorld($player->getWorld())) {
-            $this->pluginQueries->requestBlockLog($player, $event->getBlock()->getPosition());
+            $this->pluginQueries->requestBlockLogByPos($player, $event->getBlock()->getPosition());
             $event->cancel();
         }
     }
@@ -82,7 +82,7 @@ final class InspectorListener extends BedcoreListener
              */
             foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
                 $position = Position::fromObject(new Vector3($x, $y, $z), $world);
-                $this->pluginQueries->requestBlockLog($player, $position);
+                $this->pluginQueries->requestBlockLogByPos($player, $position);
             }
             $event->cancel();
         }
@@ -110,13 +110,13 @@ final class InspectorListener extends BedcoreListener
                         $position = $inventory->getHolder();
                     }
 
-                    $this->pluginQueries->requestTransactionLog($player, $position);
+                    $this->pluginQueries->requestTransactionLogByPos($player, $position);
                     $event->cancel();
                 } elseif ($clickedBlock instanceof ItemFrame) {
-                    $this->pluginQueries->requestTransactionLog($player, $position);
+                    $this->pluginQueries->requestTransactionLogByPos($player, $position);
                     $event->cancel();
                 } elseif (BlockUtils::canBeClicked($clickedBlock)) {
-                    $this->pluginQueries->requestBlockLog($player, $position);
+                    $this->pluginQueries->requestBlockLogByPos($player, $position);
                     $event->cancel();
                 }
             }

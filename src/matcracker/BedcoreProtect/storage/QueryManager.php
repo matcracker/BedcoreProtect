@@ -100,7 +100,7 @@ final class QueryManager
             return;
         }
 
-        $bb = $sender instanceof Player ? MathUtils::getRangedVector($sender->getPosition(), $cmdData->getRadius()) : null;
+        $bb = $sender instanceof Player ? MathUtils::getRangedVector($sender->getPosition(), $cmdData->getRadius() ?? 0) : null;
 
         foreach (self::$activeRollbacks as $actSender => [$actBB, $actWorld]) {
             if ((($bb !== null && $actBB !== null && $actBB->intersectsWith($bb)) || $cmdData->isGlobalRadius()) && $worldName === $actWorld) {

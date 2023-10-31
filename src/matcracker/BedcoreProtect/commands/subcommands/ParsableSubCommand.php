@@ -47,6 +47,7 @@ use function array_intersect;
 use function array_keys;
 use function array_map;
 use function array_unique;
+use function assert;
 use function count;
 use function explode;
 use function implode;
@@ -244,7 +245,8 @@ abstract class ParsableSubCommand extends SubCommand
             return null;
         }
 
-        $users = $time = $radius = $world = $actions = $inclusions = $exclusions = null;
+        $time = $radius = $world = null;
+        $users = $actions = $inclusions = $exclusions = [];
 
         /**
          * @var string $parameter
@@ -317,6 +319,8 @@ abstract class ParsableSubCommand extends SubCommand
                     break;
             }
         }
+
+        assert($world !== null);
 
         $cmdData = new CommandData($users, $time, $world, $radius, $actions, $inclusions, $exclusions, $additionalParams);
 

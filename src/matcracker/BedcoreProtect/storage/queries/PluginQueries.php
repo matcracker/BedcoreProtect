@@ -33,9 +33,10 @@ use matcracker\BedcoreProtect\utils\MathUtils;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\command\CommandSender;
 use pocketmine\math\AxisAlignedBB;
+use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
-use pocketmine\World\Position;
+use pocketmine\world\Position;
 use pocketmine\World\World;
 use poggit\libasynql\generic\GenericVariable;
 use SOFe\AwaitGenerator\Await;
@@ -54,66 +55,92 @@ class PluginQueries extends Query
 {
     public function requestNearLog(Player $inspector, int $radius, int $limit = 4, int $offset = 0): void
     {
-        Await::g2c($this->requestLog(
+        $position = $inspector->getPosition();
+        $this->requestLog(
             QueriesConst::GET_NEAR_LOG,
-            LookupData::NEAR_LOG,
             $inspector,
-            $inspector->getPosition(),
-            new CommandData(null, null, $inspector->getWorld()->getFolderName(), $radius),
+            $position,
+            $position->getWorld()->getFolderName(),
+            $radius,
             $limit,
             $offset
-        ));
+        );
     }
 
-    private function requestLog(string $queryName, int $queryType, CommandSender $inspector, Position $position, CommandData $cmdData, int $limit = 4, int $offset = 0): Generator
+    protected function requestLog(string $queryName, CommandSender $sender, Vector3 $position, string $worldName, int $radius, int $limit, int $offset): void
     {
-        $bb = MathUtils::getRangedVector($position, $cmdData->getRadius() ?? 0);
+        Await::f2c(function () use ($queryName, $sender, $position, $worldName, $radius, $limit, $offset): Generator {
+            /** @var array $rows */
+            $rows = yield from $this->requestRawLogByPosition(
+                $queryName,
+                $position,
+                $worldName,
+                $radius,
+                $limit,
+                $offset
+            );
+
+            $cmdData = new CommandData([], null, $worldName, $radius, [], [], [], []);
+
+            $this->onRetrieveLogs($queryName, $rows, $sender, $position, $cmdData, $limit, $offset);
+        });
+    }
+
+    protected function requestRawLogByPosition(string $queryName, Vector3 $position, string $worldName, int $radius, int $limit, int $offset): Generator
+    {
+        $bb = MathUtils::getRangedVector($position, $radius);
         MathUtils::floorBoundingBox($bb);
 
-        $rows = yield from $this->connector->asyncSelect(
+        return yield from $this->requestRawAreaLog($queryName, $bb, $worldName, $limit, $offset);
+    }
+
+    protected function requestRawAreaLog(string $queryName, AxisAlignedBB $area, string $worldName, int $limit, int $offset): Generator
+    {
+        return yield from $this->connector->asyncSelect(
             $queryName,
             [
-                "min_x" => $bb->minX,
-                "max_x" => $bb->maxX,
-                "min_y" => $bb->minY,
-                "max_y" => $bb->maxY,
-                "min_z" => $bb->minZ,
-                "max_z" => $bb->maxZ,
-                "world_name" => $position->getWorld()->getFolderName(),
+                "min_x" => $area->minX,
+                "max_x" => $area->maxX,
+                "min_y" => $area->minY,
+                "max_y" => $area->maxY,
+                "min_z" => $area->minZ,
+                "max_z" => $area->maxZ,
+                "world_name" => $worldName,
                 "limit" => $limit,
                 "offset" => $offset
             ]
         );
-
-        $this->onSuccessLog($rows, $queryType, $inspector, $position, $cmdData, $limit, $offset);
     }
 
-    private function onSuccessLog(array $rows, int $queryType, CommandSender $inspector, ?Position $position, CommandData $cmdData, int $limit, int $offset): void
+    protected function onRetrieveLogs(string $queryName, array $rows, CommandSender $sender, Vector3 $position, CommandData $cmdData, int $limit, int $offset): void
     {
         if (count($rows) === 0) {
-            $inspector->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("subcommand.show.empty-data"));
+            $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->plugin->getLanguage()->translateString("subcommand.show.empty-data"));
             return;
         }
 
-        LookupData::storeData($inspector, new LookupData($queryType, (int)$rows[0]["cnt_rows"], $inspector, $cmdData, $position));
-        Inspector::sendLogReport($inspector, $rows, $limit, $offset);
+        $cacheData = new LookupData($queryName, (int)$rows[0]["cnt_rows"], $sender, $cmdData, $position);
+        LookupData::storeData($sender, $cacheData);
+        Inspector::sendLogReport($sender, $rows, $limit, $offset);
     }
 
-    public function requestLookup(CommandSender $inspector, CommandData $cmdData, ?Position $position, int $limit = 4, int $offset = 0): Generator
+    public function requestLookup(CommandSender $inspector, CommandData $cmdData, ?Vector3 $position, int $limit = 4, int $offset = 0): void
     {
-        $query = "";
-        $args = [];
+        Await::f2c(function () use ($inspector, $cmdData, $position, $limit, $offset): Generator {
+            $query = "";
+            $args = [];
 
-        if (($radius = $cmdData->getRadius()) !== null) {
-            $bb = MathUtils::getRangedVector($position, $radius);
-        } else {
-            $bb = null;
-        }
+            if (($radius = $cmdData->getRadius()) !== null) {
+                $bb = MathUtils::getRangedVector($position, $radius);
+            } else {
+                $bb = null;
+            }
 
-        $this->buildLookupQuery($query, $args, $cmdData, $bb, $limit, $offset);
+            $this->buildLookupQuery($query, $args, $cmdData, $bb, $limit, $offset);
 
-        $rows = yield from DataConnectorHelper::asyncSelectRaw($this->connector, $query, $args[0]);
-        $this->onSuccessLog($rows, LookupData::LOOKUP_LOG, $inspector, $position, $cmdData, $limit, $offset);
+            $rows = yield from DataConnectorHelper::asyncSelectRaw($this->connector, $query, $args[0]);
+            $this->onRetrieveLogs(QueriesConst::DYN_LOOKUP_QUERY, $rows, $inspector, $position, $cmdData, $limit, $offset);
+        });
     }
 
     private function buildLookupQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, int $limit = 4, int $offset = 0): void
@@ -169,7 +196,7 @@ class PluginQueries extends Query
             $this->plugin->getParsedConfig()->getDatabaseType(),
             $query,
             $args,
-            "dyn-lookup-query",
+            QueriesConst::DYN_LOOKUP_QUERY,
             $variables,
             $parameters
         );
@@ -185,7 +212,7 @@ class PluginQueries extends Query
      */
     private static function buildConditionalQuery(string &$query, array &$variables, array &$params, CommandData $commandData, ?AxisAlignedBB $bb, ?float $currTime = null): void
     {
-        if (($users = $commandData->getUsers()) !== null) {
+        if (count($users = $commandData->getUsers()) > 0) {
             $variables["users"] = new GenericVariable("users", "list:string", null);
             $params["users"] = $users;
 
@@ -224,7 +251,7 @@ class PluginQueries extends Query
 
         $query .= "world_name = :world AND ";
 
-        if (($actions = $commandData->getActions()) !== null) {
+        if (count($actions = $commandData->getActions()) > 0) {
             $variables["actions"] = new GenericVariable("actions", "list:int", null);
             $params["actions"] = array_map(static function (Action $action): int {
                 return $action->getId();
@@ -233,14 +260,14 @@ class PluginQueries extends Query
             $query .= "(action IN :actions) AND ";
         }
 
-        if (($inclusions = $commandData->getInclusions()) !== null) {
+        if (count($inclusions = $commandData->getInclusions()) > 0) {
             $variables["inclusions"] = new GenericVariable("inclusions", "list:string", null);
             $params["inclusions"] = $inclusions;
 
             $query .= "(name IN :inclusions) AND ";
         }
 
-        if (($exclusions = $commandData->getExclusions()) !== null) {
+        if (count($exclusions = $commandData->getExclusions()) > 0) {
             $variables["exclusions"] = new GenericVariable("exclusions", "list:string", null);
             $params["exclusions"] = $exclusions;
 
@@ -250,56 +277,78 @@ class PluginQueries extends Query
         $query = mb_substr($query, 0, -5); //Remove excessive " AND " string.
     }
 
-    public function requestTransactionLog(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
+    public function requestTransactionLog(Player $inspector, Vector3 $position, string $worldName, int $radius = 0, int $limit = 4, int $offset = 0): void
     {
-        Await::g2c($this->requestLog(
+        $this->requestLog(
             QueriesConst::GET_TRANSACTION_LOG,
-            LookupData::TRANSACTION_LOG,
             $inspector,
             $position,
-            new CommandData(null, null, $position->getWorld()->getFolderName(), $radius),
+            $worldName,
+            $radius,
             $limit,
             $offset
-        ));
+        );
     }
 
-    public function requestBlockLog(Player $inspector, Position $blockPos, int $radius = 0, int $limit = 4, int $offset = 0): void
+    public function requestTransactionLogByPos(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
     {
-        Await::g2c($this->requestLog(
-            QueriesConst::GET_BLOCK_LOG,
-            LookupData::BLOCK_LOG,
+        $this->requestTransactionLog(
             $inspector,
-            $blockPos,
-            new CommandData(null, null, $blockPos->getWorld()->getFolderName(), $radius),
+            $position,
+            $position->getWorld()->getFolderName(),
+            $radius,
             $limit,
             $offset
-        ));
+        );
+    }
+
+    public function requestBlockLog(Player $inspector, Vector3 $position, string $worldName, int $radius = 0, int $limit = 4, int $offset = 0): void
+    {
+        $this->requestLog(
+            QueriesConst::GET_BLOCK_LOG,
+            $inspector,
+            $position,
+            $worldName,
+            $radius,
+            $limit,
+            $offset
+        );
+    }
+
+    public function requestBlockLogByPos(Player $inspector, Position $position, int $radius = 0, int $limit = 4, int $offset = 0): void
+    {
+        $this->requestBlockLog(
+            $inspector,
+            $position,
+            $position->getWorld()->getFolderName(),
+            $radius,
+            $limit,
+            $offset
+        );
     }
 
     public function purge(float $time, ?string $worldName, bool $optimize, ?Closure $onSuccess = null): void
     {
-        Await::f2c(
-            function () use ($time, $worldName, $optimize, $onSuccess) {
-                if ($worldName !== null) {
-                    /** @var int $affectedRows */
-                    $affectedRows = yield from $this->connector->asyncChange(QueriesConst::PURGE_WORLD, [
-                        "time" => $time,
-                        "world_name" => $worldName
-                    ]);
-                } else {
-                    /** @var int $affectedRows */
-                    $affectedRows = yield from $this->connector->asyncChange(QueriesConst::PURGE_TIME, ["time" => $time]);
-                }
-
-                if ($optimize) {
-                    yield from $this->connector->asyncGeneric($this->plugin->getParsedConfig()->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
-                }
-
-                if ($onSuccess !== null) {
-                    $onSuccess($affectedRows);
-                }
+        Await::f2c(function () use ($time, $worldName, $optimize, $onSuccess) {
+            if ($worldName !== null) {
+                /** @var int $affectedRows */
+                $affectedRows = yield from $this->connector->asyncChange(QueriesConst::PURGE_WORLD, [
+                    "time" => $time,
+                    "world_name" => $worldName
+                ]);
+            } else {
+                /** @var int $affectedRows */
+                $affectedRows = yield from $this->connector->asyncChange(QueriesConst::PURGE_TIME, ["time" => $time]);
             }
-        );
+
+            if ($optimize) {
+                yield from $this->connector->asyncGeneric($this->plugin->getParsedConfig()->isSQLite() ? QueriesConst::VACUUM : QueriesConst::OPTIMIZE);
+            }
+
+            if ($onSuccess !== null) {
+                $onSuccess($affectedRows);
+            }
+        });
     }
 
     public function buildLogsSelectionQuery(string &$query, array &$args, CommandData $commandData, ?AxisAlignedBB $bb, ?float $currTime, bool $rollback, int $limit): void
@@ -313,7 +362,7 @@ class PluginQueries extends Query
             "limit" => $limit
         ];
 
-        if ($commandData->getInclusions() !== null || $commandData->getExclusions() !== null) {
+        if (count($commandData->getInclusions()) > 0 || count($commandData->getExclusions()) > 0) {
             $airName = VanillaBlocks::AIR()->getName();
 
             $query = /**@lang text */

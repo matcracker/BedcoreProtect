@@ -24,24 +24,20 @@ namespace matcracker\BedcoreProtect\storage;
 use matcracker\BedcoreProtect\commands\CommandData;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
-use pocketmine\World\Position;
+use pocketmine\math\Vector3;
 
 class LookupData
 {
-    public const NEAR_LOG = 0;
-    public const BLOCK_LOG = 1;
-    public const TRANSACTION_LOG = 2;
-    public const LOOKUP_LOG = 3;
-
     /** @var self[] */
     private static array $lookupData = [];
 
     public function __construct(
-        private readonly int            $queryType,
-        private readonly int            $rows,
-        private readonly ?CommandSender $sender,
-        private readonly ?CommandData   $commandData,
-        private readonly ?Position      $position)
+        private readonly string        $queryName,
+        private readonly int           $rowsCount,
+        private readonly CommandSender $sender,
+        private readonly CommandData   $commandData,
+        private readonly Vector3       $position
+    )
     {
     }
 
@@ -55,27 +51,27 @@ class LookupData
         return self::$lookupData[Utils::getSenderUUID($sender)] ?? null;
     }
 
-    public function getQueryType(): int
+    public function getQueryName(): string
     {
-        return $this->queryType;
+        return $this->queryName;
     }
 
-    public function getRows(): int
+    public function getRowsCount(): int
     {
-        return $this->rows;
+        return $this->rowsCount;
     }
 
-    public function getSender(): ?CommandSender
+    public function getSender(): CommandSender
     {
         return $this->sender;
     }
 
-    public function getCommandData(): ?CommandData
+    public function getCommandData(): CommandData
     {
         return $this->commandData;
     }
 
-    public function getPosition(): ?Position
+    public function getPosition(): Vector3
     {
         return $this->position;
     }

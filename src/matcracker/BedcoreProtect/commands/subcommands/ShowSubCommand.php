@@ -28,10 +28,10 @@ use dktapps\pmforms\element\Input;
 use matcracker\BedcoreProtect\commands\BCPCommand;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\storage\LookupData;
+use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
-use SOFe\AwaitGenerator\Await;
 use function explode;
 
 final class ShowSubCommand extends SubCommand
@@ -102,7 +102,7 @@ final class ShowSubCommand extends SubCommand
         }
 
         $offset = ($page - 1) * $lines;
-        $rows = $data->getRows();
+        $rows = $data->getRowsCount();
 
         if ($offset > $rows || $page <= 0) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . TextFormat::RED . $this->getLang()->translateString("subcommand.show.page-not-exist", [TextFormat::GOLD . $page . TextFormat::RED]));
@@ -110,24 +110,25 @@ final class ShowSubCommand extends SubCommand
         }
 
         $pluginQueries = $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries();
-        switch ($data->getQueryType()) {
-            case LookupData::NEAR_LOG:
+        $cmdData = $data->getCommandData();
+        switch ($data->getQueryName()) {
+            case QueriesConst::GET_NEAR_LOG:
                 if ($sender instanceof Player) {
-                    $pluginQueries->requestNearLog($sender, $data->getCommandData()->getRadius(), $lines, $offset);
+                    $pluginQueries->requestNearLog($sender, $cmdData->getRadius(), $lines, $offset);
                 }
                 break;
-            case LookupData::BLOCK_LOG:
+            case QueriesConst::GET_BLOCK_LOG:
                 if ($sender instanceof Player) {
-                    $pluginQueries->requestBlockLog($sender, $data->getPosition(), $data->getCommandData()->getRadius(), $lines, $offset);
+                    $pluginQueries->requestBlockLog($sender, $data->getPosition(), $cmdData->getWorld(), $cmdData->getRadius(), $lines, $offset);
                 }
                 break;
-            case LookupData::TRANSACTION_LOG:
+            case QueriesConst::GET_TRANSACTION_LOG:
                 if ($sender instanceof Player) {
-                    $pluginQueries->requestTransactionLog($sender, $data->getPosition(), $data->getCommandData()->getRadius(), $lines, $offset);
+                    $pluginQueries->requestTransactionLog($sender, $data->getPosition(), $cmdData->getWorld(), $cmdData->getRadius(), $lines, $offset);
                 }
                 break;
-            case LookupData::LOOKUP_LOG:
-                Await::g2c($pluginQueries->requestLookup($sender, $data->getCommandData(), $data->getPosition(), $lines, $offset));
+            case QueriesConst::DYN_LOOKUP_QUERY:
+                $pluginQueries->requestLookup($sender, $cmdData, $data->getPosition(), $lines, $offset);
                 break;
         }
     }
