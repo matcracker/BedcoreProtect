@@ -26,11 +26,11 @@ use InvalidArgumentException;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\generic\GenericStatementImpl;
 use poggit\libasynql\generic\GenericVariable;
-use poggit\libasynql\libs\SOFe\AwaitGenerator\Await;
 use poggit\libasynql\result\SqlInsertResult;
 use poggit\libasynql\result\SqlSelectResult;
 use poggit\libasynql\SqlDialect;
 use poggit\libasynql\SqlThread;
+use SOFe\AwaitGenerator\Await;
 use function array_fill;
 use function count;
 
