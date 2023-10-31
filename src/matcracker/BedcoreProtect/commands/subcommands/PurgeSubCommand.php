@@ -49,7 +49,8 @@ final class PurgeSubCommand extends ParsableSubCommand
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.started"));
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.no-restart"));
 
-            $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries()->purge(
+            $pluginQueries = $this->getOwningPlugin()->getDatabase()->getQueryManager()->getPluginQueries();
+            $pluginQueries->purge(
                 (float)$cmdData->getTime() ?? PHP_FLOAT_MAX,
                 $cmdData->getWorld(),
                 in_array(AdditionalParameter::OPTIMIZE(), $cmdData->getAdditionalParams()),

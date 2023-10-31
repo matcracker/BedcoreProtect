@@ -68,9 +68,10 @@ abstract class ParsableSubCommand extends SubCommand
     public function __construct(Main $plugin, private readonly array $requiredParams)
     {
         parent::__construct($plugin);
-        $this->requiredParamsNames = array_map(static function (CommandParameter $parameter): string {
-            return $parameter->name();
-        }, $this->requiredParams);
+        $this->requiredParamsNames = array_map(
+            static fn(CommandParameter $parameter): string => $parameter->name(),
+            $this->requiredParams
+        );
     }
 
     public function getForm(Player $player): ?BaseForm
