@@ -11,14 +11,15 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/SOF3/UpdateNotifier"
+      "url": "https://github.com/ifera-mc/UpdateNotifier"
     }
   ],
   "require": {
     "sof3/libasynql": "^4.2.0",
     "sof3/await-generator": "^3.5.0",
-    "dktapps/pmforms": "dev-master",
-    "pocketmine/pocketmine-mp": "^5.0.0"
+    "dktapps/pmforms": "^2.2.0",
+    "pocketmine/pocketmine-mp": "^5.0.0",
+    "ifera-mc/update-notifier": "dev-master"
   },
   "require-dev": {
     "sof3/pharynx": "^0.3.0"
