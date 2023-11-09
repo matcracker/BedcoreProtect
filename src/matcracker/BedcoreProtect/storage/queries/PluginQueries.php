@@ -253,9 +253,7 @@ class PluginQueries extends Query
 
         if (count($actions = $commandData->getActions()) > 0) {
             $variables["actions"] = new GenericVariable("actions", "list:int", null);
-            $params["actions"] = array_map(static function (Action $action): int {
-                return $action->getId();
-            }, $actions);
+            $params["actions"] = array_map(static fn(Action $action): int => $action->value, $actions);
 
             $query .= "(action IN :actions) AND ";
         }

@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\enums\ActionType;
+use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
 use pocketmine\block\BlockTypeIds;
@@ -53,7 +53,9 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($world) && $this->config->getBlockBreak()) {
             $block = $event->getBlock();
 
-            $this->blocksQueries->addExplosionLogByEntity($player, $block->getAffectedBlocks(), ActionType::BREAK());
+            $affectedBlocks = $block->getAffectedBlocks();
+
+            $this->blocksQueries->addExplosionLogByEntity($player, $affectedBlocks, Action::BREAK);
 
             if ($this->config->getNaturalBreak()) {
                 $sides = [];
@@ -73,7 +75,7 @@ final class BlockListener extends BedcoreListener
                 }
 
                 //This is necessary because it is not possible to predict which blocks will be broken
-                $this->blocksQueries->addScheduledBlocksLogByEntity($player, $sides, ActionType::BREAK(), 2);
+                $this->blocksQueries->addScheduledBlocksLogByEntity($player, $sides, Action::BREAK, 2);
             }
         }
     }
@@ -97,7 +99,7 @@ final class BlockListener extends BedcoreListener
              */
             foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
                 $replacedBlock = $world->getBlockAt($x, $y, $z);
-                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, ActionType::PLACE());
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE);
             }
         }
     }
@@ -115,7 +117,7 @@ final class BlockListener extends BedcoreListener
         if ($this->config->isEnabledWorld($blockPos->getWorld())) {
             $newState = $event->getNewState();
             if ($newState instanceof Liquid) {
-                $action = $block instanceof Air ? ActionType::PLACE() : ActionType::BREAK();
+                $action = $block instanceof Air ? Action::PLACE : Action::BREAK;
 
                 $flowVector = $newState->getFlowVector()->floor();
                 //In case of vertical falling water we need to point to the replaced block position
@@ -127,7 +129,7 @@ final class BlockListener extends BedcoreListener
 
                 $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, $action, $blockPos, $sourcePos);
             } elseif ($newState instanceof Fire) {
-                $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, ActionType::PLACE(), $blockPos, $newState->getPosition());
+                $this->blocksQueries->addBlockLogByBlock($newState, $block, $newState, Action::PLACE, $blockPos, $newState->getPosition());
             }
         }
     }
@@ -144,7 +146,7 @@ final class BlockListener extends BedcoreListener
 
         if ($this->config->isEnabledWorld($blockPos->getWorld()) && $this->config->getBlockBurn()) {
             $causingBlock = $event->getCausingBlock();
-            $this->blocksQueries->addBlockLogByBlock($causingBlock, $block, VanillaBlocks::AIR(), ActionType::BREAK(), $blockPos, $causingBlock->getPosition());
+            $this->blocksQueries->addBlockLogByBlock($causingBlock, $block, VanillaBlocks::AIR(), Action::BREAK, $blockPos, $causingBlock->getPosition());
         }
     }
 
@@ -164,7 +166,7 @@ final class BlockListener extends BedcoreListener
 
                 $liquid = $block instanceof Water ? VanillaBlocks::LAVA() : VanillaBlocks::WATER();
 
-                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, ActionType::PLACE(), $blockPos, $blockPos);
+                $this->blocksQueries->addBlockLogByBlock($liquid, $block, $result, Action::PLACE, $blockPos, $blockPos);
             }
         }
     }
@@ -179,7 +181,7 @@ final class BlockListener extends BedcoreListener
         $block = $event->getBlock();
 
         if ($this->config->isEnabledWorld($block->getPosition()->getWorld()) && $this->config->getSignText()) {
-            $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, ActionType::UPDATE());
+            $this->blocksQueries->addBlockLogByEntity($event->getPlayer(), $block, $block, Action::UPDATE);
         }
     }
 }

@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace matcracker\BedcoreProtect\commands;
 
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\enums\AdditionalParameter;
 
 class CommandData
@@ -34,20 +33,20 @@ class CommandData
      * @param int|null $time
      * @param string $world
      * @param int|null $radius
-     * @param ActionType[] $actions
+     * @param Action[] $actions
      * @param string[] $inclusions
      * @param string[] $exclusions
      * @param AdditionalParameter[] $additionalParams
      */
     public function __construct(
         private readonly array  $users,
-        private readonly ?int    $time,
+        private readonly ?int   $time,
         private readonly string $world,
-        private readonly ?int    $radius,
+        private readonly ?int   $radius,
         private readonly array  $actions,
         private readonly array  $inclusions,
         private readonly array  $exclusions,
-        private readonly array   $additionalParams)
+        private readonly array  $additionalParams)
     {
     }
 

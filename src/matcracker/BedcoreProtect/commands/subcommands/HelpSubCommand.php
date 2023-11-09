@@ -45,10 +45,10 @@ final class HelpSubCommand extends SubCommand
             if (($subCmd = BCPCommand::getSubCommand(mb_strtolower($args[0]))) !== null) {
                 $subCmd->sendCommandHelp($sender);
 
-            } elseif (($param = CommandParameter::fromString($args[0])) !== null) {
-                $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp lookup {$param->name()}=<{$param->name()}>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.params.{$param->name()}.help", ["lookup"]));
+            } elseif (($param = CommandParameter::tryFromAlias($args[0])) !== null) {
+                $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp lookup $param->value=<$param->value>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.params.$param->value.help", ["lookup"]));
                 foreach ($param->getAliases() as $alias) {
-                    $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp lookup $alias=<{$param->name()}>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.params.generic.help.shortcut"));
+                    $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp lookup $alias=<$param->value>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.params.generic.help.shortcut"));
                 }
                 $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.examples", [$param->getExample()]));
 

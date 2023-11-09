@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\tasks\async\AsyncBlockSetter;
 use matcracker\BedcoreProtect\utils\ArrayUtils;
@@ -327,12 +326,6 @@ class BlocksQueries extends Query
         });
     }
 
-    /**
-     * @param Player $player
-     * @param ItemFrame $itemFrame
-     * @param Item $item
-     * @param Action $action
-     */
     public function addItemFrameLogByPlayer(Player $player, ItemFrame $itemFrame, Item $item, Action $action): void
     {
         $tileItemFrame = BlockUtils::asTile($itemFrame);
@@ -347,8 +340,8 @@ class BlocksQueries extends Query
         $oldNbt = Utils::serializeNBT($nbt = $tileItemFrame->saveNBT());
 
         $nbt->setTag(TileItemFrame::TAG_ITEM, $item->nbtSerialize());
-        if ($action === ActionType::CLICK()) {
             $nbt->setByte(TileItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % ItemFrame::ROTATIONS);
+        if ($action === Action::CLICK) {
         }
         $newNbt = Utils::serializeNBT($nbt);
 
@@ -369,7 +362,7 @@ class BlocksQueries extends Query
                     microtime(true)
                 );
 
-                if ($action !== ActionType::CLICK()) {
+                if ($action !== Action::CLICK) {
                     $this->inventoriesQueries->addItemFrameSlotLog($player, $item, $action, $position, $worldName);
                 }
             });

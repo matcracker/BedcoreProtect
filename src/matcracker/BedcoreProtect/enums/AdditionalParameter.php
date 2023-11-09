@@ -21,25 +21,10 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\enums;
 
-use pocketmine\utils\EnumTrait;
-
-/**
- * This doc-block is generated automatically, do not modify it manually.
- * This must be regenerated whenever enum members are added, removed or changed.
- * @see EnumTrait::_generateMethodAnnotations()
- *
- * @method static AdditionalParameter OPTIMIZE()
- */
-final class AdditionalParameter
+enum AdditionalParameter: string
 {
-    use CustomEnumTrait;
+    use NamedEnumTrait;
+    use ValueBackedEnumTrait;
 
-    public const KEY_CHAR = "#";
-
-    protected static function setup(): void
-    {
-        self::registerAll(
-            new self("optimize")
-        );
-    }
+    case OPTIMIZE = CommandParameter::WILDCARD_CHAR . "optimize";
 }

@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use pocketmine\command\CommandSender;
@@ -67,7 +66,7 @@ class PlayerQueries extends Query
             $player,
             $position->floor(),
             $position->getWorld()->getFolderName(),
-            ActionType::SESSION_JOIN(),
+            Action::SESSION_JOIN,
             microtime(true)
         ));
     }
@@ -80,7 +79,7 @@ class PlayerQueries extends Query
             $player,
             $position->floor(),
             $position->getWorld()->getFolderName(),
-            ActionType::SESSION_LEFT(),
+            Action::SESSION_LEFT,
             microtime(true)
         ));
     }

@@ -62,7 +62,7 @@ abstract class Query
             "y" => $position->getY(),
             "z" => $position->getZ(),
             "world_name" => $worldName,
-            "action" => $action->getId(),
+            "action" => $action->value,
             "time" => $time
         ]);
     }

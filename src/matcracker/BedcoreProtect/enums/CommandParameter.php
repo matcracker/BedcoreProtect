@@ -25,105 +25,61 @@ use dktapps\pmforms\element\CustomFormElement;
 use dktapps\pmforms\element\Dropdown;
 use dktapps\pmforms\element\Input;
 use dktapps\pmforms\element\Slider;
-use InvalidArgumentException;
 use matcracker\BedcoreProtect\forms\WorldDropDown;
 use matcracker\BedcoreProtect\Main;
 use matcracker\BedcoreProtect\utils\WorldUtils;
-use pocketmine\utils\EnumTrait;
-use function array_map;
-use function count;
 use function in_array;
-use function mb_strtolower;
 
-/**
- * This doc-block is generated automatically, do not modify it manually.
- * This must be regenerated whenever enum members are added, removed or changed.
- * @see EnumTrait::_generateMethodAnnotations()
- *
- * @method static self USERS()
- * @method static self TIME()
- * @method static self WORLD()
- * @method static self RADIUS()
- * @method static self ACTIONS()
- * @method static self INCLUDE ()
- * @method static self EXCLUDE()
- */
-final class CommandParameter
+enum CommandParameter: string
 {
-    use CustomEnumTrait {
-        register as Enum_register;
-        __construct as Enum___construct;
-        fromString as Enum_fromString;
-    }
+    use NamedEnumTrait;
+    use ValueBackedEnumTrait;
 
-    /**
-     * @param string $enumName
-     * @param string[] $aliases
-     * @param CustomFormElement $formElement
-     * @param string $example
-     */
-    public function __construct(
-        string                             $enumName,
-        private readonly array             $aliases,
-        private readonly CustomFormElement $formElement,
-        private readonly string            $example)
-    {
-        $this->Enum___construct($enumName);
-    }
+    public const WILDCARD_CHAR = "#";
 
-    public static function fromString(string $name): ?CommandParameter
-    {
-        try {
-            return self::Enum_fromString($name);
-        } catch (InvalidArgumentException) {
-            foreach (self::getAll() as $enum) {
-                if (in_array(mb_strtolower($name), $enum->getAliases())) {
-                    return $enum;
-                }
-            }
-        }
-
-        return null;
-    }
+    case USERS = "users";
+    case TIME = "time";
+    case WORLD = "world";
+    case RADIUS = "radius";
+    case ACTIONS = "actions";
+    case INCLUDE = "include";
+    case EXCLUDE = "exclude";
 
     /**
      * @return string[]
      */
     public function getAliases(): array
     {
-        return $this->aliases;
+        return match ($this) {
+            self::USERS => ["user", "u"],
+            self::TIME => ["t"],
+            self::WORLD => ["w"],
+            self::RADIUS => ["r"],
+            self::ACTIONS => ["action", "a"],
+            self::INCLUDE => ["i"],
+            self::EXCLUDE => ["e"]
+        };
     }
 
-    public static function getAllNames(): array
-    {
-        return array_map(static function (CommandParameter $parameter): string {
-            return $parameter->name();
-        }, self::getAll());
-    }
-
-    public static function count(): int
-    {
-        return count(self::getAll());
-    }
-
-    protected static function setup(): void
+    public function getFormElement(): CustomFormElement
     {
         $plugin = Main::getInstance();
         $lang = $plugin->getLanguage();
         $config = $plugin->getParsedConfig();
         $defaultRadius = $config->getDefaultRadius();
+        $text = $lang->translateString("form.params.$this->value");
 
         if (($maxRadius = $config->getMaxRadius()) === 0) {
             $radiusElement = new Input(
-                "radius",
-                $lang->translateString("form.params.radius"),
+                $this->value,
+                $text,
                 "5",
                 $defaultRadius > 0 ? "$defaultRadius" : ""
             );
         } else {
             $radiusElement = new Slider(
-                "radius",
-                $lang->translateString("form.params.radius"),
+                $this->value,
+                $text,
                 0,
                 $maxRadius,
                 1.0,
@@ -131,88 +87,62 @@ final class CommandParameter
             );
         }
 
-        self::registerAll(
-            new self(
-                "users",
-                ["user", "u"],
-                new Input(
-                    "users",
-                    $lang->translateString("form.params.users"),
-                    $lang->translateString("form.params.users-placeholder")
-                ),
-                "[u=shoghicp], [u=shoghicp,#zombie]"
+        return match ($this) {
+            self::USERS => new Input(
+                $this->value,
+                $text,
+                $lang->translateString("form.params.users-placeholder")
             ),
-            new self(
-                "time",
-                ["t"],
-                new Input(
-                    "time",
-                    $lang->translateString("form.params.time"),
-                    "1h3m10s"
-                ),
-                "[t=2w5d7h2m10s], [t=5d2h]"
+            self::TIME => new Input(
+                $this->value,
+                $text,
+                "1h3m10s"
             ),
-            new self(
-                "world",
-                ["w"],
-                new WorldDropDown(
-                    "world",
-                    $lang->translateString("form.params.world"),
-                    WorldUtils::getWorldNames()
-                ),
-                "[w=my_world], [w=faction]"
+            self::WORLD => new WorldDropDown(
+                $this->value,
+                $text,
+                WorldUtils::getWorldNames()
             ),
-            new self(
-                "radius",
-                ["r"],
-                $radiusElement,
-                "[r=15]"
+            self::RADIUS => $radiusElement,
+            self::ACTIONS => new Dropdown(
+                $this->value,
+                $text,
+                ActionCommandArgument::getValues()
             ),
-            new self(
-                "actions",
-                ["action", "a"],
-                new Dropdown(
-                    "action",
-                    $lang->translateString("form.params.actions"),
-                    ActionType::COMMAND_ARGUMENTS
-                ),
-                "[a=block], [a=+block], [a=-block], [a=click,container], [a=block,kill]"
-            ),
-            new self(
-                "include",
-                ["i"],
-                new Input(
-                    "inclusions",
-                    $lang->translateString("form.params.include"),
-                    "stone,dirt,grass,..."
-                ),
-                "[b=stone], [b=red_wool,dirt,tnt,...]"
-            ),
-            new self(
-                "exclude",
-                ["e"],
-                new Input(
-                    "exclusions",
-                    $lang->translateString("form.params.exclude"),
-                    "stone,dirt,grass,..."
-                ),
-                "[e=stone], [e=red_wool,dirt,tnt,...]"
+            self::INCLUDE, self::EXCLUDE => new Input(
+                $this->value,
+                $text,
+                "stone,dirt,grass,..."
             )
-        );
-    }
-
-    protected static function register(CommandParameter $member): void
-    {
-        self::Enum_register($member);
+        };
     }
 
     public function getExample(): string
     {
-        return $this->example;
+        return match ($this) {
+            self::USERS => "[u=shoghicp], [u=shoghicp,#zombie,...]",
+            self::TIME => "[t=2w5d7h2m10s], [t=5d2h]",
+            self::WORLD => "[w=my_world], [w=faction]",
+            self::RADIUS => "[r=15]",
+            self::ACTIONS => "[a=block], [a=+block], [a=-block], [a=click,container], [a=block,kill]",
+            self::INCLUDE => "[i=stone], [i=red_wool,dirt,tnt,...]",
+            self::EXCLUDE => "[e=stone], [e=red_wool,dirt,tnt,...]"
+        };
     }
 
-    public function getFormElement(): CustomFormElement
+    public static function tryFromAlias(string $value): ?static
     {
-        return $this->formElement;
+        $enum = self::tryFrom($value);
+
+        if ($enum === null) {
+            foreach (CommandParameter::cases() as $parameter) {
+                if (in_array($value, $parameter->getAliases(), true)) {
+                    return $parameter;
+                }
+            }
+            return null;
+        } else {
+            return $enum;
+        }
     }
 }

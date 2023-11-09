@@ -23,7 +23,6 @@ namespace matcracker\BedcoreProtect\storage\queries;
 
 use Generator;
 use matcracker\BedcoreProtect\enums\Action;
-use matcracker\BedcoreProtect\enums\ActionType;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\block\inventory\BlockInventory;
@@ -77,19 +76,19 @@ class InventoriesQueries extends Query
                     $sourceCount = $sourceItem->getCount();
                     $targetCount = $targetItem->getCount(); //Final count
                     if ($targetCount > $sourceCount) {
-                        $action = ActionType::ADD();
+                        $action = Action::ADD;
                         $targetItem->setCount($targetCount - $sourceCount); //Effective number of blocks added
                     } else {
-                        $action = ActionType::REMOVE();
+                        $action = Action::REMOVE;
                         $sourceItem->setCount($sourceCount - $targetCount); //Effective number of blocks removed
                     }
                 } elseif (!$sourceItem->isNull() && !$targetItem->isNull()) {
-                    yield from $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, ActionType::REMOVE(), $time);
-                    $action = ActionType::ADD();
+                    yield from $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, Action::REMOVE, $time);
+                    $action = Action::ADD;
                 } elseif (!$sourceItem->isNull()) {
-                    $action = ActionType::REMOVE();
+                    $action = Action::REMOVE;
                 } else {
-                    $action = ActionType::ADD();
+                    $action = Action::ADD;
                 }
 
                 yield from $this->addInventorySlotLog($playerUuid, $slot, $sourceItem, $targetItem, $holder, $worldName, $action, $time);
@@ -115,13 +114,7 @@ class InventoriesQueries extends Query
     }
 
     /**
-     * Item frames do not have an inventory but we treat them as if they did.
-     *
-     * @param Player $player
-     * @param Item $item
-     * @param Action $action
-     * @param Vector3 $position
-     * @param string $worldName
+     * Item frames do not have an inventory, but we treat them as if they did.
      */
     public function addItemFrameSlotLog(Player $player, Item $item, Action $action, Vector3 $position, string $worldName): void
     {
@@ -154,7 +147,7 @@ class InventoriesQueries extends Query
                         $airItem,
                         $inventoryPosition,
                         $worldName,
-                        ActionType::REMOVE(),
+                        Action::REMOVE,
                         $time
                     );
                 }

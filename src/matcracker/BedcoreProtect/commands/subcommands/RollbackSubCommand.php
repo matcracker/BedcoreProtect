@@ -32,11 +32,11 @@ final class RollbackSubCommand extends ParsableSubCommand
     {
         if ($sender instanceof Player) {
             $default = [
-                CommandParameter::WORLD()->name() => $sender->getWorld()->getFolderName()
+                CommandParameter::WORLD->value => $sender->getWorld()->getFolderName()
             ];
             $defaultRadius = $this->getOwningPlugin()->getParsedConfig()->getDefaultRadius();
             if ($defaultRadius > 0) {
-                $default[CommandParameter::RADIUS()->name()] = (string)$defaultRadius;
+                $default[CommandParameter::RADIUS->value] = (string)$defaultRadius;
             }
         } else {
             $default = [];

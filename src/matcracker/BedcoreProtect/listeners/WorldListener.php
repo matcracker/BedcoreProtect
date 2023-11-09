@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\listeners;
 
-use matcracker\BedcoreProtect\enums\ActionType;
+use matcracker\BedcoreProtect\enums\Action;
 use pocketmine\block\Block;
 use pocketmine\block\Sapling;
 use pocketmine\block\VanillaBlocks;
@@ -40,7 +40,7 @@ final class WorldListener extends BedcoreListener
     {
         $block = $event->getBlock();
         if ($this->config->isEnabledWorld($block->getPosition()->getWorld()) && $this->config->getLeavesDecay()) {
-            $this->blocksQueries->addBlockLogByBlock($block, $block, VanillaBlocks::AIR(), ActionType::BREAK(), $block->getPosition());
+            $this->blocksQueries->addBlockLogByBlock($block, $block, VanillaBlocks::AIR(), Action::BREAK, $block->getPosition());
         }
     }
 
@@ -74,7 +74,7 @@ final class WorldListener extends BedcoreListener
                 }
 
                 //TODO: create function for log blocks transaction, this is too heavy. See explosions.
-                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, ActionType::PLACE(), $replacedBlock->getPosition(), $sourcePos);
+                $this->blocksQueries->addBlockLogByEntity($player, $replacedBlock, $block, Action::PLACE, $replacedBlock->getPosition(), $sourcePos);
             }
         }
     }

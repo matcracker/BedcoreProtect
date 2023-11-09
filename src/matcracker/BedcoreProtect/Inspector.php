@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect;
 
-use matcracker\BedcoreProtect\enums\ActionType;
+use matcracker\BedcoreProtect\enums\Action;
 use matcracker\BedcoreProtect\utils\Utils;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
@@ -124,21 +124,21 @@ final class Inspector
             $y = (int)$log["y"];
             $z = (int)$log["z"];
             $worldName = (string)$log["world_name"];
-            $action = ActionType::fromId((int)$log["action"]);
+            $action = Action::from((int)$log["action"]);
             $rollback = (bool)$log["rollback"];
 
             $timeStamp = Utils::timeAgo((int)$log["time"]);
             switch ($action) {
-                case ActionType::CHAT():
-                case ActionType::COMMAND():
+                case Action::CHAT:
+                case Action::COMMAND:
                     $to = "{$log["message"]} ";
                     break;
-                case ActionType::SESSION_JOIN():
-                case ActionType::SESSION_LEFT():
+                case Action::SESSION_JOIN:
+                case Action::SESSION_LEFT:
                     $to = "";
                     break;
                 default:
-                    $prefix = ($action === ActionType::BREAK() || $action === ActionType::REMOVE()) ? "old" : "new";
+                    $prefix = ($action === Action::BREAK || $action === Action::REMOVE) ? "old" : "new";
 
                     if (isset($log["{$prefix}_name"])) {
                         $name = $log["{$prefix}_name"];

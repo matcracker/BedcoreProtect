@@ -24,7 +24,6 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
-use SOFe\AwaitGenerator\Await;
 
 final class LookupSubCommand extends ParsableSubCommand
 {
@@ -33,7 +32,7 @@ final class LookupSubCommand extends ParsableSubCommand
         if ($sender instanceof Player) {
             $pos = $sender->getPosition();
             $default = [
-                CommandParameter::WORLD()->name() => $pos->getWorld()->getFolderName()
+                CommandParameter::WORLD->value => $pos->getWorld()->getFolderName()
             ];
         } else {
             $pos = null;

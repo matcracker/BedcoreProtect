@@ -53,7 +53,7 @@ final class PurgeSubCommand extends ParsableSubCommand
             $pluginQueries->purge(
                 (float)$cmdData->getTime() ?? PHP_FLOAT_MAX,
                 $cmdData->getWorld(),
-                in_array(AdditionalParameter::OPTIMIZE(), $cmdData->getAdditionalParams()),
+                in_array(AdditionalParameter::OPTIMIZE, $cmdData->getAdditionalParams()),
                 function (int $affectedRows) use ($sender): void {
                     $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.success"));
                     $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.deleted-rows", [$affectedRows]));
@@ -65,7 +65,7 @@ final class PurgeSubCommand extends ParsableSubCommand
     public function getForm(Player $player): ?BaseForm
     {
         /** @var WorldDropDown $worldDropDown */
-        $worldDropDown = clone CommandParameter::WORLD()->getFormElement();
+        $worldDropDown = CommandParameter::WORLD->getFormElement();
         $worldDropDown->setOptions(array_merge(["----"], $worldDropDown->getOptions()));
 
         $elements = [

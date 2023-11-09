@@ -21,29 +21,16 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\enums;
 
-use InvalidArgumentException;
-use pocketmine\utils\EnumTrait;
+use BackedEnum;
+use function array_map;
 
-trait CustomEnumTrait
+trait ValueBackedEnumTrait
 {
-    use EnumTrait;
-
     /**
-     * Returns the enum member matching the given name.
-     * This is overridden to change the return typehint.
-     *
-     * @throws InvalidArgumentException if no member matches.
+     * @return string[]|int[]
      */
-    public static function fromString(string $name): self
+    public static function getValues(): array
     {
-        //phpstan doesn't support generic traits yet :(
-        /** @var self $result */
-        $result = self::_registryFromString($name);
-        return $result;
-    }
-
-    public function __toString(): string
-    {
-        return $this->enumName;
+        return array_map(static fn(BackedEnum $enum) => $enum->value, self::cases());
     }
 }

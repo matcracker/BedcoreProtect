@@ -21,36 +21,16 @@ declare(strict_types=1);
 
 namespace matcracker\BedcoreProtect\enums;
 
-use matcracker\BedcoreProtect\Main;
-use function mb_strtolower;
+use UnitEnum;
+use function array_map;
 
-enum Action: int
+trait NamedEnumTrait
 {
-    use NamedEnumTrait;
-    use ValueBackedEnumTrait;
-
-    case PLACE = 0;
-    case BREAK = 1;
-    case CLICK = 2;
-    case SPAWN = 3;
-    case DESPAWN = 4;
-    case KILL = 5;
-    case ADD = 6;
-    case REMOVE = 7;
-    case SESSION_JOIN = 8;
-    case SESSION_LEFT = 9;
-    case CHAT = 10;
-    case COMMAND = 11;
-    case UPDATE = 255;
-
-    public function getMessage(): string
+    /**
+     * @return string[]
+     */
+    public static function getNames(): array
     {
-        $action = match ($this) {
-            self::SPAWN => self::PLACE,
-            self::DESPAWN => self::BREAK,
-            default => $this
-        };
-
-        return Main::getInstance()->getLanguage()->translateString("action." . mb_strtolower($action->name));
+        return array_map(static fn(UnitEnum $enum) => $enum->name, self::cases());
     }
 }
