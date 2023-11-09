@@ -23,6 +23,7 @@ namespace matcracker\BedcoreProtect\commands\subcommands;
 
 use dktapps\pmforms\BaseForm;
 use matcracker\BedcoreProtect\commands\BCPCommand;
+use matcracker\BedcoreProtect\enums\ActionCommandArgument;
 use matcracker\BedcoreProtect\enums\CommandParameter;
 use matcracker\BedcoreProtect\Main;
 use pocketmine\command\CommandSender;
@@ -50,6 +51,15 @@ final class HelpSubCommand extends SubCommand
                 foreach ($param->getAliases() as $alias) {
                     $sender->sendMessage(TextFormat::DARK_AQUA . "/bcp lookup $alias=<$param->value>" . TextFormat::WHITE . " - " . $this->getLang()->translateString("command.params.generic.help.shortcut"));
                 }
+
+                if ($param === CommandParameter::ACTIONS) {
+                    $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::WHITE . $this->getLang()->translateString("command.params.generic.help.actions"));
+                    foreach (ActionCommandArgument::cases() as $actionArg) {
+                        $enumName = mb_strtolower($actionArg->name);
+                        $sender->sendMessage(TextFormat::DARK_AQUA . "| " . TextFormat::GRAY . "$actionArg->value " . TextFormat::WHITE . "- " . $this->getLang()->translateString("command.params.actions.$enumName.help"));
+                    }
+                }
+
                 $sender->sendMessage(TextFormat::ITALIC . TextFormat::GRAY . $this->getLang()->translateString("command.params.generic.help.examples", [$param->getExample()]));
 
             } else {
