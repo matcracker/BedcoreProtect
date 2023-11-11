@@ -29,6 +29,7 @@ use matcracker\BedcoreProtect\utils\ArrayUtils;
 use matcracker\BedcoreProtect\utils\BlockUtils;
 use matcracker\BedcoreProtect\utils\EntityUtils;
 use matcracker\BedcoreProtect\utils\Utils;
+use OutOfBoundsException;
 use pocketmine\block\Block;
 use pocketmine\block\ItemFrame;
 use pocketmine\block\tile\ItemFrame as TileItemFrame;
@@ -51,7 +52,7 @@ use pocketmine\World\Position;
 use pocketmine\World\World;
 use poggit\libasynql\DataConnector;
 use SOFe\AwaitGenerator\Await;
-use function array_values;
+use function array_fill;
 use function assert;
 use function count;
 use function get_class;
@@ -178,7 +179,7 @@ class BlocksQueries extends Query
 
                 foreach ($oldBlocks as $key => $oldBlock) {
                     $pos = $oldBlock->getPosition();
-                    $newBlock = $pos->getWorld()->getBlock($pos, addToCache: false);
+                    $newBlock = $pos->getWorld()->getBlockAt($pos->x, $pos->y, $pos->z);
                     if ($newBlock->isSameState($oldBlock)) {
                         unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                     } else {
@@ -225,32 +226,34 @@ class BlocksQueries extends Query
         ), $delay);
     }
 
-    /**
-     * @param Entity $entity
-     * @param Block[] $oldBlocks
-     * @param Action $action
-     * @param Vector3|null $sourcePos
-     */
-    public function addExplosionLogByEntity(Entity $entity, array $oldBlocks, Action $action, ?Vector3 $sourcePos = null): void
+    protected function addMultiBlocksLogByEntity(Entity $entity, array $oldBlocks, array $newBlocks, Action $action, ?Vector3 $sourcePos = null): void
     {
-        if (count($oldBlocks) === 0) {
+        if (($countOldBlocks = count($oldBlocks)) === 0) {
             return;
-        }
-
-        $oldBlocks = array_values($oldBlocks);
-
-        /** @var string[] $oldBlocksNbt */
-        $oldBlocksNbt = [];
-        foreach ($oldBlocks as $oldBlock) {
-            $oldBlocksNbt[] = BlockUtils::serializeTileTag($oldBlock);
+        } elseif ($countOldBlocks !== count($newBlocks)) {
+            throw new OutOfBoundsException("The array length between the old blocks and new blocks is different");
         }
 
         $uuidEntity = EntityUtils::getUniqueId($entity);
         $worldName = $entity->getWorld()->getFolderName();
         $time = microtime(true);
 
+        ArrayUtils::resetKeys($oldBlocks, $newBlocks);
+
+        /** @var CompoundTag[]|null[] $oldBlocksNbt */
+        $oldBlocksNbt = [];
+        foreach ($oldBlocks as $oldBlock) {
+            $oldBlocksNbt[] = BlockUtils::getCompoundTag($oldBlock);
+        }
+
+        /** @var CompoundTag[]|null[] $newBlocksNbt */
+        $newBlocksNbt = [];
+        foreach ($newBlocks as $newBlock) {
+            $newBlocksNbt[] = BlockUtils::getCompoundTag($newBlock);
+        }
+
         Await::g2c(self::getMutex()->runClosure(
-            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $action, $time, $worldName, $sourcePos): Generator {
+            function () use ($entity, $uuidEntity, $oldBlocks, $oldBlocksNbt, $newBlocks, $newBlocksNbt, $action, $time, $worldName, $sourcePos): Generator {
                 yield from $this->entitiesQueries->addEntity($entity);
 
                 if ($sourcePos !== null) {
@@ -263,16 +266,14 @@ class BlocksQueries extends Query
 
                 $generators = [];
                 foreach ($oldBlocks as $key => $oldBlock) {
-                    $oldPos = $oldBlock->getPosition();
-
                     $generators[] = $this->addRawBlockLog(
                         $uuid,
                         $oldBlock,
                         $oldBlocksNbt[$key],
-                        VanillaBlocks::AIR(),
-                        null,
-                        $oldPos->asVector3(),
-                        $oldPos->getWorld()->getFolderName(),
+                        $newBlocks[$key],
+                        $newBlocksNbt[$key],
+                        $oldBlock->getPosition(),
+                        $worldName,
                         $action,
                         $time
                     );
@@ -285,14 +286,24 @@ class BlocksQueries extends Query
     }
 
     /**
-     * It logs the block who made the action for block.
-     *
-     * @param Block $who
-     * @param Block $oldBlock
-     * @param Block $newBlock
+     * @param Entity $entity
+     * @param Block[] $oldBlocks
      * @param Action $action
-     * @param Position|null $position
      * @param Vector3|null $sourcePos
+     */
+    public function addExplosionLogByEntity(Entity $entity, array $oldBlocks, Action $action, ?Vector3 $sourcePos = null): void
+    {
+        $this->addMultiBlocksLogByEntity(
+            $entity,
+            $oldBlocks,
+            array_fill(0, count($oldBlocks), VanillaBlocks::AIR()),
+            $action,
+            $sourcePos
+        );
+    }
+
+    /**
+     * It logs the block who made the action for block.
      */
     public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null, ?Vector3 $sourcePos = null): void
     {
