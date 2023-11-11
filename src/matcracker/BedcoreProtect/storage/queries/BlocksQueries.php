@@ -40,6 +40,7 @@ use pocketmine\data\bedrock\block\BlockStateSerializeException;
 use pocketmine\entity\Entity;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginException;
 use pocketmine\scheduler\ClosureTask;
@@ -85,8 +86,8 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByEntity(?Entity $entity, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null, ?Vector3 $sourcePos = null): void
     {
-        $oldNbt = BlockUtils::serializeTileTag($oldBlock);
-        $newNbt = BlockUtils::serializeTileTag($newBlock);
+        $oldNbt = BlockUtils::getCompoundTag($oldBlock);
+        $newNbt = BlockUtils::getCompoundTag($newBlock);
         $position ??= $newBlock->getPosition();
         $worldName = $position->getWorld()->getFolderName();
         $time = microtime(true);
@@ -124,7 +125,7 @@ class BlocksQueries extends Query
         );
     }
 
-    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?string $oldNbt, Block $newBlock, ?string $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
+    final protected function addRawBlockLog(string $uuid, Block $oldBlock, ?CompoundTag $oldNbt, Block $newBlock, ?CompoundTag $newNbt, Vector3 $position, string $worldName, Action $action, float $time): Generator
     {
         try {
             $oldState = BlockUtils::serializeBlock($oldBlock);
@@ -141,10 +142,10 @@ class BlocksQueries extends Query
             "log_id" => $lastId,
             "old_name" => $oldBlock->getName(),
             "old_state" => $oldState,
-            "old_nbt" => $oldNbt,
+            "old_nbt" => $oldNbt !== null ? Utils::serializeNBT($oldNbt) : null,
             "new_name" => $newBlock->getName(),
             "new_state" => $newState,
-            "new_nbt" => $newNbt
+            "new_nbt" => $newNbt !== null ? Utils::serializeNBT($newNbt) : null
         ]);
     }
 
@@ -160,10 +161,10 @@ class BlocksQueries extends Query
             return;
         }
 
-        /** @var string[] $oldBlocksNbt */
+        /** @var CompoundTag[]|null[] $oldBlocksNbt */
         $oldBlocksNbt = [];
         foreach ($oldBlocks as $oldBlock) {
-            $oldBlocksNbt[] = BlockUtils::serializeTileTag($oldBlock);
+            $oldBlocksNbt[] = BlockUtils::getCompoundTag($oldBlock);
         }
 
         $time = microtime(true);
@@ -182,7 +183,7 @@ class BlocksQueries extends Query
                         unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                     } else {
                         $newBlocks[] = $newBlock;
-                        $newBlocksNbt[] = BlockUtils::serializeTileTag($newBlock);
+                        $newBlocksNbt[] = BlockUtils::getCompoundTag($newBlock);
                     }
                 }
 
@@ -295,8 +296,8 @@ class BlocksQueries extends Query
      */
     public function addBlockLogByBlock(Block $who, Block $oldBlock, Block $newBlock, Action $action, ?Position $position = null, ?Vector3 $sourcePos = null): void
     {
-        $oldNbt = BlockUtils::serializeTileTag($oldBlock);
-        $newNbt = BlockUtils::serializeTileTag($newBlock);
+        $oldNbt = BlockUtils::getCompoundTag($oldBlock);
+        $newNbt = BlockUtils::getCompoundTag($newBlock);
         $position ??= $newBlock->getPosition();
         $worldName = $position->getWorld()->getFolderName();
         $time = microtime(true);
@@ -337,13 +338,12 @@ class BlocksQueries extends Query
         }
 
         $item = clone $item;
-        $oldNbt = Utils::serializeNBT($nbt = $tileItemFrame->saveNBT());
+        $oldNbt = $newNbt = $tileItemFrame->saveNBT();
 
-        $nbt->setTag(TileItemFrame::TAG_ITEM, $item->nbtSerialize());
-            $nbt->setByte(TileItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % ItemFrame::ROTATIONS);
+        $newNbt->setTag(TileItemFrame::TAG_ITEM, $item->nbtSerialize());
         if ($action === Action::CLICK) {
+            $newNbt->setByte(TileItemFrame::TAG_ITEM_ROTATION, ($itemFrame->getItemRotation() + 1) % ItemFrame::ROTATIONS);
         }
-        $newNbt = Utils::serializeNBT($nbt);
 
         $position = $itemFrame->getPosition();
         $worldName = $position->getWorld()->getFolderName();

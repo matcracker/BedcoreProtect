@@ -144,6 +144,8 @@ final class BlockUtils
      * @param Block $block
      *
      * @return string|null
+     *
+     * @deprecated @see Utils::serializeNBT()
      */
     public static function serializeTileTag(Block $block): ?string
     {
