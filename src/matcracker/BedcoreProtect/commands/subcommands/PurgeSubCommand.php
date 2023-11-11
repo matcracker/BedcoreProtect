@@ -36,7 +36,6 @@ use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use function array_merge;
-use function in_array;
 use function strlen;
 use const PHP_FLOAT_MAX;
 
@@ -44,7 +43,15 @@ final class PurgeSubCommand extends ParsableSubCommand
 {
     public function onExecute(CommandSender $sender, array $args): void
     {
-        $cmdData = $this->parseArguments($sender, $args);
+        if ($sender instanceof Player) {
+            $default = [
+                CommandParameter::WORLD->value => $sender->getWorld()->getFolderName()
+            ];
+        } else {
+            $default = [];
+        }
+
+        $cmdData = $this->parseArguments($sender, $args, $default);
         if ($cmdData !== null) {
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.started"));
             $sender->sendMessage(Main::MESSAGE_PREFIX . $this->getLang()->translateString("subcommand.purge.no-restart"));
