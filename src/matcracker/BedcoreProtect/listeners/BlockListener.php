@@ -36,6 +36,7 @@ use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockSpreadEvent;
 use pocketmine\event\block\SignChangeEvent;
 use function array_merge;
+use function array_shift;
 use function count;
 
 final class BlockListener extends BedcoreListener
@@ -59,19 +60,28 @@ final class BlockListener extends BedcoreListener
 
             if ($this->config->getNaturalBreak()) {
                 $sides = [];
-                foreach ($block->getAllSides() as $side) {
-                    if ($side->getTypeId() === BlockTypeIds::AIR) {
-                        continue;
-                    }
-                    if (count($block->getAffectedBlocks()) > 1) {
-                        foreach ($block->getAffectedBlocks() as $affectedBlock) {
+                if (count($affectedBlocks) > 1) {
+                    array_shift($affectedBlocks);
+                    foreach ($block->getAllSides() as $side) {
+                        if ($side->getTypeId() === BlockTypeIds::AIR) {
+                            continue;
+                        }
+                        foreach ($affectedBlocks as $affectedBlock) {
                             if ($affectedBlock->getPosition()->equals($side->getPosition())) {
                                 continue 2;
                             }
                         }
-                    }
 
-                    $sides = array_merge($sides, $side->getAffectedBlocks());
+                        $sides = array_merge($sides, $side->getAffectedBlocks());
+                    }
+                } else {
+                    foreach ($block->getAllSides() as $side) {
+                        if ($side->getTypeId() === BlockTypeIds::AIR) {
+                            continue;
+                        }
+
+                        $sides = array_merge($sides, $side->getAffectedBlocks());
+                    }
                 }
 
                 //This is necessary because it is not possible to predict which blocks will be broken
