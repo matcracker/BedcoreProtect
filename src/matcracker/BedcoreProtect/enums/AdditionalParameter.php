@@ -26,5 +26,5 @@ enum AdditionalParameter: string
     use NamedEnumTrait;
     use ValueBackedEnumTrait;
 
-    case OPTIMIZE = CommandParameter::WILDCARD_CHAR . "optimize";
+    case OPTIMIZE = "#optimize";
 }

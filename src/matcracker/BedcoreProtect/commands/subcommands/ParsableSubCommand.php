@@ -205,7 +205,7 @@ abstract class ParsableSubCommand extends SubCommand
         foreach ($args as $arg) {
             //Check if the argument is an additional parameter by checking the first char.
             if ($arg[0] === CommandParameter::WILDCARD_CHAR) {
-                $additionalParam = AdditionalParameter::tryFrom($arg)?->value;
+                $additionalParam = AdditionalParameter::tryFrom($arg);
                 if ($additionalParam !== null) {
                     $additionalParams[] = $additionalParam;
                 } else {
