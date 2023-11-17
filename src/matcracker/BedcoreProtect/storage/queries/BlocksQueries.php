@@ -177,9 +177,18 @@ class BlocksQueries extends Query
                 /** @var string[]|null[] $newBlocksNbt */
                 $newBlocksNbt = [];
 
+                $validatePosition = $oldBlocks[0]->getPosition();
+                if (!$validatePosition->isValid()){
+                    $this->plugin->getLogger()->debug("Invalid block position, the world has been unloaded.");
+                    return;
+                }
+
+                $world = $validatePosition->getWorld();
+                $worldName = $world->getFolderName();
+
                 foreach ($oldBlocks as $key => $oldBlock) {
                     $pos = $oldBlock->getPosition();
-                    $newBlock = $pos->getWorld()->getBlockAt($pos->x, $pos->y, $pos->z);
+                    $newBlock = $world->getBlockAt($pos->x, $pos->y, $pos->z);
                     if ($newBlock->isSameState($oldBlock)) {
                         unset($oldBlocks[$key], $oldBlocksNbt[$key]);
                     } else {
@@ -197,22 +206,20 @@ class BlocksQueries extends Query
                 ArrayUtils::resetKeys($oldBlocks, $oldBlocksNbt);
 
                 Await::g2c(self::getMutex()->runClosure(
-                    function () use ($entity, $oldBlocks, $oldBlocksNbt, $newBlocks, $newBlocksNbt, $action, $time): Generator {
+                    function () use ($entity, $oldBlocks, $oldBlocksNbt, $newBlocks, $newBlocksNbt, $worldName, $action, $time): Generator {
                         yield from $this->entitiesQueries->addEntity($entity);
 
                         yield from $this->connector->asyncGeneric(QueriesConst::BEGIN_TRANSACTION);
                         $generators = [];
                         foreach ($oldBlocks as $key => $oldBlock) {
-                            $oldPosition = $oldBlock->getPosition();
-
                             $generators[] = $this->addRawBlockLog(
                                 EntityUtils::getUniqueId($entity),
                                 $oldBlock,
                                 $oldBlocksNbt[$key],
                                 $newBlocks[$key],
                                 $newBlocksNbt[$key],
-                                $oldPosition->asVector3(),
-                                $oldPosition->getWorld()->getFolderName(),
+                                $oldBlock->getPosition(),
+                                $worldName,
                                 $action,
                                 $time
                             );
