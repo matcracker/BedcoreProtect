@@ -18,7 +18,7 @@
     "sof3/libasynql": "^4.2.0",
     "sof3/await-generator": "^3.5.0",
     "dktapps/pmforms": "^2.2.0",
-    "pocketmine/pocketmine-mp": "^5.0.0",
+    "pocketmine/pocketmine-mp": "^5.5.0",
     "ifera-mc/update-notifier": "dev-master"
   },
   "require-dev": {

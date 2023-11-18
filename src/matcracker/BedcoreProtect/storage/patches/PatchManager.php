@@ -27,12 +27,12 @@ use matcracker\BedcoreProtect\storage\queries\QueriesConst;
 use pocketmine\plugin\PluginException;
 use poggit\libasynql\DataConnector;
 use poggit\libasynql\SqlDialect;
+use Symfony\Component\Filesystem\Path;
 use function array_filter;
 use function copy;
 use function count;
-use function fclose;
+use function file_get_contents;
 use function is_array;
-use function stream_get_contents;
 use function version_compare;
 use function yaml_parse;
 
@@ -127,15 +127,9 @@ final class PatchManager
      */
     private function getVersionsToPatch(string $db_version): array
     {
-        $res = $this->plugin->getResource("patches/.patches");
-        if ($res === null) {
-            throw new PluginException("Could not find \".patches\" file. Be sure to use the original .phar plugin file.");
-        }
-
-        $patchContent = stream_get_contents($res);
-        fclose($res);
+        $patchContent = file_get_contents($this->plugin->getResourcePath(Path::join("patches", ".patches")));
         if ($patchContent === false) {
-            throw new PluginException("Could not read \".patches\" file.");
+            throw new PluginException("Could not find \".patches\" file. Be sure to use the original .phar plugin file.");
         }
 
         $patchConfig = yaml_parse($patchContent);

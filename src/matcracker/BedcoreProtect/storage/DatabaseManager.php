@@ -31,6 +31,7 @@ use poggit\libasynql\libasynql;
 use poggit\libasynql\SqlError;
 use Symfony\Component\Filesystem\Path;
 use function count;
+use function fopen;
 use function version_compare;
 
 final class DatabaseManager
@@ -64,8 +65,8 @@ final class DatabaseManager
             return false;
         }
 
-        $patchResource = $this->plugin->getResource(Path::join("patches", $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql"));
-        if ($patchResource !== null) {
+        $patchResource = fopen($this->plugin->getResourcePath(Path::join("patches", $this->plugin->getParsedConfig()->getDatabaseType() . "_patch.sql")), "r");
+        if ($patchResource !== false) {
             $this->connector->loadQueryFile($patchResource);
         }
         $this->patchManager = new PatchManager($this->plugin, $this->connector);
